@@ -16,11 +16,17 @@ import {
 const graph = entrypoint(
   { name: "agent" },
   async (
-    { userId, inspirationId, inspirationContent, num }: {
+    { userId, inspirationId, inspirationContent, num, onEcho }: {
       userId: string;
       inspirationId: string;
       inspirationContent: string;
       num: number;
+      onEcho?: (echo: {
+        id: string;
+        inspiration_id: string;
+        souler_id: string;
+        content: string;
+      }) => void | Promise<void>;
     },
   ) => {
     const soulers = await matchSoulers(inspirationContent, num);
@@ -52,7 +58,10 @@ const graph = entrypoint(
           inspirationContent,
           soulerData.prompt,
         );
-        await createEcho(inspirationId, soulerData.id, answer);
+        const echo = await createEcho(inspirationId, soulerData.id, answer);
+        if (onEcho) {
+          await onEcho(echo);
+        }
       }),
     );
 

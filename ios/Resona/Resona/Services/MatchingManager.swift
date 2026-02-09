@@ -10,8 +10,6 @@ class MatchingManager {
     var isMatching = false
     var currentInspiration: Inspiration?
     var errorMessage: String?
-    
-    private var realtimeChannel: RealtimeChannelV2?
     private var matchingTask: Task<Void, Never>?
     
     private init() {}
@@ -32,7 +30,6 @@ class MatchingManager {
         matchingTask?.cancel()
         matchingTask = nil
         Task {
-            await cleanupChannel()
             await MainActor.run {
                 isMatching = false
                 text = ""
@@ -47,12 +44,7 @@ class MatchingManager {
     private func performMatching(context: ModelContext) async {
         do {
             try await createInspiration(context: context)
-            try await listenToEchoes(context: context)
-            try await invokeEchoFunction()
-                        
-            await MainActor.run {
-                currentInspiration?.status = "complete"
-            }
+            try await streamEchoes(context: context)
         } catch {
             await MainActor.run {
                 errorMessage = error.localizedDescription
@@ -63,8 +55,6 @@ class MatchingManager {
         await MainActor.run {
             isMatching = false
         }
-        
-        await cleanupChannel()
     }
     
     private func createInspiration(context: ModelContext) async throws {
@@ -77,75 +67,77 @@ class MatchingManager {
         }
     }
     
-    private func listenToEchoes(context: ModelContext) async throws {
-        await cleanupChannel()
-        
+    private func streamEchoes(context: ModelContext) async throws {
         guard let inspiration = currentInspiration else {
             return
         }
         
-        let channel = supabase.channel("echoes-\(inspiration.id)")
-        
-        await MainActor.run {
-            realtimeChannel = channel
+        guard let accessToken = supabase.auth.currentSession?.accessToken else {
+            throw AppError.unauthenticated
         }
         
-        struct Insertion: Codable {
+        struct StreamEcho: Decodable {
             let id: UUID
-            let content: String
+            let inspirationId: UUID
             let soulerId: UUID
-            
-            enum CodingKeys: String, CodingKey {
-                case id, content
-                case soulerId = "souler_id"
-            }
+            let content: String
         }
         
-        let insertions = channel.postgresChange(
-            InsertAction.self,
-            schema: "public",
-            table: "echoes",
-            filter: .eq("inspiration_id", value: inspiration.id)
-        )
+        struct StreamEvent: Decodable {
+            let type: String
+            let echo: StreamEcho?
+            let completed: Bool?
+            let message: String?
+        }
         
-        try await channel.subscribeWithError()
+        struct StreamRequest: Encodable {
+            let inspirationId: UUID
+        }
         
-        Task {
-            for await insert in insertions {
-                do {
-                    let insertion = try insert.decodeRecord(as: Insertion.self, decoder: JSONDecoder())
-                    let souler = try await Souler.get(insertion.soulerId)
-                    let echo = Echo(id: insertion.id, content: insertion.content, souler: souler)
-                    
+        let url = supabaseURL.appendingPathComponent("functions/v1/echo")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/x-ndjson", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(supabaseKey, forHTTPHeaderField: "apikey")
+        request.httpBody = try JSONEncoder().encode(StreamRequest(inspirationId: inspiration.id))
+        
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+        if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
+            throw NSError(domain: "EchoStream", code: http.statusCode, userInfo: [
+                NSLocalizedDescriptionKey: "Echo stream failed with status \(http.statusCode)"
+            ])
+        }
+        
+        let decoder = JSONDecoder()
+        for try await line in bytes.lines {
+            if Task.isCancelled { break }
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty { continue }
+            
+            let event = try decoder.decode(StreamEvent.self, from: Data(trimmed.utf8))
+            switch event.type {
+            case "echo":
+                if let payload = event.echo {
+                    let souler = try await Souler.get(payload.soulerId)
+                    let echo = Echo(id: payload.id, content: payload.content, souler: souler)
                     await MainActor.run {
                         currentInspiration?.echoes.append(echo)
                     }
-                } catch {
-                    print("Error processing echo: \(error)")
                 }
+            case "done":
+                await MainActor.run {
+                    currentInspiration?.status = (event.completed == true) ? "complete" : "incomplete"
+                }
+            case "error":
+                let message = event.message ?? "Unknown error from echo stream"
+                throw NSError(domain: "EchoStream", code: -1, userInfo: [
+                    NSLocalizedDescriptionKey: message
+                ])
+            default:
+                continue
             }
-        }
-    }
-    
-    private func invokeEchoFunction() async throws {
-        guard let inspiration = currentInspiration else { return }
-        
-        try await supabase.functions.invoke(
-            "echo",
-            options: FunctionInvokeOptions(
-                body: ["inspirationId": inspiration.id]
-            )
-        )
-    }
-    
-    private func cleanupChannel() async {
-        guard let channel = realtimeChannel else { return }
-        
-        await channel.unsubscribe()
-        await supabase.removeChannel(channel)
-        
-        await MainActor.run {
-            realtimeChannel = nil
         }
     }
 }
