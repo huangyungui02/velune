@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
   console.log(`Received inspiration: ${inspirationId}`);
 
   const headers = {
-    "Content-Type": "application/x-ndjson; charset=utf-8",
+    "Content-Type": "text/event-stream; charset=utf-8",
     "Cache-Control": "no-cache",
     "Connection": "keep-alive",
   };
@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
       const encoder = new TextEncoder();
       const send = (payload: Record<string, unknown>) => {
         controller.enqueue(
-          encoder.encode(`${JSON.stringify(payload)}\n`),
+          encoder.encode(`data: ${JSON.stringify(payload)}\n\n`),
         );
       };
 

@@ -71,11 +71,7 @@ class MatchingManager {
         guard let inspiration = currentInspiration else {
             return
         }
-        
-        guard let accessToken = supabase.auth.currentSession?.accessToken else {
-            throw AppError.unauthenticated
-        }
-        
+
         struct StreamEcho: Decodable {
             let id: UUID
             let inspirationId: UUID
@@ -89,55 +85,68 @@ class MatchingManager {
             let completed: Bool?
             let message: String?
         }
-        
-        struct StreamRequest: Encodable {
-            let inspirationId: UUID
-        }
-        
-        let url = supabaseURL.appendingPathComponent("functions/v1/echo")
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/x-ndjson", forHTTPHeaderField: "Accept")
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue(supabaseKey, forHTTPHeaderField: "apikey")
-        request.httpBody = try JSONEncoder().encode(StreamRequest(inspirationId: inspiration.id))
-        
-        let (bytes, response) = try await URLSession.shared.bytes(for: request)
-        if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
-            throw NSError(domain: "EchoStream", code: http.statusCode, userInfo: [
-                NSLocalizedDescriptionKey: "Echo stream failed with status \(http.statusCode)"
-            ])
-        }
-        
+
         let decoder = JSONDecoder()
-        for try await line in bytes.lines {
-            if Task.isCancelled { break }
-            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty { continue }
-            
-            let event = try decoder.decode(StreamEvent.self, from: Data(trimmed.utf8))
-            switch event.type {
-            case "echo":
-                if let payload = event.echo {
-                    let souler = try await Souler.get(payload.soulerId)
-                    let echo = Echo(id: payload.id, content: payload.content, souler: souler)
-                    await MainActor.run {
-                        currentInspiration?.echoes.append(echo)
+        var buffer = Data()
+        
+        func drainBuffer() async throws {
+            let delimiter = Data([0x0A, 0x0A]) // "\n\n"
+            while let range = buffer.range(of: delimiter) {
+                let eventData = buffer.subdata(in: buffer.startIndex..<range.lowerBound)
+                buffer.removeSubrange(buffer.startIndex..<range.upperBound)
+                
+                if eventData.isEmpty { continue }
+                
+                let eventText = String(decoding: eventData, as: UTF8.self)
+                let dataLines = eventText
+                    .split(separator: "\n")
+                    .compactMap { line -> Substring? in
+                        let trimmed = line.trimmingCharacters(in: .whitespaces)
+                        if trimmed.hasPrefix("data:") {
+                            return trimmed.dropFirst(5).trimmingCharacters(in: .whitespaces)[...]
+                        }
+                        return nil
                     }
+                
+                let payloadString = dataLines.joined(separator: "\n")
+                if payloadString.isEmpty { continue }
+                
+                let event = try decoder.decode(StreamEvent.self, from: Data(payloadString.utf8))
+                switch event.type {
+                case "echo":
+                    if let payload = event.echo {
+                        let souler = try await Souler.get(payload.soulerId)
+                        let echo = Echo(id: payload.id, content: payload.content, souler: souler)
+                        await MainActor.run {
+                            currentInspiration?.echoes.append(echo)
+                        }
+                    }
+                case "done":
+                    await MainActor.run {
+                        currentInspiration?.status = (event.completed == true) ? "complete" : "incomplete"
+                    }
+                case "error":
+                    let message = event.message ?? "Unknown error from echo stream"
+                    throw NSError(domain: "EchoStream", code: -1, userInfo: [
+                        NSLocalizedDescriptionKey: message
+                    ])
+                default:
+                    continue
                 }
-            case "done":
-                await MainActor.run {
-                    currentInspiration?.status = (event.completed == true) ? "complete" : "incomplete"
-                }
-            case "error":
-                let message = event.message ?? "Unknown error from echo stream"
-                throw NSError(domain: "EchoStream", code: -1, userInfo: [
-                    NSLocalizedDescriptionKey: message
-                ])
-            default:
-                continue
             }
+        }
+        
+        let stream = supabase.functions._invokeWithStreamedResponse(
+            "echo",
+            options: FunctionInvokeOptions(
+                body: ["inspirationId": inspiration.id]
+            )
+        )
+        
+        for try await chunk in stream {
+            if Task.isCancelled { break }
+            buffer.append(chunk)
+            try await drainBuffer()
         }
     }
 }
