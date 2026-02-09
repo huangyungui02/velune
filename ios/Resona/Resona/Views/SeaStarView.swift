@@ -1,0 +1,182 @@
+import Supabase
+import SwiftData
+import SwiftUI
+
+struct SeaStarView: View {
+    @Environment(\.modelContext) private var context
+    @State private var text = ""
+    @State private var isNavigatingToMatching = false
+    @State private var isPresented = false
+    @State private var manager = MatchingManager.shared
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                StarFieldView()
+
+                VStack {
+                    Spacer()
+
+                    DescriptionView(title: "Become yourself", description: "It’s the most romantic thing in the world")
+
+                    Spacer()
+
+                    magicButtonView
+                        .padding()
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        ProfileView()
+                    } label: {
+                        Image(systemName: "house.fill")
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $isNavigatingToMatching) {
+                MatchingView()
+            }
+            .fullScreenCover(isPresented: $isPresented) {
+                ComposeView(text: $text, onSend: send)
+            }
+        }
+    }
+
+    private var magicButtonView: some View {
+        Group {
+            if manager.isMatching {
+                HStack(spacing: 12) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(.white.opacity(0.9))
+                        .symbolEffect(.pulse.byLayer, options: .repeating)
+
+                    Text("Finding resonance…")
+                }
+                .padding(16)
+                .glassEffect(in: .capsule)
+            } else if text.isEmpty {
+                HStack(spacing: 12) {
+                    Image(systemName: "pencil")
+
+                    Text("Write your soul fragment")
+                }
+                .padding(16)
+                .glassEffect(in: .capsule)
+            } else {
+                ScrollView {
+                    Text(text)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                        .fixedSize(horizontal: false, vertical: false)
+                }
+                .frame(maxWidth: .infinity, maxHeight: 150)
+                .glassEffect(in: .rect(cornerRadius: 20))
+            }
+        }
+        .onTapGesture {
+            if manager.isMatching {
+                isNavigatingToMatching = true
+            } else {
+                isPresented = true
+            }
+        }
+    }
+
+    // MARK: - Actions
+
+    private func send() {
+        let input = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !input.isEmpty else { return }
+        manager.startMatching(text: text, context: context)
+        text = ""
+        isNavigatingToMatching = true
+    }
+}
+
+// MARK: - Description View
+
+private struct DescriptionView: View {
+    let title: String
+    let description: String
+
+    var body: some View {
+        VStack {
+            Spacer()
+
+            VStack(spacing: 8) {
+                Text(title)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+
+                Text(description)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .fontWeight(.light)
+                    .tracking(2)
+            }
+
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Compose View
+
+private struct ComposeView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var text: String
+    let onSend: () -> Void
+
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                TextField("Write your real thoughts, reflections, and feelings", text: $text, axis: .vertical)
+                    .focused($isFocused)
+                    .font(.body)
+                    .padding(24)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Spacer()
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Soul Fragment")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: {
+                        onSend()
+                        dismiss()
+                    }) {
+                        Image(systemName: "checkmark")
+                            .font(.body)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                    }
+                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .opacity(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.3 : 1)
+                }
+            }
+        }
+        .onAppear {
+            isFocused = true
+        }
+    }
+}
+
+#Preview {
+    SeaStarView()
+}
