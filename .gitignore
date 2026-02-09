@@ -26,6 +26,8 @@ pnpm-debug.log*
 
 # Supabase (local dev)
 .supabase/
+supabase/.branches/
+supabase/.temp/
 
 # Env files (keep examples)
 .env
