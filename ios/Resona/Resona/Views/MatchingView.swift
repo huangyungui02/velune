@@ -14,7 +14,9 @@ struct MatchingView: View {
         manager.currentInspiration?.echoes ?? []
     }
     
-    private var hasEchoes: Bool { !echoes.isEmpty }
+    private var hasEchoes: Bool {
+        !echoes.isEmpty
+    }
     
     var body: some View {
         ZStack {
@@ -41,7 +43,6 @@ struct MatchingView: View {
         }
     }
     
-    @ViewBuilder
     private var cardPagerView: some View {
         ScrollView(.horizontal) {
             LazyHStack(spacing: 0) {
@@ -114,11 +115,7 @@ struct MatchingView: View {
             
             if manager.isMatching {
                 HStack(spacing: 12) {
-                    Image(systemName: "star.fill")
-                        .font(.caption)
-                        .frame(width: 8, height: 8)
-                        .foregroundStyle(.white.opacity(0.9))
-                        .symbolEffect(.pulse.byLayer, options: .repeating)
+                    MatchingWaveIcon()
                     
                     if !hasEchoes {
                         Text("Finding resonance…")

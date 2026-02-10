@@ -47,9 +47,7 @@ struct SeaStarView: View {
         Group {
             if manager.isMatching {
                 HStack(spacing: 12) {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(.white.opacity(0.9))
-                        .symbolEffect(.pulse.byLayer, options: .repeating)
+                    MatchingWaveIcon()
 
                     Text("Finding resonance…")
                 }
