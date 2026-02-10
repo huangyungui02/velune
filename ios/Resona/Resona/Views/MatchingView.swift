@@ -54,7 +54,7 @@ struct MatchingView: View {
                 
                 // Echo cards
                 ForEach(echoes) { echo in
-                    PremiumEchoCardView(echo: echo)
+                    EchoCardView(echo: echo)
                         .containerRelativeFrame(.horizontal)
                         .id(CardID.echo(echo.id))
                 }
@@ -77,42 +77,12 @@ struct MatchingView: View {
     }
     
     private var soulFragmentCard: some View {
-        PremiumCardView(iconName: "sparkles", title: "Soul Fragment") {
-            Text(manager.text)
-                .lineSpacing(8)
-                .foregroundStyle(.white)
-        }
+        SoulFragmentCardView(content: manager.text)
     }
     
     private var indicatorView: some View {
         HStack(spacing: 8) {
-            if hasEchoes {
-                HStack(spacing: 8) {
-                    Button {
-                        withAnimation {
-                            currentPage = .soulFragment
-                        }
-                    } label: {
-                        Image(systemName: "sparkle")
-                            .font(.caption2)
-                            .foregroundStyle(currentPage == .soulFragment ? .white : .white.opacity(0.3))
-                            .frame(width: 10, height: 10)
-                            .scaleEffect(currentPage == .soulFragment ? 1.2 : 1.0)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
-                    }
-                    .buttonStyle(.plain)
-                    
-                    ForEach(echoes) { echo in
-                        Circle()
-                            .fill(currentPage == .echo(echo.id) ? .white : .white.opacity(0.3))
-                            .frame(width: 8, height: 8)
-                            .scaleEffect(currentPage == .echo(echo.id) ? 1.2 : 1.0)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
-                    }
-                }
-                .padding()
-                .glassEffect()
-            }
+            EchoPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
             
             if manager.isMatching {
                 HStack(spacing: 12) {
@@ -132,52 +102,9 @@ struct MatchingView: View {
     }
 }
 
-// MARK: - Card Identifier
-
-private enum CardID: Hashable {
-    case soulFragment
-    case echo(UUID)
-}
-
-// MARK: - Subviews
-
-private struct PremiumEchoCardView: View {
-    let echo: Echo
-    
-    var body: some View {
-        PremiumCardView(iconName: "circle.circle", title: "Echo") {
-            VStack(spacing: 20) {
-                Text(echo.content)
-                    .lineSpacing(8)
-                    .foregroundStyle(.white)
-                    
-                Divider()
-                    .background(.white.opacity(0.3))
-                    
-                NavigationLink {
-                    SoulerView(soulerId: echo.soulerId)
-                } label: {
-                    HStack(spacing: 8) {
-                        Spacer()
-
-                        Text(echo.soulerName)
-                            .font(.headline)
-                            .foregroundStyle(.white)
-
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-}
-
 #Preview {
     ZStack {
         BackgroundView()
-        PremiumEchoCardView(echo: Echo.sampleData[0])
+        EchoCardView(echo: Echo.sampleData[0])
     }
 }

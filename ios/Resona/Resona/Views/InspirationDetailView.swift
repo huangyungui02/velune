@@ -16,7 +16,7 @@ struct InspirationDetailView: View {
     }
 
     private var echoes: [Echo] {
-        inspiration.echoes
+        inspiration.echoes.sorted { $0.createdAt < $1.createdAt }
     }
 
     private var hasEchoes: Bool { !echoes.isEmpty }
@@ -121,7 +121,7 @@ struct InspirationDetailView: View {
                     .id(CardID.soulFragment)
 
                 ForEach(echoes) { echo in
-                    InspirationEchoCardView(echo: echo)
+                    EchoCardView(echo: echo)
                         .containerRelativeFrame(.horizontal)
                         .id(CardID.echo(echo.id))
                 }
@@ -134,108 +134,12 @@ struct InspirationDetailView: View {
     }
 
     private var soulFragmentCard: some View {
-        PremiumCardView(iconName: "sparkles", title: "Soul Fragment") {
-            VStack(spacing: 16) {
-                Text(inspiration.content)
-                    .font(.body)
-                    .lineSpacing(6)
-                    .foregroundStyle(.white)
-
-                Divider()
-                    .background(.white.opacity(0.2))
-
-                HStack {
-                    Spacer()
-
-                    Text(
-                        inspiration.createdAt.formatted(
-                            .dateTime
-                                .year()
-                                .month()
-                                .day()
-                                .hour()
-                                .minute()
-                        )
-                    )
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .tracking(1.5)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        SoulFragmentCardView(content: inspiration.content, createdAt: inspiration.createdAt)
     }
 
     private var indicatorView: some View {
         HStack(spacing: 8) {
-            if hasEchoes {
-                HStack(spacing: 8) {
-                    Button {
-                        withAnimation {
-                            currentPage = .soulFragment
-                        }
-                    } label: {
-                        Image(systemName: "sparkle")
-                            .font(.caption2)
-                            .foregroundStyle(currentPage == .soulFragment ? .white : .white.opacity(0.3))
-                            .frame(width: 10, height: 10)
-                            .scaleEffect(currentPage == .soulFragment ? 1.2 : 1.0)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
-                    }
-                    .buttonStyle(.plain)
-
-                    ForEach(echoes) { echo in
-                        Circle()
-                            .fill(currentPage == .echo(echo.id) ? .white : .white.opacity(0.3))
-                            .frame(width: 8, height: 8)
-                            .scaleEffect(currentPage == .echo(echo.id) ? 1.2 : 1.0)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
-                    }
-                }
-                .padding()
-                .glassEffect()
-            }
-        }
-    }
-}
-
-private enum CardID: Hashable {
-    case soulFragment
-    case echo(UUID)
-}
-
-private struct InspirationEchoCardView: View {
-    let echo: Echo
-
-    var body: some View {
-        PremiumCardView(iconName: "circle.circle", title: "Echo") {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(echo.content)
-                    .font(.body)
-                    .multilineTextAlignment(.leading)
-                    .lineSpacing(6)
-                    .foregroundStyle(.white)
-
-                Divider()
-                    .background(.white.opacity(0.3))
-
-                NavigationLink {
-                    SoulerView(soulerId: echo.soulerId)
-                } label: {
-                    HStack(spacing: 8) {
-                        Spacer()
-
-                        Text(echo.soulerName)
-                            .font(.headline)
-                            .foregroundStyle(.white)
-
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-                }
-                .buttonStyle(.plain)
-            }
+            EchoPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
         }
     }
 }
