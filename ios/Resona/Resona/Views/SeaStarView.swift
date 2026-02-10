@@ -55,9 +55,9 @@ struct SeaStarView: View {
                 .glassEffect(in: .capsule)
             } else if text.isEmpty {
                 HStack(spacing: 12) {
-                    Image(systemName: "pencil")
+                    Image(systemName: "sparkles")
 
-                    Text("Write your soul fragment")
+                    Text("What glimmers within you")
                 }
                 .padding(16)
                 .glassEffect(in: .capsule)

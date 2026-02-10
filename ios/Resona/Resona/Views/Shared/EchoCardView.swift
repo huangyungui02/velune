@@ -4,7 +4,7 @@ struct EchoCardView: View {
     let echo: Echo
 
     var body: some View {
-        PremiumCardView(iconName: "circle.circle", title: "Echo") {
+        PremiumCardView(iconName: "circle.circle") {
             VStack(alignment: .leading, spacing: 16) {
                 Text(echo.content)
                     .font(.body)
@@ -13,7 +13,8 @@ struct EchoCardView: View {
                     .foregroundStyle(.white)
 
                 Divider()
-                    .background(.white.opacity(0.3))
+                    .background(.white.opacity(0.01))
+                    .padding(.top)
 
                 NavigationLink {
                     SoulerView(soulerId: echo.soulerId)
@@ -34,4 +35,8 @@ struct EchoCardView: View {
             }
         }
     }
+}
+
+#Preview {
+    EchoCardView(echo: Echo.sampleData[0])
 }

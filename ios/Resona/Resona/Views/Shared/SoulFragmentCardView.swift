@@ -10,7 +10,7 @@ struct SoulFragmentCardView: View {
     }
 
     var body: some View {
-        PremiumCardView(iconName: "sparkles", title: "Soul Fragment") {
+        PremiumCardView(iconName: "sparkles") {
             VStack(spacing: 16) {
                 Text(content)
                     .font(.body)
@@ -19,7 +19,8 @@ struct SoulFragmentCardView: View {
 
                 if let createdAt {
                     Divider()
-                        .background(.white.opacity(0.2))
+                        .background(.white.opacity(0.01))
+                        .padding(.top)
 
                     HStack {
                         Spacer()
@@ -43,4 +44,9 @@ struct SoulFragmentCardView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
+}
+
+#Preview {
+    let inspiration = Inspiration.sampleData[0]
+    SoulFragmentCardView(content: inspiration.content, createdAt: inspiration.createdAt)
 }

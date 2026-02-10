@@ -4,7 +4,6 @@ import SwiftUI
 /// Used for displaying soul fragments and echo responses
 struct PremiumCardView<Content: View>: View {
     private let iconName: String
-    private let title: String
     private let content: Content
     private let maxContentHeight: CGFloat?
     
@@ -12,38 +11,29 @@ struct PremiumCardView<Content: View>: View {
     
     init(
         iconName: String,
-        title: String,
         maxContentHeight: CGFloat? = 450,
         @ViewBuilder content: () -> Content
     ) {
         self.iconName = iconName
-        self.title = title
         self.maxContentHeight = maxContentHeight
         self.content = content()
     }
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 16) {
             headerView
             scrollableContent
         }
-        .padding(.vertical, 32)
+        .padding(.vertical, 24)
         .frame(maxWidth: .infinity)
         .glassEffect(in: .rect(cornerRadius: 32))
         .padding(.horizontal, 24)
     }
     
     private var headerView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: iconName)
-                .font(.title2)
-                .foregroundStyle(.white.opacity(0.9))
-                
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.7))
-                .tracking(4)
-        }
+        Image(systemName: iconName)
+            .font(.title2)
+            .foregroundStyle(.white.opacity(0.9))
     }
     
     private var scrollableContent: some View {
