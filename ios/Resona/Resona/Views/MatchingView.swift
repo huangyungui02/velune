@@ -11,7 +11,8 @@ struct MatchingView: View {
     @State private var currentPage: CardID? = .soulFragment
     
     private var echoes: [Echo] {
-        manager.currentInspiration?.echoes ?? []
+        (manager.currentInspiration?.echoes ?? [])
+            .sorted { $0.createdAt < $1.createdAt }
     }
     
     private var hasEchoes: Bool {
