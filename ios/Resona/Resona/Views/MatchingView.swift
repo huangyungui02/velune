@@ -89,7 +89,7 @@ struct MatchingView: View {
                     MatchingWaveIcon()
                     
                     if !hasEchoes {
-                        Text("Finding resonance…")
+                        Text("Listening for echoes…")
                             .font(.subheadline)
                             .foregroundStyle(.white.opacity(0.8))
                             .tracking(2)

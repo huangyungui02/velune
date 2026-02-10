@@ -37,7 +37,7 @@ struct InspirationDetailView: View {
                 indicatorView
             }
         }
-        .navigationTitle("Soul Fragment")
+        .navigationTitle("Glimmer")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

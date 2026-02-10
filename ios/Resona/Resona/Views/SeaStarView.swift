@@ -17,7 +17,7 @@ struct SeaStarView: View {
                 VStack {
                     Spacer()
 
-                    DescriptionView(title: "Become yourself", description: "It’s the most romantic thing in the world")
+                    DescriptionView(title: "Return to yourself", description: "The softest romance is becoming.")
 
                     Spacer()
 
@@ -49,7 +49,7 @@ struct SeaStarView: View {
                 HStack(spacing: 12) {
                     MatchingWaveIcon()
 
-                    Text("Finding resonance…")
+                    Text("Listening for echoes…")
                 }
                 .padding(16)
                 .glassEffect(in: .capsule)
@@ -132,7 +132,7 @@ private struct ComposeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                TextField("Write your real thoughts, reflections, and feelings", text: $text, axis: .vertical)
+                    TextField("What glimmers within you", text: $text, axis: .vertical)
                     .focused($isFocused)
                     .font(.body)
                     .padding(24)
@@ -141,7 +141,7 @@ private struct ComposeView: View {
                 Spacer()
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Soul Fragment")
+            .navigationTitle("Glimmer")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

@@ -16,13 +16,13 @@ struct ProfileView: View {
                         ProgressView()
                     }
                     if inspirations.isEmpty {
-                        EmptyView(title: "No soul fragments yet")
+                        EmptyView(title: "No glimmers yet")
                     } else {
                         inspirationListView
                     }
                 }
             }
-            .navigationTitle("Soul Fragments")
+            .navigationTitle("Glimmers")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {

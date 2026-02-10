@@ -23,7 +23,7 @@ struct SignView: View {
                     Text("Resona")
                         .font(.system(size: 42, weight: .bold, design: .rounded))
 
-                    Text("Write your soul, await an echo")
+                    Text("Set down a glimmer, await its echo")
                         .font(.title)
                 }
                 .padding(.bottom, 40)
