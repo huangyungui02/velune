@@ -49,8 +49,8 @@ struct SeaStarView: View {
                 HStack(spacing: 12) {
                     MatchingWaveIcon()
 
-                    Text("Listening for echoes…")
-                        .font(UITheme.labelFont)
+                    Text("Listening for echoes")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(UITheme.secondaryText)
                 }
                 .padding(16)
@@ -60,7 +60,6 @@ struct SeaStarView: View {
                     Image(systemName: "sparkles")
 
                     Text("What glimmers within you")
-                        .font(UITheme.sectionFont)
                         .foregroundStyle(UITheme.primaryText)
                 }
                 .padding(16)
@@ -68,7 +67,7 @@ struct SeaStarView: View {
             } else {
                 ScrollView {
                     Text(text)
-                        .font(UITheme.bodyFont)
+                        .font(.system(size: 18, weight: .regular, design: .serif))
                         .foregroundStyle(UITheme.primaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(16)
@@ -110,11 +109,11 @@ private struct DescriptionView: View {
 
             VStack(spacing: 8) {
                 Text(title)
-                    .font(UITheme.titleFont)
+                    .font(.system(size: 30, weight: .semibold, design: .serif))
                     .foregroundStyle(UITheme.primaryText)
 
                 Text(description)
-                    .font(UITheme.bodyFont)
+                    .font(.system(size: 18, weight: .regular, design: .serif))
                     .foregroundStyle(UITheme.secondaryText)
                     .tracking(2)
             }
@@ -136,9 +135,9 @@ private struct ComposeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                    TextField("What glimmers within you", text: $text, axis: .vertical)
+                TextField("What glimmers within you", text: $text, axis: .vertical)
                     .focused($isFocused)
-                    .font(UITheme.bodyFont)
+                    .font(.system(size: 18, weight: .regular, design: .serif))
                     .padding(24)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -162,7 +161,7 @@ private struct ComposeView: View {
                         dismiss()
                     }) {
                         Image(systemName: "xmark")
-                            .font(UITheme.sectionFont)
+                            .font(.system(size: 21, weight: .medium, design: .rounded))
                             .foregroundStyle(UITheme.secondaryText)
                     }
                 }
@@ -173,7 +172,7 @@ private struct ComposeView: View {
                         dismiss()
                     }) {
                         Image(systemName: "checkmark")
-                            .font(UITheme.sectionFont)
+                            .font(.system(size: 21, weight: .medium, design: .rounded))
                             .fontWeight(.semibold)
                             .foregroundStyle(UITheme.primaryText)
                     }

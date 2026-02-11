@@ -13,7 +13,7 @@ struct EchoPagerIndicatorView: View {
                     }
                 } label: {
                     Image(systemName: "sparkle")
-                        .font(UITheme.labelFont)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(currentPage == .soulFragment ? UITheme.accent : UITheme.tertiaryText)
                         .frame(width: 10, height: 10)
                         .scaleEffect(currentPage == .soulFragment ? 1.2 : 1.0)

@@ -92,16 +92,16 @@ private struct InspirationCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "clock.fill")
-                    .font(UITheme.labelFont)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(UITheme.tertiaryText)
                 Text(inspiration.createdAt, format: .relative(presentation: .named))
-                    .font(UITheme.labelFont)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(UITheme.tertiaryText)
                 Spacer()
             }
 
             Text(inspiration.content)
-                .font(UITheme.bodyFont)
+                .font(.system(size: 18, weight: .regular, design: .serif))
                 .lineLimit(3)
                 .multilineTextAlignment(.leading)
                 .lineSpacing(4)

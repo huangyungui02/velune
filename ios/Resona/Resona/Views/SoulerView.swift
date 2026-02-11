@@ -25,12 +25,12 @@ struct SoulerView: View {
             } else if let errorMessage = errorMessage {
                 VStack(spacing: 12) {
                     Text("Failed to load")
-                        .font(UITheme.sectionFont)
+                        .font(.system(size: 21, weight: .medium, design: .rounded))
                         .fontWeight(.semibold)
                         .foregroundStyle(UITheme.primaryText)
 
                     Text(errorMessage)
-                        .font(UITheme.labelFont)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(UITheme.secondaryText)
                         .multilineTextAlignment(.center)
 

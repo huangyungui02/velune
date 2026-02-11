@@ -89,8 +89,8 @@ struct MatchingView: View {
                     MatchingWaveIcon()
                     
                     if !hasEchoes {
-                        Text("Listening for echoes…")
-                            .font(UITheme.labelFont)
+                        Text("Listening for echoes")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
                             .foregroundStyle(UITheme.secondaryText)
                             .tracking(2)
                     }

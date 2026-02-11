@@ -18,11 +18,11 @@ struct SignView: View {
                         .foregroundStyle(UITheme.primaryText)
 
                     Text("Resona")
-                        .font(UITheme.displayFont)
+                        .font(.system(size: 44, weight: .semibold, design: .serif))
                         .foregroundStyle(UITheme.primaryText)
 
                     Text("Glimmer.\nResonance.\nEcho.")
-                        .font(UITheme.sectionFont)
+                        .font(.system(size: 21, weight: .medium, design: .rounded))
                         .multilineTextAlignment(.center)
                         .lineSpacing(8)
                         .tracking(1.8)
@@ -36,7 +36,7 @@ struct SignView: View {
 
                 if let errorMessage {
                     Text(errorMessage)
-                        .font(UITheme.labelFont)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(UITheme.secondaryText)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
@@ -46,7 +46,7 @@ struct SignView: View {
 
                 Text(termsAttributedText)
                     .multilineTextAlignment(.center)
-                    .font(UITheme.labelFont)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(UITheme.tertiaryText)
                     .padding(.horizontal, 40)
                     .padding(.bottom, 12)
