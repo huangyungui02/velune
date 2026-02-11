@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-struct GlimmerDetailView: View {
+struct GlimmerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @State private var showingDeleteAlert = false
@@ -147,7 +147,7 @@ struct GlimmerDetailView: View {
 #Preview {
     let glimmer = Glimmer.sampleData[0]
     NavigationStack {
-        GlimmerDetailView(glimmer: glimmer)
+        GlimmerView(glimmer: glimmer)
             .sampleDataContainer()
     }
 }

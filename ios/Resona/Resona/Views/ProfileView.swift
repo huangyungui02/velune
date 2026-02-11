@@ -43,7 +43,7 @@ struct ProfileView: View {
             LazyVStack(spacing: 12) {
                 ForEach(glimmers) { glimmer in
                     NavigationLink {
-                        GlimmerDetailView(glimmer: glimmer)
+                        GlimmerView(glimmer: glimmer)
                     } label: {
                         GlimmerListCard(glimmer: glimmer)
                     }
