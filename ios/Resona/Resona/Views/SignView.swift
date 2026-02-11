@@ -14,17 +14,19 @@ struct SignView: View {
 
                 VStack(spacing: 32) {
                     Image(systemName: "circle.circle")
-                        .font(.system(size: 80))
+                        .font(.system(size: 72, weight: .regular, design: .rounded))
+                        .foregroundStyle(UITheme.primaryText)
 
                     Text("Resona")
-                        .font(.system(size: 40, weight: .semibold, design: .serif))
+                        .font(UITheme.displayFont)
+                        .foregroundStyle(UITheme.primaryText)
 
                     Text("Glimmer.\nResonance.\nEcho.")
-                        .font(.system(size: 24, weight: .light, design: .serif))
+                        .font(UITheme.sectionFont)
                         .multilineTextAlignment(.center)
                         .lineSpacing(8)
-                        .tracking(1.5)
-                        .foregroundStyle(.white.opacity(0.85))
+                        .tracking(1.8)
+                        .foregroundStyle(UITheme.secondaryText)
                 }
                 .padding(.bottom, 40)
 
@@ -34,8 +36,8 @@ struct SignView: View {
 
                 if let errorMessage {
                     Text(errorMessage)
-                        .font(.caption)
-                        .foregroundColor(.red)
+                        .font(UITheme.labelFont)
+                        .foregroundStyle(UITheme.secondaryText)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
                 }
@@ -44,8 +46,8 @@ struct SignView: View {
 
                 Text(termsAttributedText)
                     .multilineTextAlignment(.center)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(UITheme.labelFont)
+                    .foregroundStyle(UITheme.tertiaryText)
                     .padding(.horizontal, 40)
                     .padding(.bottom, 12)
             }
@@ -116,15 +118,15 @@ struct SignView: View {
 
     private var termsAttributedText: AttributedString {
         var text = AttributedString("By signing in, you agree to our Terms of Service and Privacy Policy.")
-        text.foregroundColor = .secondary
+        text.foregroundColor = UITheme.tertiaryText
 
         if let termsRange = text.range(of: "Terms of Service") {
             text[termsRange].link = URL(string: "https://example.com/terms")
-            text[termsRange].foregroundColor = .accentColor
+            text[termsRange].foregroundColor = UITheme.accent
         }
         if let privacyRange = text.range(of: "Privacy Policy") {
             text[privacyRange].link = URL(string: "https://example.com/privacy")
-            text[privacyRange].foregroundColor = .accentColor
+            text[privacyRange].foregroundColor = UITheme.accent
         }
 
         return text

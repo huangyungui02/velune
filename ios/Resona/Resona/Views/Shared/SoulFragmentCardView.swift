@@ -14,9 +14,9 @@ struct SoulFragmentCardView: View {
         PremiumCardView(iconName: "sparkles") {
             VStack(spacing: 16) {
                 Markdown(content)
-                    .font(.body)
+                    .font(UITheme.bodyFont)
                     .lineSpacing(8)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(UITheme.primaryText)
 
                 if let createdAt {
                     Divider()
@@ -36,8 +36,8 @@ struct SoulFragmentCardView: View {
                                     .minute()
                             )
                         )
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(UITheme.labelFont)
+                        .foregroundStyle(UITheme.tertiaryText)
                         .tracking(1.5)
                     }
                 }

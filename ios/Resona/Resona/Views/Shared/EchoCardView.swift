@@ -8,10 +8,10 @@ struct EchoCardView: View {
         PremiumCardView(iconName: "circle.circle") {
             VStack(alignment: .leading, spacing: 16) {
                 Markdown(echo.content)
-                    .font(.body)
+                    .font(UITheme.bodyFont)
                     .multilineTextAlignment(.leading)
                     .lineSpacing(8)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(UITheme.primaryText)
 
                 Divider()
                     .background(.white.opacity(0.01))
@@ -24,12 +24,12 @@ struct EchoCardView: View {
                         Spacer()
 
                         Text(echo.soulerName)
-                            .font(.headline)
-                            .foregroundStyle(.white)
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
+                            .foregroundStyle(UITheme.primaryText)
 
                         Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.7))
+                            .font(UITheme.labelFont)
+                            .foregroundStyle(UITheme.secondaryText)
                     }
                 }
                 .buttonStyle(.plain)

@@ -25,13 +25,13 @@ struct SoulerView: View {
             } else if let errorMessage = errorMessage {
                 VStack(spacing: 12) {
                     Text("Failed to load")
-                        .font(.title3)
+                        .font(UITheme.sectionFont)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(UITheme.primaryText)
 
                     Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.8))
+                        .font(UITheme.labelFont)
+                        .foregroundStyle(UITheme.secondaryText)
                         .multilineTextAlignment(.center)
 
                     Button("Retry") {
@@ -44,7 +44,7 @@ struct SoulerView: View {
                 .padding()
             } else {
                 ProgressView("Loading…")
-                    .tint(.white)
+                    .tint(UITheme.accent)
             }
         }
         .animation(.easeInOut, value: souler != nil)
@@ -54,7 +54,7 @@ struct SoulerView: View {
         ScrollView {
             VStack(spacing: 16) {
                 Text(souler.name)
-                    .font(.title)
+                    .font(.system(size: 24, weight: .semibold, design: .serif))
                     .fontWeight(.bold)
 
                 CardView {

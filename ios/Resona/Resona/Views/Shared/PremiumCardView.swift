@@ -26,14 +26,30 @@ struct PremiumCardView<Content: View>: View {
         }
         .padding(.vertical, 24)
         .frame(maxWidth: .infinity)
+        .background(Color.clear, in: .rect(cornerRadius: 32))
+        .overlay(
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [.white.opacity(0.30), .white.opacity(0.10)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 14)
         .glassEffect(in: .rect(cornerRadius: 32))
         .padding(.horizontal, 24)
     }
-    
+
     private var headerView: some View {
         Image(systemName: iconName)
-            .font(.title2)
-            .foregroundStyle(.white.opacity(0.9))
+            .font(.system(size: 17, weight: .semibold, design: .rounded))
+            .foregroundStyle(UITheme.primaryText)
+            .frame(width: 40, height: 40)
+            .background(.white.opacity(0.14), in: Circle())
+            .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1))
     }
     
     private var scrollableContent: some View {

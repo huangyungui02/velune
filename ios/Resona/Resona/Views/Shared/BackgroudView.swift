@@ -4,13 +4,28 @@ struct BackgroundView: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        LinearGradient(
-            colors: colorScheme == .dark
-                ? [Color(white: 0.04), Color(white: 0.12)]
-                : [Color(white: 0.95), Color(white: 0.85)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+        ZStack {
+            LinearGradient(
+                colors: colorScheme == .dark
+                    ? [
+                        Color(white: 0.03),
+                        Color(white: 0.07),
+                        Color(white: 0.12),
+                    ]
+                    : [
+                        Color(white: 0.92),
+                        Color(white: 0.87),
+                        Color(white: 0.80),
+                    ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            NebulaOverlayView(
+                colorScheme: colorScheme,
+                opacity: colorScheme == .dark ? 0.38 : 0.22
+            )
+        }
         .ignoresSafeArea()
     }
 }
@@ -21,10 +36,45 @@ struct StarryBackgroundView: View {
     var body: some View {
         ZStack {
             BackgroundView()
+            NebulaOverlayView(
+                colorScheme: colorScheme,
+                opacity: colorScheme == .dark ? 0.34 : 0.18
+            )
             StarFieldView(starCount: 80, showsBackground: false)
                 .opacity(colorScheme == .dark ? 0.55 : 0.25)
         }
         .ignoresSafeArea()
+    }
+}
+
+private struct NebulaOverlayView: View {
+    let colorScheme: ColorScheme
+    let opacity: CGFloat
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(colorScheme == .dark ? 0.24 : 0.14))
+                    .frame(width: proxy.size.width * 0.82)
+                    .blur(radius: 70)
+                    .offset(x: -proxy.size.width * 0.28, y: -proxy.size.height * 0.22)
+
+                Circle()
+                    .fill(Color.white.opacity(colorScheme == .dark ? 0.18 : 0.12))
+                    .frame(width: proxy.size.width * 0.72)
+                    .blur(radius: 90)
+                    .offset(x: proxy.size.width * 0.24, y: -proxy.size.height * 0.10)
+
+                Circle()
+                    .fill(Color.white.opacity(colorScheme == .dark ? 0.12 : 0.10))
+                    .frame(width: proxy.size.width * 0.65)
+                    .blur(radius: 80)
+                    .offset(x: proxy.size.width * 0.18, y: proxy.size.height * 0.34)
+            }
+            .opacity(opacity)
+            .blendMode(.screen)
+        }
     }
 }
 
@@ -55,7 +105,7 @@ struct StarFieldView: View {
                 if showsBackground {
                     LinearGradient(
                         colors: [
-                            Color(white: 0.04),
+                            Color(white: 0.03),
                             Color(white: 0.08)
                         ],
                         startPoint: .topLeading,

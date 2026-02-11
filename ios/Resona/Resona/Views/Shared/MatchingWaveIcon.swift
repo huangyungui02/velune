@@ -7,7 +7,7 @@ struct MatchingWaveIcon: View {
         ZStack {
             ForEach(0 ..< 3, id: \.self) { index in
                 Circle()
-                    .stroke(.white, lineWidth: 1)
+                    .stroke(UITheme.accent, lineWidth: 1)
                     .frame(width: 8, height: 8)
                     .scaleEffect(animate ? 2.1 : 0.2)
                     .opacity(animate ? 0.0 : 0.75)

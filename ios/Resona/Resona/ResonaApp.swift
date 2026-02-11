@@ -15,6 +15,7 @@ struct ResonaApp: App {
                     SignView()
                 }
             }
+            .tint(UITheme.accent)
             .preferredColorScheme(.dark)
             .animation(.easeInOut, value: authManager.isAuthenticated)
         }

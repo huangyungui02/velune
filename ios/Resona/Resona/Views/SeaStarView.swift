@@ -50,6 +50,8 @@ struct SeaStarView: View {
                     MatchingWaveIcon()
 
                     Text("Listening for echoes…")
+                        .font(UITheme.labelFont)
+                        .foregroundStyle(UITheme.secondaryText)
                 }
                 .padding(16)
                 .glassEffect(in: .capsule)
@@ -58,12 +60,16 @@ struct SeaStarView: View {
                     Image(systemName: "sparkles")
 
                     Text("What glimmers within you")
+                        .font(UITheme.sectionFont)
+                        .foregroundStyle(UITheme.primaryText)
                 }
                 .padding(16)
                 .glassEffect(in: .capsule)
             } else {
                 ScrollView {
                     Text(text)
+                        .font(UITheme.bodyFont)
+                        .foregroundStyle(UITheme.primaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(16)
                         .fixedSize(horizontal: false, vertical: false)
@@ -104,14 +110,12 @@ private struct DescriptionView: View {
 
             VStack(spacing: 8) {
                 Text(title)
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.primary)
+                    .font(UITheme.titleFont)
+                    .foregroundStyle(UITheme.primaryText)
 
                 Text(description)
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .fontWeight(.light)
+                    .font(UITheme.bodyFont)
+                    .foregroundStyle(UITheme.secondaryText)
                     .tracking(2)
             }
 
@@ -134,13 +138,22 @@ private struct ComposeView: View {
             VStack(spacing: 0) {
                     TextField("What glimmers within you", text: $text, axis: .vertical)
                     .focused($isFocused)
-                    .font(.body)
+                    .font(UITheme.bodyFont)
                     .padding(24)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Spacer()
             }
-            .background(Color(.systemGroupedBackground))
+            .background(
+                LinearGradient(
+                    colors: [
+                        Color(white: 0.06),
+                        Color(white: 0.12),
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
             .navigationTitle("Glimmer")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -149,8 +162,8 @@ private struct ComposeView: View {
                         dismiss()
                     }) {
                         Image(systemName: "xmark")
-                            .font(.body)
-                            .foregroundStyle(.secondary)
+                            .font(UITheme.sectionFont)
+                            .foregroundStyle(UITheme.secondaryText)
                     }
                 }
 
@@ -160,9 +173,9 @@ private struct ComposeView: View {
                         dismiss()
                     }) {
                         Image(systemName: "checkmark")
-                            .font(.body)
+                            .font(UITheme.sectionFont)
                             .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(UITheme.primaryText)
                     }
                     .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .opacity(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.3 : 1)

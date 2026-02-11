@@ -90,8 +90,8 @@ struct MatchingView: View {
                     
                     if !hasEchoes {
                         Text("Listening for echoes…")
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.8))
+                            .font(UITheme.labelFont)
+                            .foregroundStyle(UITheme.secondaryText)
                             .tracking(2)
                     }
                 }
