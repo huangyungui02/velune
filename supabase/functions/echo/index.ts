@@ -1,16 +1,16 @@
 import graph from "./graph.ts";
 import {
   checkStatusBeforeProcessing,
-  getInspiration,
-  updateInspirationStatus,
+  getGlimmer,
+  updateGlimmerStatus,
 } from "./supabase.ts";
 import { getUserIdFromRequest } from "./utils.ts";
 
 Deno.serve(async (req) => {
-  let inspirationId: string | undefined;
+  let glimmerId: string | undefined;
   try {
     const body = await req.json();
-    inspirationId = body?.inspirationId;
+    glimmerId = body?.glimmerId;
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
       status: 400,
@@ -18,19 +18,19 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (!inspirationId) {
-    return new Response(JSON.stringify({ error: "Missing inspirationId" }), {
+  if (!glimmerId) {
+    return new Response(JSON.stringify({ error: "Missing glimmerId" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  console.log(`Received inspiration: ${inspirationId}`);
+  console.log(`Received glimmer: ${glimmerId}`);
 
   const headers = {
     "Content-Type": "text/event-stream; charset=utf-8",
     "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
+    Connection: "keep-alive",
   };
 
   const stream = new ReadableStream({
@@ -46,28 +46,28 @@ Deno.serve(async (req) => {
         // Get the user ID from the request
         const userId = await getUserIdFromRequest(req);
 
-        // Check if the inspiration exists and is owned by the user
-        const inspiration = await getInspiration(inspirationId, userId);
+        // Check if the glimmer exists and is owned by the user
+        const glimmer = await getGlimmer(glimmerId, userId);
 
-        // Check if the inspiration is pending
-        await checkStatusBeforeProcessing(inspirationId);
+        // Check if the glimmer is pending
+        await checkStatusBeforeProcessing(glimmerId);
 
         // Mark as processing
-        await updateInspirationStatus(inspirationId, "processing");
+        await updateGlimmerStatus(glimmerId, "processing");
 
         const num = 5;
         // Invoke the graph and stream echoes as they are created
         const completed = await graph.invoke({
           userId: userId,
-          inspirationId: inspirationId,
-          inspirationContent: inspiration.content,
+          glimmerId: glimmerId,
+          glimmerContent: glimmer.content,
           num: num,
           onEcho: (echo) => {
             send({
               type: "echo",
               echo: {
                 id: echo.id,
-                inspirationId: echo.inspiration_id,
+                glimmerId: echo.glimmer_id,
                 soulerId: echo.souler_id,
                 content: echo.content,
               },
@@ -76,22 +76,22 @@ Deno.serve(async (req) => {
         });
 
         if (completed) {
-          await updateInspirationStatus(inspirationId, "complete");
-          console.log(`Successfully processed inspiration: ${inspiration.id}`);
+          await updateGlimmerStatus(glimmerId, "complete");
+          console.log(`Successfully processed glimmer: ${glimmer.id}`);
         } else {
-          await updateInspirationStatus(inspirationId, "incomplete");
-          console.log(`Incomplete inspiration: ${inspiration.id}`);
+          await updateGlimmerStatus(glimmerId, "incomplete");
+          console.log(`Incomplete glimmer: ${glimmer.id}`);
         }
 
         send({ type: "done", completed });
       } catch (error: unknown) {
         try {
-          await updateInspirationStatus(inspirationId, "failed");
+          await updateGlimmerStatus(glimmerId, "failed");
         } catch {
           // Ignore status update failure if request itself failed
         }
         console.error(
-          `Failed to process inspiration: ${inspirationId}, error: ${error}`,
+          `Failed to process glimmer: ${glimmerId}, error: ${error}`,
         );
         send({
           type: "error",

@@ -1,22 +1,22 @@
 import SwiftData
 import SwiftUI
 
-struct InspirationDetailView: View {
+struct GlimmerDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @State private var showingDeleteAlert = false
     @State private var isDeleting: Bool = false
     @State private var errorMessage: String? = nil
     @State private var isLoading: Bool = false
-    @State private var inspiration: Inspiration
-    @State private var currentPage: CardID? = .soulFragment
+    @State private var glimmer: Glimmer
+    @State private var currentPage: CardID? = .glimmer
 
-    init(inspiration: Inspiration) {
-        self.inspiration = inspiration
+    init(glimmer: Glimmer) {
+        self.glimmer = glimmer
     }
 
     private var echoes: [Echo] {
-        inspiration.echoes.sorted { $0.createdAt < $1.createdAt }
+        glimmer.echoes.sorted { $0.createdAt < $1.createdAt }
     }
 
     private var hasEchoes: Bool { !echoes.isEmpty }
@@ -57,7 +57,7 @@ struct InspirationDetailView: View {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 Task {
-                    let success = await deleteInspiration()
+                    let success = await deleteGlimmer()
                     if success {
                         dismiss()
                     }
@@ -75,17 +75,17 @@ struct InspirationDetailView: View {
             }
         }
         .task {
-            await refreshInspiration()
+            await refreshGlimmer()
         }
     }
 
-    func deleteInspiration() async -> Bool {
+    func deleteGlimmer() async -> Bool {
         isDeleting = true
         defer { isDeleting = false }
 
         do {
-            try await Inspiration.delete(inspiration.id)
-            context.delete(inspiration)
+            try await Glimmer.delete(glimmer.id)
+            context.delete(glimmer)
             return true
         } catch {
             errorMessage = error.localizedDescription
@@ -93,21 +93,21 @@ struct InspirationDetailView: View {
         }
     }
 
-    func refreshInspiration() async {
-        if inspiration.status == "complete" {
-            if !inspiration.echoes.isEmpty { return }
+    func refreshGlimmer() async {
+        if glimmer.status == "complete" {
+            if !glimmer.echoes.isEmpty { return }
         }
 
         isLoading = true
         defer { isLoading = false }
 
         do {
-            let newInspiration = try await Inspiration.get(inspiration.id)
-            let echoes = try await Echo.getAll(newInspiration.id)
-            newInspiration.echoes = echoes
-            inspiration.update(from: newInspiration)
+            let newGlimmer = try await Glimmer.get(glimmer.id)
+            let echoes = try await Echo.getAll(newGlimmer.id)
+            newGlimmer.echoes = echoes
+            glimmer.update(from: newGlimmer)
         } catch {
-            print("Failed to refresh inspiration \(inspiration.id): \(error)")
+            print("Failed to refresh glimmer \(glimmer.id): \(error)")
             return
         }
     }
@@ -116,9 +116,9 @@ struct InspirationDetailView: View {
     private var cardPagerView: some View {
         ScrollView(.horizontal) {
             LazyHStack(spacing: 0) {
-                soulFragmentCard
+                glimmerCard
                     .containerRelativeFrame(.horizontal)
-                    .id(CardID.soulFragment)
+                    .id(CardID.glimmer)
 
                 ForEach(echoes) { echo in
                     EchoCardView(echo: echo)
@@ -133,8 +133,8 @@ struct InspirationDetailView: View {
         .scrollIndicators(.hidden)
     }
 
-    private var soulFragmentCard: some View {
-        SoulFragmentCardView(content: inspiration.content, createdAt: inspiration.createdAt)
+    private var glimmerCard: some View {
+        GlimmerCardView(content: glimmer.content, createdAt: glimmer.createdAt)
     }
 
     private var indicatorView: some View {
@@ -145,9 +145,9 @@ struct InspirationDetailView: View {
 }
 
 #Preview {
-    let inspiration = Inspiration.sampleData[0]
+    let glimmer = Glimmer.sampleData[0]
     NavigationStack {
-        InspirationDetailView(inspiration: inspiration)
+        GlimmerDetailView(glimmer: glimmer)
             .sampleDataContainer()
     }
 }

@@ -9,14 +9,14 @@ struct EchoPagerIndicatorView: View {
             HStack(spacing: 8) {
                 Button {
                     withAnimation {
-                        currentPage = .soulFragment
+                        currentPage = .glimmer
                     }
                 } label: {
                     Image(systemName: "sparkle")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(currentPage == .soulFragment ? UITheme.accent : UITheme.tertiaryText)
+                        .foregroundStyle(currentPage == .glimmer ? UITheme.accent : UITheme.tertiaryText)
                         .frame(width: 10, height: 10)
-                        .scaleEffect(currentPage == .soulFragment ? 1.2 : 1.0)
+                        .scaleEffect(currentPage == .glimmer ? 1.2 : 1.0)
                         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
                 }
                 .buttonStyle(.plain)

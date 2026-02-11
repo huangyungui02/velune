@@ -3,7 +3,7 @@ import SwiftUI
 
 struct ProfileView: View {
     @Environment(\.modelContext) private var context
-    @Query(sort: \Inspiration.createdAt, order: .reverse) private var inspirations: [Inspiration]
+    @Query(sort: \Glimmer.createdAt, order: .reverse) private var glimmers: [Glimmer]
     @State private var isRefreshing: Bool = false
 
     var body: some View {
@@ -15,10 +15,10 @@ struct ProfileView: View {
                     if isRefreshing {
                         ProgressView()
                     }
-                    if inspirations.isEmpty {
+                    if glimmers.isEmpty {
                         EmptyView(title: "No glimmers yet")
                     } else {
-                        inspirationListView
+                        glimmerListView
                     }
                 }
             }
@@ -33,19 +33,19 @@ struct ProfileView: View {
                 }
             }
             .task {
-                await refreshInspirations()
+                await refreshGlimmers()
             }
         }
     }
 
-    private var inspirationListView: some View {
+    private var glimmerListView: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
-                ForEach(inspirations) { inspiration in
+                ForEach(glimmers) { glimmer in
                     NavigationLink {
-                        InspirationDetailView(inspiration: inspiration)
+                        GlimmerDetailView(glimmer: glimmer)
                     } label: {
-                        InspirationCard(inspiration: inspiration)
+                        GlimmerListCard(glimmer: glimmer)
                     }
                     .buttonStyle(.plain)
                 }
@@ -55,16 +55,16 @@ struct ProfileView: View {
     }
 
     @MainActor
-    func refreshInspirations() async {
-        if !inspirations.isEmpty { return }
+    func refreshGlimmers() async {
+        if !glimmers.isEmpty { return }
 
         isRefreshing = true
         defer { isRefreshing = false }
 
         do {
-            let inspirationsData = try await Inspiration.getAll()
-            for (idx, inspiration) in inspirationsData.enumerated() {
-                context.insert(inspiration)
+            let glimmersData = try await Glimmer.getAll()
+            for (idx, glimmer) in glimmersData.enumerated() {
+                context.insert(glimmer)
                 if idx > 0, idx % 200 == 0 {
                     await Task.yield()
                 }
@@ -72,15 +72,15 @@ struct ProfileView: View {
             try context.save()
         } catch {
             let errorMessage = error.localizedDescription
-            print("error refreshing inspirations: \(errorMessage)")
+            print("error refreshing glimmers: \(errorMessage)")
         }
     }
 }
 
-// MARK: - Inspiration Card
+// MARK: - Glimmer Card
 
-private struct InspirationCard: View {
-    let inspiration: Inspiration
+private struct GlimmerListCard: View {
+    let glimmer: Glimmer
 
     var body: some View {
         CardView {
@@ -94,13 +94,13 @@ private struct InspirationCard: View {
                 Image(systemName: "clock.fill")
                     .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(UITheme.tertiaryText)
-                Text(inspiration.createdAt, format: .relative(presentation: .named))
+                Text(glimmer.createdAt, format: .relative(presentation: .named))
                     .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(UITheme.tertiaryText)
                 Spacer()
             }
 
-            Text(inspiration.content)
+            Text(glimmer.content)
                 .font(.system(size: 18, weight: .regular, design: .serif))
                 .lineLimit(3)
                 .multilineTextAlignment(.leading)

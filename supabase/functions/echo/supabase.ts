@@ -10,34 +10,34 @@ export const getUserId = async (jwt: string) => {
   return data.user?.id;
 };
 
-export const checkStatusBeforeProcessing = async (inspirationId: string) => {
-  const { data, error } = await supabase.from("inspirations")
+export const checkStatusBeforeProcessing = async (glimmerId: string) => {
+  const { data, error } = await supabase.from("glimmers")
     .select("status")
-    .eq("id", inspirationId)
+    .eq("id", glimmerId)
     .single();
   const status = data?.status;
   if (error) {
     throw error;
   }
   if (status !== "pending") {
-    throw new Error("Inspiration is not pending");
+    throw new Error("Glimmer is not pending");
   }
 };
 
-export const updateInspirationStatus = async (
-  inspirationId: string,
+export const updateGlimmerStatus = async (
+  glimmerId: string,
   status: "processing" | "complete" | "incomplete" | "failed",
 ) => {
-  const { error } = await supabase.from("inspirations").update({ status })
-    .eq("id", inspirationId);
+  const { error } = await supabase.from("glimmers").update({ status })
+    .eq("id", glimmerId);
   if (error) {
     throw error;
   }
 };
 
-export const getInspiration = async (inspirationId: string, userId: string) => {
-  const { data, error } = await supabase.from("inspirations").select("*")
-    .eq("id", inspirationId)
+export const getGlimmer = async (glimmerId: string, userId: string) => {
+  const { data, error } = await supabase.from("glimmers").select("*")
+    .eq("id", glimmerId)
     .eq("user_id", userId)
     .single();
   if (error) {
@@ -88,12 +88,12 @@ export const updateSouler = async (
 };
 
 export const createEcho = async (
-  inspirationId: string,
+  glimmerId: string,
   soulerId: string,
   content: string,
 ) => {
   const { data, error } = await supabase.from("echoes").insert({
-    inspiration_id: inspirationId,
+    glimmer_id: glimmerId,
     souler_id: soulerId,
     content,
   })

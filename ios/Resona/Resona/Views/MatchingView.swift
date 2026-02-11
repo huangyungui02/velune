@@ -8,10 +8,10 @@ struct MatchingView: View {
     
     @State private var manager = MatchingManager.shared
     @State private var showError = false
-    @State private var currentPage: CardID? = .soulFragment
+    @State private var currentPage: CardID? = .glimmer
     
     private var echoes: [Echo] {
-        (manager.currentInspiration?.echoes ?? [])
+        (manager.currentGlimmer?.echoes ?? [])
             .sorted { $0.createdAt < $1.createdAt }
     }
     
@@ -48,9 +48,9 @@ struct MatchingView: View {
         ScrollView(.horizontal) {
             LazyHStack(spacing: 0) {
                 // Soul Fragment card
-                soulFragmentCard
+                glimmerCard
                     .containerRelativeFrame(.horizontal)
-                    .id(CardID.soulFragment)
+                    .id(CardID.glimmer)
                 
                 // Echo cards
                 ForEach(echoes) { echo in
@@ -66,7 +66,7 @@ struct MatchingView: View {
         .scrollIndicators(.hidden)
         .onChange(of: hasEchoes) { _, newValue in
             // Switch to first echo when echoes appear
-            if newValue, case .soulFragment = currentPage {
+            if newValue, case .glimmer = currentPage {
                 if let firstEcho = echoes.first {
                     withAnimation {
                         currentPage = .echo(firstEcho.id)
@@ -76,8 +76,8 @@ struct MatchingView: View {
         }
     }
     
-    private var soulFragmentCard: some View {
-        SoulFragmentCardView(content: manager.text)
+    private var glimmerCard: some View {
+        GlimmerCardView(content: manager.text)
     }
     
     private var indicatorView: some View {

@@ -16,20 +16,20 @@ import {
 const graph = entrypoint(
   { name: "agent" },
   async (
-    { userId, inspirationId, inspirationContent, num, onEcho }: {
+    { userId, glimmerId, glimmerContent, num, onEcho }: {
       userId: string;
-      inspirationId: string;
-      inspirationContent: string;
+      glimmerId: string;
+      glimmerContent: string;
       num: number;
       onEcho?: (echo: {
         id: string;
-        inspiration_id: string;
+        glimmer_id: string;
         souler_id: string;
         content: string;
       }) => void | Promise<void>;
     },
   ) => {
-    const soulers = await matchSoulers(inspirationContent, num);
+    const soulers = await matchSoulers(glimmerContent, num);
     const results = await Promise.allSettled(
       soulers.map(async (item) => {
         // Query or create souler
@@ -54,10 +54,10 @@ const graph = entrypoint(
 
         // Answer the question
         const answer = await soulerAnswer(
-          inspirationContent,
+          glimmerContent,
           soulerData.prompt,
         );
-        const echo = await createEcho(inspirationId, soulerData.id, answer);
+        const echo = await createEcho(glimmerId, soulerData.id, answer);
         if (onEcho) {
           await onEcho(echo);
         }

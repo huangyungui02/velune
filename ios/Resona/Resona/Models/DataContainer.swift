@@ -12,7 +12,7 @@ class DataContainer {
 
     init(sampleData: Bool = false) {
         let schema = Schema([
-            Inspiration.self,
+            Glimmer.self,
             Echo.self,
         ])
 
@@ -31,11 +31,11 @@ class DataContainer {
     }
 
     private func loadSampleData() {
-        for (idx, inspiration) in Inspiration.sampleData.enumerated() {
+        for (idx, glimmer) in Glimmer.sampleData.enumerated() {
             for echo in Echo.sampleData[idx*5 ..< idx*5 + 5] {
-                inspiration.echoes.append(echo)
+                glimmer.echoes.append(echo)
             }
-            context.insert(inspiration)
+            context.insert(glimmer)
         }
     }
 }

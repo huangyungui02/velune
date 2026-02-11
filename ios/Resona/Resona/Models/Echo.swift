@@ -8,7 +8,7 @@ class Echo {
     var content: String
     var createdAt: Date
 
-    var inspiration: Inspiration?
+    var glimmer: Glimmer?
     var soulerId: UUID
     var soulerName: String
 
@@ -38,7 +38,7 @@ class Echo {
 }
 
 extension Echo {
-    static func getAll(_ inspirationId: UUID) async throws -> [Echo] {
+    static func getAll(_ glimmerId: UUID) async throws -> [Echo] {
         struct Response: Codable, Identifiable {
             var id: UUID
             var content: String
@@ -58,7 +58,7 @@ extension Echo {
         let response: [Response] = try await supabase
             .from("echoes_with_souler")
             .select()
-            .eq("inspiration_id", value: inspirationId)
+            .eq("glimmer_id", value: glimmerId)
             .execute()
             .value
 
@@ -74,14 +74,14 @@ extension Echo {
 
 extension Echo {
     @MainActor static let sampleData: [Echo] = [
-        // Five echoes for Inspiration 0
+        // Five echoes for Glimmer 0
         Echo(
-            content: "Great idea! From a psychoanalytic perspective, your creative impulse may come from a deep desire for self-actualization. Writing these inspirations down is a way of listening to your unconscious.",
+            content: "Great idea! From a psychoanalytic perspective, your creative impulse may come from a deep desire for self-actualization. Writing these glimmers down is a way of listening to your unconscious.",
             soulerId: Souler.sampleData[0].id,
             soulerName: Souler.sampleData[0].name
         ),
         Echo(
-            content: "This touches the creative archetype in the collective unconscious. Capturing inspiration is a way to bring unconscious material into consciousness—and it can support individuation.",
+            content: "This touches the creative archetype in the collective unconscious. Capturing glimmer is a way to bring unconscious material into consciousness—and it can support individuation.",
             soulerId: Souler.sampleData[1].id,
             soulerName: Souler.sampleData[1].name
         ),
@@ -91,24 +91,24 @@ extension Echo {
             soulerName: Souler.sampleData[2].name
         ),
         Echo(
-            content: "You’ve begun a journey of self-knowledge. Writing ideas down is a way to examine the mind. Remember: even an unexamined inspiration shouldn’t be forgotten. Reflect on these thoughts and you’ll know yourself more deeply.",
+            content: "You’ve begun a journey of self-knowledge. Writing ideas down is a way to examine the mind. Remember: even an unexamined glimmer shouldn’t be forgotten. Reflect on these thoughts and you’ll know yourself more deeply.",
             soulerId: Souler.sampleData[3].id,
             soulerName: Souler.sampleData[3].name
         ),
         Echo(
-            content: "Follow nature and your inspiration will flow like a spring. The Tao gives birth to one, one to two, two to three, and three to all things. A small thought can unfold into infinite possibilities. Act without forcing, and let creativity move on its own.",
+            content: "Follow nature and your glimmer will flow like a spring. The Tao gives birth to one, one to two, two to three, and three to all things. A small thought can unfold into infinite possibilities. Act without forcing, and let creativity move on its own.",
             soulerId: Souler.sampleData[4].id,
             soulerName: Souler.sampleData[4].name
         ),
 
-        // Five echoes for Inspiration 1
+        // Five echoes for Glimmer 1
         Echo(
             content: "Building an app like this speaks to our instinct to express ourselves. Our dreams, daydreams, and sudden thoughts are ways the unconscious tries to speak with consciousness.",
             soulerId: Souler.sampleData[0].id,
             soulerName: Souler.sampleData[0].name
         ),
         Echo(
-            content: "A tool for capturing inspiration helps integrate consciousness and the unconscious. When we record fleeting thoughts in time, we build a bridge between the ego and the deeper psyche.",
+            content: "A tool for capturing glimmer helps integrate consciousness and the unconscious. When we record fleeting thoughts in time, we build a bridge between the ego and the deeper psyche.",
             soulerId: Souler.sampleData[1].id,
             soulerName: Souler.sampleData[1].name
         ),
@@ -118,17 +118,17 @@ extension Echo {
             soulerName: Souler.sampleData[2].name
         ),
         Echo(
-            content: "An excellent tool—but remember, a tool isn’t the end. What matters is using it to think: Where did this inspiration come from? What is it telling me? What should I do next? Asking the right questions matters more than having quick answers.",
+            content: "An excellent tool—but remember, a tool isn’t the end. What matters is using it to think: Where did this glimmer come from? What is it telling me? What should I do next? Asking the right questions matters more than having quick answers.",
             soulerId: Souler.sampleData[3].id,
             soulerName: Souler.sampleData[3].name
         ),
         Echo(
-            content: "Simplicity is the ultimate sophistication. The best tools should be like water—formless, yet everywhere. Don’t let complicated features obscure the essence of inspiration. Simple, natural, unforced—that is the Tao.",
+            content: "Simplicity is the ultimate sophistication. The best tools should be like water—formless, yet everywhere. Don’t let complicated features obscure the essence of glimmer. Simple, natural, unforced—that is the Tao.",
             soulerId: Souler.sampleData[4].id,
             soulerName: Souler.sampleData[4].name
         ),
 
-        // Five echoes for Inspiration 2
+        // Five echoes for Glimmer 2
         Echo(
             content: "Your observation is sharp. Creative thinking often arises from the interaction of different psychological mechanisms. When we allow ideas to combine freely, we release the unconscious’s creativity.",
             soulerId: Souler.sampleData[0].id,
@@ -155,7 +155,7 @@ extension Echo {
             soulerName: Souler.sampleData[4].name
         ),
 
-        // Five echoes for Inspiration 3
+        // Five echoes for Glimmer 3
         Echo(
             content: "Nature often triggers deep memory and emotion. Sunlight through leaves may awaken a childhood feeling. Art is often born from this primal emotional experience.",
             soulerId: Souler.sampleData[0].id,
@@ -167,7 +167,7 @@ extension Echo {
             soulerName: Souler.sampleData[1].name
         ),
         Echo(
-            content: "Seeking inspiration in nature is a way humans create meaningful connection with the world. That beam of sunlight didn’t just illuminate leaves—it illuminated something in you. Experiences of beauty are among life’s greatest gifts.",
+            content: "Seeking glimmer in nature is a way humans create meaningful connection with the world. That beam of sunlight didn’t just illuminate leaves—it illuminated something in you. Experiences of beauty are among life’s greatest gifts.",
             soulerId: Souler.sampleData[2].id,
             soulerName: Souler.sampleData[2].name
         ),
@@ -182,7 +182,7 @@ extension Echo {
             soulerName: Souler.sampleData[4].name
         ),
 
-        // Five echoes for Inspiration 4
+        // Five echoes for Glimmer 4
         Echo(
             content: "Sudden associations and breakthroughs are often the result of long unconscious work. Your mind has caught an idea that was fermenting beneath awareness. Trust these intuitions—they’re often closer to the truth than pure rational thought.",
             soulerId: Souler.sampleData[0].id,
@@ -199,12 +199,12 @@ extension Echo {
             soulerName: Souler.sampleData[2].name
         ),
         Echo(
-            content: "A great start—but inspiration is only the first step. Now test it with reason: is this combination truly feasible? What problems might arise? How will you implement it? With rigorous thinking and dialogue, inspiration becomes wisdom.",
+            content: "A great start—but glimmer is only the first step. Now test it with reason: is this combination truly feasible? What problems might arise? How will you implement it? With rigorous thinking and dialogue, glimmer becomes wisdom.",
             soulerId: Souler.sampleData[3].id,
             soulerName: Souler.sampleData[3].name
         ),
         Echo(
-            content: "Follow nature—so it is with inspiration. Don’t cling to the idea or rush to execute. Let it ferment in your mind; what is meant to come will come in time. Between doing and not-doing lies a subtle balance.",
+            content: "Follow nature—so it is with glimmer. Don’t cling to the idea or rush to execute. Let it ferment in your mind; what is meant to come will come in time. Between doing and not-doing lies a subtle balance.",
             soulerId: Souler.sampleData[4].id,
             soulerName: Souler.sampleData[4].name
         )

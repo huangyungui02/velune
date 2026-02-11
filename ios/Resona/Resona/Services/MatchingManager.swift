@@ -8,7 +8,7 @@ class MatchingManager {
     
     var text = ""
     var isMatching = false
-    var currentInspiration: Inspiration?
+    var currentGlimmer: Glimmer?
     var errorMessage: String?
     private var matchingTask: Task<Void, Never>?
     
@@ -17,7 +17,7 @@ class MatchingManager {
     func startMatching(text: String, context: ModelContext) {
         matchingTask?.cancel()
         self.text = text
-        currentInspiration = nil
+        currentGlimmer = nil
         isMatching = true
         errorMessage = nil
                 
@@ -33,7 +33,7 @@ class MatchingManager {
             await MainActor.run {
                 isMatching = false
                 text = ""
-                currentInspiration = nil
+                currentGlimmer = nil
                 errorMessage = nil
             }
         }
@@ -43,7 +43,7 @@ class MatchingManager {
     
     private func performMatching(context: ModelContext) async {
         do {
-            try await createInspiration(context: context)
+            try await createGlimmer(context: context)
             try await streamEchoes(context: context)
         } catch {
             await MainActor.run {
@@ -57,24 +57,24 @@ class MatchingManager {
         }
     }
     
-    private func createInspiration(context: ModelContext) async throws {
-        let newInspiration = Inspiration(content: text)
-        try await Inspiration.create(newInspiration)
+    private func createGlimmer(context: ModelContext) async throws {
+        let newGlimmer = Glimmer(content: text)
+        try await Glimmer.create(newGlimmer)
         
         await MainActor.run {
-            context.insert(newInspiration)
-            currentInspiration = newInspiration
+            context.insert(newGlimmer)
+            currentGlimmer = newGlimmer
         }
     }
     
     private func streamEchoes(context: ModelContext) async throws {
-        guard let inspiration = currentInspiration else {
+        guard let glimmer = currentGlimmer else {
             return
         }
 
         struct StreamEcho: Decodable {
             let id: UUID
-            let inspirationId: UUID
+            let glimmerId: UUID
             let soulerId: UUID
             let content: String
         }
@@ -118,12 +118,12 @@ class MatchingManager {
                         let souler = try await Souler.get(payload.soulerId)
                         let echo = Echo(id: payload.id, content: payload.content, souler: souler)
                         await MainActor.run {
-                            currentInspiration?.echoes.append(echo)
+                            currentGlimmer?.echoes.append(echo)
                         }
                     }
                 case "done":
                     await MainActor.run {
-                        currentInspiration?.status = (event.completed == true) ? "complete" : "incomplete"
+                        currentGlimmer?.status = (event.completed == true) ? "complete" : "incomplete"
                     }
                 case "error":
                     let message = event.message ?? "Unknown error from echo stream"
@@ -139,7 +139,7 @@ class MatchingManager {
         let stream = supabase.functions._invokeWithStreamedResponse(
             "echo",
             options: FunctionInvokeOptions(
-                body: ["inspirationId": inspiration.id]
+                body: ["glimmerId": glimmer.id]
             )
         )
         

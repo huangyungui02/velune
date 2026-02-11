@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct SoulFragmentCardView: View {
+struct GlimmerCardView: View {
     let content: String
     let createdAt: Date?
 
@@ -46,6 +46,6 @@ struct SoulFragmentCardView: View {
 }
 
 #Preview {
-    let inspiration = Inspiration.sampleData[0]
-    SoulFragmentCardView(content: inspiration.content, createdAt: inspiration.createdAt)
+    let glimmer = Glimmer.sampleData[0]
+    GlimmerCardView(content: glimmer.content, createdAt: glimmer.createdAt)
 }
