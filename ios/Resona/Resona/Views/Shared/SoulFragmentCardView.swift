@@ -1,3 +1,4 @@
+import MarkdownUI
 import SwiftUI
 
 struct SoulFragmentCardView: View {
@@ -12,7 +13,7 @@ struct SoulFragmentCardView: View {
     var body: some View {
         PremiumCardView(iconName: "sparkles") {
             VStack(spacing: 16) {
-                Text(content)
+                Markdown(content)
                     .font(.body)
                     .lineSpacing(8)
                     .foregroundStyle(.white)

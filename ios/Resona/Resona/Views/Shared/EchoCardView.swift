@@ -1,3 +1,4 @@
+import MarkdownUI
 import SwiftUI
 
 struct EchoCardView: View {
@@ -6,7 +7,7 @@ struct EchoCardView: View {
     var body: some View {
         PremiumCardView(iconName: "circle.circle") {
             VStack(alignment: .leading, spacing: 16) {
-                Text(echo.content)
+                Markdown(echo.content)
                     .font(.body)
                     .multilineTextAlignment(.leading)
                     .lineSpacing(8)
