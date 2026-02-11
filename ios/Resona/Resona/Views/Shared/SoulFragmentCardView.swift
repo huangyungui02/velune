@@ -15,6 +15,7 @@ struct SoulFragmentCardView: View {
                 Text(content)
                     .font(.system(size: 18, weight: .regular, design: .serif))
                     .lineSpacing(8)
+                    .multilineTextAlignment(.leading)
                     .foregroundStyle(UITheme.primaryText)
 
                 if let createdAt {
@@ -41,7 +42,6 @@ struct SoulFragmentCardView: View {
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
