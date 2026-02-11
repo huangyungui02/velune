@@ -15,8 +15,22 @@ struct BackgroundView: View {
     }
 }
 
+struct StarryBackgroundView: View {
+    @Environment(\.colorScheme) var colorScheme
+
+    var body: some View {
+        ZStack {
+            BackgroundView()
+            StarFieldView(starCount: 80, showsBackground: false)
+                .opacity(colorScheme == .dark ? 0.55 : 0.25)
+        }
+        .ignoresSafeArea()
+    }
+}
+
 struct StarFieldView: View {
     let starCount: Int
+    let showsBackground: Bool
     @State private var stars: [Star] = []
 
     struct Star: Identifiable {
@@ -30,21 +44,24 @@ struct StarFieldView: View {
         let moveSpeedY: CGFloat
     }
 
-    init(starCount: Int = 100) {
+    init(starCount: Int = 100, showsBackground: Bool = true) {
         self.starCount = starCount
+        self.showsBackground = showsBackground
     }
 
     var body: some View {
         GeometryReader { _ in
             ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(white: 0.04),
-                        Color(white: 0.08)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                if showsBackground {
+                    LinearGradient(
+                        colors: [
+                            Color(white: 0.04),
+                            Color(white: 0.08)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
 
                 // Draw twinkling and moving stars
                 TimelineView(.animation) { timeline in

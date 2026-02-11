@@ -12,7 +12,7 @@ struct SeaStarView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                StarFieldView()
+                StarryBackgroundView()
 
                 VStack {
                     Spacer()

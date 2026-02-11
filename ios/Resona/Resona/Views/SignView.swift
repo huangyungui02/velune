@@ -4,11 +4,10 @@ import SwiftUI
 
 struct SignView: View {
     @State private var errorMessage: String? = nil
-    @State private var hasAgreedToTerms: Bool = false
 
     var body: some View {
         ZStack {
-            BackgroundView()
+            StarryBackgroundView()
 
             VStack(spacing: 32) {
                 Spacer()
@@ -16,23 +15,22 @@ struct SignView: View {
                 VStack(spacing: 32) {
                     Image(systemName: "circle.circle")
                         .font(.system(size: 80))
-                        .symbolEffect(
-                            .pulse
-                        )
 
                     Text("Resona")
-                        .font(.system(size: 42, weight: .bold, design: .rounded))
+                        .font(.system(size: 40, weight: .semibold, design: .serif))
 
-                    Text("Set down a glimmer, await its echo")
-                        .font(.title)
+                    Text("Glimmer.\nResonance.\nEcho.")
+                        .font(.system(size: 24, weight: .light, design: .serif))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(8)
+                        .tracking(1.5)
+                        .foregroundStyle(.white.opacity(0.85))
                 }
                 .padding(.bottom, 40)
 
                 appleSignInView
                     .frame(height: 50)
                     .padding(.horizontal, 50)
-                    .disabled(!hasAgreedToTerms)
-                    .opacity(hasAgreedToTerms ? 1.0 : 0.5)
 
                 if let errorMessage {
                     Text(errorMessage)
@@ -44,19 +42,12 @@ struct SignView: View {
 
                 Spacer()
 
-                HStack(spacing: 12) {
-                    Button {
-                        hasAgreedToTerms.toggle()
-                    } label: {
-                        Image(systemName: hasAgreedToTerms ? "checkmark.square.fill" : "square")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(hasAgreedToTerms ? .accentColor : .secondary)
-                    }
-                    .buttonStyle(.plain)
-
-                    Text(termsAttributedText)
-                        .multilineTextAlignment(.leading)
-                }.font(.footnote).padding()
+                Text(termsAttributedText)
+                    .multilineTextAlignment(.center)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 12)
             }
         }
     }
@@ -124,7 +115,7 @@ struct SignView: View {
     }
 
     private var termsAttributedText: AttributedString {
-        var text = AttributedString("I have read and agree to the Terms of Service and Privacy Policy")
+        var text = AttributedString("By signing in, you agree to our Terms of Service and Privacy Policy.")
         text.foregroundColor = .secondary
 
         if let termsRange = text.range(of: "Terms of Service") {
@@ -138,6 +129,7 @@ struct SignView: View {
 
         return text
     }
+
 }
 
 #Preview {

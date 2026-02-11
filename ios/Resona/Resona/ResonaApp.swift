@@ -15,8 +15,8 @@ struct ResonaApp: App {
                     SignView()
                 }
             }
-            .animation(.easeInOut, value: authManager.isAuthenticated)
             .preferredColorScheme(.dark)
+            .animation(.easeInOut, value: authManager.isAuthenticated)
         }
         .modelContainer(dataContainer.modelContainer)
     }

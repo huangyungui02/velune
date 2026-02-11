@@ -22,7 +22,7 @@ struct MatchingView: View {
     var body: some View {
         ZStack {
             BackgroundView()
-            
+
             VStack {
                 cardPagerView
 
