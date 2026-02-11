@@ -33,22 +33,21 @@ const graph = entrypoint(
     const results = await Promise.allSettled(
       soulers.map(async (item) => {
         // Query or create souler
-        const { name, name_en } = await parseSouler(item.souler, item.content);
-        const soulerName = name + (name_en ? "(" + name_en + ")" : "");
-        const soulerData = await getOrCreateSoulerByName(name, name_en);
+        const { name } = await parseSouler(item.souler, item.content);
+        const soulerData = await getOrCreateSoulerByName(name);
         // Create or update resonance
         await createOrUpdateResonance(userId, soulerData.id);
 
         // Query or create souler profile
         if (!soulerData.bio) {
-          const bio = await soulerProfile(soulerName);
+          const bio = await soulerProfile(name);
           soulerData.bio = bio;
           await updateSouler(soulerData.id, { bio });
         }
 
         // Query or create souler prompt
         if (!soulerData.prompt) {
-          const prompt = await soulerPrompt(soulerName);
+          const prompt = await soulerPrompt(name);
           soulerData.prompt = prompt;
           await updateSouler(soulerData.id, { prompt });
         }

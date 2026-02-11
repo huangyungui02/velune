@@ -20,7 +20,7 @@ struct PremiumCardView<Content: View>: View {
     }
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 24) {
             headerView
             scrollableContent
         }
@@ -41,7 +41,7 @@ struct PremiumCardView<Content: View>: View {
         return ScrollView {
             content
                 .padding(.horizontal, 24)
-                .padding(.vertical, 20)
+//                .padding(.vertical, 20)
                 .background(
                     GeometryReader { proxy in
                         Color.clear

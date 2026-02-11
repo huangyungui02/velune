@@ -8,7 +8,7 @@ export const soulerProfile = task(
     const modelResponse = await modelS.invoke(
       [
         new SystemMessage(
-          "对于用户输入的人物，做人物的主要介绍，用于资料页显示，以Markdown格式返回。请勿给出除人物介绍之外的其他内容",
+          "Write a concise profile for the given person for an app detail page. Return Markdown only, focused on who they are, key ideas, and why they matter. Output must be English only.",
         ),
         new HumanMessage(souler),
       ] as unknown as Parameters<typeof modelS.invoke>[0],

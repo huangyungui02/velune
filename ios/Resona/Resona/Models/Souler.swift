@@ -4,13 +4,11 @@ import Supabase
 struct Souler: Identifiable, Codable, Equatable {
     var id: UUID
     var name: String
-    var alias: String?
     var bio: String
 
-    init(id: UUID = UUID(), name: String, alias: String? = nil, bio: String) {
+    init(id: UUID = UUID(), name: String, bio: String) {
         self.id = id
         self.name = name
-        self.alias = alias
         self.bio = bio
     }
 }
@@ -20,19 +18,18 @@ extension Souler {
         struct Response: Codable {
             var id: UUID
             var name: String
-            var alias: String?
             var bio: String
         }
 
         let res: Response = try await supabase
             .from("soulers")
-            .select("id, name, alias, bio")
+            .select("id, name, bio")
             .eq("id", value: soulerId)
             .single()
             .execute()
             .value
 
-        return Souler(id: res.id, name: res.name, alias: res.alias, bio: res.bio)
+        return Souler(id: res.id, name: res.name, bio: res.bio)
     }
 }
 

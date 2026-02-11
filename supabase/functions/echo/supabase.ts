@@ -48,14 +48,10 @@ export const getInspiration = async (inspirationId: string, userId: string) => {
 
 export const getOrCreateSoulerByName = async (
   name: string,
-  alias: string | undefined,
 ) => {
-  // check if souler exists by name or alias
-  let query = supabase.from("soulers").select().eq("name", name);
-  if (alias) {
-    query = query.or(`alias.eq.${alias}`);
-  }
-  const { data, error } = await query.maybeSingle();
+  // Check if souler exists by canonical name.
+  const { data, error } = await supabase.from("soulers").select().eq("name", name)
+    .maybeSingle();
   if (error) {
     console.error(`Error getting or creating souler: ${error.message}`);
     throw error;
@@ -63,14 +59,14 @@ export const getOrCreateSoulerByName = async (
 
   // if souler does not exist, create it
   if (!data) {
-    return await createSouler(name, alias);
+    return await createSouler(name);
   }
   return data;
 };
 
-const createSouler = async (name: string, alias: string | undefined) => {
-  const { data, error } = await supabase.from("soulers").insert({ name, alias })
-    .select().single();
+const createSouler = async (name: string) => {
+  const { data, error } = await supabase.from("soulers").insert({ name }).select()
+    .single();
   if (error) {
     console.error(`Error creating souler: ${error.message}`);
     throw error;

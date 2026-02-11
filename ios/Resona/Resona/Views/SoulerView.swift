@@ -57,12 +57,6 @@ struct SoulerView: View {
                     .font(.title)
                     .fontWeight(.bold)
 
-                if let alias = souler.alias {
-                    Text(alias)
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                }
-
                 CardView {
                     Markdown(souler.bio)
                 }.padding()

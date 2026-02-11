@@ -21,7 +21,7 @@ export const matchSoulers = task(
     const modelResponse = await model_with_schema.invoke(
       [
         new SystemMessage(
-          `根据用户写下的日记，寻找最能与用户产生共鸣的哲学家、诗人、作家、艺术家、历史人物、宗教人物、神话人物、文学人物、艺术家、心理学家、社会学家、企业家、科学家或其他知名人物。一共返回${num}组数据(data)，每组包含人物(souler)，和一句最能与用户内容共振的片段(content)。以json格式返回。`,
+          `Based on the user's journal entry, find people who would resonate deeply with the user (for example philosophers, poets, writers, artists, historical figures, religious figures, mythological or literary figures, psychologists, sociologists, entrepreneurs, scientists, or other notable people). Return exactly ${num} items in JSON with shape {"data":[{"souler":"...","content":"..."}]}. "souler" is the person's name and "content" is one short quote-like line that best resonates with the user entry. Output must be English only.`,
         ),
         new HumanMessage(content),
       ] as unknown as Parameters<typeof model_with_schema.invoke>[0],

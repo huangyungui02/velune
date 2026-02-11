@@ -7,10 +7,11 @@ const answerPrompt = (prompt: string) => `
 ${prompt}
 
 # Task
-针对用户写下的灵魂碎片，进行回应
+Respond to the user's soul fragment in this persona.
 
 # Output  
-只需给出回应的内容
+Return only the response content.
+Output must be English only.
 `;
 
 export const soulerAnswer = task(

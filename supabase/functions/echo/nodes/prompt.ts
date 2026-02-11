@@ -8,7 +8,7 @@ export const soulerPrompt = task(
     const modelResponse = await modelS.invoke(
       [
         new SystemMessage(
-          '你是提示词生成器，对于用户输入的人物，给出对应提示词，用做大模型的人物模拟，以"你是"开头',
+          "You generate role prompts. For the given person, write a concise character prompt for an LLM to simulate that person. The prompt must start with 'You are'. Output must be English only.",
         ),
         new HumanMessage(souler),
       ] as unknown as Parameters<typeof modelS.invoke>[0],
