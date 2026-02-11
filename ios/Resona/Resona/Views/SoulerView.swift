@@ -56,6 +56,11 @@ struct SoulerView: View {
                 Text(souler.name)
                     .font(.system(size: 24, weight: .semibold, design: .serif))
                     .fontWeight(.bold)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 20)
 
                 CardView {
                     Markdown(souler.bio)
