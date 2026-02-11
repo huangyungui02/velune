@@ -73,7 +73,7 @@ extension Echo {
 }
 
 extension Echo {
-    static let sampleData: [Echo] = [
+    @MainActor static let sampleData: [Echo] = [
         // Five echoes for Inspiration 0
         Echo(
             content: "Great idea! From a psychoanalytic perspective, your creative impulse may come from a deep desire for self-actualization. Writing these inspirations down is a way of listening to your unconscious.",

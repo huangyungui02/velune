@@ -21,7 +21,7 @@ class MatchingManager {
         isMatching = true
         errorMessage = nil
                 
-        matchingTask = Task.detached { [weak self] in
+        matchingTask = Task { [weak self] in
             await self?.performMatching(context: context)
         }
     }

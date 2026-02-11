@@ -38,7 +38,6 @@ struct SoulFragmentCardView: View {
                         )
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(UITheme.tertiaryText)
-                        .tracking(1.5)
                     }
                 }
             }

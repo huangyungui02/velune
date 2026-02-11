@@ -111,7 +111,7 @@ extension Inspiration {
 }
 
 extension Inspiration {
-    static let sampleData: [Inspiration] =
+    @MainActor static let sampleData: [Inspiration] =
         [
             Inspiration(
                 content: "Today I suddenly had a great idea! I want to write these concepts down—maybe they’ll come in handy one day.",
