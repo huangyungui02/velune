@@ -52,6 +52,7 @@ struct SeaStarView: View {
                     Text("Listening for echoes")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(UITheme.secondaryText)
+                        .tracking(2)
                 }
                 .padding(16)
                 .glassEffect(in: .capsule)
@@ -61,6 +62,7 @@ struct SeaStarView: View {
 
                     Text("What glimmers within you")
                         .foregroundStyle(UITheme.primaryText)
+                        .font(.system(size: 18, weight: .regular, design: .serif))
                 }
                 .padding(16)
                 .glassEffect(in: .capsule)
