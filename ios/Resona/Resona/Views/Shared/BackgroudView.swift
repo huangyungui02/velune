@@ -13,7 +13,7 @@ struct BackgroundView: View {
                 endPoint: .bottomTrailing
             )
 
-            NebulaOverlayView(opacity: 0.2)
+            NebulaOverlayView(opacity: 0.30)
         }
         .ignoresSafeArea()
     }
@@ -36,31 +36,29 @@ private struct NebulaOverlayView: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
-            GeometryReader { proxy in
-                let size = proxy.size
-                ZStack {
-                    MeshGradient(
-                        width: 3,
-                        height: 3,
-                        points: meshPoints(at: time),
-                        colors: meshColors(),
-                        background: Color.black,
-                        smoothsColors: true
-                    )
+            ZStack {
+                MeshGradient(
+                    width: 4,
+                    height: 4,
+                    points: meshPoints(at: time),
+                    colors: meshColorsPrimary(),
+                    background: Color.black,
+                    smoothsColors: true
+                )
 
-                    RadialGradient(
-                        stops: [
-                            .init(color: Color.clear, location: 0.52),
-                            .init(color: Color.black.opacity(0.28), location: 1.0),
-                        ],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: max(size.width, size.height) * 0.95
-                    )
-                }
+                MeshGradient(
+                    width: 4,
+                    height: 4,
+                    points: meshPointsSecondary(at: time),
+                    colors: meshColorsSecondary(),
+                    background: .clear,
+                    smoothsColors: true
+                )
+                .blendMode(.softLight)
+                .opacity(0.42)
             }
             .opacity(opacity)
-            .blur(radius: 36)
+            .blur(radius: 12)
         }
         .drawingGroup()
     }
@@ -70,30 +68,93 @@ private struct NebulaOverlayView: View {
 
         return [
             SIMD2(0.00, 0.00),
-            SIMD2(0.50 + sin(t * 0.021) * 0.03, 0.00 + cos(t * 0.019) * 0.02),
+            SIMD2(0.33 + sin(t * 0.021) * 0.02, 0.00 + cos(t * 0.019) * 0.012),
+            SIMD2(0.66 + sin(t * 0.018 + 0.8) * 0.018, 0.00 + cos(t * 0.017 + 0.4) * 0.012),
             SIMD2(1.00, 0.00),
 
-            SIMD2(0.00 + cos(t * 0.017 + 0.7) * 0.02, 0.50 + sin(t * 0.016 + 0.5) * 0.03),
-            SIMD2(0.50 + sin(t * 0.014 + 1.1) * 0.04, 0.50 + cos(t * 0.013 + 1.7) * 0.04),
-            SIMD2(1.00 + sin(t * 0.018 + 0.9) * 0.02, 0.50 + cos(t * 0.015 + 0.4) * 0.03),
+            SIMD2(0.00 + cos(t * 0.017 + 0.7) * 0.012, 0.33 + sin(t * 0.016 + 0.5) * 0.02),
+            SIMD2(0.33 + sin(t * 0.014 + 1.1) * 0.02, 0.33 + cos(t * 0.013 + 1.7) * 0.02),
+            SIMD2(0.66 + sin(t * 0.015 + 0.9) * 0.018, 0.33 + cos(t * 0.014 + 0.6) * 0.02),
+            SIMD2(1.00 + sin(t * 0.018 + 0.9) * 0.012, 0.33 + cos(t * 0.015 + 0.4) * 0.02),
+
+            SIMD2(0.00 + cos(t * 0.016 + 1.4) * 0.012, 0.66 + sin(t * 0.015 + 1.0) * 0.018),
+            SIMD2(0.33 + sin(t * 0.013 + 2.1) * 0.02, 0.66 + cos(t * 0.012 + 2.0) * 0.018),
+            SIMD2(0.66 + sin(t * 0.014 + 2.4) * 0.018, 0.66 + cos(t * 0.013 + 2.3) * 0.018),
+            SIMD2(1.00 + sin(t * 0.015 + 1.9) * 0.012, 0.66 + cos(t * 0.014 + 1.8) * 0.018),
 
             SIMD2(0.00, 1.00),
-            SIMD2(0.50 + cos(t * 0.020 + 1.3) * 0.03, 1.00 + sin(t * 0.018 + 0.8) * 0.02),
+            SIMD2(0.33 + cos(t * 0.020 + 1.3) * 0.02, 1.00 + sin(t * 0.018 + 0.8) * 0.012),
+            SIMD2(0.66 + cos(t * 0.017 + 2.0) * 0.018, 1.00 + sin(t * 0.016 + 1.6) * 0.012),
             SIMD2(1.00, 1.00),
         ]
     }
 
-    private func meshColors() -> [Color] {
+    private func meshPointsSecondary(at time: TimeInterval) -> [SIMD2<Float>] {
+        let t = Float(time)
+
+        return [
+            SIMD2(0.00 + cos(t * 0.012) * 0.02, 0.00 + sin(t * 0.014) * 0.02),
+            SIMD2(0.33 + sin(t * 0.017 + 0.8) * 0.022, 0.00 + cos(t * 0.015 + 0.3) * 0.015),
+            SIMD2(0.66 + cos(t * 0.013 + 1.2) * 0.02, 0.00 + sin(t * 0.012 + 1.0) * 0.015),
+            SIMD2(1.00 + cos(t * 0.011 + 1.7) * 0.02, 0.00 + sin(t * 0.013 + 0.6) * 0.015),
+
+            SIMD2(0.00 + sin(t * 0.014 + 0.4) * 0.015, 0.33 + cos(t * 0.013 + 0.7) * 0.022),
+            SIMD2(0.33 + cos(t * 0.011 + 1.7) * 0.024, 0.33 + sin(t * 0.012 + 1.6) * 0.024),
+            SIMD2(0.66 + sin(t * 0.013 + 1.5) * 0.022, 0.33 + cos(t * 0.014 + 1.1) * 0.024),
+            SIMD2(1.00 + cos(t * 0.012 + 2.0) * 0.015, 0.33 + sin(t * 0.013 + 1.8) * 0.022),
+
+            SIMD2(0.00 + sin(t * 0.013 + 2.1) * 0.015, 0.66 + cos(t * 0.012 + 2.0) * 0.022),
+            SIMD2(0.33 + cos(t * 0.015 + 2.2) * 0.024, 0.66 + sin(t * 0.014 + 2.1) * 0.022),
+            SIMD2(0.66 + cos(t * 0.013 + 2.5) * 0.022, 0.66 + sin(t * 0.012 + 2.4) * 0.022),
+            SIMD2(1.00 + sin(t * 0.014 + 2.8) * 0.015, 0.66 + cos(t * 0.013 + 2.7) * 0.022),
+
+            SIMD2(0.00 + cos(t * 0.012 + 2.0) * 0.02, 1.00 + sin(t * 0.013 + 1.8) * 0.015),
+            SIMD2(0.33 + sin(t * 0.015 + 2.2) * 0.022, 1.00 + cos(t * 0.014 + 2.1) * 0.015),
+            SIMD2(0.66 + cos(t * 0.012 + 2.5) * 0.02, 1.00 + sin(t * 0.013 + 2.4) * 0.015),
+            SIMD2(1.00 + cos(t * 0.012 + 2.5) * 0.02, 1.00 + sin(t * 0.013 + 2.4) * 0.015),
+        ]
+    }
+
+    private func meshColorsPrimary() -> [Color] {
         [
-            Color(white: 0.020),
-            Color(white: 0.030),
-            Color(white: 0.026),
-            Color(white: 0.034),
-            Color(white: 0.048),
-            Color(white: 0.032),
-            Color(white: 0.024),
             Color(white: 0.036),
-            Color(white: 0.022),
+            Color(white: 0.064),
+            Color(white: 0.044),
+            Color(white: 0.038),
+            Color(white: 0.072),
+            Color(white: 0.052),
+            Color(white: 0.040),
+            Color(white: 0.076),
+            Color(white: 0.056),
+            Color(white: 0.042),
+            Color(white: 0.068),
+            Color(white: 0.050),
+            Color(white: 0.038),
+            Color(white: 0.060),
+            Color(white: 0.046),
+            Color(white: 0.034),
+        ]
+    }
+
+    private func meshColorsSecondary() -> [Color] {
+        [
+            Color(white: 0.00).opacity(0.00),
+            Color(white: 0.22).opacity(0.10),
+            Color(white: 0.00).opacity(0.00),
+            Color(white: 0.18).opacity(0.08),
+            Color(white: 0.00).opacity(0.00),
+            Color(white: 0.20).opacity(0.09),
+            Color(white: 0.28).opacity(0.13),
+            Color(white: 0.19).opacity(0.08),
+            Color(white: 0.00).opacity(0.00),
+            Color(white: 0.18).opacity(0.08),
+            Color(white: 0.24).opacity(0.11),
+            Color(white: 0.17).opacity(0.07),
+            Color(white: 0.00).opacity(0.00),
+            Color(white: 0.00).opacity(0.00),
+            Color(white: 0.19).opacity(0.09),
+            Color(white: 0.00).opacity(0.00),
+            Color(white: 0.00).opacity(0.00),
         ]
     }
 }
