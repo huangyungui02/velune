@@ -1,7 +1,6 @@
 import Supabase
 import SwiftData
 import SwiftUI
-import UIKit
 
 struct SeaStarView: View {
     @Environment(\.modelContext) private var context
@@ -9,45 +8,10 @@ struct SeaStarView: View {
     @State private var isNavigatingToMatching = false
     @State private var isPresented = false
     @State private var manager = MatchingManager.shared
-    @State private var draftPreviewWidth: CGFloat = 0
 
     private let draftPreviewMaxLines: Int = 5
     private let draftLineSpacing: CGFloat = 6
     private let draftPreviewPadding: CGFloat = 16
-
-    private static let draftUIFont: UIFont = {
-        let base = UIFont.systemFont(ofSize: 18, weight: .regular)
-        guard let descriptor = base.fontDescriptor.withDesign(.serif) else { return base }
-        return UIFont(descriptor: descriptor, size: 18)
-    }()
-
-    private var draftTextHeight: CGFloat {
-        let availableWidth = max(0, draftPreviewWidth - draftPreviewPadding * 2)
-        guard availableWidth > 0 else {
-            return (Self.draftUIFont.lineHeight + draftLineSpacing) + draftPreviewPadding * 2
-        }
-        let measuredTextHeight = text.measuredHeight(
-            constrainedTo: availableWidth,
-            font: Self.draftUIFont,
-            lineSpacing: draftLineSpacing
-        )
-        return measuredTextHeight + draftPreviewPadding * 2
-    }
-
-    private var shouldScrollDraftPreview: Bool {
-        draftTextHeight > draftPreviewMaxHeight
-    }
-
-    private var draftPreviewMaxHeight: CGFloat {
-        let lineCount = CGFloat(draftPreviewMaxLines)
-        let textHeight = (Self.draftUIFont.lineHeight * lineCount)
-            + (draftLineSpacing * CGFloat(max(0, draftPreviewMaxLines - 1)))
-        return ceil(textHeight + draftPreviewPadding * 2)
-    }
-
-    private var draftPreviewHeight: CGFloat {
-        min(draftTextHeight, draftPreviewMaxHeight)
-    }
 
     var body: some View {
         NavigationStack {
@@ -107,33 +71,16 @@ struct SeaStarView: View {
                 .padding(16)
                 .glassEffect(in: .capsule)
             } else {
-                Group {
-                    if shouldScrollDraftPreview {
-                        ScrollView {
-                            draftPreviewText
-                                .padding(draftPreviewPadding)
+                draftPreviewField
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(draftPreviewPadding)
+                    .glassEffect(in: .rect(cornerRadius: 20))
+                    .contentShape(.rect)
+                    .highPriorityGesture(
+                        TapGesture().onEnded {
+                            isPresented = true
                         }
-                        .scrollIndicators(.hidden)
-                    } else {
-                        draftPreviewText
-                            .padding(draftPreviewPadding)
-                    }
-                }
-                .background(
-                    GeometryReader { proxy in
-                        Color.clear
-                            .onAppear {
-                                draftPreviewWidth = proxy.size.width
-                            }
-                            .onChange(of: proxy.size.width) { _, newWidth in
-                                draftPreviewWidth = newWidth
-                            }
-                    }
-                )
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: draftPreviewHeight, alignment: .topLeading)
-                .glassEffect(in: .rect(cornerRadius: 20))
-                .contentShape(.rect)
+                    )
             }
         }
         .onTapGesture {
@@ -145,13 +92,14 @@ struct SeaStarView: View {
         }
     }
 
-    private var draftPreviewText: some View {
-        Text(text)
+    private var draftPreviewField: some View {
+        TextField("", text: .constant(text), axis: .vertical)
             .font(.system(size: 18, weight: .regular, design: .serif))
             .lineSpacing(draftLineSpacing)
+            .lineLimit(1 ... draftPreviewMaxLines)
             .foregroundStyle(UITheme.primaryText)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
+            .textFieldStyle(.plain)
     }
 
     // MARK: - Actions
@@ -162,26 +110,6 @@ struct SeaStarView: View {
         manager.startMatching(text: text, context: context)
         text = ""
         isNavigatingToMatching = true
-    }
-}
-
-private extension String {
-    func measuredHeight(constrainedTo width: CGFloat, font: UIFont, lineSpacing: CGFloat) -> CGFloat {
-        guard width > 0 else { return 0 }
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineBreakMode = .byWordWrapping
-        paragraphStyle.lineSpacing = lineSpacing
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .paragraphStyle: paragraphStyle,
-        ]
-        let rect = (self as NSString).boundingRect(
-            with: CGSize(width: width, height: .greatestFiniteMagnitude),
-            options: [.usesLineFragmentOrigin, .usesFontLeading],
-            attributes: attributes,
-            context: nil
-        )
-        return ceil(rect.height)
     }
 }
 
