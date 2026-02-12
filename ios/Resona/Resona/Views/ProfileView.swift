@@ -86,6 +86,8 @@ private struct GlimmerListCard: View {
         CardView {
             content
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(.rect)
     }
 
     private var content: some View {

@@ -29,6 +29,7 @@ struct MatchingView: View {
                 Spacer()
                 
                 indicatorView
+                    .padding(.bottom, 16)
             }
         }
         .onChange(of: manager.errorMessage) { _, newValue in
