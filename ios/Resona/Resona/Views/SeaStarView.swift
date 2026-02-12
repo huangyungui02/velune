@@ -10,7 +10,6 @@ struct SeaStarView: View {
     @State private var manager = MatchingManager.shared
 
     private let draftPreviewMaxLines: Int = 5
-    private let draftLineSpacing: CGFloat = 6
     private let draftPreviewPadding: CGFloat = 16
 
     var body: some View {
@@ -95,7 +94,6 @@ struct SeaStarView: View {
     private var draftPreviewField: some View {
         TextField("", text: .constant(text), axis: .vertical)
             .font(.system(size: 18, weight: .regular, design: .serif))
-            .lineSpacing(draftLineSpacing)
             .lineLimit(1 ... draftPreviewMaxLines)
             .foregroundStyle(UITheme.primaryText)
             .frame(maxWidth: .infinity, alignment: .leading)
