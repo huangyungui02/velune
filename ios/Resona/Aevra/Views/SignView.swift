@@ -17,7 +17,7 @@ struct SignView: View {
                         .font(.system(size: 72, weight: .regular, design: .rounded))
                         .foregroundStyle(UITheme.primaryText)
 
-                    Text("Resona")
+                    Text("Aevra")
                         .font(.system(size: 44, weight: .semibold, design: .serif))
                         .foregroundStyle(UITheme.primaryText)
 
@@ -121,11 +121,11 @@ struct SignView: View {
         text.foregroundColor = UITheme.tertiaryText
         let isChineseLanguage = Locale.preferredLanguages.first?.hasPrefix("zh") == true
         let termsURL = isChineseLanguage
-            ? "https://resona.echoversa.com/zh/terms"
-            : "https://resona.echoversa.com/terms"
+            ? "https://aevra.echoversa.com/zh/terms"
+            : "https://aevra.echoversa.com/terms"
         let privacyURL = isChineseLanguage
-            ? "https://resona.echoversa.com/zh/privacy"
-            : "https://resona.echoversa.com/privacy"
+            ? "https://aevra.echoversa.com/zh/privacy"
+            : "https://aevra.echoversa.com/privacy"
 
         if let termsRange = text.range(of: "Terms of Service") {
             text[termsRange].link = URL(string: termsURL)

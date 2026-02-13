@@ -13,13 +13,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		321D07BD2EDA8CD8007F4762 /* Resona.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Resona.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		321D07BD2EDA8CD8007F4762 /* Aevra.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aevra.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		321D07BF2EDA8CD8007F4762 /* Resona */ = {
+		321D07BF2EDA8CD8007F4762 /* Aevra */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Resona;
+			path = Aevra;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -41,7 +41,7 @@
 		321D07B42EDA8CD8007F4762 = {
 			isa = PBXGroup;
 			children = (
-				321D07BF2EDA8CD8007F4762 /* Resona */,
+				321D07BF2EDA8CD8007F4762 /* Aevra */,
 				321D07BE2EDA8CD8007F4762 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -49,7 +49,7 @@
 		321D07BE2EDA8CD8007F4762 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				321D07BD2EDA8CD8007F4762 /* Resona.app */,
+				321D07BD2EDA8CD8007F4762 /* Aevra.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -57,9 +57,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		321D07BC2EDA8CD8007F4762 /* Resona */ = {
+		321D07BC2EDA8CD8007F4762 /* Aevra */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 321D07CA2EDA8CD9007F4762 /* Build configuration list for PBXNativeTarget "Resona" */;
+			buildConfigurationList = 321D07CA2EDA8CD9007F4762 /* Build configuration list for PBXNativeTarget "Aevra" */;
 			buildPhases = (
 				321D07B92EDA8CD8007F4762 /* Sources */,
 				321D07BA2EDA8CD8007F4762 /* Frameworks */,
@@ -70,16 +70,16 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				321D07BF2EDA8CD8007F4762 /* Resona */,
+				321D07BF2EDA8CD8007F4762 /* Aevra */,
 			);
-			name = Resona;
+			name = Aevra;
 			packageProductDependencies = (
 				321220E92EE30B3C00E3705D /* Supabase */,
 				32B3CE302EEBFF130041F499 /* Realtime */,
 				3299B15A2EF39407009A60EF /* MarkdownUI */,
 			);
 			productName = Resona;
-			productReference = 321D07BD2EDA8CD8007F4762 /* Resona.app */;
+			productReference = 321D07BD2EDA8CD8007F4762 /* Aevra.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -97,7 +97,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 321D07B82EDA8CD8007F4762 /* Build configuration list for PBXProject "Resona" */;
+			buildConfigurationList = 321D07B82EDA8CD8007F4762 /* Build configuration list for PBXProject "Aevra" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -116,7 +116,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				321D07BC2EDA8CD8007F4762 /* Resona */,
+				321D07BC2EDA8CD8007F4762 /* Aevra */,
 			);
 		};
 /* End PBXProject section */
@@ -270,7 +270,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Resona/Resona.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Aevra/Aevra.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LQK5WB3692;
@@ -287,7 +287,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = resona.echoversa.com;
+				PRODUCT_BUNDLE_IDENTIFIER = aevra.echoversa.com;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -304,7 +304,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Resona/Resona.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Aevra/Aevra.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LQK5WB3692;
@@ -321,7 +321,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = resona.echoversa.com;
+				PRODUCT_BUNDLE_IDENTIFIER = aevra.echoversa.com;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -336,7 +336,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		321D07B82EDA8CD8007F4762 /* Build configuration list for PBXProject "Resona" */ = {
+		321D07B82EDA8CD8007F4762 /* Build configuration list for PBXProject "Aevra" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				321D07C82EDA8CD9007F4762 /* Debug */,
@@ -345,7 +345,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		321D07CA2EDA8CD9007F4762 /* Build configuration list for PBXNativeTarget "Resona" */ = {
+		321D07CA2EDA8CD9007F4762 /* Build configuration list for PBXNativeTarget "Aevra" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				321D07CB2EDA8CD9007F4762 /* Debug */,

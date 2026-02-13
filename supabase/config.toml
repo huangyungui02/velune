@@ -298,7 +298,7 @@ max_frequency = "5s"
 # `twitter`, `slack`, `spotify`, `workos`, `zoom`.
 [auth.external.apple]
 enabled = true
-client_id = "resona.echoversa.com"
+client_id = "aevra.echoversa.com"
 # DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
 # secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
 # Overrides the default auth redirectUrl.
