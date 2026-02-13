@@ -1,12 +1,12 @@
 :root {
-  --bg-0: #010101;
-  --bg-1: #050505;
-  --bg-2: #0d0d0d;
-  --line: rgba(255, 255, 255, 0.14);
-  --line-strong: rgba(255, 255, 255, 0.28);
-  --text-main: rgba(255, 255, 255, 0.95);
-  --text-sub: rgba(255, 255, 255, 0.7);
-  --text-soft: rgba(255, 255, 255, 0.48);
+  --bg-0: #000000;
+  --bg-1: #030303;
+  --bg-2: #080808;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --text-main: rgba(255, 255, 255, 0.92);
+  --text-sub: rgba(255, 255, 255, 0.65);
+  --text-soft: rgba(255, 255, 255, 0.4);
 }
 
 *,
@@ -26,8 +26,8 @@ body {
   overflow-x: hidden;
   color: var(--text-main);
   background:
-    radial-gradient(140% 100% at 50% -10%, rgba(255, 255, 255, 0.06), transparent 44%),
-    linear-gradient(160deg, var(--bg-0), var(--bg-1) 45%, var(--bg-2));
+    radial-gradient(120% 100% at 50% -20%, rgba(255, 255, 255, 0.03), transparent 50%),
+    linear-gradient(180deg, var(--bg-0), var(--bg-1) 60%, var(--bg-2));
   font-family: "IBM Plex Sans", "Source Han Sans SC", "PingFang SC", "Noto Sans CJK SC",
     "Hiragino Sans GB", sans-serif;
 }
@@ -36,27 +36,27 @@ body {
   position: fixed;
   border-radius: 999px;
   pointer-events: none;
-  filter: blur(80px);
+  filter: blur(100px);
   z-index: -3;
-  opacity: 0.16;
+  opacity: 0.12;
 }
 
 .bg-orb-a {
-  width: 48rem;
-  height: 48rem;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
-  top: -23rem;
-  left: -18rem;
-  animation: driftA 30s ease-in-out infinite alternate;
+  width: 56rem;
+  height: 56rem;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0));
+  top: -28rem;
+  left: -20rem;
+  animation: driftA 60s ease-in-out infinite alternate;
 }
 
 .bg-orb-b {
-  width: 36rem;
-  height: 36rem;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-  bottom: -16rem;
-  right: -11rem;
-  animation: driftB 34s ease-in-out infinite alternate;
+  width: 42rem;
+  height: 42rem;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+  bottom: -18rem;
+  right: -12rem;
+  animation: driftB 72s ease-in-out infinite alternate;
 }
 
 .bg-grain {

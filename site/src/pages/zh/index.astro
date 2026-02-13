@@ -2,92 +2,92 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Resona | 黑白禅意产品介绍" description="Resona 中文产品介绍页面">
+<BaseLayout title="Aevra | 虚空 · 镜像 · 永恒" description="在数字虚空中，寻得灵魂的镜像。">
   <div class="page" id="top">
     <header class="hero">
-      <div class="hero-mark reveal" data-parallax="0.18" aria-hidden="true"></div>
-      <p class="eyebrow reveal">心光 · 共振 · 回响</p>
-      <h1 class="reveal">Resona</h1>
+      <div class="hero-mark reveal" data-parallax="0.12" aria-hidden="true"></div>
+      <p class="eyebrow reveal">虚空 · 镜像 · 永恒</p>
+      <h1 class="reveal">Aevra</h1>
       <p class="hero-copy reveal">
-        从一段由内而发的心光开始。<br />
-        收到与你精神深度同频的回响。
+        在数字虚空中，<br />
+        寻得灵魂的镜像。
       </p>
       <div class="hero-actions reveal">
-        <a class="btn btn-solid" href="#essence">进入 Resona</a>
-        <a class="btn btn-ghost" href="#journey">了解流程</a>
+        <a class="btn btn-solid" href="#essence">进入 Aevra</a>
+        <a class="btn btn-ghost" href="#journey">探索</a>
       </div>
     </header>
 
     <section id="essence" class="split reveal">
       <div>
-        <p class="kicker">核心气质</p>
-        <h2>一个只属于你自己的灵魂回声室。</h2>
+        <p class="kicker">本源</p>
+        <h2>并非工具，而是容器。</h2>
       </div>
       <p>
-        你写下心光：<br />
-        一段由内而发的思绪，或一次深度感悟。<br />
-        系统会在跨越时间的灵魂脉络中完成共振，并返回回响回应。
+        在这个喧嚣的数字世界里，<br />
+        Aevra 是一个静谧的容器。<br />
+        它承载你的片刻凝视，映照出跨越时空的共鸣。
       </p>
     </section>
 
     <section class="feature-grid">
       <article class="feature-card reveal tilt-card">
         <p class="feature-index">01</p>
-        <h3>心光初现</h3>
-        <p>一段简短却深刻的内在文字，轻盈真实，也有分量。</p>
+        <h3>凝视</h3>
+        <p>向内观看，捕捉那些稍纵即逝的真实念头。</p>
       </article>
       <article class="feature-card reveal tilt-card">
         <p class="feature-index">02</p>
-        <h3>同频映照</h3>
-        <p>系统读懂你文字里的情绪纹理，并在灵魂脉络中完成同频对齐。</p>
+        <h3>沉浸</h3>
+        <p>在极简的黑白场域中，感受纯粹的精神流动。</p>
       </article>
       <article class="feature-card reveal tilt-card">
         <p class="feature-index">03</p>
-        <h3>回响映现</h3>
-        <p>系统将同频共鸣转为清晰回应，回到你当下的内在语境。</p>
+        <h3>归一</h3>
+        <p>万物互联，于无声处听惊雷，于回响中见真我。</p>
       </article>
     </section>
 
     <section id="journey" class="journey reveal">
-      <h2>Resona 的三段回响</h2>
+      <h2>灵魂的三重映射</h2>
       <ol>
         <li class="tilt-card">
-          <span>01</span>
+          <span>I</span>
           <div>
-            <h4>心光</h4>
-            <p>写下你此刻真实的内在思绪与感受。</p>
+            <h4>投射</h4>
+            <p>将你的思绪投入虚空，如石沉静水。</p>
           </div>
         </li>
         <li class="tilt-card">
-          <span>02</span>
+          <span>II</span>
           <div>
-            <h4>共振</h4>
-            <p>模型在跨越时间的灵魂脉络中检索与你同频的共鸣。</p>
+            <h4>涟漪</h4>
+            <p>算法捕捉情感的纹理，在时空中寻找同频的波动。</p>
           </div>
         </li>
         <li class="tilt-card">
-          <span>03</span>
+          <span>III</span>
           <div>
-            <h4>回响</h4>
-            <p>你收到被共鸣过的回应，在回应里重新看见自己。</p>
+            <h4>回声</h4>
+            <p>你收到的不仅是回复，而是另一个维度的自己。</p>
           </div>
         </li>
       </ol>
     </section>
 
     <section class="quote reveal tilt-card">
-      <blockquote>不是靠喧哗连接，而是靠共振相认。</blockquote>
+      <blockquote>于虚空中见万有，于静默中听惊雷。</blockquote>
     </section>
 
     <footer class="footer reveal">
-      <a href="#top">Resona</a>
-      <p>心光 · 共振 · 回响</p>
+      <a href="#top">Aevra</a>
+      <p>Void · Mirror · Eternity</p>
       <nav class="legal-links" aria-label="Legal">
         <a href="/zh/terms">用户协议</a>
         <span aria-hidden="true">/</span>
         <a href="/zh/privacy">隐私政策</a>
         <span aria-hidden="true">/</span>
-        <a href="/">英文</a>
+        <a href="/">English</a>
       </nav>
     </footer>
   </div>
@@ -106,7 +106,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         }
       });
     },
-    { threshold: 0.14 }
+    { threshold: 0.12 }
   );
   revealEls.forEach((el) => obs.observe(el));
 
@@ -128,9 +128,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         const rect = card.getBoundingClientRect();
         const px = (e.clientX - rect.left) / rect.width;
         const py = (e.clientY - rect.top) / rect.height;
-        const rotateY = (px - 0.5) * 6;
-        const rotateX = (0.5 - py) * 5;
-        card.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        const rotateY = (px - 0.5) * 4; // Reduced rotation for more subtlety
+        const rotateX = (0.5 - py) * 3;
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
         card.style.setProperty("--glow-x", `${px * 100}%`);
         card.style.setProperty("--glow-y", `${py * 100}%`);
       });

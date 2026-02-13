@@ -5,83 +5,83 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 <BaseLayout>
   <div class="page" id="top">
     <header class="hero">
-      <div class="hero-mark reveal" data-parallax="0.18" aria-hidden="true"></div>
-      <p class="eyebrow reveal">Glimmer. Resonance. Echo.</p>
-      <h1 class="reveal">Resona</h1>
+      <div class="hero-mark reveal" data-parallax="0.12" aria-hidden="true"></div>
+      <p class="eyebrow reveal">Void · Mirror · Eternity</p>
+      <h1 class="reveal">Aevra</h1>
       <p class="hero-copy reveal">
-        Begin with a Glimmer from your inner world.<br />
-        Receive an Echo in resonance with your depth.
+        Finding the soul's mirror<br />
+        in the digital void.
       </p>
       <div class="hero-actions reveal">
-        <a class="btn btn-solid" href="#essence">Enter Resona</a>
-        <a class="btn btn-ghost" href="#journey">How It Works</a>
+        <a class="btn btn-solid" href="#essence">Enter Aevra</a>
+        <a class="btn btn-ghost" href="#journey">Explore</a>
       </div>
     </header>
 
     <section id="essence" class="split reveal">
       <div>
         <p class="kicker">Essence</p>
-        <h2>A chamber where thought turns into resonance.</h2>
+        <h2>Not a tool, but a vessel.</h2>
       </div>
       <p>
-        You publish a Glimmer:<br />
-        a brief thought from your inner world, a deep personal insight.<br />
-        The system returns an Echo from a resonant voice across time.
+        In this noisy digital expanse,<br />
+        Aevra stands as a quiet vessel.<br />
+        It holds your gaze, reflecting a resonance across time and space.
       </p>
     </section>
 
     <section class="feature-grid">
       <article class="feature-card reveal tilt-card">
         <p class="feature-index">01</p>
-        <h3>Quiet Spark</h3>
-        <p>A brief but deep thought, intimate and honest, always from within.</p>
+        <h3>Gaze</h3>
+        <p>Look inward. Capture the fleeting, authentic thoughts that define you.</p>
       </article>
       <article class="feature-card reveal tilt-card">
         <p class="feature-index">02</p>
-        <h3>Signal Weave</h3>
-        <p>Your words are read for emotional texture, then matched with a kindred voice.</p>
+        <h3>Immersion</h3>
+        <p>A minimalist void where the spirit flows freely, unburdened by noise.</p>
       </article>
       <article class="feature-card reveal tilt-card">
         <p class="feature-index">03</p>
-        <h3>Echo Arrival</h3>
-        <p>AI finds a voice that deeply resonates with you and reflects it back.</p>
+        <h3>Unity</h3>
+        <p>Connect with the universal. Hear the thunder in silence, find yourself in the echo.</p>
       </article>
     </section>
 
     <section id="journey" class="journey reveal">
-      <h2>Three Movements of Resona</h2>
+      <h2>Three Movements of the Soul</h2>
       <ol>
         <li class="tilt-card">
-          <span>01</span>
+          <span>I</span>
           <div>
-            <h4>Glimmer</h4>
-            <p>Write what is truly alive in you, subtle, personal, and sincere.</p>
+            <h4>Projection</h4>
+            <p>Cast your thoughts into the void, like a stone into still water.</p>
           </div>
         </li>
         <li class="tilt-card">
-          <span>02</span>
+          <span>II</span>
           <div>
-            <h4>Resonance</h4>
-            <p>The model searches for a voice across time with similar depth.</p>
+            <h4>Ripple</h4>
+            <p>The algorithm traces emotional textures, seeking a kindred frequency.</p>
           </div>
         </li>
         <li class="tilt-card">
-          <span>03</span>
+          <span>III</span>
           <div>
             <h4>Echo</h4>
-            <p>You receive a focused response as if from that resonant soul.</p>
+            <p>Receive not just a reply, but a reflection from another dimension of self.</p>
           </div>
         </li>
       </ol>
     </section>
 
     <section class="quote reveal tilt-card">
-      <blockquote>Not connection by noise, but recognition by resonance.</blockquote>
+      <blockquote>To see the universe in the void, to hear thunder in silence.</blockquote>
     </section>
 
     <footer class="footer reveal">
-      <a href="#top">Resona</a>
-      <p>Glimmer · Resonance · Echo</p>
+      <a href="#top">Aevra</a>
+      <p>Void · Mirror · Eternity</p>
       <nav class="legal-links" aria-label="Legal">
         <a href="/terms">Terms</a>
         <span aria-hidden="true">/</span>
@@ -106,7 +106,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         }
       });
     },
-    { threshold: 0.14 }
+    { threshold: 0.12 }
   );
   revealEls.forEach((el) => obs.observe(el));
 
@@ -128,9 +128,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         const rect = card.getBoundingClientRect();
         const px = (e.clientX - rect.left) / rect.width;
         const py = (e.clientY - rect.top) / rect.height;
-        const rotateY = (px - 0.5) * 6;
-        const rotateX = (0.5 - py) * 5;
-        card.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        const rotateY = (px - 0.5) * 4; // Reduced rotation for more subtlety
+        const rotateX = (0.5 - py) * 3;
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
         card.style.setProperty("--glow-x", `${px * 100}%`);
         card.style.setProperty("--glow-y", `${py * 100}%`);
       });
