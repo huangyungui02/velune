@@ -119,13 +119,20 @@ struct SignView: View {
     private var termsAttributedText: AttributedString {
         var text = AttributedString("By signing in, you agree to our Terms of Service and Privacy Policy.")
         text.foregroundColor = UITheme.tertiaryText
+        let isChineseLanguage = Locale.preferredLanguages.first?.hasPrefix("zh") == true
+        let termsURL = isChineseLanguage
+            ? "https://resona.echoversa.com/zh/terms"
+            : "https://resona.echoversa.com/terms"
+        let privacyURL = isChineseLanguage
+            ? "https://resona.echoversa.com/zh/privacy"
+            : "https://resona.echoversa.com/privacy"
 
         if let termsRange = text.range(of: "Terms of Service") {
-            text[termsRange].link = URL(string: "https://example.com/terms")
+            text[termsRange].link = URL(string: termsURL)
             text[termsRange].foregroundColor = UITheme.accent
         }
         if let privacyRange = text.range(of: "Privacy Policy") {
-            text[privacyRange].link = URL(string: "https://example.com/privacy")
+            text[privacyRange].link = URL(string: privacyURL)
             text[privacyRange].foregroundColor = UITheme.accent
         }
 

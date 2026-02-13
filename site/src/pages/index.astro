@@ -1,0 +1,144 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout>
+  <div class="page" id="top">
+    <header class="hero">
+      <div class="hero-mark reveal" data-parallax="0.18" aria-hidden="true"></div>
+      <p class="eyebrow reveal">Glimmer. Resonance. Echo.</p>
+      <h1 class="reveal">Resona</h1>
+      <p class="hero-copy reveal">
+        Begin with a Glimmer from your inner world.<br />
+        Receive an Echo in resonance with your depth.
+      </p>
+      <div class="hero-actions reveal">
+        <a class="btn btn-solid" href="#essence">Enter Resona</a>
+        <a class="btn btn-ghost" href="#journey">How It Works</a>
+      </div>
+    </header>
+
+    <section id="essence" class="split reveal">
+      <div>
+        <p class="kicker">Essence</p>
+        <h2>A chamber where thought turns into resonance.</h2>
+      </div>
+      <p>
+        You publish a Glimmer:<br />
+        a brief thought from your inner world, a deep personal insight.<br />
+        The system returns an Echo from a resonant voice across time.
+      </p>
+    </section>
+
+    <section class="feature-grid">
+      <article class="feature-card reveal tilt-card">
+        <p class="feature-index">01</p>
+        <h3>Quiet Spark</h3>
+        <p>A brief but deep thought, intimate and honest, always from within.</p>
+      </article>
+      <article class="feature-card reveal tilt-card">
+        <p class="feature-index">02</p>
+        <h3>Signal Weave</h3>
+        <p>Your words are read for emotional texture, then matched with a kindred voice.</p>
+      </article>
+      <article class="feature-card reveal tilt-card">
+        <p class="feature-index">03</p>
+        <h3>Echo Arrival</h3>
+        <p>AI finds a voice that deeply resonates with you and reflects it back.</p>
+      </article>
+    </section>
+
+    <section id="journey" class="journey reveal">
+      <h2>Three Movements of Resona</h2>
+      <ol>
+        <li class="tilt-card">
+          <span>01</span>
+          <div>
+            <h4>Glimmer</h4>
+            <p>Write what is truly alive in you, subtle, personal, and sincere.</p>
+          </div>
+        </li>
+        <li class="tilt-card">
+          <span>02</span>
+          <div>
+            <h4>Resonance</h4>
+            <p>The model searches for a voice across time with similar depth.</p>
+          </div>
+        </li>
+        <li class="tilt-card">
+          <span>03</span>
+          <div>
+            <h4>Echo</h4>
+            <p>You receive a focused response as if from that resonant soul.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="quote reveal tilt-card">
+      <blockquote>Not connection by noise, but recognition by resonance.</blockquote>
+    </section>
+
+    <footer class="footer reveal">
+      <a href="#top">Resona</a>
+      <p>Glimmer · Resonance · Echo</p>
+      <nav class="legal-links" aria-label="Legal">
+        <a href="/terms">Terms</a>
+        <span aria-hidden="true">/</span>
+        <a href="/privacy">Privacy</a>
+        <span aria-hidden="true">/</span>
+        <a href="/zh/">中文</a>
+      </nav>
+    </footer>
+  </div>
+</BaseLayout>
+
+<script>
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const revealEls = Array.from(document.querySelectorAll(".reveal"));
+  const obs = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          obs.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.14 }
+  );
+  revealEls.forEach((el) => obs.observe(el));
+
+  if (!prefersReducedMotion) {
+    const parallaxTargets = Array.from(document.querySelectorAll("[data-parallax]"));
+    const onScroll = () => {
+      const y = window.scrollY;
+      parallaxTargets.forEach((el) => {
+        const factor = Number(el.getAttribute("data-parallax") || 0.1);
+        (el as HTMLElement).style.transform = `translate3d(0, ${y * factor}px, 0)`;
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    const tiltCards = Array.from(document.querySelectorAll<HTMLElement>(".tilt-card"));
+    tiltCards.forEach((card) => {
+      card.addEventListener("pointermove", (e: PointerEvent) => {
+        const rect = card.getBoundingClientRect();
+        const px = (e.clientX - rect.left) / rect.width;
+        const py = (e.clientY - rect.top) / rect.height;
+        const rotateY = (px - 0.5) * 6;
+        const rotateX = (0.5 - py) * 5;
+        card.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        card.style.setProperty("--glow-x", `${px * 100}%`);
+        card.style.setProperty("--glow-y", `${py * 100}%`);
+      });
+      card.addEventListener("pointerleave", () => {
+        card.style.transform = "";
+      });
+    });
+  } else {
+    revealEls.forEach((el) => el.classList.add("is-visible"));
+  }
+</script>
