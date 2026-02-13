@@ -36,3 +36,7 @@ supabase/.temp/
 !.env.sample
 !.env.template
 
+# Astro site build/cache artifacts
+site/dist/
+site/.astro/
+site/.vercel/
