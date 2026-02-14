@@ -1,16 +1,17 @@
 {
-	"main": "dist/_worker.js/index.js",
-	"name": "aevra",
+  "main": "dist/_worker.js/index.js",
+  "name": "aevra",
+  "pages_build_output_dir": "./dist",
   "compatibility_date": "2026-02-13",
   "compatibility_flags": [
     "nodejs_compat",
     "global_fetch_strictly_public"
   ],
-	"assets": {
-		"binding": "ASSETS",
-		"directory": "./dist"
-	},
-	"observability": {
-    "enabled": true
-  }
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist",
+  },
+  "observability": {
+    "enabled": true,
+  },
 }

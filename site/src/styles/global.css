@@ -19,6 +19,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
+  background-color: var(--bg-0);
 }
 
 body {
@@ -37,9 +38,8 @@ body {
   position: fixed;
   border-radius: 999px;
   pointer-events: none;
-  filter: blur(100px);
   z-index: -3;
-  opacity: 0.12;
+  opacity: 0.09;
 }
 
 .bg-orb-a {
@@ -211,9 +211,7 @@ h1 {
 .quote,
 .footer {
   border: 1px solid var(--line);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.012));
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background: linear-gradient(160deg, rgba(18, 18, 18, 0.9), rgba(10, 10, 10, 0.8));
   box-shadow: 0 22px 56px rgba(0, 0, 0, 0.36);
 }
 
@@ -417,9 +415,7 @@ blockquote {
   border: 1px solid var(--line);
   border-radius: 28px;
   padding: clamp(1.2rem, 3vw, 2.2rem);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.01));
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(160deg, rgba(18, 18, 18, 0.9), rgba(10, 10, 10, 0.8));
   box-shadow: 0 22px 56px rgba(0, 0, 0, 0.36);
 }
 
@@ -586,7 +582,7 @@ blockquote {
   }
 
   .bg-orb {
-    filter: blur(70px);
+    opacity: 0.06;
   }
 }
 
@@ -628,33 +624,3 @@ blockquote {
   }
 }
 
-@supports not ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
-  .split,
-  .journey,
-  .feature-card,
-  .quote,
-  .footer,
-  .legal-page {
-    background: rgba(255, 255, 255, 0.06);
-  }
-}
-
-.is-safari body {
-  background-color: var(--bg-0);
-}
-
-.is-safari .split,
-.is-safari .journey,
-.is-safari .feature-card,
-.is-safari .quote,
-.is-safari .footer,
-.is-safari .legal-page {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  background: rgba(12, 12, 12, 0.78);
-}
-
-.is-safari .bg-orb {
-  filter: blur(56px);
-  opacity: 0.08;
-}
