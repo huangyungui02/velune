@@ -263,7 +263,8 @@ h1 {
 
 .feature-card::before,
 .journey li::before,
-.quote::before {
+.quote::before,
+.zen-feature-item::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -276,7 +277,8 @@ h1 {
 
 .feature-card:hover::before,
 .journey li:hover::before,
-.quote:hover::before {
+.quote:hover::before,
+.zen-feature-item:hover::before {
   opacity: 1;
 }
 
@@ -624,3 +626,91 @@ blockquote {
   }
 }
 
+/* Zen Mode Additions */
+.zen-center {
+  text-align: center;
+  padding: clamp(4rem, 10vw, 8rem) 1rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.zen-center h2 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 400;
+  margin-bottom: 1.5rem;
+  color: var(--text-main);
+  font-family: "Cormorant Garamond", "Bodoni Moda", "Songti SC", "STKaiti", serif;
+}
+
+.zen-center p {
+  font-size: clamp(1.1rem, 2vw, 1.3rem);
+  color: var(--text-sub);
+  line-height: 1.8;
+  font-weight: 300;
+}
+
+.zen-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-top: 4rem;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.zen-feature-item {
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.zen-feature-item h3 {
+  font-size: 1.4rem;
+  margin-bottom: 0.8rem;
+  color: var(--text-main);
+  font-family: "Cormorant Garamond", "Bodoni Moda", "Songti SC", "STKaiti", serif;
+}
+
+.zen-feature-item p {
+  font-size: 0.95rem;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .zen-features {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+}
+
+/* New Footer Quote Style */
+.zen-quote-footer {
+  margin-top: 8rem;
+  margin-bottom: 6rem;
+  text-align: center;
+  position: relative;
+  padding: 4rem 1rem;
+}
+
+.zen-quote-footer blockquote {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: var(--text-main);
+  opacity: 0.85;
+  font-family: "Cormorant Garamond", "Bodoni Moda", "Songti SC", "STKaiti", serif;
+  position: relative;
+  display: inline-block;
+}
+
+.zen-quote-footer blockquote::before,
+.zen-quote-footer blockquote::after {
+  content: "✦";
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  vertical-align: middle;
+  margin: 0 1rem;
+  opacity: 0.5;
+}
