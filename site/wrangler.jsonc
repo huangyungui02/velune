@@ -8,10 +8,9 @@
     "global_fetch_strictly_public"
   ],
   "assets": {
-    "binding": "ASSETS",
-    "directory": "./dist",
+    "directory": "./dist"
   },
   "observability": {
-    "enabled": true,
-  },
+    "enabled": true
+  }
 }
