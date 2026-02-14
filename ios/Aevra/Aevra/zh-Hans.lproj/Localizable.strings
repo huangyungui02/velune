@@ -1,0 +1,47 @@
+"settings.title" = "设置";
+"settings.section.account" = "账号";
+"settings.section.legal" = "法律";
+"settings.section.support" = "支持";
+"settings.section.about" = "关于";
+"settings.action.signOut" = "退出登录";
+"settings.action.deleteAccount" = "删除账号";
+"settings.link.terms" = "用户协议";
+"settings.link.privacy" = "隐私政策";
+"settings.link.contactSupport" = "联系支持";
+"settings.version" = "版本";
+"settings.error.title" = "操作失败";
+"settings.signOut.confirm.title" = "确认退出登录？";
+"settings.signOut.confirm.message" = "你将需要重新登录后才能继续使用。";
+"settings.delete.confirm.title" = "确认永久删除账号？";
+"settings.delete.confirm.message" = "此操作不可撤销。你的账号与相关数据将被永久删除。";
+
+"common.cancel" = "取消";
+"common.ok" = "好的";
+"common.retry" = "重试";
+"common.loading" = "加载中…";
+
+"sign.slogan" = "心光\n共振\n回响";
+"sign.terms.full" = "登录即表示你同意我们的《用户协议》和《隐私政策》。";
+"sign.terms.label" = "《用户协议》";
+"sign.privacy.label" = "《隐私政策》";
+
+"profile.empty.noGlimmers" = "还没有灵感片段";
+"profile.title.glimmers" = "灵感片段";
+
+"seastar.hero.title" = "回到自己";
+"seastar.hero.description" = "最温柔的浪漫，是成为自己。";
+"seastar.prompt.glimmerWithin" = "你心中正闪烁着什么";
+
+"matching.status.listening" = "正在聆听回响";
+"matching.error.title" = "错误";
+"matching.error.unknown" = "未知错误";
+
+"glimmer.title" = "灵感";
+"glimmer.action.delete" = "删除";
+"glimmer.delete.title" = "删除";
+"glimmer.delete.message" = "确定要删除吗？该操作不可撤销。";
+"glimmer.delete.progress" = "删除中…";
+
+"souler.load.failed" = "加载失败";
+
+"app.error.unauthenticated" = "用户尚未登录";

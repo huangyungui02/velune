@@ -37,7 +37,7 @@ struct GlimmerView: View {
                 indicatorView
             }
         }
-        .navigationTitle("Glimmer")
+        .navigationTitle(String(localized: "glimmer.title"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -45,7 +45,7 @@ struct GlimmerView: View {
                     Button(role: .destructive) {
                         showingDeleteAlert = true
                     } label: {
-                        Label("Delete", systemImage: "trash")
+                        Label(String(localized: "glimmer.action.delete"), systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -53,9 +53,9 @@ struct GlimmerView: View {
                 .disabled(isDeleting)
             }
         }
-        .alert("Delete", isPresented: $showingDeleteAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
+        .alert(String(localized: "glimmer.delete.title"), isPresented: $showingDeleteAlert) {
+            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(String(localized: "glimmer.action.delete"), role: .destructive) {
                 Task {
                     let success = await deleteGlimmer()
                     if success {
@@ -64,11 +64,11 @@ struct GlimmerView: View {
                 }
             }
         } message: {
-            Text("Are you sure you want to delete this? This action can’t be undone.")
+            Text(String(localized: "glimmer.delete.message"))
         }
         .overlay {
             if isDeleting {
-                ProgressView("Deleting…")
+                ProgressView(String(localized: "glimmer.delete.progress"))
                     .padding()
                     .background(.regularMaterial)
                     .cornerRadius(10)

@@ -20,7 +20,10 @@ struct SeaStarView: View {
                 VStack {
                     Spacer()
 
-                    DescriptionView(title: "Return to yourself", description: "The softest romance is becoming.")
+                    DescriptionView(
+                        title: String(localized: "seastar.hero.title"),
+                        description: String(localized: "seastar.hero.description")
+                    )
 
                     Spacer()
 
@@ -52,7 +55,7 @@ struct SeaStarView: View {
                 HStack(spacing: 12) {
                     MatchingWaveIcon()
 
-                    Text("Listening for echoes")
+                    Text(String(localized: "matching.status.listening"))
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(UITheme.secondaryText)
                         .tracking(2)
@@ -63,7 +66,7 @@ struct SeaStarView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "sparkles")
 
-                    Text("What glimmers within you")
+                    Text(String(localized: "seastar.prompt.glimmerWithin"))
                         .foregroundStyle(UITheme.primaryText)
                         .font(.system(size: 18, weight: .regular, design: .serif))
                 }
@@ -149,7 +152,7 @@ private struct ComposeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                TextField("What glimmers within you", text: $text, axis: .vertical)
+                TextField(String(localized: "seastar.prompt.glimmerWithin"), text: $text, axis: .vertical)
                     .focused($isFocused)
                     .font(.system(size: 18, weight: .regular, design: .serif))
                     .lineSpacing(6)
@@ -168,7 +171,7 @@ private struct ComposeView: View {
                     endPoint: .bottomTrailing
                 )
             )
-            .navigationTitle("Glimmer")
+            .navigationTitle(String(localized: "glimmer.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

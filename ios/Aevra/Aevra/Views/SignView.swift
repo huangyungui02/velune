@@ -21,7 +21,7 @@ struct SignView: View {
                         .font(.system(size: 44, weight: .semibold, design: .serif))
                         .foregroundStyle(UITheme.primaryText)
 
-                    Text("Glimmer.\nResonance.\nEcho.")
+                    Text(String(localized: "sign.slogan"))
                         .font(.system(size: 21, weight: .medium, design: .rounded))
                         .multilineTextAlignment(.center)
                         .lineSpacing(8)
@@ -117,22 +117,19 @@ struct SignView: View {
     }
 
     private var termsAttributedText: AttributedString {
-        var text = AttributedString("By signing in, you agree to our Terms of Service and Privacy Policy.")
-        text.foregroundColor = UITheme.tertiaryText
-        let isChineseLanguage = Locale.preferredLanguages.first?.hasPrefix("zh") == true
-        let termsURL = isChineseLanguage
-            ? "https://aevra.echoversa.com/zh/terms"
-            : "https://aevra.echoversa.com/terms"
-        let privacyURL = isChineseLanguage
-            ? "https://aevra.echoversa.com/zh/privacy"
-            : "https://aevra.echoversa.com/privacy"
+        let baseText = String(localized: "sign.terms.full")
+        let termsLabel = String(localized: "sign.terms.label")
+        let privacyLabel = String(localized: "sign.privacy.label")
 
-        if let termsRange = text.range(of: "Terms of Service") {
-            text[termsRange].link = URL(string: termsURL)
+        var text = AttributedString(baseText)
+        text.foregroundColor = UITheme.tertiaryText
+
+        if let termsRange = text.range(of: termsLabel) {
+            text[termsRange].link = AppLinks.terms
             text[termsRange].foregroundColor = UITheme.accent
         }
-        if let privacyRange = text.range(of: "Privacy Policy") {
-            text[privacyRange].link = URL(string: privacyURL)
+        if let privacyRange = text.range(of: privacyLabel) {
+            text[privacyRange].link = AppLinks.privacy
             text[privacyRange].foregroundColor = UITheme.accent
         }
 

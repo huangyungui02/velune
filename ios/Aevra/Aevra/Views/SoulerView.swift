@@ -24,7 +24,7 @@ struct SoulerView: View {
                 soulerDetailView(souler)
             } else if let errorMessage = errorMessage {
                 VStack(spacing: 12) {
-                    Text("Failed to load")
+                    Text(String(localized: "souler.load.failed"))
                         .font(.system(size: 21, weight: .medium, design: .rounded))
                         .fontWeight(.semibold)
                         .foregroundStyle(UITheme.primaryText)
@@ -34,7 +34,7 @@ struct SoulerView: View {
                         .foregroundStyle(UITheme.secondaryText)
                         .multilineTextAlignment(.center)
 
-                    Button("Retry") {
+                    Button(String(localized: "common.retry")) {
                         Task {
                             await loadSouler()
                         }
@@ -43,7 +43,7 @@ struct SoulerView: View {
                 }
                 .padding()
             } else {
-                ProgressView("Loading…")
+                ProgressView(String(localized: "common.loading"))
                     .tint(UITheme.accent)
             }
         }

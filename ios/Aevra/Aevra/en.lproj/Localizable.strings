@@ -1,0 +1,47 @@
+"settings.title" = "Settings";
+"settings.section.account" = "Account";
+"settings.section.legal" = "Legal";
+"settings.section.support" = "Support";
+"settings.section.about" = "About";
+"settings.action.signOut" = "Sign out";
+"settings.action.deleteAccount" = "Delete Account";
+"settings.link.terms" = "Terms of Service";
+"settings.link.privacy" = "Privacy Policy";
+"settings.link.contactSupport" = "Contact Support";
+"settings.version" = "Version";
+"settings.error.title" = "Action Failed";
+"settings.signOut.confirm.title" = "Are you sure you want to sign out?";
+"settings.signOut.confirm.message" = "You’ll need to sign in again to continue using the app.";
+"settings.delete.confirm.title" = "Delete account permanently?";
+"settings.delete.confirm.message" = "This action cannot be undone. Your account and related data will be permanently deleted.";
+
+"common.cancel" = "Cancel";
+"common.ok" = "OK";
+"common.retry" = "Retry";
+"common.loading" = "Loading…";
+
+"sign.slogan" = "Glimmer\nResonance\nEcho";
+"sign.terms.full" = "By signing in, you agree to our Terms of Service and Privacy Policy.";
+"sign.terms.label" = "Terms of Service";
+"sign.privacy.label" = "Privacy Policy";
+
+"profile.empty.noGlimmers" = "No glimmers yet";
+"profile.title.glimmers" = "Glimmers";
+
+"seastar.hero.title" = "Return to yourself";
+"seastar.hero.description" = "The softest romance is becoming.";
+"seastar.prompt.glimmerWithin" = "What glimmers within you";
+
+"matching.status.listening" = "Listening for echoes";
+"matching.error.title" = "Error";
+"matching.error.unknown" = "Unknown error";
+
+"glimmer.title" = "Glimmer";
+"glimmer.action.delete" = "Delete";
+"glimmer.delete.title" = "Delete";
+"glimmer.delete.message" = "Are you sure you want to delete this? This action can’t be undone.";
+"glimmer.delete.progress" = "Deleting…";
+
+"souler.load.failed" = "Failed to load";
+
+"app.error.unauthenticated" = "User is not authenticated";

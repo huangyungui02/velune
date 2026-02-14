@@ -51,4 +51,20 @@ final class AuthManager {
     func signOut() async throws {
         try await supabase.auth.signOut()
     }
+
+    func deleteAccount() async throws {
+        try await supabase
+            .rpc("delete_own_account")
+            .execute()
+
+        // The auth user is already removed. Sign out locally to clear any cached session.
+        do {
+            try await supabase.auth.signOut()
+        } catch {
+            // Ignore sign-out failures after deletion and force local auth state reset.
+        }
+
+        isAuthenticated = false
+        currentUser = nil
+    }
 }
