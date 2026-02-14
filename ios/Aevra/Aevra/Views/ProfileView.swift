@@ -14,8 +14,7 @@ struct ProfileView: View {
                 Group {
                     if isRefreshing {
                         ProgressView()
-                    }
-                    if glimmers.isEmpty {
+                    } else if glimmers.isEmpty {
                         EmptyView(title: "No glimmers yet")
                     } else {
                         glimmerListView
