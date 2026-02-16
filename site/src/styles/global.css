@@ -115,14 +115,6 @@ main {
   border: 1px solid rgba(255, 255, 255, 0.42);
 }
 
-.hero-mark::before {
-  content: "";
-  position: absolute;
-  inset: -12px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-}
-
 .eyebrow {
   margin: 0;
   color: var(--text-soft);

@@ -1,11 +1,22 @@
 import { defineConfig } from "astro/config";
-
 import cloudflare from "@astrojs/cloudflare";
+import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
-  server: {
-    host: true
+  site: "https://aevra.echoversa.com",
+  server: { host: true },
+  adapter: cloudflare(),
+  i18n: {
+    defaultLocale: "en",
+    locales: ["en", "zh"],
+    routing: { prefixDefaultLocale: false },
   },
-
-  adapter: cloudflare()
+  integrations: [
+    sitemap({
+      i18n: {
+        defaultLocale: "en",
+        locales: { en: "en-US", zh: "zh-CN" },
+      },
+    }),
+  ],
 });

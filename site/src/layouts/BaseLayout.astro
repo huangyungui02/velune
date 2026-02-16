@@ -2,23 +2,84 @@
 import "../styles/global.css";
 
 interface Props {
+  lang?: string;
   title?: string;
   description?: string;
+  ogImage?: string;
 }
 
 const {
-  title = "Aevra | Digital Serenity",
-  description = "Aevra. Finding the soul's mirror in the digital void."
-} = Astro.props as Props;
+  lang = "en",
+  title = "Aevra — Digital Serenity",
+  description = "Explore inward, reach the depths of the cosmos. Aevra captures fleeting moments of insight through Glimmer, Resonance, and Echo.",
+  ogImage = "/og.png",
+} = Astro.props;
+
+const pathname = Astro.url.pathname;
+const canonicalURL = new URL(pathname, Astro.site);
+
+const isZh = pathname.startsWith("/zh");
+const basePath = isZh ? pathname.slice(3) || "/" : pathname;
+const enURL = new URL(basePath, Astro.site);
+const zhURL = new URL(`/zh${basePath === "/" ? "/" : basePath}`, Astro.site);
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Aevra",
+  alternateName: "微澜",
+  url: Astro.site?.toString(),
+  description,
+  inLanguage: [
+    { "@type": "Language", name: "English", alternateName: "en" },
+    { "@type": "Language", name: "Chinese", alternateName: "zh" },
+  ],
+};
 ---
 
 <!doctype html>
-<html lang="zh-CN">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={description} />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- SEO Core -->
     <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL.href} />
+
+    <!-- Alternate Languages -->
+    <link rel="alternate" hreflang="en" href={enURL.href} />
+    <link rel="alternate" hreflang="zh" href={zhURL.href} />
+    <link rel="alternate" hreflang="x-default" href={enURL.href} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL.href} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(ogImage, Astro.site).href} />
+    <meta property="og:site_name" content="Aevra" />
+    <meta property="og:locale" content={isZh ? "zh_CN" : "en_US"} />
+    <meta property="og:locale:alternate" content={isZh ? "en_US" : "zh_CN"} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL(ogImage, Astro.site).href} />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+    <!-- Preconnect -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+
+    <meta name="theme-color" content="#000000" />
+    <meta name="color-scheme" content="dark" />
   </head>
   <body>
     <div class="bg-orb bg-orb-a" aria-hidden="true"></div>
