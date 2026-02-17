@@ -1,15 +1,14 @@
 import { task } from "@langchain/langgraph";
 import { modelS } from "../model.ts";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { type Lang, profilePrompt } from "../prompts.ts";
 
 export const soulerProfile = task(
   { name: "souler_profile" },
-  async (souler: string) => {
+  async (souler: string, lang: Lang) => {
     const modelResponse = await modelS.invoke(
       [
-        new SystemMessage(
-          "Write a concise profile for the given person for an app detail page. Return Markdown only, focused on who they are, key ideas, and why they matter. Output must be English only.",
-        ),
+        new SystemMessage(profilePrompt[lang]),
         new HumanMessage(souler),
       ] as unknown as Parameters<typeof modelS.invoke>[0],
     );

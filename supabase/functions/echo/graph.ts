@@ -6,6 +6,7 @@ import {
   soulerProfile,
   soulerPrompt,
 } from "./nodes/index.ts";
+import { detectLang } from "./prompts.ts";
 import {
   createEcho,
   createOrUpdateResonance,
@@ -29,33 +30,30 @@ const graph = entrypoint(
       }) => void | Promise<void>;
     },
   ) => {
-    const soulers = await matchSoulers(glimmerContent, num);
+    const lang = detectLang(glimmerContent);
+    const soulers = await matchSoulers(glimmerContent, num, lang);
     const results = await Promise.allSettled(
       soulers.map(async (item) => {
-        // Query or create souler
-        const { name } = await parseSouler(item.souler, item.content);
+        const { name } = await parseSouler(item.souler, item.content, lang);
         const soulerData = await getOrCreateSoulerByName(name);
-        // Create or update resonance
         await createOrUpdateResonance(userId, soulerData.id);
 
-        // Query or create souler profile
         if (!soulerData.bio) {
-          const bio = await soulerProfile(name);
+          const bio = await soulerProfile(name, lang);
           soulerData.bio = bio;
           await updateSouler(soulerData.id, { bio });
         }
 
-        // Query or create souler prompt
         if (!soulerData.prompt) {
-          const prompt = await soulerPrompt(name);
+          const prompt = await soulerPrompt(name, lang);
           soulerData.prompt = prompt;
           await updateSouler(soulerData.id, { prompt });
         }
 
-        // Answer the question
         const answer = await soulerAnswer(
           glimmerContent,
           soulerData.prompt,
+          lang,
         );
         const echo = await createEcho(glimmerId, soulerData.id, answer);
         if (onEcho) {
