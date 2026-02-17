@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -7,31 +8,34 @@ struct SettingsView: View {
     @State private var isDeletingAccount = false
     @State private var feedbackMessage: String?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.requestReview) private var requestReview
 
     var body: some View {
         List {
-            Section(accountSectionTitle) {
-                Button(role: .destructive) {
-                    showDeleteAccountConfirmation = true
+            Section(generalSectionTitle) {
+                Button {
+                    openNotificationSettings()
                 } label: {
-                    rowLabel(
-                        title: deleteAccountText,
-                        systemImage: "trash",
-                        showsLoading: isDeletingAccount
-                    )
+                    HStack {
+                        Label(notificationsText, systemImage: "bell.badge")
+                        Spacer()
+                        Image(systemName: "arrow.up.forward")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
-                .disabled(isBusy)
+            }
 
-                Button(role: .destructive) {
-                    showSignOutConfirmation = true
-                } label: {
-                    rowLabel(
-                        title: signOutText,
-                        systemImage: "rectangle.portrait.and.arrow.right",
-                        showsLoading: isSigningOut
-                    )
+            Section(supportSectionTitle) {
+                Link(destination: AppLinks.supportEmail) {
+                    Label(contactSupportText, systemImage: "envelope")
                 }
-                .disabled(isBusy)
+
+                Button {
+                    requestReview()
+                } label: {
+                    Label(rateAppText, systemImage: "star")
+                }
             }
 
             Section(legalSectionTitle) {
@@ -44,12 +48,6 @@ struct SettingsView: View {
                 }
             }
 
-            Section(supportSectionTitle) {
-                Link(destination: AppLinks.supportEmail) {
-                    Label(contactSupportText, systemImage: "envelope")
-                }
-            }
-
             Section(aboutSectionTitle) {
                 LabeledContent {
                     Text(appVersion)
@@ -57,6 +55,32 @@ struct SettingsView: View {
                 } label: {
                     Label(versionText, systemImage: "app.badge")
                 }
+            }
+
+            Section {
+                Button(role: .destructive) {
+                    showSignOutConfirmation = true
+                } label: {
+                    rowLabel(
+                        title: signOutText,
+                        systemImage: "rectangle.portrait.and.arrow.right",
+                        showsLoading: isSigningOut
+                    )
+                }
+                .disabled(isBusy)
+            }
+
+            Section {
+                Button(role: .destructive) {
+                    showDeleteAccountConfirmation = true
+                } label: {
+                    rowLabel(
+                        title: deleteAccountText,
+                        systemImage: "trash",
+                        showsLoading: isDeletingAccount
+                    )
+                }
+                .disabled(isBusy)
             }
         }
         .listStyle(.insetGrouped)
@@ -122,6 +146,11 @@ struct SettingsView: View {
         }
     }
 
+    private func openNotificationSettings() {
+        guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
     @ViewBuilder
     private func rowLabel(title: String, systemImage: String, showsLoading: Bool) -> some View {
         HStack(spacing: 12) {
@@ -144,11 +173,15 @@ struct SettingsView: View {
         return "\(shortVersion) (\(build))"
     }
 
+    // MARK: - Localized Strings
+
     private var settingsTitle: String { String(localized: "settings.title") }
-    private var accountSectionTitle: String { String(localized: "settings.section.account") }
+    private var generalSectionTitle: String { String(localized: "settings.section.general") }
     private var legalSectionTitle: String { String(localized: "settings.section.legal") }
     private var supportSectionTitle: String { String(localized: "settings.section.support") }
     private var aboutSectionTitle: String { String(localized: "settings.section.about") }
+    private var notificationsText: String { String(localized: "settings.notifications") }
+    private var rateAppText: String { String(localized: "settings.rateApp") }
     private var signOutText: String { String(localized: "settings.action.signOut") }
     private var deleteAccountText: String { String(localized: "settings.action.deleteAccount") }
     private var termsText: String { String(localized: "settings.link.terms") }

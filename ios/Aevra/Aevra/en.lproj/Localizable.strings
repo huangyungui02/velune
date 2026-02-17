@@ -1,9 +1,11 @@
 "settings.title" = "Settings";
-"settings.section.account" = "Account";
+"settings.section.general" = "General";
 "settings.section.legal" = "Legal";
 "settings.section.support" = "Support";
 "settings.section.about" = "About";
-"settings.action.signOut" = "Sign out";
+"settings.notifications" = "Notifications";
+"settings.rateApp" = "Rate on App Store";
+"settings.action.signOut" = "Sign Out";
 "settings.action.deleteAccount" = "Delete Account";
 "settings.link.terms" = "Terms of Service";
 "settings.link.privacy" = "Privacy Policy";
