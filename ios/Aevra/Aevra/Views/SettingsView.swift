@@ -27,7 +27,7 @@ struct SettingsView: View {
             }
 
             Section(supportSectionTitle) {
-                Link(destination: AppLinks.supportEmail) {
+                Link(destination: AppLinks.contactEmail) {
                     Label(contactSupportText, systemImage: "envelope")
                 }
 

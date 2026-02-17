@@ -19,11 +19,7 @@ enum AppLinks {
             : "https://aevra.echoversa.com/privacy")!
     }
 
-    static var supportEmail: URL {
-        URL(string: "mailto:support@resona.app")!
-    }
-
-    static var privacyEmail: URL {
-        URL(string: "mailto:privacy@resona.app?subject=Account%20Deletion%20Request")!
+    static var contactEmail: URL {
+        URL(string: "mailto:aevra@echoversa.com")!
     }
 }
