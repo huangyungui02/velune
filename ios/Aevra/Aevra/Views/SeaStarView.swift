@@ -20,10 +20,7 @@ struct SeaStarView: View {
                 VStack {
                     Spacer()
 
-                    DescriptionView(
-                        title: String(localized: "seastar.hero.title"),
-                        description: String(localized: "seastar.hero.description")
-                    )
+                    VerseView(text: String(localized: "seastar.hero.verse"))
 
                     Spacer()
 
@@ -114,26 +111,23 @@ struct SeaStarView: View {
     }
 }
 
-// MARK: - Description View
+// MARK: - Verse View
 
-private struct DescriptionView: View {
-    let title: String
-    let description: String
+private struct VerseView: View {
+    let text: String
 
     var body: some View {
         VStack {
             Spacer()
 
-            VStack(spacing: 8) {
-                Text(title)
-                    .font(.system(size: 30, weight: .semibold, design: .serif))
-                    .foregroundStyle(UITheme.primaryText)
-
-                Text(description)
-                    .font(.system(size: 18, weight: .regular, design: .serif))
-                    .foregroundStyle(UITheme.secondaryText)
-                    .tracking(2)
-            }
+            Text(text)
+                .font(.system(size: 24, weight: .light, design: .serif))
+                .multilineTextAlignment(.center)
+                .lineSpacing(14)
+                .tracking(3)
+                .foregroundStyle(UITheme.primaryText.opacity(0.85))
+                .shadow(color: .white.opacity(0.12), radius: 16)
+                .shadow(color: .white.opacity(0.06), radius: 32)
 
             Spacer()
         }

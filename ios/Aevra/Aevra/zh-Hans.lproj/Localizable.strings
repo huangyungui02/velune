@@ -22,23 +22,22 @@
 "common.retry" = "重试";
 "common.loading" = "加载中…";
 
-"sign.slogan" = "心光\n共振\n回响";
+"sign.slogan" = "向内探索，\n直至宇宙深处";
 "sign.terms.full" = "登录即表示你同意我们的《用户协议》和《隐私政策》。";
 "sign.terms.label" = "《用户协议》";
 "sign.privacy.label" = "《隐私政策》";
 
-"profile.empty.noGlimmers" = "还没有灵感片段";
-"profile.title.glimmers" = "灵感片段";
+"profile.empty.noGlimmers" = "暂无微光";
+"profile.title.glimmers" = "微光";
 
-"seastar.hero.title" = "回到自己";
-"seastar.hero.description" = "最温柔的浪漫，是成为自己。";
-"seastar.prompt.glimmerWithin" = "你心中正闪烁着什么";
+"seastar.hero.verse" = "心有微澜\n宇宙自现";
+"seastar.prompt.glimmerWithin" = "我心里闪烁着什么";
 
 "matching.status.listening" = "正在聆听回响";
 "matching.error.title" = "错误";
 "matching.error.unknown" = "未知错误";
 
-"glimmer.title" = "灵感";
+"glimmer.title" = "微光";
 "glimmer.action.delete" = "删除";
 "glimmer.delete.title" = "删除";
 "glimmer.delete.message" = "确定要删除吗？该操作不可撤销。";

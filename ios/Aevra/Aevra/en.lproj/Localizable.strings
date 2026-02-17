@@ -22,7 +22,7 @@
 "common.retry" = "Retry";
 "common.loading" = "Loading…";
 
-"sign.slogan" = "Glimmer\nResonance\nEcho";
+"sign.slogan" = "Explore inward,\nreach the depths of the cosmos.";
 "sign.terms.full" = "By signing in, you agree to our Terms of Service and Privacy Policy.";
 "sign.terms.label" = "Terms of Service";
 "sign.privacy.label" = "Privacy Policy";
@@ -30,8 +30,7 @@
 "profile.empty.noGlimmers" = "No glimmers yet";
 "profile.title.glimmers" = "Glimmers";
 
-"seastar.hero.title" = "Return to yourself";
-"seastar.hero.description" = "The softest romance is becoming.";
+"seastar.hero.verse" = "When the heart ripples,\nthe universe unfolds.";
 "seastar.prompt.glimmerWithin" = "What glimmers within you";
 
 "matching.status.listening" = "Listening for echoes";
