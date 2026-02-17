@@ -110,7 +110,7 @@ main {
 .hero-mark::after {
   content: "";
   position: absolute;
-  inset: 14px;
+  inset: 20px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.42);
 }

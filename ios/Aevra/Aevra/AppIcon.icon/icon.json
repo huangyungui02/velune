@@ -23,7 +23,7 @@
           "hidden" : false,
           "image-name" : "zen-circle-inner.svg",
           "name" : "zen-circle-inner",
-          "opacity" : 1
+          "opacity" : 0.5
         }
       ],
       "shadow" : {
