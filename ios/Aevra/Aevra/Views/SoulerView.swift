@@ -65,10 +65,10 @@ struct SoulerView: View {
                     Markdown(souler.bio)
                         .markdownTextStyle {
                             FontFamily(.custom(UITheme.literaryFontName))
-                            FontSize(17)
+                            FontSize(19)
                             ForegroundColor(UITheme.primaryText)
                         }
-                        .lineSpacing(6)
+                        .lineSpacing(8)
                 }.padding()
             }
             .padding(.vertical)

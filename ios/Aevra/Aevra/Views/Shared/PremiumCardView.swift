@@ -20,15 +20,15 @@ struct PremiumCardView<Content: View>: View {
     }
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             headerView
             scrollableContent
         }
-        .padding(.vertical, 24)
+        .padding(.vertical, 20)
         .frame(maxWidth: .infinity)
-        .background(Color.clear, in: .rect(cornerRadius: 32))
+        .background(Color.clear, in: .rect(cornerRadius: 28))
         .overlay(
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .stroke(
                     LinearGradient(
                         colors: [.white.opacity(0.30), .white.opacity(0.10)],
@@ -39,8 +39,8 @@ struct PremiumCardView<Content: View>: View {
                 )
         )
         .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 14)
-        .glassEffect(in: .rect(cornerRadius: 32))
-        .padding(.horizontal, 24)
+        .glassEffect(in: .rect(cornerRadius: 28))
+        .padding(.horizontal, 16)
     }
 
     private var headerView: some View {
@@ -56,7 +56,7 @@ struct PremiumCardView<Content: View>: View {
         let cap = maxContentHeight ?? .infinity
         return ScrollView {
             content
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 20)
 //                .padding(.vertical, 20)
                 .background(
                     GeometryReader { proxy in
