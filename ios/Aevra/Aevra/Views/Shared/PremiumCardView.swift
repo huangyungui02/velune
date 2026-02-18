@@ -57,7 +57,7 @@ struct PremiumCardView<Content: View>: View {
         return ScrollView {
             content
                 .padding(.horizontal, 20)
-//                .padding(.vertical, 20)
+                .padding(.vertical, 10)
                 .background(
                     GeometryReader { proxy in
                         Color.clear
