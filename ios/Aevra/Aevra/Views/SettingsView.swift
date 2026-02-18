@@ -2,60 +2,53 @@ import StoreKit
 import SwiftData
 import SwiftUI
 
+// MARK: - Settings
+
 struct SettingsView: View {
     @State private var showSignOutConfirmation = false
-    @State private var showDeleteAccountConfirmation = false
     @State private var isSigningOut = false
-    @State private var isDeletingAccount = false
     @State private var feedbackMessage: String?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.requestReview) private var requestReview
-    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         List {
-            Section(generalSectionTitle) {
-                Button {
-                    openNotificationSettings()
+            Section(String(localized: "settings.section.account")) {
+                NavigationLink {
+                    AccountSettingsView()
                 } label: {
-                    HStack {
-                        Label(notificationsText, systemImage: "bell.badge")
-                        Spacer()
-                        Image(systemName: "arrow.up.forward")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                    }
+                    Label(String(localized: "settings.account"), systemImage: "person.crop.circle")
                 }
             }
 
-            Section(supportSectionTitle) {
+            Section(String(localized: "settings.section.support")) {
                 Link(destination: AppLinks.contactEmail) {
-                    Label(contactSupportText, systemImage: "envelope")
+                    Label(String(localized: "settings.link.contactSupport"), systemImage: "envelope")
                 }
 
                 Button {
                     requestReview()
                 } label: {
-                    Label(rateAppText, systemImage: "star")
+                    Label(String(localized: "settings.rateApp"), systemImage: "star")
                 }
             }
 
-            Section(legalSectionTitle) {
+            Section(String(localized: "settings.section.legal")) {
                 Link(destination: AppLinks.terms) {
-                    Label(termsText, systemImage: "doc.text")
+                    Label(String(localized: "settings.link.terms"), systemImage: "doc.text")
                 }
 
                 Link(destination: AppLinks.privacy) {
-                    Label(privacyText, systemImage: "hand.raised")
+                    Label(String(localized: "settings.link.privacy"), systemImage: "hand.raised")
                 }
             }
 
-            Section(aboutSectionTitle) {
+            Section(String(localized: "settings.section.about")) {
                 LabeledContent {
                     Text(appVersion)
                         .foregroundStyle(.secondary)
                 } label: {
-                    Label(versionText, systemImage: "app.badge")
+                    Label(String(localized: "settings.version"), systemImage: "app.badge")
                 }
             }
 
@@ -63,66 +56,35 @@ struct SettingsView: View {
                 Button(role: .destructive) {
                     showSignOutConfirmation = true
                 } label: {
-                    rowLabel(
-                        title: signOutText,
+                    actionRow(
+                        title: String(localized: "settings.action.signOut"),
                         systemImage: "rectangle.portrait.and.arrow.right",
-                        showsLoading: isSigningOut
+                        isLoading: isSigningOut
                     )
                 }
-                .disabled(isBusy)
-            }
-
-            Section {
-                Button(role: .destructive) {
-                    showDeleteAccountConfirmation = true
-                } label: {
-                    rowLabel(
-                        title: deleteAccountText,
-                        systemImage: "trash",
-                        showsLoading: isDeletingAccount
-                    )
-                }
-                .disabled(isBusy)
+                .disabled(isSigningOut)
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle(settingsTitle)
+        .navigationTitle(String(localized: "settings.title"))
         .navigationBarTitleDisplayMode(.inline)
-        .alert(signOutConfirmationTitle, isPresented: $showSignOutConfirmation) {
-            Button(signOutText, role: .destructive) {
-                Task {
-                    await signOut()
-                }
+        .alert(String(localized: "settings.signOut.confirm.title"), isPresented: $showSignOutConfirmation) {
+            Button(String(localized: "settings.action.signOut"), role: .destructive) {
+                Task { await signOut() }
             }
-            Button(cancelText, role: .cancel) {}
+            Button(String(localized: "common.cancel"), role: .cancel) {}
         } message: {
-            Text(signOutConfirmationMessage)
+            Text(String(localized: "settings.signOut.confirm.message"))
         }
-        .alert(deleteConfirmationTitle, isPresented: $showDeleteAccountConfirmation) {
-            Button(deleteAccountText, role: .destructive) {
-                Task {
-                    await deleteAccount()
-                }
-            }
-            Button(cancelText, role: .cancel) {}
-        } message: {
-            Text(deleteConfirmationMessage)
-        }
-        .alert(errorTitle, isPresented: Binding(
+        .alert(String(localized: "settings.error.title"), isPresented: Binding(
             get: { feedbackMessage != nil },
-            set: { isPresented in
-                if !isPresented {
-                    feedbackMessage = nil
-                }
-            }
+            set: { if !$0 { feedbackMessage = nil } }
         )) {
-            Button(okText, role: .cancel) {}
+            Button(String(localized: "common.ok"), role: .cancel) {}
         } message: {
             Text(feedbackMessage ?? "")
         }
     }
-
-    // MARK: - Actions
 
     private func signOut() async {
         isSigningOut = true
@@ -136,9 +98,61 @@ struct SettingsView: View {
         }
     }
 
+    private var appVersion: String {
+        let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "-"
+        return "\(short) (\(build))"
+    }
+}
+
+// MARK: - Account Settings
+
+struct AccountSettingsView: View {
+    @State private var showDeleteConfirmation = false
+    @State private var isDeleting = false
+    @State private var feedbackMessage: String?
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+
+    var body: some View {
+        List {
+            Section {
+                Button(role: .destructive) {
+                    showDeleteConfirmation = true
+                } label: {
+                    actionRow(
+                        title: String(localized: "settings.action.deleteAccount"),
+                        systemImage: "trash",
+                        isLoading: isDeleting
+                    )
+                }
+                .disabled(isDeleting)
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle(String(localized: "settings.account"))
+        .navigationBarTitleDisplayMode(.inline)
+        .alert(String(localized: "settings.delete.confirm.title"), isPresented: $showDeleteConfirmation) {
+            Button(String(localized: "settings.action.deleteAccount"), role: .destructive) {
+                Task { await deleteAccount() }
+            }
+            Button(String(localized: "common.cancel"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "settings.delete.confirm.message"))
+        }
+        .alert(String(localized: "settings.error.title"), isPresented: Binding(
+            get: { feedbackMessage != nil },
+            set: { if !$0 { feedbackMessage = nil } }
+        )) {
+            Button(String(localized: "common.ok"), role: .cancel) {}
+        } message: {
+            Text(feedbackMessage ?? "")
+        }
+    }
+
     private func deleteAccount() async {
-        isDeletingAccount = true
-        defer { isDeletingAccount = false }
+        isDeleting = true
+        defer { isDeleting = false }
 
         do {
             try await AuthManager.shared.deleteAccount()
@@ -149,56 +163,19 @@ struct SettingsView: View {
             feedbackMessage = error.localizedDescription
         }
     }
+}
 
-    private func openNotificationSettings() {
-        guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else { return }
-        UIApplication.shared.open(url)
-    }
+// MARK: - Shared Components
 
-    @ViewBuilder
-    private func rowLabel(title: String, systemImage: String, showsLoading: Bool) -> some View {
-        HStack(spacing: 12) {
-            Label(title, systemImage: systemImage)
-            Spacer()
-            if showsLoading {
-                ProgressView()
-                    .controlSize(.small)
-            }
+private func actionRow(title: String, systemImage: String, isLoading: Bool) -> some View {
+    HStack(spacing: 12) {
+        Label(title, systemImage: systemImage)
+        Spacer()
+        if isLoading {
+            ProgressView()
+                .controlSize(.small)
         }
     }
-
-    private var isBusy: Bool {
-        isSigningOut || isDeletingAccount
-    }
-
-    private var appVersion: String {
-        let shortVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "-"
-        return "\(shortVersion) (\(build))"
-    }
-
-    // MARK: - Localized Strings
-
-    private var settingsTitle: String { String(localized: "settings.title") }
-    private var generalSectionTitle: String { String(localized: "settings.section.general") }
-    private var legalSectionTitle: String { String(localized: "settings.section.legal") }
-    private var supportSectionTitle: String { String(localized: "settings.section.support") }
-    private var aboutSectionTitle: String { String(localized: "settings.section.about") }
-    private var notificationsText: String { String(localized: "settings.notifications") }
-    private var rateAppText: String { String(localized: "settings.rateApp") }
-    private var signOutText: String { String(localized: "settings.action.signOut") }
-    private var deleteAccountText: String { String(localized: "settings.action.deleteAccount") }
-    private var termsText: String { String(localized: "settings.link.terms") }
-    private var privacyText: String { String(localized: "settings.link.privacy") }
-    private var contactSupportText: String { String(localized: "settings.link.contactSupport") }
-    private var versionText: String { String(localized: "settings.version") }
-    private var cancelText: String { String(localized: "common.cancel") }
-    private var okText: String { String(localized: "common.ok") }
-    private var errorTitle: String { String(localized: "settings.error.title") }
-    private var signOutConfirmationTitle: String { String(localized: "settings.signOut.confirm.title") }
-    private var signOutConfirmationMessage: String { String(localized: "settings.signOut.confirm.message") }
-    private var deleteConfirmationTitle: String { String(localized: "settings.delete.confirm.title") }
-    private var deleteConfirmationMessage: String { String(localized: "settings.delete.confirm.message") }
 }
 
 #Preview {

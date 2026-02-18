@@ -1,9 +1,9 @@
 "settings.title" = "设置";
-"settings.section.general" = "通用";
+"settings.section.account" = "账号";
 "settings.section.legal" = "法律";
 "settings.section.support" = "支持";
 "settings.section.about" = "关于";
-"settings.notifications" = "通知";
+"settings.account" = "账号";
 "settings.rateApp" = "去 App Store 评分";
 "settings.action.signOut" = "退出登录";
 "settings.action.deleteAccount" = "删除账号";
