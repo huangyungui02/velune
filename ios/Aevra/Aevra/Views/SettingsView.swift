@@ -1,4 +1,5 @@
 import StoreKit
+import SwiftData
 import SwiftUI
 
 struct SettingsView: View {
@@ -9,6 +10,7 @@ struct SettingsView: View {
     @State private var feedbackMessage: String?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         List {
@@ -140,6 +142,8 @@ struct SettingsView: View {
 
         do {
             try await AuthManager.shared.deleteAccount()
+            try modelContext.delete(model: Glimmer.self)
+            try modelContext.delete(model: Echo.self)
             dismiss()
         } catch {
             feedbackMessage = error.localizedDescription
