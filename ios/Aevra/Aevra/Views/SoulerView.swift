@@ -54,8 +54,7 @@ struct SoulerView: View {
         ScrollView {
             VStack(spacing: 16) {
                 Text(souler.name)
-                    .font(.system(size: 24, weight: .semibold, design: .serif))
-                    .fontWeight(.bold)
+                    .font(UITheme.literary(size: 24, weight: .semibold))
                     .multilineTextAlignment(.center)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
@@ -64,6 +63,12 @@ struct SoulerView: View {
 
                 CardView {
                     Markdown(souler.bio)
+                        .markdownTextStyle {
+                            FontFamily(.custom(UITheme.literaryFontName))
+                            FontSize(17)
+                            ForegroundColor(UITheme.primaryText)
+                        }
+                        .lineSpacing(6)
                 }.padding()
             }
             .padding(.vertical)

@@ -7,7 +7,7 @@ enum UITheme {
     static let secondaryText = Color.white.opacity(0.74)
     static let tertiaryText = Color.white.opacity(0.55)
 
-    private static let literaryFontName = "LXGWWenKaiLite-Regular"
+    static let literaryFontName = "LXGWWenKaiLite-Regular"
 
     /// Register bundled custom fonts at app launch
     static func registerFonts() {

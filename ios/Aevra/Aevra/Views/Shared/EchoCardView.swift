@@ -9,7 +9,7 @@ struct EchoCardView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Markdown(echo.content)
                     .markdownTextStyle {
-                        FontFamily(.custom("LXGWWenKaiLite-Regular"))
+                        FontFamily(.custom(UITheme.literaryFontName))
                         FontSize(20)
                         ForegroundColor(UITheme.primaryText)
                     }

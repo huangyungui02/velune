@@ -65,7 +65,7 @@ struct SeaStarView: View {
 
                     Text(String(localized: "seastar.prompt.glimmerWithin"))
                         .foregroundStyle(UITheme.primaryText)
-                        .font(.system(size: 18, weight: .regular, design: .serif))
+                        .font(UITheme.literary(size: 18))
                 }
                 .padding(16)
                 .glassEffect(in: .capsule)
@@ -93,7 +93,7 @@ struct SeaStarView: View {
 
     private var draftPreviewField: some View {
         TextField("", text: .constant(text), axis: .vertical)
-            .font(.system(size: 18, weight: .regular, design: .serif))
+            .font(UITheme.literary(size: 18))
             .lineLimit(1 ... draftPreviewMaxLines)
             .foregroundStyle(UITheme.primaryText)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -121,10 +121,10 @@ private struct VerseView: View {
             Spacer()
 
             Text(text)
-                .font(.system(size: 24, weight: .light, design: .serif))
+                .font(UITheme.literary(size: 26))
                 .multilineTextAlignment(.center)
                 .lineSpacing(14)
-                .tracking(3)
+                .tracking(2)
                 .foregroundStyle(UITheme.primaryText.opacity(0.85))
                 .shadow(color: .white.opacity(0.12), radius: 16)
                 .shadow(color: .white.opacity(0.06), radius: 32)
@@ -148,7 +148,7 @@ private struct ComposeView: View {
             VStack(spacing: 0) {
                 TextField(String(localized: "seastar.prompt.glimmerWithin"), text: $text, axis: .vertical)
                     .focused($isFocused)
-                    .font(.system(size: 18, weight: .regular, design: .serif))
+                    .font(UITheme.literary(size: 18))
                     .lineSpacing(6)
                     .padding(24)
                     .frame(maxWidth: .infinity, alignment: .leading)

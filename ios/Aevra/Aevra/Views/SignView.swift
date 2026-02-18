@@ -22,10 +22,10 @@ struct SignView: View {
                         .foregroundStyle(UITheme.primaryText)
 
                     Text(String(localized: "sign.slogan"))
-                        .font(.system(size: 21, weight: .medium, design: .rounded))
+                        .font(UITheme.literary(size: 20))
                         .multilineTextAlignment(.center)
                         .lineSpacing(8)
-                        .tracking(1.8)
+                        .tracking(1.5)
                         .foregroundStyle(UITheme.secondaryText)
                 }
                 .padding(.bottom, 40)

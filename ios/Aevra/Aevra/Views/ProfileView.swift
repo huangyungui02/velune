@@ -102,10 +102,10 @@ private struct GlimmerListCard: View {
             }
 
             Text(glimmer.content)
-                .font(.system(size: 18, weight: .regular, design: .serif))
+                .font(UITheme.literary(size: 18))
                 .lineLimit(3)
                 .multilineTextAlignment(.leading)
-                .lineSpacing(4)
+                .lineSpacing(6)
                 .foregroundStyle(UITheme.primaryText)
         }
     }
