@@ -6,6 +6,10 @@ struct ResonaApp: App {
     @State private var authManager = AuthManager.shared
     let dataContainer = DataContainer()
 
+    init() {
+        UITheme.registerFonts()
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {

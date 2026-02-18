@@ -13,7 +13,7 @@ struct GlimmerCardView: View {
         PremiumCardView(iconName: "sparkles") {
             VStack(spacing: 16) {
                 Text(content)
-                    .font(.system(size: 18, weight: .regular, design: .serif))
+                    .font(UITheme.literary(size: 20))
                     .lineSpacing(8)
                     .multilineTextAlignment(.leading)
                     .foregroundStyle(UITheme.primaryText)
