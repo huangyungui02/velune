@@ -24,8 +24,8 @@ export const parsePrompt: Record<Lang, string> = {
 };
 
 export const profilePrompt: Record<Lang, string> = {
-  en: `Write a profile for the given soul.`,
-  zh: `为给定灵魂写一段个人简介。`,
+  en: `Write an introduction for the given souler.`,
+  zh: `为给定灵魂写一段人物简介。`,
 };
 
 export const rolePrompt: Record<Lang, string> = {
