@@ -82,12 +82,12 @@ class MatchingManager {
         struct StreamEvent: Decodable {
             let type: String
             let echo: StreamEcho?
-            let completed: Bool?
             let message: String?
         }
 
         let decoder = JSONDecoder()
         var buffer = Data()
+        var receivedDone = false
         
         func drainBuffer() async throws {
             let delimiter = Data([0x0A, 0x0A]) // "\n\n"
@@ -122,9 +122,8 @@ class MatchingManager {
                         }
                     }
                 case "done":
-                    await MainActor.run {
-                        currentGlimmer?.status = (event.completed == true) ? "complete" : "incomplete"
-                    }
+                    receivedDone = true
+                    continue
                 case "error":
                     let message = event.message ?? "Unknown error from echo stream"
                     throw NSError(domain: "EchoStream", code: -1, userInfo: [
@@ -147,6 +146,12 @@ class MatchingManager {
             if Task.isCancelled { break }
             buffer.append(chunk)
             try await drainBuffer()
+        }
+
+        if !Task.isCancelled && receivedDone {
+            await MainActor.run {
+                currentGlimmer?.status = "complete"
+            }
         }
     }
 }

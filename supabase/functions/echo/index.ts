@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
           console.log(`Incomplete glimmer: ${glimmer.id}`);
         }
 
-        send({ type: "done", completed });
+        send({ type: "done" });
       } catch (error: unknown) {
         try {
           await updateGlimmerStatus(glimmerId, "failed");
