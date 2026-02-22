@@ -64,6 +64,10 @@ struct ResonanceChatView: View {
                     proxy.scrollTo(lastId, anchor: .bottom)
                 }
             }
+            .onChange(of: messages.last?.content) { _, _ in
+                guard let lastId = messages.last?.id else { return }
+                proxy.scrollTo(lastId, anchor: .bottom)
+            }
         }
     }
 
@@ -123,10 +127,39 @@ struct ResonanceChatView: View {
         inputText = ""
         defer { isSending = false }
 
+        let userLocal = ResonanceMessage(
+            id: UUID(),
+            soulerId: soulerId,
+            role: .user,
+            content: content,
+            createdAt: .now
+        )
+        messages.append(userLocal)
+
+        let assistantLocalId = UUID()
+        let assistantLocal = ResonanceMessage(
+            id: assistantLocalId,
+            soulerId: soulerId,
+            role: .assistant,
+            content: "",
+            createdAt: .now
+        )
+        messages.append(assistantLocal)
+
         do {
-            try await ResonanceMessage.send(soulerId: soulerId, content: content)
+            for try await event in ResonanceMessage.streamReply(soulerId: soulerId, content: content) {
+                switch event {
+                case let .delta(delta):
+                    if let index = messages.firstIndex(where: { $0.id == assistantLocalId }) {
+                        messages[index].content += delta
+                    }
+                case .done:
+                    break
+                }
+            }
             messages = try await ResonanceMessage.getHistory(soulerId: soulerId)
         } catch {
+            messages.removeAll { $0.id == assistantLocalId }
             errorMessage = error.localizedDescription
         }
     }

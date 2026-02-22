@@ -162,6 +162,22 @@ const buildSystemPrompt = (
     .join("\n\n");
 };
 
+const contentToText = (content: unknown): string => {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+
+  return content
+    .map((part) => {
+      if (typeof part === "string") return part;
+      if (part && typeof part === "object" && "text" in part) {
+        const text = (part as { text?: unknown }).text;
+        return typeof text === "string" ? text : "";
+      }
+      return "";
+    })
+    .join("");
+};
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -170,86 +186,89 @@ Deno.serve(async (req) => {
     });
   }
 
-  try {
-    const userId = await getUserIdFromRequest(req);
+  const headers = {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  };
 
-    const body = await req.json();
-    const soulerId = String(body?.soulerId ?? "").trim();
-    const content = String(body?.content ?? "").trim();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const encoder = new TextEncoder();
+      const send = (payload: Record<string, unknown>) => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
+      };
 
-    if (!soulerId || !content) {
-      return new Response(
-        JSON.stringify({ error: "Missing soulerId or content" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
+      try {
+        const userId = await getUserIdFromRequest(req);
 
-    const souler = await getSouler(soulerId);
+        const body = await req.json();
+        const soulerId = String(body?.soulerId ?? "").trim();
+        const content = String(body?.content ?? "").trim();
 
-    const history = await getRecentMessages(userId, soulerId);
-    const userMessage = await insertMessage(userId, soulerId, "user", content);
+        if (!soulerId || !content) {
+          throw new Error("Missing soulerId or content");
+        }
 
-    const systemPrompt = buildSystemPrompt(
-      souler.name,
-      souler.bio,
-      souler.prompt,
-    );
-    const promptMessages = [
-      new SystemMessage(systemPrompt),
-      ...history.map((item) =>
-        item.role === "user"
-          ? new HumanMessage(item.content)
-          : new AIMessage(item.content),
-      ),
-      new HumanMessage(content),
-    ] as unknown as Parameters<typeof model.invoke>[0];
+        const souler = await getSouler(soulerId);
+        const history = await getRecentMessages(userId, soulerId);
 
-    const completion = await model.invoke(promptMessages);
-    const assistantContent = String(completion.content ?? "").trim();
-    if (!assistantContent) {
-      throw new Error("Empty assistant response");
-    }
+        await insertMessage(userId, soulerId, "user", content);
 
-    const assistantMessage = await insertMessage(
-      userId,
-      soulerId,
-      "assistant",
-      assistantContent,
-    );
+        const systemPrompt = buildSystemPrompt(
+          souler.name,
+          souler.bio,
+          souler.prompt,
+        );
+        const promptMessages = [
+          new SystemMessage(systemPrompt),
+          ...history.map((item) =>
+            item.role === "user"
+              ? new HumanMessage(item.content)
+              : new AIMessage(item.content)
+          ),
+          new HumanMessage(content),
+        ] as unknown as Parameters<typeof model.stream>[0];
 
-    await createOrUpdateResonance(userId, soulerId);
+        let assistantContent = "";
+        const completionStream = await model.stream(promptMessages);
+        for await (const chunk of completionStream) {
+          const delta = contentToText(chunk.content);
+          if (!delta) continue;
+          assistantContent += delta;
+          send({ type: "delta", delta });
+        }
 
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        userMessage: {
-          id: userMessage.id,
-          content,
-          createdAt: userMessage.created_at,
-        },
-        assistantMessage: {
-          id: assistantMessage.id,
-          content: assistantContent,
-          createdAt: assistantMessage.created_at,
-        },
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-  } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : String(error),
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-  }
+        const finalContent = assistantContent.trim();
+        if (!finalContent) {
+          throw new Error("Empty assistant response");
+        }
+
+        const assistantMessage = await insertMessage(
+          userId,
+          soulerId,
+          "assistant",
+          finalContent,
+        );
+
+        await createOrUpdateResonance(userId, soulerId);
+        send({
+          type: "done",
+          assistantMessage: {
+            id: assistantMessage.id,
+            createdAt: assistantMessage.created_at,
+          },
+        });
+      } catch (error) {
+        send({
+          type: "error",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, { headers });
 });
