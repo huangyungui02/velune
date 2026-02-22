@@ -1,7 +1,7 @@
 import Foundation
 import Supabase
 
-struct ResonanceMessage: Identifiable, Equatable {
+struct Message: Identifiable, Equatable {
     enum Role: String, Codable {
         case user
         case assistant
@@ -14,7 +14,7 @@ struct ResonanceMessage: Identifiable, Equatable {
     var createdAt: Date
 }
 
-extension ResonanceMessage {
+extension Message {
     enum StreamEvent {
         case delta(String)
         case done
@@ -41,9 +41,9 @@ extension ResonanceMessage {
         var content: String
     }
 
-    static func getHistory(soulerId: UUID) async throws -> [ResonanceMessage] {
+    static func getHistory(soulerId: UUID) async throws -> [Message] {
         let response: [Response] = try await supabase
-            .from("resonance_messages")
+            .from("messages")
             .select("id, souler_id, role, content, created_at")
             .eq("souler_id", value: soulerId.uuidString)
             .order("created_at", ascending: true)
@@ -51,7 +51,7 @@ extension ResonanceMessage {
             .value
 
         return response.map { item in
-            ResonanceMessage(
+            Message(
                 id: item.id,
                 soulerId: item.soulerId,
                 role: item.role,
@@ -64,7 +64,7 @@ extension ResonanceMessage {
     static func streamReply(soulerId: UUID, content: String) -> AsyncThrowingStream<StreamEvent, Error> {
         let request = SendRequest(soulerId: soulerId.uuidString, content: content)
         let rawStream = supabase.functions._invokeWithStreamedResponse(
-            "resonance-chat",
+            "chat",
             options: FunctionInvokeOptions(body: request)
         )
 

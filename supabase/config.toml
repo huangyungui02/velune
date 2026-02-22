@@ -392,8 +392,8 @@ entrypoint = "./functions/echo/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/echo/*.html" ]
 
-[functions.resonance-chat]
+[functions.chat]
 enabled = true
 verify_jwt = false
-import_map = "./functions/resonance-chat/deno.json"
-entrypoint = "./functions/resonance-chat/index.ts"
+import_map = "./functions/chat/deno.json"
+entrypoint = "./functions/chat/index.ts"

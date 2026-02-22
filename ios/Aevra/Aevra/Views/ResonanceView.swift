@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ResonanceListView: View {
+struct ResonanceView: View {
     private let pageSize: Int = 20
 
     @State private var resonances: [Resonance] = []
@@ -59,7 +59,7 @@ struct ResonanceListView: View {
             LazyVStack(spacing: 12) {
                 ForEach(resonances) { resonance in
                     NavigationLink {
-                        ResonanceChatView(
+                        ChatView(
                             soulerId: resonance.soulerId,
                             soulerName: resonance.soulerName
                         )
@@ -196,11 +196,5 @@ private struct ResonanceListCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .contentShape(.rect)
-    }
-}
-
-#Preview {
-    NavigationStack {
-        ResonanceListView()
     }
 }

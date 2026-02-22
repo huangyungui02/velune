@@ -31,7 +31,7 @@ struct SeaStarView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink {
-                        ResonanceListView()
+                        ResonanceView()
                     } label: {
                         Image(systemName: "waveform.path.ecg")
                     }

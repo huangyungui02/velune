@@ -20,7 +20,7 @@ const model = new ChatOpenAI({
   },
 });
 
-type ResonanceMessage = {
+type MessageRow = {
   id: string;
   user_id: string;
   souler_id: string;
@@ -69,9 +69,9 @@ const getSouler = async (soulerId: string) => {
 const getRecentMessages = async (
   userId: string,
   soulerId: string,
-): Promise<ResonanceMessage[]> => {
+): Promise<MessageRow[]> => {
   const { data, error } = await supabase
-    .from("resonance_messages")
+    .from("messages")
     .select("id, user_id, souler_id, role, content, created_at")
     .eq("user_id", userId)
     .eq("souler_id", soulerId)
@@ -82,7 +82,7 @@ const getRecentMessages = async (
     throw error;
   }
 
-  return (data ?? []).reverse() as ResonanceMessage[];
+  return (data ?? []).reverse() as MessageRow[];
 };
 
 const insertMessage = async (
@@ -92,7 +92,7 @@ const insertMessage = async (
   content: string,
 ) => {
   const { data, error } = await supabase
-    .from("resonance_messages")
+    .from("messages")
     .insert({
       user_id: userId,
       souler_id: soulerId,

@@ -1,11 +1,11 @@
 import MarkdownUI
 import SwiftUI
 
-struct ResonanceChatView: View {
+struct ChatView: View {
     let soulerId: UUID
     let soulerName: String
 
-    @State private var messages: [ResonanceMessage] = []
+    @State private var messages: [Message] = []
     @State private var inputText = ""
     @State private var isLoading = false
     @State private var isSending = false
@@ -121,7 +121,7 @@ struct ResonanceChatView: View {
         defer { isLoading = false }
 
         do {
-            messages = try await ResonanceMessage.getHistory(soulerId: soulerId)
+            messages = try await Message.getHistory(soulerId: soulerId)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -138,7 +138,7 @@ struct ResonanceChatView: View {
         inputText = ""
         defer { isSending = false }
 
-        let userLocal = ResonanceMessage(
+        let userLocal = Message(
             id: UUID(),
             soulerId: soulerId,
             role: .user,
@@ -148,7 +148,7 @@ struct ResonanceChatView: View {
         messages.append(userLocal)
 
         let assistantLocalId = UUID()
-        let assistantLocal = ResonanceMessage(
+        let assistantLocal = Message(
             id: assistantLocalId,
             soulerId: soulerId,
             role: .assistant,
@@ -158,7 +158,7 @@ struct ResonanceChatView: View {
         messages.append(assistantLocal)
 
         do {
-            for try await event in ResonanceMessage.streamReply(soulerId: soulerId, content: content) {
+            for try await event in Message.streamReply(soulerId: soulerId, content: content) {
                 switch event {
                 case let .delta(delta):
                     if let index = messages.firstIndex(where: { $0.id == assistantLocalId }) {
@@ -168,7 +168,7 @@ struct ResonanceChatView: View {
                     break
                 }
             }
-            messages = try await ResonanceMessage.getHistory(soulerId: soulerId)
+            messages = try await Message.getHistory(soulerId: soulerId)
         } catch {
             messages.removeAll { $0.id == assistantLocalId }
             errorMessage = error.localizedDescription
@@ -177,7 +177,7 @@ struct ResonanceChatView: View {
 }
 
 private struct ResonanceChatBubble: View {
-    let message: ResonanceMessage
+    let message: Message
 
     private var isUser: Bool {
         message.role == .user
@@ -210,14 +210,5 @@ private struct ResonanceChatBubble: View {
                 Spacer(minLength: 32)
             }
         }
-    }
-}
-
-#Preview {
-    NavigationStack {
-        ResonanceChatView(
-            soulerId: UUID(),
-            soulerName: "Socrates"
-        )
     }
 }
