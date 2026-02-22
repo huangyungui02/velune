@@ -1,3 +1,4 @@
+import MarkdownUI
 import SwiftUI
 
 struct ResonanceChatView: View {
@@ -31,6 +32,16 @@ struct ResonanceChatView: View {
         }
         .navigationTitle(soulerName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    SoulerView(soulerId: soulerId)
+                } label: {
+                    Image(systemName: "person.text.rectangle")
+                }
+                .accessibilityLabel(String(localized: "resonance.chat.action.profile"))
+            }
+        }
         .alert(String(localized: "matching.error.title"), isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -178,9 +189,12 @@ private struct ResonanceChatBubble: View {
                 Spacer(minLength: 32)
             }
 
-            Text(message.content)
-                .font(UITheme.literary(size: 17))
-                .foregroundStyle(UITheme.primaryText)
+            Markdown(message.content)
+                .markdownTextStyle {
+                    FontFamily(.custom(UITheme.literaryFontName))
+                    FontSize(17)
+                    ForegroundColor(UITheme.primaryText)
+                }
                 .lineSpacing(5)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
