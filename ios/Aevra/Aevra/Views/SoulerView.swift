@@ -6,12 +6,25 @@ struct SoulerView: View {
     @State private var souler: Souler?
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showNavigationTitle = false
+    @State private var nameBlockHeight: CGFloat = 0
+    private let navTitleThreshold: CGFloat = 12
 
     var body: some View {
         ZStack {
             BackgroundView()
 
             contentView
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text(souler?.name ?? "")
+                    .font(UITheme.literary(size: 17, weight: .semibold))
+                    .lineLimit(1)
+                    .opacity(showNavigationTitle ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.16), value: showNavigationTitle)
+            }
         }
         .task(id: soulerId) {
             await loadSouler()
@@ -60,6 +73,14 @@ struct SoulerView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 20)
+                    .background {
+                        GeometryReader { geometry in
+                            Color.clear
+                                .onAppear {
+                                    nameBlockHeight = geometry.size.height
+                                }
+                        }
+                    }
 
                 CardView {
                     Markdown(souler.bio)
@@ -72,6 +93,19 @@ struct SoulerView: View {
                 }.padding()
             }
             .padding(.vertical)
+        }
+        .onScrollGeometryChange(
+            for: CGFloat.self,
+            of: { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top
+            },
+            action: { _, visibleOffsetY in
+                let trigger = max(24, nameBlockHeight + navTitleThreshold)
+                showNavigationTitle = visibleOffsetY > trigger
+            }
+        )
+        .onAppear {
+            showNavigationTitle = false
         }
     }
 
@@ -87,6 +121,8 @@ struct SoulerView: View {
             let result = try await Souler.get(soulerId)
             await MainActor.run {
                 souler = result
+                showNavigationTitle = false
+                nameBlockHeight = 0
             }
         } catch {
             await MainActor.run {
