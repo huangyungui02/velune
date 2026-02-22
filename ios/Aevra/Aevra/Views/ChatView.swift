@@ -66,9 +66,6 @@ struct ChatView: View {
                 }
                 .padding()
             }
-            .refreshable {
-                await loadMessages()
-            }
             .onChange(of: messages.count) { _, _ in
                 guard let lastId = messages.last?.id else { return }
                 withAnimation(.easeOut(duration: 0.2)) {
