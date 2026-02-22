@@ -52,6 +52,8 @@
 "resonance.sort.title" = "排序";
 "resonance.sort.updatedAt" = "最近共鸣";
 "resonance.sort.count" = "最多共鸣";
+"resonance.chat.placeholder" = "对Ta说点什么…";
+"resonance.chat.empty" = "开始一段共鸣对话";
 "resonance.unknownSouler" = "未命名灵魂";
 
 "app.error.unauthenticated" = "用户尚未登录";

@@ -59,7 +59,10 @@ struct ResonanceListView: View {
             LazyVStack(spacing: 12) {
                 ForEach(resonances) { resonance in
                     NavigationLink {
-                        SoulerView(soulerId: resonance.soulerId)
+                        ResonanceChatView(
+                            soulerId: resonance.soulerId,
+                            soulerName: resonance.soulerName
+                        )
                     } label: {
                         ResonanceListCard(resonance: resonance)
                     }
