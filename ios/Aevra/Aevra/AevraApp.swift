@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 
 @main
-struct ResonaApp: App {
+struct AevraApp: App {
     @State private var authManager = AuthManager.shared
     let dataContainer = DataContainer()
 
