@@ -1,6 +1,13 @@
 import Foundation
 import Supabase
 
+enum ResonanceSort: String, CaseIterable, Identifiable {
+    case updatedAt
+    case resonanceCount
+
+    var id: String { rawValue }
+}
+
 struct Resonance: Identifiable, Equatable {
     var id: UUID
     var soulerId: UUID
@@ -33,13 +40,29 @@ extension Resonance {
         var name: String
     }
 
-    static func getAll() async throws -> [Resonance] {
-        let response: [Response] = try await supabase
-            .from("resonances")
-            .select("id, souler_id, count, created_at, updated_at, soulers(name)")
-            .order("updated_at", ascending: false)
-            .execute()
-            .value
+    static func getPage(limit: Int, offset: Int, sort: ResonanceSort) async throws -> [Resonance] {
+        let upperBound = max(offset + limit - 1, offset)
+        let response: [Response]
+        switch sort {
+        case .updatedAt:
+            response = try await supabase
+                .from("resonances")
+                .select("id, souler_id, count, created_at, updated_at, soulers(name)")
+                .order("updated_at", ascending: false)
+                .order("count", ascending: false)
+                .range(from: offset, to: upperBound)
+                .execute()
+                .value
+        case .resonanceCount:
+            response = try await supabase
+                .from("resonances")
+                .select("id, souler_id, count, created_at, updated_at, soulers(name)")
+                .order("count", ascending: false)
+                .order("updated_at", ascending: false)
+                .range(from: offset, to: upperBound)
+                .execute()
+                .value
+        }
 
         let fallbackName = String(localized: "resonance.unknownSouler")
         return response.map { res in

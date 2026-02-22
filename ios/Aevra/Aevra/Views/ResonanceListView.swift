@@ -1,16 +1,21 @@
 import SwiftUI
 
 struct ResonanceListView: View {
+    private let pageSize: Int = 20
+
     @State private var resonances: [Resonance] = []
-    @State private var isLoading = false
+    @State private var isLoadingInitial = false
+    @State private var isLoadingMore = false
+    @State private var hasMore = true
     @State private var errorMessage: String?
+    @State private var sortOption: ResonanceSort = .updatedAt
 
     var body: some View {
         ZStack {
             BackgroundView()
 
             Group {
-                if isLoading, resonances.isEmpty {
+                if isLoadingInitial, resonances.isEmpty {
                     ProgressView(String(localized: "common.loading"))
                         .tint(UITheme.accent)
                 } else if resonances.isEmpty {
@@ -28,18 +33,24 @@ struct ResonanceListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    Task {
-                        await refreshResonances(force: true)
+                Menu {
+                    Picker(String(localized: "resonance.sort.title"), selection: $sortOption) {
+                        ForEach(ResonanceSort.allCases) { option in
+                            Text(localizedLabel(for: option)).tag(option)
+                        }
                     }
                 } label: {
-                    Image(systemName: "arrow.clockwise")
+                    Image(systemName: "arrow.up.arrow.down")
                 }
-                .disabled(isLoading)
             }
         }
         .task {
-            await refreshResonances(force: false)
+            await reloadResonances()
+        }
+        .onChange(of: sortOption) { _, _ in
+            Task {
+                await reloadResonances()
+            }
         }
     }
 
@@ -53,9 +64,23 @@ struct ResonanceListView: View {
                         ResonanceListCard(resonance: resonance)
                     }
                     .buttonStyle(.plain)
+                    .onAppear {
+                        Task {
+                            await loadMoreIfNeeded(current: resonance)
+                        }
+                    }
+                }
+
+                if isLoadingMore {
+                    ProgressView(String(localized: "common.loading"))
+                        .tint(UITheme.accent)
+                        .padding(.vertical, 12)
                 }
             }
             .padding()
+        }
+        .refreshable {
+            await reloadResonances()
         }
     }
 
@@ -73,7 +98,7 @@ struct ResonanceListView: View {
 
             Button(String(localized: "common.retry")) {
                 Task {
-                    await refreshResonances(force: true)
+                    await reloadResonances()
                 }
             }
             .buttonStyle(.borderedProminent)
@@ -82,18 +107,49 @@ struct ResonanceListView: View {
     }
 
     @MainActor
-    private func refreshResonances(force: Bool) async {
-        if isLoading { return }
-        if !force, !resonances.isEmpty { return }
+    private func reloadResonances() async {
+        if isLoadingInitial { return }
 
-        isLoading = true
+        isLoadingInitial = true
         errorMessage = nil
-        defer { isLoading = false }
+        hasMore = true
+        defer { isLoadingInitial = false }
 
         do {
-            resonances = try await Resonance.getAll()
+            let page = try await Resonance.getPage(limit: pageSize, offset: 0, sort: sortOption)
+            resonances = page
+            hasMore = page.count == pageSize
         } catch {
             errorMessage = error.localizedDescription
+            resonances = []
+            hasMore = false
+        }
+    }
+
+    @MainActor
+    private func loadMoreIfNeeded(current: Resonance) async {
+        guard hasMore else { return }
+        guard !isLoadingInitial, !isLoadingMore else { return }
+        guard current.id == resonances.last?.id else { return }
+
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+
+        do {
+            let page = try await Resonance.getPage(limit: pageSize, offset: resonances.count, sort: sortOption)
+            resonances.append(contentsOf: page)
+            hasMore = page.count == pageSize
+        } catch {
+            hasMore = false
+        }
+    }
+
+    private func localizedLabel(for option: ResonanceSort) -> String {
+        switch option {
+        case .updatedAt:
+            return String(localized: "resonance.sort.updatedAt")
+        case .resonanceCount:
+            return String(localized: "resonance.sort.count")
         }
     }
 }

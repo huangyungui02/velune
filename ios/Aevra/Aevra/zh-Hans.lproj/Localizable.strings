@@ -49,6 +49,9 @@
 "resonance.title" = "共鸣";
 "resonance.empty" = "暂无共鸣";
 "resonance.load.failed" = "加载共鸣失败";
+"resonance.sort.title" = "排序";
+"resonance.sort.updatedAt" = "最近共鸣";
+"resonance.sort.count" = "最多共鸣";
 "resonance.unknownSouler" = "未命名灵魂";
 
 "app.error.unauthenticated" = "用户尚未登录";
