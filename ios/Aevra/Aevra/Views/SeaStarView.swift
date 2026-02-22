@@ -29,6 +29,15 @@ struct SeaStarView: View {
                 }
             }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        ResonanceListView()
+                    } label: {
+                        Image(systemName: "waveform.path.ecg")
+                    }
+                    .accessibilityLabel(String(localized: "seastar.action.resonances"))
+                }
+
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         ProfileView()
