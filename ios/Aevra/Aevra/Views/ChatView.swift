@@ -80,7 +80,9 @@ struct ChatView: View {
     }
 
     private var composer: some View {
-        HStack(alignment: .bottom, spacing: 10) {
+        let canSend = !isSending && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        return HStack(alignment: .bottom, spacing: 10) {
             TextField(
                 String(localized: "resonance.chat.placeholder"),
                 text: $inputText,
@@ -92,22 +94,29 @@ struct ChatView: View {
             .foregroundStyle(UITheme.primaryText)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(.white.opacity(0.08), in: .rect(cornerRadius: 14))
+            .background(Color.clear, in: .rect(cornerRadius: 18))
+            .glassEffect(in: .rect(cornerRadius: 18))
 
             Button {
                 Task {
                     await sendMessage()
                 }
             } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 30, weight: .regular, design: .rounded))
-                    .foregroundStyle(UITheme.primaryText)
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    .foregroundStyle(canSend ? UITheme.primaryText : UITheme.tertiaryText)
+                    .frame(width: 45, height: 45)
+                    .background(Color.clear, in: .circle)
+                    .glassEffect(in: .circle)
             }
-            .disabled(isSending || inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .opacity(isSending || inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.4 : 1.0)
+            .disabled(!canSend)
+            .scaleEffect(canSend ? 1 : 0.96)
+            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: canSend)
         }
-        .padding()
-        .background(.ultraThinMaterial)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .padding(.horizontal)
+        .padding(.bottom, 6)
     }
 
     @MainActor
