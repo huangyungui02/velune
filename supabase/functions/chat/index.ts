@@ -141,23 +141,33 @@ const createOrUpdateResonance = async (userId: string, soulerId: string) => {
   }
 };
 
+const isChineseName = (name: string) => /[\p{Script=Han}]/u.test(name);
+
 const buildSystemPrompt = (
   name: string,
   bio: string | null,
   prompt: string | null,
 ) => {
+  const useChinesePrompt = isChineseName(name);
+  const localeInstruction = useChinesePrompt
+    ? "保持角色设定，表达简洁。"
+    : "Stay in character and be concise.";
+  const languageRule = useChinesePrompt
+    ? "使用与用户相同的语言回复。"
+    : "reply in the same language as the user.";
+
   if (prompt && prompt.trim().length > 0) {
-    return [
-      prompt.trim(),
-      "Stay in character, be concise, and reply in the same language as the user.",
-    ].join("\n\n");
+    return [prompt.trim(), localeInstruction, languageRule].join("\n\n");
   }
 
-  return [
-    `You are ${name}.`,
-    bio?.trim() ? `Background:\n${bio.trim()}` : "",
-    "Stay in character, be concise, and reply in the same language as the user.",
-  ]
+  const profileIntro = useChinesePrompt ? `你是${name}。` : `You are ${name}.`;
+  const profileBio = bio?.trim()
+    ? useChinesePrompt
+      ? `背景：\n${bio.trim()}`
+      : `Background:\n${bio.trim()}`
+    : "";
+
+  return [profileIntro, profileBio, localeInstruction, languageRule]
     .filter(Boolean)
     .join("\n\n");
 };
