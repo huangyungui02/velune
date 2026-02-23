@@ -29,7 +29,7 @@ struct SeaStarView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         ResonanceView()
                     } label: {
@@ -38,7 +38,7 @@ struct SeaStarView: View {
                     .accessibilityLabel(String(localized: "seastar.action.resonances"))
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarLeading) {
                     NavigationLink {
                         ProfileView()
                     } label: {
