@@ -55,7 +55,7 @@ struct MatchingView: View {
                 
                 // Echo cards
                 ForEach(echoes) { echo in
-                    EchoCardView(echo: echo)
+                    EchoCardView(echo: echo, glimmerContent: manager.text)
                         .containerRelativeFrame(.horizontal)
                         .id(CardID.echo(echo.id))
                 }
@@ -106,6 +106,6 @@ struct MatchingView: View {
 #Preview {
     ZStack {
         BackgroundView()
-        EchoCardView(echo: Echo.sampleData[0])
+        EchoCardView(echo: Echo.sampleData[0], glimmerContent: Glimmer.sampleData[0].content)
     }
 }

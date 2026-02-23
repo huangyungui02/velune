@@ -45,6 +45,7 @@
 "glimmer.delete.progress" = "Deleting…";
 
 "souler.load.failed" = "Failed to load";
+"echo.reply.placeholder" = "Reply to this echo…";
 
 "resonance.title" = "Resonances";
 "resonance.empty" = "No resonances yet";

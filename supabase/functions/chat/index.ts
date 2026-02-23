@@ -29,6 +29,11 @@ type MessageRow = {
   created_at: string;
 };
 
+type SeedMessageInput = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 const getUserIdFromRequest = async (request: Request) => {
   const authHeader = request.headers.get("Authorization");
   if (!authHeader) {
@@ -188,6 +193,27 @@ const contentToText = (content: unknown): string => {
     .join("");
 };
 
+const normalizeSeedMessages = (value: unknown): SeedMessageInput[] => {
+  if (!Array.isArray(value)) return [];
+
+  const seedMessages: SeedMessageInput[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const role = (item as { role?: unknown }).role;
+    const content = (item as { content?: unknown }).content;
+    if (role !== "user" && role !== "assistant") continue;
+    if (typeof content !== "string") continue;
+
+    const trimmed = content.trim();
+    if (!trimmed) continue;
+
+    seedMessages.push({ role, content: trimmed });
+    if (seedMessages.length >= 10) break;
+  }
+
+  return seedMessages;
+};
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -215,12 +241,18 @@ Deno.serve(async (req) => {
         const body = await req.json();
         const soulerId = String(body?.soulerId ?? "").trim();
         const content = String(body?.content ?? "").trim();
+        const seedMessages = normalizeSeedMessages(body?.seedMessages);
 
         if (!soulerId || !content) {
           throw new Error("Missing soulerId or content");
         }
 
         const souler = await getSouler(soulerId);
+
+        for (const seed of seedMessages) {
+          await insertMessage(userId, soulerId, seed.role, seed.content);
+        }
+
         const history = await getRecentMessages(userId, soulerId);
 
         await insertMessage(userId, soulerId, "user", content);

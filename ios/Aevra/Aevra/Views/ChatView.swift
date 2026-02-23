@@ -4,12 +4,30 @@ import SwiftUI
 struct ChatView: View {
     let soulerId: UUID
     let soulerName: String
+    let initialSeedMessages: [Message.SeedMessage]
+    let initialDisplayMessages: [Message]
+    let initialReply: String?
 
     @State private var messages: [Message] = []
     @State private var inputText = ""
     @State private var isLoading = false
     @State private var isSending = false
     @State private var errorMessage: String?
+    @State private var hasTriggeredInitialReply = false
+
+    init(
+        soulerId: UUID,
+        soulerName: String,
+        initialSeedMessages: [Message.SeedMessage] = [],
+        initialDisplayMessages: [Message] = [],
+        initialReply: String? = nil
+    ) {
+        self.soulerId = soulerId
+        self.soulerName = soulerName
+        self.initialSeedMessages = initialSeedMessages
+        self.initialDisplayMessages = initialDisplayMessages
+        self.initialReply = initialReply
+    }
 
     var body: some View {
         ZStack {
@@ -52,6 +70,7 @@ struct ChatView: View {
         }
         .task {
             await loadMessages()
+            await triggerInitialReplyIfNeeded()
         }
     }
 
@@ -134,14 +153,20 @@ struct ChatView: View {
     }
 
     @MainActor
-    private func sendMessage() async {
+    private func sendMessage(
+        contentOverride: String? = nil,
+        seedMessages: [Message.SeedMessage] = []
+    ) async {
         if isSending { return }
 
-        let content = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let content = (contentOverride ?? inputText)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty else { return }
 
         isSending = true
-        inputText = ""
+        if contentOverride == nil {
+            inputText = ""
+        }
         defer { isSending = false }
 
         let userLocal = Message(
@@ -164,7 +189,11 @@ struct ChatView: View {
         messages.append(assistantLocal)
 
         do {
-            for try await event in Message.streamReply(soulerId: soulerId, content: content) {
+            for try await event in Message.streamReply(
+                soulerId: soulerId,
+                content: content,
+                seedMessages: seedMessages
+            ) {
                 switch event {
                 case let .delta(delta):
                     if let index = messages.firstIndex(where: { $0.id == assistantLocalId }) {
@@ -179,6 +208,20 @@ struct ChatView: View {
             messages.removeAll { $0.id == assistantLocalId }
             errorMessage = error.localizedDescription
         }
+    }
+
+    @MainActor
+    private func triggerInitialReplyIfNeeded() async {
+        guard !hasTriggeredInitialReply else { return }
+
+        let reply = initialReply?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !reply.isEmpty else { return }
+
+        hasTriggeredInitialReply = true
+        if messages.isEmpty, !initialDisplayMessages.isEmpty {
+            messages = initialDisplayMessages
+        }
+        await sendMessage(contentOverride: reply, seedMessages: initialSeedMessages)
     }
 }
 

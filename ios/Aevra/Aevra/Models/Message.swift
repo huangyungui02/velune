@@ -15,6 +15,11 @@ struct Message: Identifiable, Equatable {
 }
 
 extension Message {
+    struct SeedMessage: Encodable {
+        var role: Role
+        var content: String
+    }
+
     enum StreamEvent {
         case delta(String)
         case done
@@ -39,6 +44,13 @@ extension Message {
     private struct SendRequest: Encodable {
         var soulerId: String
         var content: String
+        var seedMessages: [SeedMessage]
+
+        enum CodingKeys: String, CodingKey {
+            case soulerId = "soulerId"
+            case content
+            case seedMessages = "seedMessages"
+        }
     }
 
     static func getHistory(soulerId: UUID) async throws -> [Message] {
@@ -61,8 +73,16 @@ extension Message {
         }
     }
 
-    static func streamReply(soulerId: UUID, content: String) -> AsyncThrowingStream<StreamEvent, Error> {
-        let request = SendRequest(soulerId: soulerId.uuidString, content: content)
+    static func streamReply(
+        soulerId: UUID,
+        content: String,
+        seedMessages: [SeedMessage] = []
+    ) -> AsyncThrowingStream<StreamEvent, Error> {
+        let request = SendRequest(
+            soulerId: soulerId.uuidString,
+            content: content,
+            seedMessages: seedMessages
+        )
         let rawStream = supabase.functions._invokeWithStreamedResponse(
             "chat",
             options: FunctionInvokeOptions(body: request)

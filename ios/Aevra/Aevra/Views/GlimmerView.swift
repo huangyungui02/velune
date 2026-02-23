@@ -121,7 +121,7 @@ struct GlimmerView: View {
                     .id(CardID.glimmer)
 
                 ForEach(echoes) { echo in
-                    EchoCardView(echo: echo)
+                    EchoCardView(echo: echo, glimmerContent: glimmer.content)
                         .containerRelativeFrame(.horizontal)
                         .id(CardID.echo(echo.id))
                 }

@@ -45,6 +45,7 @@
 "glimmer.delete.progress" = "删除中…";
 
 "souler.load.failed" = "加载失败";
+"echo.reply.placeholder" = "回应这段回响…";
 
 "resonance.title" = "共鸣";
 "resonance.empty" = "暂无共鸣";
