@@ -21,28 +21,15 @@ struct EchoCardView: View {
                     .multilineTextAlignment(.leading)
                     .lineSpacing(8)
 
+                soulerSignature
+                    .padding(.top, 16)
+
                 Divider()
                     .background(.white.opacity(0.01))
-                    .padding(.top)
+                    .padding(.top, 2)
+                    .padding(.bottom, 2)
 
                 replyComposer
-
-                NavigationLink {
-                    SoulerView(soulerId: echo.soulerId)
-                } label: {
-                    HStack(spacing: 8) {
-                        Spacer()
-
-                        Text(echo.soulerName)
-                            .font(UITheme.literary(size: 19, weight: .medium))
-                            .foregroundStyle(UITheme.primaryText)
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundStyle(UITheme.secondaryText)
-                    }
-                }
-                .buttonStyle(.plain)
             }
         }
         .navigationDestination(isPresented: $navigateToChat) {
@@ -72,6 +59,25 @@ struct EchoCardView: View {
                 initialReply: chatInitialReply
             )
         }
+    }
+
+    private var soulerSignature: some View {
+        NavigationLink {
+            SoulerView(soulerId: echo.soulerId)
+        } label: {
+            HStack(spacing: 8) {
+                Spacer()
+                Text(echo.soulerName)
+                    .font(UITheme.literary(size: 19, weight: .medium))
+                    .foregroundStyle(UITheme.accent)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(UITheme.secondaryText)
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
     }
 
     private var replyComposer: some View {
