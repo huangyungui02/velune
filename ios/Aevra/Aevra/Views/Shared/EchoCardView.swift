@@ -27,41 +27,6 @@ struct EchoCardView: View {
 
                 replyComposer
 
-                NavigationLink(
-                    isActive: $navigateToChat,
-                    destination: {
-                        ChatView(
-                            soulerId: echo.soulerId,
-                            soulerName: echo.soulerName,
-                            initialSeedMessages: [
-                                .init(role: .user, content: glimmerContent),
-                                .init(role: .assistant, content: echo.content),
-                            ],
-                            initialDisplayMessages: [
-                                Message(
-                                    id: UUID(),
-                                    soulerId: echo.soulerId,
-                                    role: .user,
-                                    content: glimmerContent,
-                                    createdAt: .now.addingTimeInterval(-2)
-                                ),
-                                Message(
-                                    id: UUID(),
-                                    soulerId: echo.soulerId,
-                                    role: .assistant,
-                                    content: echo.content,
-                                    createdAt: .now.addingTimeInterval(-1)
-                                ),
-                            ],
-                            initialReply: chatInitialReply
-                        )
-                    },
-                    label: {
-                        SwiftUI.EmptyView()
-                    }
-                )
-                .hidden()
-
                 NavigationLink {
                     SoulerView(soulerId: echo.soulerId)
                 } label: {
@@ -79,6 +44,33 @@ struct EchoCardView: View {
                 }
                 .buttonStyle(.plain)
             }
+        }
+        .navigationDestination(isPresented: $navigateToChat) {
+            ChatView(
+                soulerId: echo.soulerId,
+                soulerName: echo.soulerName,
+                initialSeedMessages: [
+                    .init(role: .user, content: glimmerContent),
+                    .init(role: .assistant, content: echo.content),
+                ],
+                initialDisplayMessages: [
+                    Message(
+                        id: UUID(),
+                        soulerId: echo.soulerId,
+                        role: .user,
+                        content: glimmerContent,
+                        createdAt: .now.addingTimeInterval(-2)
+                    ),
+                    Message(
+                        id: UUID(),
+                        soulerId: echo.soulerId,
+                        role: .assistant,
+                        content: echo.content,
+                        createdAt: .now.addingTimeInterval(-1)
+                    ),
+                ],
+                initialReply: chatInitialReply
+            )
         }
     }
 
