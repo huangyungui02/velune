@@ -4,16 +4,20 @@ struct PremiumCardView<Content: View>: View {
     private let iconName: String
     private let content: Content
     private let maxCardHeight: CGFloat?
+    private let followBottomOnContentGrowth: Bool
     
     @State private var contentHeight: CGFloat = 0
+    private let bottomAnchorId = "premium-card-bottom-anchor"
     
     init(
         iconName: String,
         maxCardHeight: CGFloat? = nil,
+        followBottomOnContentGrowth: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
         self.iconName = iconName
         self.maxCardHeight = maxCardHeight
+        self.followBottomOnContentGrowth = followBottomOnContentGrowth
         self.content = content()
     }
     
@@ -50,26 +54,38 @@ struct PremiumCardView<Content: View>: View {
     private var scrollableContent: some View {
         let cap = maxContentHeight
 
-        return ScrollView {
-            VStack(spacing: 20) {
-                headerView
-                content
-                    .padding(.horizontal, 20)
+        return ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 20) {
+                    headerView
+                    content
+                        .padding(.horizontal, 20)
+                    Color.clear
+                        .frame(height: 1)
+                        .id(bottomAnchorId)
+                }
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear
+                                .preference(key: ContentHeightKey.self, value: proxy.size.height)
+                        }
+                    )
             }
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity)
-                .background(
-                    GeometryReader { proxy in
-                        Color.clear
-                            .preference(key: ContentHeightKey.self, value: proxy.size.height)
+            .scrollDisabled(contentHeight <= cap)
+            .frame(height: contentHeight == 0 ? nil : min(contentHeight, cap), alignment: .top)
+            .onPreferenceChange(ContentHeightKey.self) { newValue in
+                let shouldFollow = followBottomOnContentGrowth && newValue > contentHeight
+                if contentHeight != newValue {
+                    contentHeight = newValue
+                }
+                guard shouldFollow else { return }
+                DispatchQueue.main.async {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        proxy.scrollTo(bottomAnchorId, anchor: .bottom)
                     }
-                )
-        }
-        .scrollDisabled(contentHeight <= cap)
-        .frame(height: contentHeight == 0 ? nil : min(contentHeight, cap), alignment: .top)
-        .onPreferenceChange(ContentHeightKey.self) { newValue in
-            if contentHeight != newValue {
-                contentHeight = newValue
+                }
             }
         }
     }

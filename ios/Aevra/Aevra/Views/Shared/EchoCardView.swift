@@ -15,9 +15,14 @@ struct EchoCardView: View {
     @State private var replyText = ""
     @State private var navigateToChat = false
     @State private var chatInitialReply: String?
+    @FocusState private var isReplyFieldFocused: Bool
 
     var body: some View {
-        PremiumCardView(iconName: "circle.circle", maxCardHeight: maxCardHeight) {
+        PremiumCardView(
+            iconName: "circle.circle",
+            maxCardHeight: maxCardHeight,
+            followBottomOnContentGrowth: isReplyFieldFocused
+        ) {
             VStack(alignment: .leading, spacing: 16) {
                 Markdown(echo.content)
                     .markdownTextStyle {
@@ -97,7 +102,8 @@ struct EchoCardView: View {
                 text: $replyText,
                 axis: .vertical
             )
-            .lineLimit(1 ... 3)
+            .lineLimit(1 ... 5)
+            .focused($isReplyFieldFocused)
             .textFieldStyle(.plain)
             .font(UITheme.literary(size: 16))
             .foregroundStyle(UITheme.primaryText)
