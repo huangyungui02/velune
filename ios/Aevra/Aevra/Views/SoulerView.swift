@@ -86,7 +86,7 @@ struct SoulerView: View {
                     Markdown(souler.bio)
                         .markdownTextStyle {
                             FontFamily(.custom(UITheme.literaryFontName))
-                            FontSize(19)
+                            FontSize(18)
                             ForegroundColor(UITheme.primaryText)
                         }
                         .lineSpacing(8)

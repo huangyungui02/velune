@@ -22,7 +22,7 @@ struct EchoCardView: View {
                 Markdown(echo.content)
                     .markdownTextStyle {
                         FontFamily(.custom(UITheme.literaryFontName))
-                        FontSize(19)
+                        FontSize(18)
                         ForegroundColor(UITheme.primaryText)
                     }
                     .multilineTextAlignment(.leading)
@@ -75,7 +75,7 @@ struct EchoCardView: View {
             HStack(spacing: 8) {
                 Spacer()
                 Text(echo.soulerName)
-                    .font(UITheme.literary(size: 19, weight: .medium))
+                    .font(UITheme.literary(size: 18, weight: .medium))
                     .foregroundStyle(UITheme.accent)
 
                 Image(systemName: "chevron.right")
