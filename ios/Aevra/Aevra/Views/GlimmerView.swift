@@ -30,10 +30,9 @@ struct GlimmerView: View {
 
                 if isLoading {
                     ProgressView()
+                } else {
+                    indicatorView
                 }
-
-                indicatorView
-                    .padding(.bottom, 16)
             }
         }
         .navigationTitle(String(localized: "glimmer.title"))
@@ -149,9 +148,7 @@ struct GlimmerView: View {
     }
 
     private var indicatorView: some View {
-        HStack(spacing: 8) {
-            EchoPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
-        }
+        EchoPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
     }
 }
 

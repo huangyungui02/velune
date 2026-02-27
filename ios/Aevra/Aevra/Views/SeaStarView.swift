@@ -9,9 +9,6 @@ struct SeaStarView: View {
     @State private var isPresented = false
     @State private var manager = MatchingManager.shared
 
-    private let draftPreviewMaxLines: Int = 5
-    private let draftPreviewPadding: CGFloat = 16
-
     var body: some View {
         NavigationStack {
             ZStack {
@@ -25,7 +22,6 @@ struct SeaStarView: View {
                     Spacer()
 
                     magicButtonView
-                        .padding()
                 }
             }
             .toolbar {
@@ -66,7 +62,7 @@ struct SeaStarView: View {
                         .foregroundStyle(UITheme.secondaryText)
                         .tracking(2)
                 }
-                .padding(16)
+                .padding()
                 .glassEffect(in: .capsule)
             } else if text.isEmpty {
                 HStack(spacing: 12) {
@@ -76,12 +72,12 @@ struct SeaStarView: View {
                         .foregroundStyle(UITheme.primaryText)
                         .font(UITheme.literary(size: 18))
                 }
-                .padding(16)
+                .padding()
                 .glassEffect(in: .capsule)
             } else {
                 draftPreviewField
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(draftPreviewPadding)
+                    .padding()
                     .glassEffect(in: .rect(cornerRadius: 20))
                     .contentShape(.rect)
                     .highPriorityGesture(
@@ -103,7 +99,7 @@ struct SeaStarView: View {
     private var draftPreviewField: some View {
         TextField("", text: .constant(text), axis: .vertical)
             .font(UITheme.literary(size: 18))
-            .lineLimit(1 ... draftPreviewMaxLines)
+            .lineLimit(1 ... 5)
             .foregroundStyle(UITheme.primaryText)
             .frame(maxWidth: .infinity, alignment: .leading)
             .textFieldStyle(.plain)
