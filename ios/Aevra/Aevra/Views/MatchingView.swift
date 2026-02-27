@@ -1,10 +1,7 @@
-import Supabase
-import SwiftData
 import SwiftUI
 
 struct MatchingView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var context
     
     @State private var manager = MatchingManager.shared
     @State private var showError = false
@@ -23,11 +20,11 @@ struct MatchingView: View {
         ZStack {
             BackgroundView()
 
-            VStack {
+            VStack(spacing: 16) {
                 cardPagerView
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(.vertical)
 
-                Spacer()
-                
                 indicatorView
                     .padding(.bottom, 16)
             }
@@ -46,39 +43,49 @@ struct MatchingView: View {
     }
     
     private var cardPagerView: some View {
-        ScrollView(.horizontal) {
-            LazyHStack(spacing: 0) {
-                // Soul Fragment card
-                glimmerCard
-                    .containerRelativeFrame(.horizontal)
-                    .id(CardID.glimmer)
-                
-                // Echo cards
-                ForEach(echoes) { echo in
-                    EchoCardView(echo: echo, glimmerContent: manager.text)
+        GeometryReader { proxy in
+            let maxCardHeight = proxy.size.height
+            let cardHeightLimit = maxCardHeight > 0 ? maxCardHeight : nil
+
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 0) {
+                    // Soul Fragment card
+                    glimmerCard(maxCardHeight: maxCardHeight)
+                        .containerRelativeFrame(.horizontal)
+                        .id(CardID.glimmer)
+
+                    // Echo cards
+                    ForEach(echoes) { echo in
+                        EchoCardView(
+                            echo: echo,
+                            glimmerContent: manager.text,
+                            maxCardHeight: cardHeightLimit
+                        )
                         .containerRelativeFrame(.horizontal)
                         .id(CardID.echo(echo.id))
+                    }
                 }
+                .scrollTargetLayout()
             }
-            .scrollTargetLayout()
-        }
-        .scrollTargetBehavior(.paging)
-        .scrollPosition(id: $currentPage)
-        .scrollIndicators(.hidden)
-        .onChange(of: hasEchoes) { _, newValue in
-            // Switch to first echo when echoes appear
-            if newValue, case .glimmer = currentPage {
-                if let firstEcho = echoes.first {
-                    withAnimation {
-                        currentPage = .echo(firstEcho.id)
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $currentPage)
+            .scrollIndicators(.hidden)
+            .onChange(of: hasEchoes) { _, newValue in
+                // Switch to first echo when echoes appear
+                if newValue, case .glimmer = currentPage {
+                    if let firstEcho = echoes.first {
+                        withAnimation {
+                            currentPage = .echo(firstEcho.id)
+                        }
                     }
                 }
             }
         }
     }
     
-    private var glimmerCard: some View {
-        GlimmerCardView(content: manager.text)
+    private func glimmerCard(maxCardHeight: CGFloat) -> some View {
+        let cardHeightLimit = maxCardHeight > 0 ? maxCardHeight : nil
+        return GlimmerCardView(content: manager.text, maxCardHeight: cardHeightLimit)
     }
     
     private var indicatorView: some View {

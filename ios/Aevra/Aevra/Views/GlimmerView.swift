@@ -19,22 +19,21 @@ struct GlimmerView: View {
         glimmer.echoes.sorted { $0.createdAt < $1.createdAt }
     }
 
-    private var hasEchoes: Bool { !echoes.isEmpty }
-
     var body: some View {
         ZStack {
             BackgroundView()
 
-            VStack {
+            VStack(spacing: 16) {
                 cardPagerView
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(.vertical)
 
                 if isLoading {
                     ProgressView()
                 }
 
-                Spacer()
-
                 indicatorView
+                    .padding(.bottom, 16)
             }
         }
         .navigationTitle(String(localized: "glimmer.title"))
@@ -112,29 +111,41 @@ struct GlimmerView: View {
         }
     }
 
-    @ViewBuilder
     private var cardPagerView: some View {
-        ScrollView(.horizontal) {
-            LazyHStack(spacing: 0) {
-                glimmerCard
-                    .containerRelativeFrame(.horizontal)
-                    .id(CardID.glimmer)
+        GeometryReader { proxy in
+            let maxCardHeight = proxy.size.height
+            let cardHeightLimit = maxCardHeight > 0 ? maxCardHeight : nil
 
-                ForEach(echoes) { echo in
-                    EchoCardView(echo: echo, glimmerContent: glimmer.content)
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 0) {
+                    glimmerCard(maxCardHeight: cardHeightLimit)
+                        .containerRelativeFrame(.horizontal)
+                        .id(CardID.glimmer)
+
+                    ForEach(echoes) { echo in
+                        EchoCardView(
+                            echo: echo,
+                            glimmerContent: glimmer.content,
+                            maxCardHeight: cardHeightLimit
+                        )
                         .containerRelativeFrame(.horizontal)
                         .id(CardID.echo(echo.id))
+                    }
                 }
+                .scrollTargetLayout()
             }
-            .scrollTargetLayout()
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $currentPage)
+            .scrollIndicators(.hidden)
         }
-        .scrollTargetBehavior(.paging)
-        .scrollPosition(id: $currentPage)
-        .scrollIndicators(.hidden)
     }
 
-    private var glimmerCard: some View {
-        GlimmerCardView(content: glimmer.content, createdAt: glimmer.createdAt)
+    private func glimmerCard(maxCardHeight: CGFloat?) -> some View {
+        GlimmerCardView(
+            content: glimmer.content,
+            createdAt: glimmer.createdAt,
+            maxCardHeight: maxCardHeight
+        )
     }
 
     private var indicatorView: some View {

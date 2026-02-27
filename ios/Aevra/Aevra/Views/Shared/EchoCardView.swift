@@ -4,13 +4,20 @@ import SwiftUI
 struct EchoCardView: View {
     let echo: Echo
     let glimmerContent: String
+    let maxCardHeight: CGFloat?
+
+    init(echo: Echo, glimmerContent: String, maxCardHeight: CGFloat? = nil) {
+        self.echo = echo
+        self.glimmerContent = glimmerContent
+        self.maxCardHeight = maxCardHeight
+    }
 
     @State private var replyText = ""
     @State private var navigateToChat = false
     @State private var chatInitialReply: String?
 
     var body: some View {
-        PremiumCardView(iconName: "circle.circle") {
+        PremiumCardView(iconName: "circle.circle", maxCardHeight: maxCardHeight) {
             VStack(alignment: .leading, spacing: 16) {
                 Markdown(echo.content)
                     .markdownTextStyle {

@@ -1,21 +1,19 @@
 import SwiftUI
 
-/// A reusable card component with icon header and scrollable content
-/// Used for displaying soul fragments and echo responses
 struct PremiumCardView<Content: View>: View {
     private let iconName: String
     private let content: Content
-    private let maxContentHeight: CGFloat?
+    private let maxCardHeight: CGFloat?
     
     @State private var contentHeight: CGFloat = 0
     
     init(
         iconName: String,
-        maxContentHeight: CGFloat? = 450,
+        maxCardHeight: CGFloat? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.iconName = iconName
-        self.maxContentHeight = maxContentHeight
+        self.maxCardHeight = maxCardHeight
         self.content = content()
     }
     
@@ -53,7 +51,8 @@ struct PremiumCardView<Content: View>: View {
     }
     
     private var scrollableContent: some View {
-        let cap = maxContentHeight ?? .infinity
+        let cap = maxContentHeight
+
         return ScrollView {
             content
                 .padding(.horizontal, 20)
@@ -66,12 +65,17 @@ struct PremiumCardView<Content: View>: View {
                 )
         }
         .scrollDisabled(contentHeight <= cap)
-        .frame(height: contentHeight == 0 ? nil : min(contentHeight, cap))
+        .frame(height: contentHeight == 0 ? nil : min(contentHeight, cap), alignment: .top)
         .onPreferenceChange(ContentHeightKey.self) { newValue in
             if contentHeight != newValue {
                 contentHeight = newValue
             }
         }
+    }
+
+    private var maxContentHeight: CGFloat {
+        guard let maxCardHeight else { return .infinity }
+        return max(0, maxCardHeight - 100)
     }
 }
 
