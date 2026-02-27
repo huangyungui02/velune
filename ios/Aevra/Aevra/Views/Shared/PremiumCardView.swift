@@ -18,10 +18,7 @@ struct PremiumCardView<Content: View>: View {
     }
     
     var body: some View {
-        VStack(spacing: 20) {
-            headerView
-            scrollableContent
-        }
+        scrollableContent
         .padding(.vertical, 20)
         .frame(maxWidth: .infinity)
         .background(Color.clear, in: .rect(cornerRadius: 28))
@@ -54,9 +51,13 @@ struct PremiumCardView<Content: View>: View {
         let cap = maxContentHeight
 
         return ScrollView {
-            content
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
+            VStack(spacing: 20) {
+                headerView
+                content
+                    .padding(.horizontal, 20)
+            }
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
                 .background(
                     GeometryReader { proxy in
                         Color.clear
@@ -75,7 +76,7 @@ struct PremiumCardView<Content: View>: View {
 
     private var maxContentHeight: CGFloat {
         guard let maxCardHeight else { return .infinity }
-        return max(0, maxCardHeight - 100)
+        return max(0, maxCardHeight - 40)
     }
 }
 
