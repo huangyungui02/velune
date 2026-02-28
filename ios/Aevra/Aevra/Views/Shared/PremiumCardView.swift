@@ -5,10 +5,10 @@ struct PremiumCardView<Content: View>: View {
     private let content: Content
     private let maxCardHeight: CGFloat?
     private let followBottomOnContentGrowth: Bool
-    
+
     @State private var contentHeight: CGFloat = 0
     private let bottomAnchorId = "premium-card-bottom-anchor"
-    
+
     init(
         iconName: String,
         maxCardHeight: CGFloat? = nil,
@@ -20,26 +20,26 @@ struct PremiumCardView<Content: View>: View {
         self.followBottomOnContentGrowth = followBottomOnContentGrowth
         self.content = content()
     }
-    
+
     var body: some View {
         scrollableContent
-        .padding(.vertical, 20)
-        .frame(maxWidth: .infinity)
-        .background(Color.clear, in: .rect(cornerRadius: 28))
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [.white.opacity(0.30), .white.opacity(0.10)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        )
-        .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 14)
-        .glassEffect(in: .rect(cornerRadius: 28))
-        .padding(.horizontal, 16)
+            .padding(.vertical)
+            .frame(maxWidth: .infinity)
+            .background(Color.clear, in: .rect(cornerRadius: 28))
+            .overlay(
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [.white.opacity(0.30), .white.opacity(0.10)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 14)
+            .glassEffect(in: .rect(cornerRadius: 28))
+            .padding(.horizontal)
     }
 
     private var headerView: some View {
@@ -50,28 +50,32 @@ struct PremiumCardView<Content: View>: View {
             .background(.white.opacity(0.14), in: Circle())
             .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1))
     }
-    
+
     private var scrollableContent: some View {
         let cap = maxContentHeight
 
         return ScrollViewReader { proxy in
             ScrollView {
-                VStack(spacing: 20) {
-                    headerView
-                    content
-                        .padding(.horizontal, 20)
+                VStack {
+                    VStack(spacing: 20) {
+                        headerView
+
+                        content
+                            .padding(.horizontal, 20)
+                    }
+
                     Color.clear
                         .frame(height: 1)
                         .id(bottomAnchorId)
                 }
-                .padding(.vertical, 10)
+                .padding(.vertical, 8)
                 .frame(maxWidth: .infinity)
-                    .background(
-                        GeometryReader { proxy in
-                            Color.clear
-                                .preference(key: ContentHeightKey.self, value: proxy.size.height)
-                        }
-                    )
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear
+                            .preference(key: ContentHeightKey.self, value: proxy.size.height)
+                    }
+                )
             }
             .scrollDisabled(contentHeight <= cap)
             .frame(height: contentHeight == 0 ? nil : min(contentHeight, cap), alignment: .top)
@@ -98,7 +102,7 @@ struct PremiumCardView<Content: View>: View {
 
 private struct ContentHeightKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
-    
+
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
     }
