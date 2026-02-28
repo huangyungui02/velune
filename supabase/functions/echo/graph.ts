@@ -44,9 +44,12 @@ const graph = entrypoint(
           const wikiResolved = await fetchWikipediaCanonicalName(parsedName, lang);
           const canonicalName = wikiResolved.name;
           const wikiId = wikiResolved.wikiId;
-          if (wikiId) {
-            soulerData = await getSoulerByWikiId(wikiId);
+          if (!wikiId) {
+            throw new Error(
+              `Missing wikiId for parsedName: ${parsedName}, canonicalName: ${canonicalName}`,
+            );
           }
+          soulerData = await getSoulerByWikiId(wikiId);
           if (soulerData) {
             soulerData = await appendSoulerAlias(soulerData.id, parsedName);
           } else {
