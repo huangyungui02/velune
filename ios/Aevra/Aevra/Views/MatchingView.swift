@@ -31,13 +31,13 @@ struct MatchingView: View {
         .onChange(of: manager.errorMessage) { _, newValue in
             showError = newValue != nil
         }
-        .alert(String(localized: "matching.error.title"), isPresented: $showError) {
-            Button(String(localized: "common.ok"), role: .cancel) {
+        .alert(L10n.string("matching.error.title"), isPresented: $showError) {
+            Button(L10n.string("common.ok"), role: .cancel) {
                 manager.reset()
                 dismiss()
             }
         } message: {
-            Text(manager.errorMessage ?? String(localized: "matching.error.unknown"))
+            Text(manager.errorMessage ?? L10n.string("matching.error.unknown"))
         }
     }
     
@@ -96,7 +96,7 @@ struct MatchingView: View {
                     MatchingWaveIcon()
                     
                     if !hasEchoes {
-                        Text(String(localized: "matching.status.listening"))
+                        Text(L10n.string("matching.status.listening"))
                             .font(.system(size: 13, weight: .medium, design: .rounded))
                             .foregroundStyle(UITheme.secondaryText)
                             .tracking(2)

@@ -2,8 +2,12 @@
 "settings.section.account" = "账号";
 "settings.section.legal" = "法律";
 "settings.section.support" = "支持";
+"settings.section.language" = "语言";
 "settings.section.about" = "关于";
 "settings.account" = "账号";
+"settings.language" = "应用语言";
+"settings.language.english" = "English";
+"settings.language.simplifiedChinese" = "简体中文";
 "settings.rateApp" = "去 App Store 评分";
 "settings.action.signOut" = "退出登录";
 "settings.action.deleteAccount" = "删除账号";

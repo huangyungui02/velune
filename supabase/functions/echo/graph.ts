@@ -7,7 +7,7 @@ import {
   soulerProfile,
   soulerPrompt,
 } from "./nodes/index.ts";
-import { detectLang } from "./prompts.ts";
+import { type Lang } from "./prompts.ts";
 import {
   appendSoulerAlias,
   createSouler,
@@ -21,11 +21,12 @@ import {
 const graph = entrypoint(
   { name: "agent" },
   async (
-    { userId, glimmerId, glimmerContent, num, onEcho }: {
+    { userId, glimmerId, glimmerContent, num, lang, onEcho }: {
       userId: string;
       glimmerId: string;
       glimmerContent: string;
       num: number;
+      lang: Lang;
       onEcho?: (echo: {
         id: string;
         glimmer_id: string;
@@ -34,7 +35,6 @@ const graph = entrypoint(
       }) => void | Promise<void>;
     },
   ) => {
-    const lang = detectLang(glimmerContent);
     const soulers = await matchSoulers(glimmerContent, num, lang);
     const results = await Promise.allSettled(
       soulers.map(async (item) => {

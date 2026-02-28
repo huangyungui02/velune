@@ -21,7 +21,7 @@ struct SignView: View {
                         .font(.system(size: 44, weight: .semibold, design: .serif))
                         .foregroundStyle(UITheme.primaryText)
 
-                    Text(String(localized: "sign.slogan"))
+                    Text(L10n.string("sign.slogan"))
                         .font(UITheme.literary(size: 20))
                         .multilineTextAlignment(.center)
                         .lineSpacing(8)
@@ -117,9 +117,9 @@ struct SignView: View {
     }
 
     private var termsAttributedText: AttributedString {
-        let baseText = String(localized: "sign.terms.full")
-        let termsLabel = String(localized: "sign.terms.label")
-        let privacyLabel = String(localized: "sign.privacy.label")
+        let baseText = L10n.string("sign.terms.full")
+        let termsLabel = L10n.string("sign.terms.label")
+        let privacyLabel = L10n.string("sign.privacy.label")
 
         var text = AttributedString(baseText)
         text.foregroundColor = UITheme.tertiaryText

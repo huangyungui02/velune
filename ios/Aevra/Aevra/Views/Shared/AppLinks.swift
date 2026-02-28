@@ -1,25 +1,85 @@
 import Foundation
 
-enum AppLocale {
-    static var isChineseLanguage: Bool {
+enum AppLanguage: String, CaseIterable, Identifiable {
+    case english = "en"
+    case simplifiedChinese = "zh"
+
+    static let storageKey = "app.language"
+
+    var id: String { rawValue }
+
+    var locale: Locale {
+        switch self {
+        case .english:
+            Locale(identifier: "en")
+        case .simplifiedChinese:
+            Locale(identifier: "zh-Hans")
+        }
+    }
+
+    var websitePathPrefix: String {
+        switch self {
+        case .english:
+            ""
+        case .simplifiedChinese:
+            "/zh"
+        }
+    }
+
+    static var systemDefault: AppLanguage {
         Locale.preferredLanguages.first?.hasPrefix("zh") == true
+            ? .simplifiedChinese
+            : .english
+    }
+
+    static var current: AppLanguage {
+        guard
+            let rawValue = UserDefaults.standard.string(forKey: storageKey),
+            let language = AppLanguage(rawValue: rawValue)
+        else {
+            return systemDefault
+        }
+        return language
+    }
+
+    var appleLanguageIdentifier: String {
+        switch self {
+        case .english:
+            "en"
+        case .simplifiedChinese:
+            "zh-Hans"
+        }
+    }
+
+    func applyAsPreferredLanguage() {
+        UserDefaults.standard.set([appleLanguageIdentifier], forKey: "AppleLanguages")
     }
 }
 
 enum AppLinks {
     static var terms: URL {
-        URL(string: AppLocale.isChineseLanguage
-            ? "https://aevra.echoversa.com/zh/terms"
-            : "https://aevra.echoversa.com/terms")!
+        URL(string: "https://aevra.echoversa.com\(AppLanguage.current.websitePathPrefix)/terms")!
     }
 
     static var privacy: URL {
-        URL(string: AppLocale.isChineseLanguage
-            ? "https://aevra.echoversa.com/zh/privacy"
-            : "https://aevra.echoversa.com/privacy")!
+        URL(string: "https://aevra.echoversa.com\(AppLanguage.current.websitePathPrefix)/privacy")!
     }
 
     static var contactEmail: URL {
         URL(string: "mailto:aevra@echoversa.com")!
+    }
+}
+
+enum L10n {
+    nonisolated static func string(_ key: String) -> String {
+        let rawLanguage = UserDefaults.standard.string(forKey: "app.language") ?? "en"
+        let lproj = rawLanguage == "zh" ? "zh-Hans" : "en"
+        guard
+            let path = Bundle.main.path(forResource: lproj, ofType: "lproj"),
+            let bundle = Bundle(path: path)
+        else {
+            return NSLocalizedString(key, comment: "")
+        }
+        return bundle.localizedString(forKey: key, value: nil, table: nil)
     }
 }

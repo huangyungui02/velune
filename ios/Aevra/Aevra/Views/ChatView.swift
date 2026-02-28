@@ -35,11 +35,11 @@ struct ChatView: View {
 
             VStack(spacing: 0) {
                 if isLoading, messages.isEmpty {
-                    ProgressView(String(localized: "common.loading"))
+                    ProgressView(L10n.string("common.loading"))
                         .tint(UITheme.accent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if messages.isEmpty {
-                    EmptyView(title: String(localized: "resonance.chat.empty"))
+                    EmptyView(title: L10n.string("resonance.chat.empty"))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     messageList
@@ -57,16 +57,16 @@ struct ChatView: View {
                 } label: {
                     Image(systemName: "person.text.rectangle")
                 }
-                .accessibilityLabel(String(localized: "resonance.chat.action.profile"))
+                .accessibilityLabel(L10n.string("resonance.chat.action.profile"))
             }
         }
-        .alert(String(localized: "matching.error.title"), isPresented: Binding(
+        .alert(L10n.string("matching.error.title"), isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
-            Button(String(localized: "common.ok"), role: .cancel) {}
+            Button(L10n.string("common.ok"), role: .cancel) {}
         } message: {
-            Text(errorMessage ?? String(localized: "matching.error.unknown"))
+            Text(errorMessage ?? L10n.string("matching.error.unknown"))
         }
         .task {
             await loadMessages()
@@ -103,7 +103,7 @@ struct ChatView: View {
 
         return HStack(alignment: .bottom, spacing: 10) {
             TextField(
-                String(localized: "resonance.chat.placeholder"),
+                L10n.string("resonance.chat.placeholder"),
                 text: $inputText,
                 axis: .vertical
             )

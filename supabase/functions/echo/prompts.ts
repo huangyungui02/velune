@@ -1,14 +1,5 @@
 export type Lang = "zh" | "en";
 
-/**
- * Detect the primary language of the given text.
- * Returns "zh" if Chinese characters exceed 10% of total length, otherwise "en".
- */
-export function detectLang(text: string): Lang {
-  const cjk = text.match(/[\u4e00-\u9fff]/g);
-  return (cjk?.length ?? 0) / text.length > 0.1 ? "zh" : "en";
-}
-
 // ── Bilingual prompts ──────────────────────────────────────────────
 
 export const matchPrompt: Record<Lang, (num: number) => string> = {

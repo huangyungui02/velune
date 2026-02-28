@@ -85,6 +85,11 @@ class MatchingManager {
             let message: String?
         }
 
+        struct EchoRequestBody: Encodable {
+            let glimmerId: UUID
+            let lang: String
+        }
+
         let decoder = JSONDecoder()
         var buffer = Data()
         var receivedDone = false
@@ -138,7 +143,10 @@ class MatchingManager {
         let stream = supabase.functions._invokeWithStreamedResponse(
             "echo",
             options: FunctionInvokeOptions(
-                body: ["glimmerId": glimmer.id]
+                body: EchoRequestBody(
+                    glimmerId: glimmer.id,
+                    lang: AppLanguage.current.rawValue
+                )
             )
         )
         

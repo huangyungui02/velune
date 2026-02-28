@@ -2,8 +2,12 @@
 "settings.section.account" = "Account";
 "settings.section.legal" = "Legal";
 "settings.section.support" = "Support";
+"settings.section.language" = "Language";
 "settings.section.about" = "About";
 "settings.account" = "Account";
+"settings.language" = "App Language";
+"settings.language.english" = "English";
+"settings.language.simplifiedChinese" = "简体中文";
 "settings.rateApp" = "Rate on App Store";
 "settings.action.signOut" = "Sign Out";
 "settings.action.deleteAccount" = "Delete Account";

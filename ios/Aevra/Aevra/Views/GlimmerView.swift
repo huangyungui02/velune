@@ -35,7 +35,7 @@ struct GlimmerView: View {
                 }
             }
         }
-        .navigationTitle(String(localized: "glimmer.title"))
+        .navigationTitle(L10n.string("glimmer.title"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -43,7 +43,7 @@ struct GlimmerView: View {
                     Button(role: .destructive) {
                         showingDeleteAlert = true
                     } label: {
-                        Label(String(localized: "glimmer.action.delete"), systemImage: "trash")
+                        Label(L10n.string("glimmer.action.delete"), systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -51,9 +51,9 @@ struct GlimmerView: View {
                 .disabled(isDeleting)
             }
         }
-        .alert(String(localized: "glimmer.delete.title"), isPresented: $showingDeleteAlert) {
-            Button(String(localized: "common.cancel"), role: .cancel) {}
-            Button(String(localized: "glimmer.action.delete"), role: .destructive) {
+        .alert(L10n.string("glimmer.delete.title"), isPresented: $showingDeleteAlert) {
+            Button(L10n.string("common.cancel"), role: .cancel) {}
+            Button(L10n.string("glimmer.action.delete"), role: .destructive) {
                 Task {
                     let success = await deleteGlimmer()
                     if success {
@@ -62,11 +62,11 @@ struct GlimmerView: View {
                 }
             }
         } message: {
-            Text(String(localized: "glimmer.delete.message"))
+            Text(L10n.string("glimmer.delete.message"))
         }
         .overlay {
             if isDeleting {
-                ProgressView(String(localized: "glimmer.delete.progress"))
+                ProgressView(L10n.string("glimmer.delete.progress"))
                     .padding()
                     .background(.regularMaterial)
                     .cornerRadius(10)

@@ -15,13 +15,13 @@ struct ProfileView: View {
                     if isRefreshing {
                         ProgressView()
                     } else if glimmers.isEmpty {
-                        EmptyView(title: String(localized: "profile.empty.noGlimmers"))
+                        EmptyView(title: L10n.string("profile.empty.noGlimmers"))
                     } else {
                         glimmerListView
                     }
                 }
             }
-            .navigationTitle(String(localized: "profile.title.glimmers"))
+            .navigationTitle(L10n.string("profile.title.glimmers"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {

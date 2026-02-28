@@ -1,4 +1,5 @@
 import graph from "./graph.ts";
+import { type Lang } from "./prompts.ts";
 import {
   checkStatusBeforeProcessing,
   getGlimmer,
@@ -8,9 +9,11 @@ import { getUserIdFromRequest } from "./utils.ts";
 
 Deno.serve(async (req) => {
   let glimmerId: string | undefined;
+  let lang: Lang | undefined;
   try {
     const body = await req.json();
     glimmerId = body?.glimmerId;
+    lang = body?.lang;
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
       status: 400,
@@ -20,6 +23,12 @@ Deno.serve(async (req) => {
 
   if (!glimmerId) {
     return new Response(JSON.stringify({ error: "Missing glimmerId" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  if (lang !== "en" && lang !== "zh") {
+    return new Response(JSON.stringify({ error: "Missing or invalid lang" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
@@ -62,6 +71,7 @@ Deno.serve(async (req) => {
           glimmerId: glimmerId,
           glimmerContent: glimmer.content,
           num: num,
+          lang: lang,
           onEcho: (echo) => {
             send({
               type: "echo",

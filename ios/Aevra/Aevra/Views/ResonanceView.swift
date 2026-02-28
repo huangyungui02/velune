@@ -16,25 +16,25 @@ struct ResonanceView: View {
 
             Group {
                 if isLoadingInitial, resonances.isEmpty {
-                    ProgressView(String(localized: "common.loading"))
+                    ProgressView(L10n.string("common.loading"))
                         .tint(UITheme.accent)
                 } else if resonances.isEmpty {
                     if let errorMessage {
                         loadFailedView(message: errorMessage)
                     } else {
-                        EmptyView(title: String(localized: "resonance.empty"))
+                        EmptyView(title: L10n.string("resonance.empty"))
                     }
                 } else {
                     resonanceListView
                 }
             }
         }
-        .navigationTitle(String(localized: "resonance.title"))
+        .navigationTitle(L10n.string("resonance.title"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Picker(String(localized: "resonance.sort.title"), selection: $sortOption) {
+                    Picker(L10n.string("resonance.sort.title"), selection: $sortOption) {
                         ForEach(ResonanceSort.allCases) { option in
                             Text(localizedLabel(for: option)).tag(option)
                         }
@@ -75,7 +75,7 @@ struct ResonanceView: View {
                 }
 
                 if isLoadingMore {
-                    ProgressView(String(localized: "common.loading"))
+                    ProgressView(L10n.string("common.loading"))
                         .tint(UITheme.accent)
                         .padding(.vertical, 12)
                 }
@@ -89,7 +89,7 @@ struct ResonanceView: View {
 
     private func loadFailedView(message: String) -> some View {
         VStack(spacing: 12) {
-            Text(String(localized: "resonance.load.failed"))
+            Text(L10n.string("resonance.load.failed"))
                 .font(.system(size: 21, weight: .medium, design: .rounded))
                 .fontWeight(.semibold)
                 .foregroundStyle(UITheme.primaryText)
@@ -99,7 +99,7 @@ struct ResonanceView: View {
                 .foregroundStyle(UITheme.secondaryText)
                 .multilineTextAlignment(.center)
 
-            Button(String(localized: "common.retry")) {
+            Button(L10n.string("common.retry")) {
                 Task {
                     await reloadResonances()
                 }
@@ -150,9 +150,9 @@ struct ResonanceView: View {
     private func localizedLabel(for option: ResonanceSort) -> String {
         switch option {
         case .updatedAt:
-            return String(localized: "resonance.sort.updatedAt")
+            return L10n.string("resonance.sort.updatedAt")
         case .resonanceCount:
-            return String(localized: "resonance.sort.count")
+            return L10n.string("resonance.sort.count")
         }
     }
 }

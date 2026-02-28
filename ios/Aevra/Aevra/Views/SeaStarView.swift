@@ -17,7 +17,7 @@ struct SeaStarView: View {
                 VStack {
                     Spacer()
 
-                    VerseView(text: String(localized: "seastar.hero.verse"))
+                    VerseView(text: L10n.string("seastar.hero.verse"))
 
                     Spacer()
 
@@ -31,7 +31,7 @@ struct SeaStarView: View {
                     } label: {
                         Image(systemName: "waveform.path.ecg")
                     }
-                    .accessibilityLabel(String(localized: "seastar.action.resonances"))
+                    .accessibilityLabel(L10n.string("seastar.action.resonances"))
                 }
 
                 ToolbarItem(placement: .topBarLeading) {
@@ -57,7 +57,7 @@ struct SeaStarView: View {
                 HStack(spacing: 12) {
                     MatchingWaveIcon()
 
-                    Text(String(localized: "matching.status.listening"))
+                    Text(L10n.string("matching.status.listening"))
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(UITheme.secondaryText)
                         .tracking(2)
@@ -68,7 +68,7 @@ struct SeaStarView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "sparkles")
 
-                    Text(String(localized: "seastar.prompt.glimmerWithin"))
+                    Text(L10n.string("seastar.prompt.glimmerWithin"))
                         .foregroundStyle(UITheme.primaryText)
                         .font(UITheme.literary(size: 18))
                 }
@@ -151,7 +151,7 @@ private struct ComposeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                TextField(String(localized: "seastar.prompt.glimmerWithin"), text: $text, axis: .vertical)
+                TextField(L10n.string("seastar.prompt.glimmerWithin"), text: $text, axis: .vertical)
                     .focused($isFocused)
                     .font(UITheme.literary(size: 18))
                     .lineSpacing(6)
@@ -170,7 +170,7 @@ private struct ComposeView: View {
                     endPoint: .bottomTrailing
                 )
             )
-            .navigationTitle(String(localized: "glimmer.title"))
+            .navigationTitle(L10n.string("glimmer.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
