@@ -1,5 +1,6 @@
 import { entrypoint } from "@langchain/langgraph";
 import {
+  fetchWikipediaCanonicalName,
   matchSoulers,
   parseSouler,
   soulerAnswer,
@@ -8,9 +9,12 @@ import {
 } from "./nodes/index.ts";
 import { detectLang } from "./prompts.ts";
 import {
+  appendSoulerAlias,
+  createSouler,
   createEcho,
   createOrUpdateResonance,
-  getOrCreateSoulerByName,
+  getSoulerByAlias,
+  getSoulerByWikiId,
   updateSouler,
 } from "./supabase.ts";
 
@@ -34,18 +38,39 @@ const graph = entrypoint(
     const soulers = await matchSoulers(glimmerContent, num, lang);
     const results = await Promise.allSettled(
       soulers.map(async (item) => {
-        const { name } = await parseSouler(item.souler, item.content, lang);
-        const soulerData = await getOrCreateSoulerByName(name);
+        const { name: parsedName } = await parseSouler(item.souler, item.content, lang);
+        let soulerData = await getSoulerByAlias(parsedName);
+        if (!soulerData) {
+          const wikiResolved = await fetchWikipediaCanonicalName(parsedName, lang);
+          const canonicalName = wikiResolved.name;
+          const wikiId = wikiResolved.wikiId;
+          if (wikiId) {
+            soulerData = await getSoulerByWikiId(wikiId);
+          }
+          if (soulerData) {
+            soulerData = await appendSoulerAlias(soulerData.id, parsedName);
+          } else {
+            const aliases = canonicalName === parsedName
+              ? [canonicalName]
+              : [canonicalName, parsedName];
+            soulerData = await createSouler(
+              canonicalName,
+              aliases,
+              wikiId,
+            );
+          }
+        }
+
         await createOrUpdateResonance(userId, soulerData.id);
 
         if (!soulerData.bio) {
-          const bio = await soulerProfile(name, lang);
+          const bio = await soulerProfile(soulerData.name, lang);
           soulerData.bio = bio;
           await updateSouler(soulerData.id, { bio });
         }
 
         if (!soulerData.prompt) {
-          const prompt = await soulerPrompt(name, lang);
+          const prompt = await soulerPrompt(soulerData.name, lang);
           soulerData.prompt = prompt;
           await updateSouler(soulerData.id, { prompt });
         }

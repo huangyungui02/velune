@@ -11,7 +11,8 @@ export const getUserId = async (jwt: string) => {
 };
 
 export const checkStatusBeforeProcessing = async (glimmerId: string) => {
-  const { data, error } = await supabase.from("glimmers")
+  const { data, error } = await supabase
+    .from("glimmers")
     .select("status")
     .eq("id", glimmerId)
     .single();
@@ -28,7 +29,9 @@ export const updateGlimmerStatus = async (
   glimmerId: string,
   status: "processing" | "complete" | "incomplete" | "failed",
 ) => {
-  const { error } = await supabase.from("glimmers").update({ status })
+  const { error } = await supabase
+    .from("glimmers")
+    .update({ status })
     .eq("id", glimmerId);
   if (error) {
     throw error;
@@ -36,7 +39,9 @@ export const updateGlimmerStatus = async (
 };
 
 export const getGlimmer = async (glimmerId: string, userId: string) => {
-  const { data, error } = await supabase.from("glimmers").select("*")
+  const { data, error } = await supabase
+    .from("glimmers")
+    .select("*")
     .eq("id", glimmerId)
     .eq("user_id", userId)
     .single();
@@ -46,26 +51,49 @@ export const getGlimmer = async (glimmerId: string, userId: string) => {
   return data;
 };
 
-export const getOrCreateSoulerByName = async (
-  name: string,
-) => {
-  // Check if souler exists by canonical name.
-  const { data, error } = await supabase.from("soulers").select().eq("name", name)
-    .maybeSingle();
+export const getSoulerByAlias = async (candidateName: string) => {
+  const query = candidateName.trim();
+  if (!query) {
+    return null;
+  }
+  const { data, error } = await supabase
+    .from("soulers")
+    .select()
+    .contains("aliases", [query])
+    .limit(1);
   if (error) {
-    console.error(`Error getting or creating souler: ${error.message}`);
+    console.error(`Error querying souler by alias: ${error.message}`);
     throw error;
   }
+  return data?.[0] ?? null;
+};
 
-  // if souler does not exist, create it
-  if (!data) {
-    return await createSouler(name);
+export const getSoulerByWikiId = async (wikiId: number) => {
+  const { data, error } = await supabase
+    .from("soulers")
+    .select()
+    .eq("wiki_id", wikiId)
+    .maybeSingle();
+  if (error) {
+    console.error(`Error querying souler by wiki_id: ${error.message}`);
+    throw error;
   }
   return data;
 };
 
-const createSouler = async (name: string) => {
-  const { data, error } = await supabase.from("soulers").insert({ name }).select()
+export const createSouler = async (
+  name: string,
+  aliases: string[] = [],
+  wikiId?: number | null,
+) => {
+  const { data, error } = await supabase
+    .from("soulers")
+    .insert({
+      name,
+      aliases,
+      wiki_id: wikiId ?? null,
+    })
+    .select()
     .single();
   if (error) {
     console.error(`Error creating souler: ${error.message}`);
@@ -74,13 +102,34 @@ const createSouler = async (name: string) => {
   return data;
 };
 
+export const appendSoulerAlias = async (soulerId: string, alias: string) => {
+  const cleanedAlias = alias.trim();
+  if (!cleanedAlias) {
+    throw new Error("Alias cannot be empty");
+  }
+  const { data, error } = await supabase.rpc("append_souler_alias", {
+    souler_id: soulerId,
+    alias_to_add: cleanedAlias,
+  });
+  if (error) {
+    throw error;
+  }
+  if (!data || data.length === 0) {
+    throw new Error("Souler not found when appending alias");
+  }
+  return data[0];
+};
+
 export const updateSouler = async (
   id: string,
   data: Record<string, unknown>,
 ) => {
-  const { data: updatedData, error } = await supabase.from("soulers").update(
-    data,
-  ).eq("id", id).select().single();
+  const { data: updatedData, error } = await supabase
+    .from("soulers")
+    .update(data)
+    .eq("id", id)
+    .select()
+    .single();
   if (error) {
     throw error;
   }
@@ -92,12 +141,15 @@ export const createEcho = async (
   soulerId: string,
   content: string,
 ) => {
-  const { data, error } = await supabase.from("echoes").insert({
-    glimmer_id: glimmerId,
-    souler_id: soulerId,
-    content,
-  })
-    .select().single();
+  const { data, error } = await supabase
+    .from("echoes")
+    .insert({
+      glimmer_id: glimmerId,
+      souler_id: soulerId,
+      content,
+    })
+    .select()
+    .single();
   if (error) {
     throw error;
   }
@@ -109,7 +161,9 @@ export const createOrUpdateResonance = async (
   soulerId: string,
 ) => {
   // check if resonance exists
-  const { data, error } = await supabase.from("resonances").select()
+  const { data, error } = await supabase
+    .from("resonances")
+    .select()
     .eq("user_id", userId)
     .eq("souler_id", soulerId)
     .maybeSingle();
@@ -125,10 +179,14 @@ export const createOrUpdateResonance = async (
 };
 
 const createResonance = async (userId: string, soulerId: string) => {
-  const { data, error } = await supabase.from("resonances").insert({
-    user_id: userId,
-    souler_id: soulerId,
-  }).select().single();
+  const { data, error } = await supabase
+    .from("resonances")
+    .insert({
+      user_id: userId,
+      souler_id: soulerId,
+    })
+    .select()
+    .single();
   if (error) {
     throw error;
   }
@@ -136,9 +194,12 @@ const createResonance = async (userId: string, soulerId: string) => {
 };
 
 const updateResonance = async (id: string, data: Record<string, unknown>) => {
-  const { data: updatedData, error } = await supabase.from("resonances").update(
-    data,
-  ).eq("id", id).select().single();
+  const { data: updatedData, error } = await supabase
+    .from("resonances")
+    .update(data)
+    .eq("id", id)
+    .select()
+    .single();
   if (error) {
     throw error;
   }
