@@ -64,7 +64,7 @@ extension Resonance {
                 .value
         }
 
-        let fallbackName = L10n.string("resonance.unknownSouler")
+        let fallbackName = String(localized: "resonance.unknownSouler")
         return response.map { res in
             Resonance(
                 id: res.id,

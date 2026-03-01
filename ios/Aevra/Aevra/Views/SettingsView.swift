@@ -14,57 +14,57 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            Section(L10n.string("settings.section.account")) {
+            Section("settings.section.account") {
                 NavigationLink {
                     AccountSettingsView()
                 } label: {
-                    Label(L10n.string("settings.account"), systemImage: "person.crop.circle")
+                    Label("settings.account", systemImage: "person.crop.circle")
                 }
             }
 
-            Section(L10n.string("settings.section.language")) {
+            Section("settings.section.language") {
                 LabeledContent {
                     Picker("", selection: $appLanguageRawValue) {
-                        Text(L10n.string("settings.language.english"))
+                        Text("settings.language.english")
                             .tag(AppLanguage.english.rawValue)
-                        Text(L10n.string("settings.language.simplifiedChinese"))
+                        Text("settings.language.simplifiedChinese")
                             .tag(AppLanguage.simplifiedChinese.rawValue)
                     }
                     .pickerStyle(.menu)
                     .labelsHidden()
                 } label: {
-                    Label(L10n.string("settings.language"), systemImage: "globe")
+                    Label("settings.language", systemImage: "globe")
                 }
             }
 
-            Section(L10n.string("settings.section.support")) {
+            Section("settings.section.support") {
                 Link(destination: AppLinks.contactEmail) {
-                    Label(L10n.string("settings.link.contactSupport"), systemImage: "envelope")
+                    Label("settings.link.contactSupport", systemImage: "envelope")
                 }
 
                 Button {
                     requestReview()
                 } label: {
-                    Label(L10n.string("settings.rateApp"), systemImage: "star")
+                    Label("settings.rateApp", systemImage: "star")
                 }
             }
 
-            Section(L10n.string("settings.section.legal")) {
+            Section("settings.section.legal") {
                 Link(destination: AppLinks.terms) {
-                    Label(L10n.string("settings.link.terms"), systemImage: "doc.text")
+                    Label("settings.link.terms", systemImage: "doc.text")
                 }
 
                 Link(destination: AppLinks.privacy) {
-                    Label(L10n.string("settings.link.privacy"), systemImage: "hand.raised")
+                    Label("settings.link.privacy", systemImage: "hand.raised")
                 }
             }
 
-            Section(L10n.string("settings.section.about")) {
+            Section("settings.section.about") {
                 LabeledContent {
                     Text(appVersion)
                         .foregroundStyle(.secondary)
                 } label: {
-                    Label(L10n.string("settings.version"), systemImage: "app.badge")
+                    Label("settings.version", systemImage: "app.badge")
                 }
             }
 
@@ -73,7 +73,7 @@ struct SettingsView: View {
                     showSignOutConfirmation = true
                 } label: {
                     actionRow(
-                        title: L10n.string("settings.action.signOut"),
+                        title: "settings.action.signOut",
                         systemImage: "rectangle.portrait.and.arrow.right",
                         isLoading: isSigningOut
                     )
@@ -82,21 +82,21 @@ struct SettingsView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle(L10n.string("settings.title"))
+        .navigationTitle("settings.title")
         .navigationBarTitleDisplayMode(.inline)
-        .alert(L10n.string("settings.signOut.confirm.title"), isPresented: $showSignOutConfirmation) {
-            Button(L10n.string("settings.action.signOut"), role: .destructive) {
+        .alert("settings.signOut.confirm.title", isPresented: $showSignOutConfirmation) {
+            Button("settings.action.signOut", role: .destructive) {
                 Task { await signOut() }
             }
-            Button(L10n.string("common.cancel"), role: .cancel) {}
+            Button("common.cancel", role: .cancel) {}
         } message: {
-            Text(L10n.string("settings.signOut.confirm.message"))
+            Text("settings.signOut.confirm.message")
         }
-        .alert(L10n.string("settings.error.title"), isPresented: Binding(
+        .alert("settings.error.title", isPresented: Binding(
             get: { feedbackMessage != nil },
             set: { if !$0 { feedbackMessage = nil } }
         )) {
-            Button(L10n.string("common.ok"), role: .cancel) {}
+            Button("common.ok", role: .cancel) {}
         } message: {
             Text(feedbackMessage ?? "")
         }
@@ -137,7 +137,7 @@ struct AccountSettingsView: View {
                     showDeleteConfirmation = true
                 } label: {
                     actionRow(
-                        title: L10n.string("settings.action.deleteAccount"),
+                        title: "settings.action.deleteAccount",
                         systemImage: "trash",
                         isLoading: isDeleting
                     )
@@ -146,21 +146,21 @@ struct AccountSettingsView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle(L10n.string("settings.account"))
+        .navigationTitle("settings.account")
         .navigationBarTitleDisplayMode(.inline)
-        .alert(L10n.string("settings.delete.confirm.title"), isPresented: $showDeleteConfirmation) {
-            Button(L10n.string("settings.action.deleteAccount"), role: .destructive) {
+        .alert("settings.delete.confirm.title", isPresented: $showDeleteConfirmation) {
+            Button("settings.action.deleteAccount", role: .destructive) {
                 Task { await deleteAccount() }
             }
-            Button(L10n.string("common.cancel"), role: .cancel) {}
+            Button("common.cancel", role: .cancel) {}
         } message: {
-            Text(L10n.string("settings.delete.confirm.message"))
+            Text("settings.delete.confirm.message")
         }
-        .alert(L10n.string("settings.error.title"), isPresented: Binding(
+        .alert("settings.error.title", isPresented: Binding(
             get: { feedbackMessage != nil },
             set: { if !$0 { feedbackMessage = nil } }
         )) {
-            Button(L10n.string("common.ok"), role: .cancel) {}
+            Button("common.ok", role: .cancel) {}
         } message: {
             Text(feedbackMessage ?? "")
         }
@@ -183,7 +183,7 @@ struct AccountSettingsView: View {
 
 // MARK: - Shared Components
 
-private func actionRow(title: String, systemImage: String, isLoading: Bool) -> some View {
+private func actionRow(title: LocalizedStringKey, systemImage: String, isLoading: Bool) -> some View {
     HStack(spacing: 12) {
         Label(title, systemImage: systemImage)
         Spacer()

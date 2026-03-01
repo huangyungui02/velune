@@ -69,17 +69,3 @@ enum AppLinks {
         URL(string: "mailto:aevra@echoversa.com")!
     }
 }
-
-enum L10n {
-    nonisolated static func string(_ key: String) -> String {
-        let rawLanguage = UserDefaults.standard.string(forKey: "app.language") ?? "en"
-        let lproj = rawLanguage == "zh" ? "zh-Hans" : "en"
-        guard
-            let path = Bundle.main.path(forResource: lproj, ofType: "lproj"),
-            let bundle = Bundle(path: path)
-        else {
-            return NSLocalizedString(key, comment: "")
-        }
-        return bundle.localizedString(forKey: key, value: nil, table: nil)
-    }
-}

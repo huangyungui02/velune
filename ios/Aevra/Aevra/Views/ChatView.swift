@@ -35,11 +35,11 @@ struct ChatView: View {
 
             VStack(spacing: 0) {
                 if isLoading, messages.isEmpty {
-                    ProgressView(L10n.string("common.loading"))
+                    ProgressView("common.loading")
                         .tint(UITheme.accent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if messages.isEmpty {
-                    EmptyView(title: L10n.string("resonance.chat.empty"))
+                    EmptyView(title: "resonance.chat.empty")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     messageList
@@ -57,16 +57,20 @@ struct ChatView: View {
                 } label: {
                     Image(systemName: "person.text.rectangle")
                 }
-                .accessibilityLabel(L10n.string("resonance.chat.action.profile"))
+                .accessibilityLabel(Text("resonance.chat.action.profile"))
             }
         }
-        .alert(L10n.string("matching.error.title"), isPresented: Binding(
+        .alert("matching.error.title", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
-            Button(L10n.string("common.ok"), role: .cancel) {}
+            Button("common.ok", role: .cancel) {}
         } message: {
-            Text(errorMessage ?? L10n.string("matching.error.unknown"))
+            if let errorMessage {
+                Text(errorMessage)
+            } else {
+                Text("matching.error.unknown")
+            }
         }
         .task {
             await loadMessages()
@@ -103,7 +107,7 @@ struct ChatView: View {
 
         return HStack(alignment: .bottom, spacing: 10) {
             TextField(
-                L10n.string("resonance.chat.placeholder"),
+                "resonance.chat.placeholder",
                 text: $inputText,
                 axis: .vertical
             )

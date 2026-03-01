@@ -98,7 +98,7 @@ struct EchoCardView: View {
 
         return HStack(alignment: .bottom, spacing: 10) {
             TextField(
-                L10n.string("echo.reply.placeholder"),
+                "echo.reply.placeholder",
                 text: $replyText,
                 axis: .vertical
             )

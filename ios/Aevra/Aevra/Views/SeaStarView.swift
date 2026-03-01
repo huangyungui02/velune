@@ -17,7 +17,7 @@ struct SeaStarView: View {
                 VStack {
                     Spacer()
 
-                    VerseView(text: L10n.string("seastar.hero.verse"))
+                    VerseView(textKey: "seastar.hero.verse")
 
                     Spacer()
 
@@ -31,7 +31,7 @@ struct SeaStarView: View {
                     } label: {
                         Image(systemName: "waveform.path.ecg")
                     }
-                    .accessibilityLabel(L10n.string("seastar.action.resonances"))
+                    .accessibilityLabel(Text("seastar.action.resonances"))
                 }
 
                 ToolbarItem(placement: .topBarLeading) {
@@ -57,7 +57,7 @@ struct SeaStarView: View {
                 HStack(spacing: 12) {
                     MatchingWaveIcon()
 
-                    Text(L10n.string("matching.status.listening"))
+                    Text("matching.status.listening")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(UITheme.secondaryText)
                         .tracking(2)
@@ -68,7 +68,7 @@ struct SeaStarView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "sparkles")
 
-                    Text(L10n.string("seastar.prompt.glimmerWithin"))
+                    Text("seastar.prompt.glimmerWithin")
                         .foregroundStyle(UITheme.primaryText)
                         .font(UITheme.literary(size: 18))
                 }
@@ -119,13 +119,13 @@ struct SeaStarView: View {
 // MARK: - Verse View
 
 private struct VerseView: View {
-    let text: String
+    let textKey: LocalizedStringKey
 
     var body: some View {
         VStack {
             Spacer()
 
-            Text(text)
+            Text(textKey)
                 .font(UITheme.literary(size: 26))
                 .multilineTextAlignment(.center)
                 .lineSpacing(14)
@@ -151,7 +151,7 @@ private struct ComposeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                TextField(L10n.string("seastar.prompt.glimmerWithin"), text: $text, axis: .vertical)
+                TextField("seastar.prompt.glimmerWithin", text: $text, axis: .vertical)
                     .focused($isFocused)
                     .font(UITheme.literary(size: 18))
                     .lineSpacing(6)
@@ -170,7 +170,7 @@ private struct ComposeView: View {
                     endPoint: .bottomTrailing
                 )
             )
-            .navigationTitle(L10n.string("glimmer.title"))
+            .navigationTitle("glimmer.title")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

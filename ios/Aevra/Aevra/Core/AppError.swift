@@ -13,7 +13,7 @@ enum AppError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unauthenticated:
-            return L10n.string("app.error.unauthenticated")
+            return String(localized: "app.error.unauthenticated")
         }
     }
 }

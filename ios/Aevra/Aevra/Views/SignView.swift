@@ -3,6 +3,7 @@ import Supabase
 import SwiftUI
 
 struct SignView: View {
+    @Environment(\.locale) private var locale
     @State private var errorMessage: String? = nil
 
     var body: some View {
@@ -21,7 +22,7 @@ struct SignView: View {
                         .font(.system(size: 44, weight: .semibold, design: .serif))
                         .foregroundStyle(UITheme.primaryText)
 
-                    Text(L10n.string("sign.slogan"))
+                    Text("sign.slogan")
                         .font(UITheme.literary(size: 20))
                         .multilineTextAlignment(.center)
                         .lineSpacing(8)
@@ -117,9 +118,9 @@ struct SignView: View {
     }
 
     private var termsAttributedText: AttributedString {
-        let baseText = L10n.string("sign.terms.full")
-        let termsLabel = L10n.string("sign.terms.label")
-        let privacyLabel = L10n.string("sign.privacy.label")
+        let baseText = String(localized: "sign.terms.full", locale: locale)
+        let termsLabel = String(localized: "sign.terms.label", locale: locale)
+        let privacyLabel = String(localized: "sign.privacy.label", locale: locale)
 
         var text = AttributedString(baseText)
         text.foregroundColor = UITheme.tertiaryText

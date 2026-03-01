@@ -131,7 +131,8 @@ extension Message {
                             case "done":
                                 continuation.yield(.done)
                             case "error":
-                                let message = event.message ?? L10n.string("matching.error.unknown")
+                                let message = event.message
+                                    ?? String(localized: "matching.error.unknown")
                                 throw NSError(
                                     domain: "ResonanceChat",
                                     code: -1,
