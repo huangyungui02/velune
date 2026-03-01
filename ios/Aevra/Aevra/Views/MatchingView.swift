@@ -63,7 +63,7 @@ struct MatchingView: View {
     
     private var indicatorView: some View {
         HStack(spacing: 8) {
-            EchoPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
+            CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
             
             if manager.isMatching {
                 HStack(spacing: 12) {

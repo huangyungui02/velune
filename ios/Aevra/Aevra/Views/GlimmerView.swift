@@ -131,7 +131,7 @@ struct GlimmerView: View {
     }
 
     private var indicatorView: some View {
-        EchoPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
+        CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
     }
 }
 

@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct EchoPagerIndicatorView: View {
+struct CardPagerIndicatorView: View {
     let echoes: [Echo]
     @Binding var currentPage: CardID?
 
