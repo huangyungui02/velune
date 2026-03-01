@@ -2,20 +2,21 @@ import SwiftUI
 
 struct MatchingView: View {
     @Environment(\.dismiss) private var dismiss
-    
+
     @State private var manager = MatchingManager.shared
     @State private var showError = false
     @State private var currentPage: CardID? = .glimmer
-    
+    @State private var chatDestination: EchoChatDestination?
+
     private var echoes: [Echo] {
         (manager.currentGlimmer?.echoes ?? [])
             .sorted { $0.createdAt < $1.createdAt }
     }
-    
+
     private var hasEchoes: Bool {
         !echoes.isEmpty
     }
-    
+
     var body: some View {
         ZStack {
             BackgroundView()
@@ -43,8 +44,11 @@ struct MatchingView: View {
                 Text("matching.error.unknown")
             }
         }
+        .navigationDestination(item: $chatDestination) { destination in
+            destination.makeChatView()
+        }
     }
-    
+
     private var cardPagerView: some View {
         CardPagerView(
             echoes: echoes,
@@ -56,19 +60,22 @@ struct MatchingView: View {
             EchoCardView(
                 echo: echo,
                 glimmerContent: manager.text,
-                maxCardHeight: maxCardHeight
+                maxCardHeight: maxCardHeight,
+                onOpenChat: { destination in
+                    chatDestination = destination
+                }
             )
         }
     }
-    
+
     private var indicatorView: some View {
         HStack(spacing: 8) {
             CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
-            
+
             if manager.isMatching {
                 HStack(spacing: 12) {
                     MatchingWaveIcon()
-                    
+
                     if !hasEchoes {
                         Text("matching.status.listening")
                             .font(.system(size: 13, weight: .medium, design: .rounded))

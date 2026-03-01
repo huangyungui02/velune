@@ -10,6 +10,7 @@ struct GlimmerView: View {
     @State private var isLoading: Bool = false
     @State private var glimmer: Glimmer
     @State private var currentPage: CardID? = .glimmer
+    @State private var chatDestination: EchoChatDestination?
 
     init(glimmer: Glimmer) {
         self.glimmer = glimmer
@@ -75,6 +76,9 @@ struct GlimmerView: View {
         .task {
             await refreshGlimmer()
         }
+        .navigationDestination(item: $chatDestination) { destination in
+            destination.makeChatView()
+        }
     }
 
     func deleteGlimmer() async -> Bool {
@@ -125,7 +129,10 @@ struct GlimmerView: View {
             EchoCardView(
                 echo: echo,
                 glimmerContent: glimmer.content,
-                maxCardHeight: maxCardHeight
+                maxCardHeight: maxCardHeight,
+                onOpenChat: { destination in
+                    chatDestination = destination
+                }
             )
         }
     }

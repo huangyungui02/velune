@@ -1,20 +1,69 @@
 import MarkdownUI
 import SwiftUI
 
+struct EchoChatDestination: Identifiable, Hashable {
+    let id = UUID()
+    let echo: Echo
+    let glimmerContent: String
+    let initialReply: String?
+
+    static func == (lhs: EchoChatDestination, rhs: EchoChatDestination) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    @ViewBuilder
+    func makeChatView() -> some View {
+        ChatView(
+            soulerId: echo.soulerId,
+            soulerName: echo.soulerName,
+            initialSeedMessages: [
+                .init(role: .user, content: glimmerContent),
+                .init(role: .assistant, content: echo.content),
+            ],
+            initialDisplayMessages: [
+                Message(
+                    id: UUID(),
+                    soulerId: echo.soulerId,
+                    role: .user,
+                    content: glimmerContent,
+                    createdAt: .now.addingTimeInterval(-2)
+                ),
+                Message(
+                    id: UUID(),
+                    soulerId: echo.soulerId,
+                    role: .assistant,
+                    content: echo.content,
+                    createdAt: .now.addingTimeInterval(-1)
+                ),
+            ],
+            initialReply: initialReply
+        )
+    }
+}
+
 struct EchoCardView: View {
     let echo: Echo
     let glimmerContent: String
     let maxCardHeight: CGFloat?
+    let onOpenChat: (EchoChatDestination) -> Void
 
-    init(echo: Echo, glimmerContent: String, maxCardHeight: CGFloat? = nil) {
+    init(
+        echo: Echo,
+        glimmerContent: String,
+        maxCardHeight: CGFloat? = nil,
+        onOpenChat: @escaping (EchoChatDestination) -> Void = { _ in }
+    ) {
         self.echo = echo
         self.glimmerContent = glimmerContent
         self.maxCardHeight = maxCardHeight
+        self.onOpenChat = onOpenChat
     }
 
     @State private var replyText = ""
-    @State private var navigateToChat = false
-    @State private var chatInitialReply: String?
     @FocusState private var isReplyFieldFocused: Bool
 
     var body: some View {
@@ -43,33 +92,6 @@ struct EchoCardView: View {
 
                 replyComposer
             }
-        }
-        .navigationDestination(isPresented: $navigateToChat) {
-            ChatView(
-                soulerId: echo.soulerId,
-                soulerName: echo.soulerName,
-                initialSeedMessages: [
-                    .init(role: .user, content: glimmerContent),
-                    .init(role: .assistant, content: echo.content),
-                ],
-                initialDisplayMessages: [
-                    Message(
-                        id: UUID(),
-                        soulerId: echo.soulerId,
-                        role: .user,
-                        content: glimmerContent,
-                        createdAt: .now.addingTimeInterval(-2)
-                    ),
-                    Message(
-                        id: UUID(),
-                        soulerId: echo.soulerId,
-                        role: .assistant,
-                        content: echo.content,
-                        createdAt: .now.addingTimeInterval(-1)
-                    ),
-                ],
-                initialReply: chatInitialReply
-            )
         }
     }
 
@@ -112,9 +134,14 @@ struct EchoCardView: View {
             .background(.white.opacity(0.08), in: .rect(cornerRadius: 14))
 
             Button {
-                chatInitialReply = trimmed
                 replyText = ""
-                navigateToChat = true
+                onOpenChat(
+                    EchoChatDestination(
+                        echo: echo,
+                        glimmerContent: glimmerContent,
+                        initialReply: trimmed
+                    )
+                )
             } label: {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
