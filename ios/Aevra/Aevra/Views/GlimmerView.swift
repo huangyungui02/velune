@@ -111,40 +111,23 @@ struct GlimmerView: View {
     }
 
     private var cardPagerView: some View {
-        GeometryReader { proxy in
-            let maxCardHeight = proxy.size.height
-            let cardHeightLimit = maxCardHeight > 0 ? maxCardHeight : nil
-
-            ScrollView(.horizontal) {
-                LazyHStack(spacing: 0) {
-                    glimmerCard(maxCardHeight: cardHeightLimit)
-                        .containerRelativeFrame(.horizontal)
-                        .id(CardID.glimmer)
-
-                    ForEach(echoes) { echo in
-                        EchoCardView(
-                            echo: echo,
-                            glimmerContent: glimmer.content,
-                            maxCardHeight: cardHeightLimit
-                        )
-                        .containerRelativeFrame(.horizontal)
-                        .id(CardID.echo(echo.id))
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .scrollTargetBehavior(.paging)
-            .scrollPosition(id: $currentPage)
-            .scrollIndicators(.hidden)
+        CardPagerView(
+            echoes: echoes,
+            currentPage: $currentPage,
+            autoSwitchToFirstEcho: false
+        ) { maxCardHeight in
+            GlimmerCardView(
+                content: glimmer.content,
+                createdAt: glimmer.createdAt,
+                maxCardHeight: maxCardHeight
+            )
+        } echoCard: { echo, maxCardHeight in
+            EchoCardView(
+                echo: echo,
+                glimmerContent: glimmer.content,
+                maxCardHeight: maxCardHeight
+            )
         }
-    }
-
-    private func glimmerCard(maxCardHeight: CGFloat?) -> some View {
-        GlimmerCardView(
-            content: glimmer.content,
-            createdAt: glimmer.createdAt,
-            maxCardHeight: maxCardHeight
-        )
     }
 
     private var indicatorView: some View {

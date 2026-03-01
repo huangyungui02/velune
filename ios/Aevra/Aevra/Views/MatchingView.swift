@@ -46,49 +46,19 @@ struct MatchingView: View {
     }
     
     private var cardPagerView: some View {
-        GeometryReader { proxy in
-            let maxCardHeight = proxy.size.height
-            let cardHeightLimit = maxCardHeight > 0 ? maxCardHeight : nil
-
-            ScrollView(.horizontal) {
-                LazyHStack(spacing: 0) {
-                    // Soul Fragment card
-                    glimmerCard(maxCardHeight: maxCardHeight)
-                        .containerRelativeFrame(.horizontal)
-                        .id(CardID.glimmer)
-
-                    // Echo cards
-                    ForEach(echoes) { echo in
-                        EchoCardView(
-                            echo: echo,
-                            glimmerContent: manager.text,
-                            maxCardHeight: cardHeightLimit
-                        )
-                        .containerRelativeFrame(.horizontal)
-                        .id(CardID.echo(echo.id))
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .scrollTargetBehavior(.paging)
-            .scrollPosition(id: $currentPage)
-            .scrollIndicators(.hidden)
-            .onChange(of: hasEchoes) { _, newValue in
-                // Switch to first echo when echoes appear
-                if newValue, case .glimmer = currentPage {
-                    if let firstEcho = echoes.first {
-                        withAnimation {
-                            currentPage = .echo(firstEcho.id)
-                        }
-                    }
-                }
-            }
+        CardPagerView(
+            echoes: echoes,
+            currentPage: $currentPage,
+            autoSwitchToFirstEcho: true
+        ) { maxCardHeight in
+            GlimmerCardView(content: manager.text, maxCardHeight: maxCardHeight)
+        } echoCard: { echo, maxCardHeight in
+            EchoCardView(
+                echo: echo,
+                glimmerContent: manager.text,
+                maxCardHeight: maxCardHeight
+            )
         }
-    }
-    
-    private func glimmerCard(maxCardHeight: CGFloat) -> some View {
-        let cardHeightLimit = maxCardHeight > 0 ? maxCardHeight : nil
-        return GlimmerCardView(content: manager.text, maxCardHeight: cardHeightLimit)
     }
     
     private var indicatorView: some View {
