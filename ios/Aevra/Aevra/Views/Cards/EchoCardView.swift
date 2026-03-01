@@ -1,13 +1,23 @@
 import MarkdownUI
 import SwiftUI
 
-struct EchoChatDestination: Identifiable, Hashable {
+struct EchoChatRoute: Identifiable, Hashable {
     let id = UUID()
-    let echo: Echo
+    let soulerId: UUID
+    let soulerName: String
     let glimmerContent: String
+    let echoContent: String
     let initialReply: String?
 
-    static func == (lhs: EchoChatDestination, rhs: EchoChatDestination) -> Bool {
+    init(echo: Echo, glimmerContent: String, initialReply: String?) {
+        soulerId = echo.soulerId
+        soulerName = echo.soulerName
+        self.glimmerContent = glimmerContent
+        echoContent = echo.content
+        self.initialReply = initialReply
+    }
+
+    static func == (lhs: EchoChatRoute, rhs: EchoChatRoute) -> Bool {
         lhs.id == rhs.id
     }
 
@@ -15,33 +25,30 @@ struct EchoChatDestination: Identifiable, Hashable {
         hasher.combine(id)
     }
 
-    @ViewBuilder
-    func makeChatView() -> some View {
-        ChatView(
-            soulerId: echo.soulerId,
-            soulerName: echo.soulerName,
-            initialSeedMessages: [
-                .init(role: .user, content: glimmerContent),
-                .init(role: .assistant, content: echo.content),
-            ],
-            initialDisplayMessages: [
-                Message(
-                    id: UUID(),
-                    soulerId: echo.soulerId,
-                    role: .user,
-                    content: glimmerContent,
-                    createdAt: .now.addingTimeInterval(-2)
-                ),
-                Message(
-                    id: UUID(),
-                    soulerId: echo.soulerId,
-                    role: .assistant,
-                    content: echo.content,
-                    createdAt: .now.addingTimeInterval(-1)
-                ),
-            ],
-            initialReply: initialReply
-        )
+    var initialSeedMessages: [Message.SeedMessage] {
+        [
+            .init(role: .user, content: glimmerContent),
+            .init(role: .assistant, content: echoContent),
+        ]
+    }
+
+    var initialDisplayMessages: [Message] {
+        [
+            Message(
+                id: UUID(),
+                soulerId: soulerId,
+                role: .user,
+                content: glimmerContent,
+                createdAt: .now.addingTimeInterval(-2)
+            ),
+            Message(
+                id: UUID(),
+                soulerId: soulerId,
+                role: .assistant,
+                content: echoContent,
+                createdAt: .now.addingTimeInterval(-1)
+            ),
+        ]
     }
 }
 
@@ -49,13 +56,13 @@ struct EchoCardView: View {
     let echo: Echo
     let glimmerContent: String
     let maxCardHeight: CGFloat?
-    let onOpenChat: (EchoChatDestination) -> Void
+    let onOpenChat: (EchoChatRoute) -> Void
 
     init(
         echo: Echo,
         glimmerContent: String,
         maxCardHeight: CGFloat? = nil,
-        onOpenChat: @escaping (EchoChatDestination) -> Void = { _ in }
+        onOpenChat: @escaping (EchoChatRoute) -> Void = { _ in }
     ) {
         self.echo = echo
         self.glimmerContent = glimmerContent
@@ -136,7 +143,7 @@ struct EchoCardView: View {
             Button {
                 replyText = ""
                 onOpenChat(
-                    EchoChatDestination(
+                    EchoChatRoute(
                         echo: echo,
                         glimmerContent: glimmerContent,
                         initialReply: trimmed

@@ -6,7 +6,7 @@ struct MatchingView: View {
     @State private var manager = MatchingManager.shared
     @State private var showError = false
     @State private var currentPage: CardID? = .glimmer
-    @State private var chatDestination: EchoChatDestination?
+    @State private var chatRoute: EchoChatRoute?
 
     private var echoes: [Echo] {
         (manager.currentGlimmer?.echoes ?? [])
@@ -44,8 +44,14 @@ struct MatchingView: View {
                 Text("matching.error.unknown")
             }
         }
-        .navigationDestination(item: $chatDestination) { destination in
-            destination.makeChatView()
+        .navigationDestination(item: $chatRoute) { route in
+            ChatView(
+                soulerId: route.soulerId,
+                soulerName: route.soulerName,
+                initialSeedMessages: route.initialSeedMessages,
+                initialDisplayMessages: route.initialDisplayMessages,
+                initialReply: route.initialReply
+            )
         }
     }
 
@@ -61,8 +67,8 @@ struct MatchingView: View {
                 echo: echo,
                 glimmerContent: manager.text,
                 maxCardHeight: maxCardHeight,
-                onOpenChat: { destination in
-                    chatDestination = destination
+                onOpenChat: { route in
+                    chatRoute = route
                 }
             )
         }

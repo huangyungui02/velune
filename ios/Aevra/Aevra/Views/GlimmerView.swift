@@ -10,7 +10,7 @@ struct GlimmerView: View {
     @State private var isLoading: Bool = false
     @State private var glimmer: Glimmer
     @State private var currentPage: CardID? = .glimmer
-    @State private var chatDestination: EchoChatDestination?
+    @State private var chatRoute: EchoChatRoute?
 
     init(glimmer: Glimmer) {
         self.glimmer = glimmer
@@ -76,8 +76,14 @@ struct GlimmerView: View {
         .task {
             await refreshGlimmer()
         }
-        .navigationDestination(item: $chatDestination) { destination in
-            destination.makeChatView()
+        .navigationDestination(item: $chatRoute) { route in
+            ChatView(
+                soulerId: route.soulerId,
+                soulerName: route.soulerName,
+                initialSeedMessages: route.initialSeedMessages,
+                initialDisplayMessages: route.initialDisplayMessages,
+                initialReply: route.initialReply
+            )
         }
     }
 
@@ -130,8 +136,8 @@ struct GlimmerView: View {
                 echo: echo,
                 glimmerContent: glimmer.content,
                 maxCardHeight: maxCardHeight,
-                onOpenChat: { destination in
-                    chatDestination = destination
+                onOpenChat: { route in
+                    chatRoute = route
                 }
             )
         }
