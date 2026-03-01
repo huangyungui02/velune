@@ -17,15 +17,6 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         }
     }
 
-    var websitePathPrefix: String {
-        switch self {
-        case .english:
-            ""
-        case .simplifiedChinese:
-            "/zh"
-        }
-    }
-
     static var systemDefault: AppLanguage {
         Locale.preferredLanguages.first?.hasPrefix("zh") == true
             ? .simplifiedChinese
@@ -57,13 +48,9 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 enum AppLinks {
-    static var terms: URL {
-        URL(string: "https://aevra.echoversa.com\(AppLanguage.current.websitePathPrefix)/terms")!
-    }
+    static let terms = URL(string: "https://aevra.echoversa.com/terms")!
 
-    static var privacy: URL {
-        URL(string: "https://aevra.echoversa.com\(AppLanguage.current.websitePathPrefix)/privacy")!
-    }
+    static let privacy = URL(string: "https://aevra.echoversa.com/privacy")!
 
     static var contactEmail: URL {
         URL(string: "mailto:aevra@echoversa.com")!
