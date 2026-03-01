@@ -8,7 +8,6 @@ struct AevraApp: App {
     let dataContainer = DataContainer()
 
     init() {
-        UITheme.registerFonts()
         (AppLanguage(rawValue: UserDefaults.standard.string(forKey: AppLanguage.storageKey) ?? "") ?? .systemDefault)
             .applyAsPreferredLanguage()
     }

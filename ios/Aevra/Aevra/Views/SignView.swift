@@ -15,15 +15,17 @@ struct SignView: View {
 
                 VStack(spacing: 32) {
                     Image(systemName: "circle.circle")
-                        .font(.system(size: 72, weight: .regular, design: .rounded))
+                        .font(.largeTitle)
                         .foregroundStyle(UITheme.primaryText)
 
                     Text("Aevra")
-                        .font(.system(size: 44, weight: .semibold, design: .serif))
+                        .font(.largeTitle.weight(.semibold))
+                        .fontDesign(.serif)
                         .foregroundStyle(UITheme.primaryText)
 
                     Text("sign.slogan")
-                        .font(UITheme.literary(size: 20))
+                        .font(.title3)
+                        .fontDesign(.serif)
                         .multilineTextAlignment(.center)
                         .lineSpacing(8)
                         .tracking(1.5)
@@ -37,7 +39,7 @@ struct SignView: View {
 
                 if let errorMessage {
                     Text(errorMessage)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.footnote.weight(.medium))
                         .foregroundStyle(UITheme.secondaryText)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
@@ -47,7 +49,7 @@ struct SignView: View {
 
                 Text(termsAttributedText)
                     .multilineTextAlignment(.center)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(UITheme.tertiaryText)
                     .padding(.horizontal, 40)
                     .padding(.bottom, 12)

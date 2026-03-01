@@ -58,7 +58,7 @@ struct SeaStarView: View {
                     MatchingWaveIcon()
 
                     Text("matching.status.listening")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.footnote.weight(.medium))
                         .foregroundStyle(UITheme.secondaryText)
                         .tracking(2)
                 }
@@ -70,7 +70,8 @@ struct SeaStarView: View {
 
                     Text("seastar.prompt.glimmerWithin")
                         .foregroundStyle(UITheme.primaryText)
-                        .font(UITheme.literary(size: 18))
+                        .font(.body)
+                        .fontDesign(.serif)
                 }
                 .padding()
                 .glassEffect(in: .capsule)
@@ -98,7 +99,8 @@ struct SeaStarView: View {
 
     private var draftPreviewField: some View {
         TextField("", text: .constant(text), axis: .vertical)
-            .font(UITheme.literary(size: 18))
+            .font(.body)
+            .fontDesign(.serif)
             .lineLimit(1 ... 5)
             .foregroundStyle(UITheme.primaryText)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -126,7 +128,8 @@ private struct VerseView: View {
             Spacer()
 
             Text(textKey)
-                .font(UITheme.literary(size: 26))
+                .font(.title2)
+                .fontDesign(.serif)
                 .multilineTextAlignment(.center)
                 .lineSpacing(14)
                 .tracking(2)
@@ -153,7 +156,8 @@ private struct ComposeView: View {
             VStack(spacing: 0) {
                 TextField("seastar.prompt.glimmerWithin", text: $text, axis: .vertical)
                     .focused($isFocused)
-                    .font(UITheme.literary(size: 18))
+                    .font(.body)
+                    .fontDesign(.serif)
                     .lineSpacing(6)
                     .padding(24)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -178,7 +182,7 @@ private struct ComposeView: View {
                         dismiss()
                     }) {
                         Image(systemName: "xmark")
-                            .font(.system(size: 21, weight: .medium, design: .rounded))
+                            .font(.title3.weight(.medium))
                             .foregroundStyle(UITheme.secondaryText)
                     }
                 }
@@ -189,8 +193,7 @@ private struct ComposeView: View {
                         dismiss()
                     }) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 21, weight: .medium, design: .rounded))
-                            .fontWeight(.semibold)
+                            .font(.title3.weight(.semibold))
                             .foregroundStyle(UITheme.primaryText)
                     }
                     .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

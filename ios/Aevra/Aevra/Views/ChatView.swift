@@ -113,7 +113,8 @@ struct ChatView: View {
             )
             .lineLimit(1 ... 4)
             .textFieldStyle(.plain)
-            .font(UITheme.literary(size: 17))
+            .font(.body)
+            .fontDesign(.serif)
             .foregroundStyle(UITheme.primaryText)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -126,7 +127,7 @@ struct ChatView: View {
                 }
             } label: {
                 Image(systemName: "arrow.up")
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(canSend ? UITheme.primaryText : UITheme.tertiaryText)
                     .frame(width: 45, height: 45)
                     .background(Color.clear, in: .circle)
@@ -244,10 +245,9 @@ private struct ResonanceChatBubble: View {
 
             Markdown(message.content)
                 .markdownTextStyle {
-                    FontFamily(.custom(UITheme.literaryFontName))
-                    FontSize(17)
                     ForegroundColor(UITheme.primaryText)
                 }
+                .fontDesign(.serif)
                 .lineSpacing(5)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)

@@ -82,10 +82,9 @@ struct EchoCardView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Markdown(echo.content)
                     .markdownTextStyle {
-                        FontFamily(.custom(UITheme.literaryFontName))
-                        FontSize(18)
                         ForegroundColor(UITheme.primaryText)
                     }
+                    .fontDesign(.serif)
                     .multilineTextAlignment(.leading)
                     .lineSpacing(8)
 
@@ -109,11 +108,12 @@ struct EchoCardView: View {
             HStack(spacing: 8) {
                 Spacer()
                 Text(echo.soulerName)
-                    .font(UITheme.literary(size: 18, weight: .medium))
+                    .font(.body.weight(.medium))
+                    .fontDesign(.serif)
                     .foregroundStyle(UITheme.accent)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(UITheme.secondaryText)
             }
             .contentShape(.rect)
@@ -134,7 +134,8 @@ struct EchoCardView: View {
             .lineLimit(1 ... 5)
             .focused($isReplyFieldFocused)
             .textFieldStyle(.plain)
-            .font(UITheme.literary(size: 16))
+            .font(.body)
+            .fontDesign(.serif)
             .foregroundStyle(UITheme.primaryText)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -151,7 +152,7 @@ struct EchoCardView: View {
                 )
             } label: {
                 Image(systemName: "arrow.up")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(canSend ? UITheme.primaryText : UITheme.tertiaryText)
                     .frame(width: 38, height: 38)
                     .background(.white.opacity(0.10), in: .circle)

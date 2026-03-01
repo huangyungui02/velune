@@ -93,16 +93,17 @@ private struct GlimmerListCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "clock.fill")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(UITheme.tertiaryText)
                 Text(glimmer.createdAt, format: .relative(presentation: .named))
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(UITheme.tertiaryText)
                 Spacer()
             }
 
             Text(glimmer.content)
-                .font(UITheme.literary(size: 18))
+                .font(.body)
+                .fontDesign(.serif)
                 .lineLimit(3)
                 .multilineTextAlignment(.leading)
                 .lineSpacing(6)

@@ -20,7 +20,8 @@ struct SoulerView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text(souler?.name ?? "")
-                    .font(UITheme.literary(size: 17, weight: .semibold))
+                    .font(.headline.weight(.semibold))
+                    .fontDesign(.serif)
                     .lineLimit(1)
                     .opacity(showNavigationTitle ? 1 : 0)
                     .animation(.easeInOut(duration: 0.16), value: showNavigationTitle)
@@ -38,12 +39,11 @@ struct SoulerView: View {
             } else if let errorMessage = errorMessage {
                 VStack(spacing: 12) {
                     Text("souler.load.failed")
-                        .font(.system(size: 21, weight: .medium, design: .rounded))
-                        .fontWeight(.semibold)
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(UITheme.primaryText)
 
                     Text(errorMessage)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.footnote.weight(.medium))
                         .foregroundStyle(UITheme.secondaryText)
                         .multilineTextAlignment(.center)
 
@@ -67,7 +67,8 @@ struct SoulerView: View {
         ScrollView {
             VStack(spacing: 16) {
                 Text(souler.name)
-                    .font(UITheme.literary(size: 24, weight: .semibold))
+                    .font(.title2.weight(.semibold))
+                    .fontDesign(.serif)
                     .multilineTextAlignment(.center)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
@@ -85,10 +86,9 @@ struct SoulerView: View {
                 CardView {
                     Markdown(souler.bio)
                         .markdownTextStyle {
-                            FontFamily(.custom(UITheme.literaryFontName))
-                            FontSize(18)
                             ForegroundColor(UITheme.primaryText)
                         }
+                        .fontDesign(.serif)
                         .lineSpacing(8)
                 }.padding()
             }

@@ -44,7 +44,7 @@ struct PremiumCardView<Content: View>: View {
 
     private var headerView: some View {
         Image(systemName: iconName)
-            .font(.system(size: 17, weight: .semibold, design: .rounded))
+            .font(.headline.weight(.semibold))
             .foregroundStyle(UITheme.primaryText)
             .frame(width: 40, height: 40)
             .background(.white.opacity(0.14), in: Circle())

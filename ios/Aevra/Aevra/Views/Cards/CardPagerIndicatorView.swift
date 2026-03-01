@@ -13,7 +13,7 @@ struct CardPagerIndicatorView: View {
                     }
                 } label: {
                     Image(systemName: "sparkle")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.footnote.weight(.medium))
                         .foregroundStyle(currentPage == .glimmer ? UITheme.accent : UITheme.tertiaryText)
                         .frame(width: 10, height: 10)
                         .scaleEffect(currentPage == .glimmer ? 1.2 : 1.0)

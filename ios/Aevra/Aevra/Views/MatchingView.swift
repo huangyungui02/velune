@@ -84,7 +84,7 @@ struct MatchingView: View {
 
                     if !hasEchoes {
                         Text("matching.status.listening")
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .font(.footnote.weight(.medium))
                             .foregroundStyle(UITheme.secondaryText)
                             .tracking(2)
                     }

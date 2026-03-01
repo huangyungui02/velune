@@ -90,12 +90,11 @@ struct ResonanceView: View {
     private func loadFailedView(message: String) -> some View {
         VStack(spacing: 12) {
             Text("resonance.load.failed")
-                .font(.system(size: 21, weight: .medium, design: .rounded))
-                .fontWeight(.semibold)
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(UITheme.primaryText)
 
             Text(message)
-                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .font(.footnote.weight(.medium))
                 .foregroundStyle(UITheme.secondaryText)
                 .multilineTextAlignment(.center)
 
@@ -165,7 +164,8 @@ private struct ResonanceListCard: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text(resonance.soulerName)
-                        .font(UITheme.literary(size: 20, weight: .semibold))
+                        .font(.headline.weight(.semibold))
+                        .fontDesign(.serif)
                         .foregroundStyle(UITheme.primaryText)
                         .lineLimit(1)
 
@@ -173,9 +173,9 @@ private struct ResonanceListCard: View {
 
                     HStack(spacing: 6) {
                         Image(systemName: "waveform.path.ecg")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .font(.caption.weight(.semibold))
                         Text("\(resonance.count)")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .font(.caption.weight(.semibold))
                     }
                     .foregroundStyle(UITheme.secondaryText)
                     .padding(.horizontal, 10)
@@ -185,11 +185,11 @@ private struct ResonanceListCard: View {
 
                 HStack(spacing: 8) {
                     Image(systemName: "clock.fill")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.footnote.weight(.medium))
                         .foregroundStyle(UITheme.tertiaryText)
 
                     Text(resonance.updatedAt.formatted(.relative(presentation: .named)))
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.footnote.weight(.medium))
                         .foregroundStyle(UITheme.tertiaryText)
                 }
             }
