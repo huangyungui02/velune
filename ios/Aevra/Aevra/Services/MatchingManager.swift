@@ -71,89 +71,24 @@ class MatchingManager {
         guard let glimmer = currentGlimmer else {
             return
         }
-
-        struct StreamEcho: Decodable {
-            let id: UUID
-            let glimmerId: UUID
-            let soulerId: UUID
-            let content: String
-        }
-        
-        struct StreamEvent: Decodable {
-            let type: String
-            let echo: StreamEcho?
-            let message: String?
-        }
-
-        struct EchoRequestBody: Encodable {
-            let glimmerId: UUID
-            let lang: String
-        }
-
-        let decoder = JSONDecoder()
-        var buffer = Data()
         var receivedDone = false
-        
-        func drainBuffer() async throws {
-            let delimiter = Data([0x0A, 0x0A]) // "\n\n"
-            while let range = buffer.range(of: delimiter) {
-                let eventData = buffer.subdata(in: buffer.startIndex..<range.lowerBound)
-                buffer.removeSubrange(buffer.startIndex..<range.upperBound)
-                
-                if eventData.isEmpty { continue }
-                
-                let eventText = String(decoding: eventData, as: UTF8.self)
-                let dataLines = eventText
-                    .split(separator: "\n")
-                    .compactMap { line -> Substring? in
-                        let trimmed = line.trimmingCharacters(in: .whitespaces)
-                        if trimmed.hasPrefix("data:") {
-                            return trimmed.dropFirst(5).trimmingCharacters(in: .whitespaces)[...]
-                        }
-                        return nil
-                    }
-                
-                let payloadString = dataLines.joined(separator: "\n")
-                if payloadString.isEmpty { continue }
-                
-                let event = try decoder.decode(StreamEvent.self, from: Data(payloadString.utf8))
-                switch event.type {
-                case "echo":
-                    if let payload = event.echo {
-                        let souler = try await Souler.get(payload.soulerId)
-                        let echo = Echo(id: payload.id, content: payload.content, souler: souler)
-                        await MainActor.run {
-                            currentGlimmer?.echoes.append(echo)
-                        }
-                    }
-                case "done":
-                    receivedDone = true
-                    continue
-                case "error":
-                    let message = event.message ?? "Unknown error from echo stream"
-                    throw NSError(domain: "EchoStream", code: -1, userInfo: [
-                        NSLocalizedDescriptionKey: message
-                    ])
-                default:
-                    continue
-                }
-            }
-        }
-        
-        let stream = supabase.functions._invokeWithStreamedResponse(
-            "echo",
-            options: FunctionInvokeOptions(
-                body: EchoRequestBody(
-                    glimmerId: glimmer.id,
-                    lang: AppLanguage.current.rawValue
-                )
-            )
-        )
-        
-        for try await chunk in stream {
+
+        for try await event in EchoStreamService.stream(
+            glimmerId: glimmer.id,
+            lang: AppLanguage.current.rawValue
+        ) {
             if Task.isCancelled { break }
-            buffer.append(chunk)
-            try await drainBuffer()
+
+            switch event {
+            case let .echo(payload):
+                let souler = try await Souler.get(payload.soulerId)
+                let echo = Echo(id: payload.id, content: payload.content, souler: souler)
+                await MainActor.run {
+                    currentGlimmer?.echoes.append(echo)
+                }
+            case .done:
+                receivedDone = true
+            }
         }
 
         if !Task.isCancelled && receivedDone {

@@ -193,7 +193,7 @@ struct ChatView: View {
         messages.append(assistantLocal)
 
         do {
-            for try await event in Message.streamReply(
+            for try await event in ChatStreamService.streamReply(
                 soulerId: soulerId,
                 content: content,
                 seedMessages: seedMessages
