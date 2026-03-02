@@ -72,9 +72,8 @@ struct ChatView: View {
                 Text("matching.error.unknown")
             }
         }
-        .task {
-            await loadMessages()
-            await triggerInitialReplyIfNeeded()
+        .task(id: soulerId) {
+            await prepareConversation()
         }
     }
 
@@ -141,6 +140,16 @@ struct ChatView: View {
         .padding(.vertical, 10)
         .padding(.horizontal)
         .padding(.bottom, 6)
+    }
+
+    @MainActor
+    private func prepareConversation() async {
+        messages = []
+        inputText = ""
+        errorMessage = nil
+        hasTriggeredInitialReply = false
+        await loadMessages()
+        await triggerInitialReplyIfNeeded()
     }
 
     @MainActor
