@@ -9,6 +9,7 @@ struct SeaStarView: View {
     }
 
     @Environment(\.modelContext) private var context
+    @Environment(\.locale) private var locale
     @State private var text = ""
     @State private var isNavigatingToMatching = false
     @State private var isPresented = false
@@ -175,7 +176,7 @@ struct SeaStarView: View {
                                         isSidebarPresented = false
                                     }
                                 } label: {
-                                    VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 8) {
                                         HStack(spacing: 8) {
                                             Image(systemName: selectedResonanceId == resonance.id ? "checkmark" : "message")
                                                 .font(.caption.weight(.semibold))
@@ -186,10 +187,13 @@ struct SeaStarView: View {
                                         }
                                         .foregroundStyle(UITheme.primaryText)
 
-                                        Text(resonance.updatedAt.formatted(.relative(presentation: .named)))
-                                            .font(.caption2)
+                                        Spacer(minLength: 8)
+
+                                        Text(resonance.updatedAt, format: .relative(presentation: .named).locale(locale))
+                                            .font(.caption)
                                             .foregroundStyle(UITheme.secondaryText)
-                                            .padding(.leading, 22)
+                                            .lineLimit(1)
+                                            .monospacedDigit()
                                     }
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 10)
@@ -206,8 +210,8 @@ struct SeaStarView: View {
                 }
             }
         }
-        .padding(14)
-        .frame(width: 300, alignment: .topLeading)
+        .padding(12)
+        .frame(width: 320, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(.ultraThinMaterial, in: .rect(cornerRadius: 22))
         .overlay(
