@@ -83,14 +83,20 @@ struct SoulerView: View {
                         }
                     }
 
-                CardView {
-                    Markdown(souler.bio)
-                        .markdownTextStyle {
-                            ForegroundColor(UITheme.primaryText)
-                        }
-                        .fontDesign(.serif)
-                        .lineSpacing(8)
-                }.padding()
+                Markdown(souler.bio)
+                    .markdownTextStyle {
+                        ForegroundColor(UITheme.primaryText)
+                    }
+                    .fontDesign(.serif)
+                    .lineSpacing(8)
+                    .padding(16)
+                    .background(Color.clear, in: .rect(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(.white.opacity(0.18), lineWidth: 1)
+                    )
+                    .glassEffect(in: .rect(cornerRadius: 16))
+                    .padding()
             }
             .padding(.vertical)
         }

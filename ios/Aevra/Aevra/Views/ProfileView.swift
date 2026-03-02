@@ -82,11 +82,16 @@ private struct GlimmerListCard: View {
     let glimmer: Glimmer
 
     var body: some View {
-        CardView {
-            content
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(.rect)
+        content
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.clear, in: .rect(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(.white.opacity(0.18), lineWidth: 1)
+            )
+            .glassEffect(in: .rect(cornerRadius: 16))
+            .contentShape(.rect)
     }
 
     private var content: some View {
