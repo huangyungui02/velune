@@ -7,6 +7,7 @@ struct ChatView: View {
     let initialSeedMessages: [Message.SeedMessage]
     let initialDisplayMessages: [Message]
     let initialReply: String?
+    let onTapSidebarButton: (() -> Void)?
 
     @State private var messages: [Message] = []
     @State private var inputText = ""
@@ -20,13 +21,15 @@ struct ChatView: View {
         soulerName: String,
         initialSeedMessages: [Message.SeedMessage] = [],
         initialDisplayMessages: [Message] = [],
-        initialReply: String? = nil
+        initialReply: String? = nil,
+        onTapSidebarButton: (() -> Void)? = nil
     ) {
         self.soulerId = soulerId
         self.soulerName = soulerName
         self.initialSeedMessages = initialSeedMessages
         self.initialDisplayMessages = initialDisplayMessages
         self.initialReply = initialReply
+        self.onTapSidebarButton = onTapSidebarButton
     }
 
     var body: some View {
@@ -51,6 +54,15 @@ struct ChatView: View {
         .navigationTitle(soulerName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            if let onTapSidebarButton {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: onTapSidebarButton) {
+                        Image(systemName: "line.3.horizontal")
+                    }
+                    .accessibilityLabel(Text("seastar.action.resonances"))
+                }
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
                     SoulerView(soulerId: soulerId)

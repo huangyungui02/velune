@@ -1,7 +1,19 @@
 import SwiftUI
 
 struct ResonanceView: View {
-    private let pageSize: Int = 20
+    var body: some View {
+        ZStack {
+            BackgroundView()
+            ResonanceListView()
+        }
+        .navigationTitle("resonance.title")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct ResonanceListView: View {
+    let onSelect: ((Resonance) -> Void)?
+    private let pageSize = 20
 
     @State private var resonances: [Resonance] = []
     @State private var isLoadingInitial = false
@@ -9,50 +21,41 @@ struct ResonanceView: View {
     @State private var hasMore = true
     @State private var errorMessage: String?
 
-    var body: some View {
-        ZStack {
-            BackgroundView()
+    init(onSelect: ((Resonance) -> Void)? = nil) {
+        self.onSelect = onSelect
+    }
 
-            Group {
-                if isLoadingInitial, resonances.isEmpty {
-                    ProgressView("common.loading")
-                        .tint(UITheme.accent)
-                } else if resonances.isEmpty {
-                    if let errorMessage {
-                        loadFailedView(message: errorMessage)
-                    } else {
-                        EmptyView(title: "resonance.empty")
-                    }
+    var body: some View {
+        Group {
+            if isLoadingInitial, resonances.isEmpty {
+                ProgressView("common.loading")
+                    .tint(UITheme.accent)
+            } else if resonances.isEmpty {
+                if let errorMessage {
+                    loadFailedView(message: errorMessage)
                 } else {
-                    resonanceListView
+                    EmptyView(title: "resonance.empty")
                 }
+            } else {
+                resonanceList
             }
         }
-        .navigationTitle("resonance.title")
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             await reloadResonances()
         }
     }
 
-    private var resonanceListView: some View {
+    private var resonanceList: some View {
         List {
             ForEach(resonances) { resonance in
-                NavigationLink {
-                    ChatView(
-                        soulerId: resonance.soulerId,
-                        soulerName: resonance.soulerName
-                    )
-                } label: {
-                    ResonanceRow(resonance: resonance)
-                }
-                .listRowBackground(Color.clear)
-                .listRowSeparatorTint(.white.opacity(0.08))
-                .onAppear {
-                    Task {
-                        await loadMoreIfNeeded(current: resonance)
+                resonanceRow(for: resonance)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparatorTint(.white.opacity(0.08))
+                    .onAppear {
+                        Task {
+                            await loadMoreIfNeeded(current: resonance)
+                        }
                     }
-                }
             }
 
             if isLoadingMore {
@@ -68,6 +71,28 @@ struct ResonanceView: View {
         .scrollContentBackground(.hidden)
         .refreshable {
             await reloadResonances()
+        }
+    }
+
+    @ViewBuilder
+    private func resonanceRow(for resonance: Resonance) -> some View {
+        if let onSelect {
+            Button {
+                onSelect(resonance)
+            } label: {
+                ResonanceRow(resonance: resonance)
+            }
+            .buttonStyle(.plain)
+            .contentShape(.rect)
+        } else {
+            NavigationLink {
+                ChatView(
+                    soulerId: resonance.soulerId,
+                    soulerName: resonance.soulerName
+                )
+            } label: {
+                ResonanceRow(resonance: resonance)
+            }
         }
     }
 
@@ -129,7 +154,6 @@ struct ResonanceView: View {
             hasMore = false
         }
     }
-
 }
 
 private struct ResonanceRow: View {
