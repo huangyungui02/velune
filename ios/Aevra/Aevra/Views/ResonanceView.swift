@@ -8,7 +8,6 @@ struct ResonanceView: View {
     @State private var isLoadingMore = false
     @State private var hasMore = true
     @State private var errorMessage: String?
-    @State private var sortOption: ResonanceSort = .updatedAt
 
     var body: some View {
         ZStack {
@@ -31,57 +30,42 @@ struct ResonanceView: View {
         }
         .navigationTitle("resonance.title")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Picker("resonance.sort.title", selection: $sortOption) {
-                        ForEach(ResonanceSort.allCases) { option in
-                            Text(localizedLabel(for: option)).tag(option)
-                        }
-                    }
-                } label: {
-                    Image(systemName: "arrow.up.arrow.down")
-                }
-            }
-        }
         .task {
             await reloadResonances()
-        }
-        .onChange(of: sortOption) { _, _ in
-            Task {
-                await reloadResonances()
-            }
         }
     }
 
     private var resonanceListView: some View {
-        ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(resonances) { resonance in
-                    NavigationLink {
-                        ChatView(
-                            soulerId: resonance.soulerId,
-                            soulerName: resonance.soulerName
-                        )
-                    } label: {
-                        ResonanceListCard(resonance: resonance)
-                    }
-                    .buttonStyle(.plain)
-                    .onAppear {
-                        Task {
-                            await loadMoreIfNeeded(current: resonance)
-                        }
-                    }
+        List {
+            ForEach(resonances) { resonance in
+                NavigationLink {
+                    ChatView(
+                        soulerId: resonance.soulerId,
+                        soulerName: resonance.soulerName
+                    )
+                } label: {
+                    ResonanceRow(resonance: resonance)
                 }
-
-                if isLoadingMore {
-                    ProgressView("common.loading")
-                        .tint(UITheme.accent)
-                        .padding(.vertical, 12)
+                .listRowBackground(Color.clear)
+                .listRowSeparatorTint(.white.opacity(0.08))
+                .onAppear {
+                    Task {
+                        await loadMoreIfNeeded(current: resonance)
+                    }
                 }
             }
-            .padding()
+
+            if isLoadingMore {
+                ProgressView("common.loading")
+                    .tint(UITheme.accent)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .padding(.vertical, 8)
+            }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .refreshable {
             await reloadResonances()
         }
@@ -118,7 +102,7 @@ struct ResonanceView: View {
         defer { isLoadingInitial = false }
 
         do {
-            let page = try await Resonance.getPage(limit: pageSize, offset: 0, sort: sortOption)
+            let page = try await Resonance.getPage(limit: pageSize, offset: 0)
             resonances = page
             hasMore = page.count == pageSize
         } catch {
@@ -138,7 +122,7 @@ struct ResonanceView: View {
         defer { isLoadingMore = false }
 
         do {
-            let page = try await Resonance.getPage(limit: pageSize, offset: resonances.count, sort: sortOption)
+            let page = try await Resonance.getPage(limit: pageSize, offset: resonances.count)
             resonances.append(contentsOf: page)
             hasMore = page.count == pageSize
         } catch {
@@ -146,55 +130,25 @@ struct ResonanceView: View {
         }
     }
 
-    private func localizedLabel(for option: ResonanceSort) -> LocalizedStringKey {
-        switch option {
-        case .updatedAt:
-            return "resonance.sort.updatedAt"
-        case .resonanceCount:
-            return "resonance.sort.count"
-        }
-    }
 }
 
-private struct ResonanceListCard: View {
+private struct ResonanceRow: View {
     let resonance: Resonance
 
     var body: some View {
-        CardView {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text(resonance.soulerName)
-                        .font(.headline.weight(.semibold))
-                        .fontDesign(.serif)
-                        .foregroundStyle(UITheme.primaryText)
-                        .lineLimit(1)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(resonance.soulerName)
+                .font(.body.weight(.medium))
+                .fontDesign(.serif)
+                .foregroundStyle(UITheme.primaryText)
+                .lineLimit(1)
 
-                    Spacer(minLength: 8)
-
-                    HStack(spacing: 6) {
-                        Image(systemName: "waveform.path.ecg")
-                            .font(.caption.weight(.semibold))
-                        Text("\(resonance.count)")
-                            .font(.caption.weight(.semibold))
-                    }
-                    .foregroundStyle(UITheme.secondaryText)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(.white.opacity(0.10), in: .capsule)
-                }
-
-                HStack(spacing: 8) {
-                    Image(systemName: "clock.fill")
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(UITheme.tertiaryText)
-
-                    Text(resonance.updatedAt.formatted(.relative(presentation: .named)))
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(UITheme.tertiaryText)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text(resonance.updatedAt.formatted(.relative(presentation: .named)))
+                .font(.caption)
+                .foregroundStyle(UITheme.tertiaryText)
         }
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(.rect)
     }
 }
