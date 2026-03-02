@@ -14,6 +14,9 @@ struct SeaStarView: View {
     @State private var isPresented = false
     @State private var isSidebarPresented = false
     @State private var destination: Destination = .seastar
+    @State private var resonances: [Resonance] = []
+    @State private var isLoadingResonances = false
+    @State private var resonanceMenuError: String?
     @State private var manager = MatchingManager.shared
 
     var body: some View {
@@ -21,14 +24,17 @@ struct SeaStarView: View {
             ZStack(alignment: .leading) {
                 mainContent
                     .disabled(isSidebarPresented)
+                    .blur(radius: isSidebarPresented ? 1.5 : 0)
                     .toolbar {
-                        if isSeaStarDestination {
-                            ToolbarItem(placement: .topBarLeading) {
-                                Button(action: toggleSidebar) {
-                                    Image(systemName: "line.3.horizontal")
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.22)) {
+                                    isSidebarPresented.toggle()
                                 }
-                                .accessibilityLabel(Text("seastar.action.resonances"))
+                            } label: {
+                                Image(systemName: "line.3.horizontal")
                             }
+                            .accessibilityLabel(Text("seastar.action.resonances"))
                         }
 
                         if isSeaStarDestination {
@@ -41,9 +47,12 @@ struct SeaStarView: View {
                             }
                         }
                     }
+                    .task {
+                        await loadResonancesForMenu()
+                    }
 
                 if isSidebarPresented {
-                    Color.black.opacity(0.32)
+                    Color.black.opacity(0.3)
                         .ignoresSafeArea()
                         .onTapGesture {
                             withAnimation(.easeInOut(duration: 0.2)) {
@@ -57,12 +66,13 @@ struct SeaStarView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.22), value: isSidebarPresented)
-            .navigationDestination(isPresented: $isNavigatingToMatching) {
-                MatchingView()
-            }
-            .fullScreenCover(isPresented: $isPresented) {
-                ComposeView(text: $text, onSend: send)
-            }
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .navigationDestination(isPresented: $isNavigatingToMatching) {
+            MatchingView()
+        }
+        .fullScreenCover(isPresented: $isPresented) {
+            ComposeView(text: $text, onSend: send)
         }
     }
 
@@ -86,8 +96,7 @@ struct SeaStarView: View {
         case let .chat(resonance):
             ChatView(
                 soulerId: resonance.soulerId,
-                soulerName: resonance.soulerName,
-                onTapSidebarButton: toggleSidebar
+                soulerName: resonance.soulerName
             )
         }
     }
@@ -100,53 +109,120 @@ struct SeaStarView: View {
     }
 
     private var sidebarView: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sidebarHeader
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                destination = .seastar
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isSidebarPresented = false
+                }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: isSeaStarDestination ? "checkmark" : "sparkles")
+                    Text("SeaStar")
+                        .font(.body.weight(.semibold))
+                        .fontDesign(.serif)
+                }
+                .foregroundStyle(UITheme.primaryText)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    isSeaStarDestination ? .white.opacity(0.18) : .clear,
+                    in: .rect(cornerRadius: 12)
+                )
+            }
+            .buttonStyle(.plain)
 
             Divider()
-                .overlay(.white.opacity(0.16))
+                .overlay(.white.opacity(0.12))
+                .padding(.bottom, 2)
 
-            ResonanceListView { resonance in
-                destination = .chat(resonance)
-                isSidebarPresented = false
+            Group {
+                if let resonanceMenuError {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(resonanceMenuError)
+                            .font(.footnote)
+                            .foregroundStyle(UITheme.secondaryText)
+
+                        Button("common.retry") {
+                            Task {
+                                await loadResonancesForMenu()
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .padding(.top, 8)
+                } else if isLoadingResonances, resonances.isEmpty {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("common.loading")
+                            .font(.footnote)
+                            .foregroundStyle(UITheme.secondaryText)
+                    }
+                    .padding(.top, 8)
+                } else if resonances.isEmpty {
+                    Text("resonance.empty")
+                        .font(.footnote)
+                        .foregroundStyle(UITheme.secondaryText)
+                        .padding(.top, 8)
+                } else {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 4) {
+                            ForEach(resonances) { resonance in
+                                Button {
+                                    destination = .chat(resonance)
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        isSidebarPresented = false
+                                    }
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: selectedResonanceId == resonance.id ? "checkmark" : "message")
+                                                .font(.caption.weight(.semibold))
+                                            Text(resonance.soulerName)
+                                                .lineLimit(1)
+                                                .font(.body.weight(.medium))
+                                                .fontDesign(.serif)
+                                        }
+                                        .foregroundStyle(UITheme.primaryText)
+
+                                        Text(resonance.updatedAt.formatted(.relative(presentation: .named)))
+                                            .font(.caption2)
+                                            .foregroundStyle(UITheme.secondaryText)
+                                            .padding(.leading, 22)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 10)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(
+                                        selectedResonanceId == resonance.id ? .white.opacity(0.15) : .clear,
+                                        in: .rect(cornerRadius: 12)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
             }
         }
-        .padding(16)
-        .frame(width: 320, alignment: .topLeading)
+        .padding(14)
+        .frame(width: 300, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 24))
+        .background(.ultraThinMaterial, in: .rect(cornerRadius: 22))
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(.white.opacity(0.16), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(.white.opacity(0.14), lineWidth: 1)
         )
-        .padding(.leading, 12)
-        .padding(.vertical, 12)
+        .padding(.leading, 10)
+        .padding(.vertical, 8)
     }
 
-    private var sidebarHeader: some View {
-        Button {
-            destination = .seastar
-            isSidebarPresented = false
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "sparkles")
-                    .font(.body.weight(.semibold))
-                Text("SeaStar")
-                    .font(.body.weight(.semibold))
-                    .fontDesign(.serif)
-            }
-            .foregroundStyle(isSeaStarDestination ? UITheme.primaryText : UITheme.secondaryText)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                isSeaStarDestination
-                    ? .white.opacity(0.16)
-                    : .clear,
-                in: .rect(cornerRadius: 12)
-            )
+    private var selectedResonanceId: UUID? {
+        if case let .chat(resonance) = destination {
+            return resonance.id
         }
-        .buttonStyle(.plain)
+        return nil
     }
 
     private var magicButtonView: some View {
@@ -208,9 +284,19 @@ struct SeaStarView: View {
 
     // MARK: - Actions
 
-    private func toggleSidebar() {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isSidebarPresented.toggle()
+    @MainActor
+    private func loadResonancesForMenu() async {
+        if isLoadingResonances { return }
+
+        isLoadingResonances = true
+        defer { isLoadingResonances = false }
+
+        do {
+            resonances = try await Resonance.getPage(limit: 20, offset: 0)
+            resonanceMenuError = nil
+        } catch {
+            resonanceMenuError = error.localizedDescription
+            resonances = []
         }
     }
 
