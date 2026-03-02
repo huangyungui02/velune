@@ -86,6 +86,7 @@ struct SeaStarView: View {
                             isPresented = true
                         }
                     )
+                    .padding(.horizontal)
             }
         }
         .onTapGesture {
