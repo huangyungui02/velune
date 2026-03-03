@@ -24,17 +24,9 @@ struct GlimmerView: View {
         ZStack {
             BackgroundView()
 
-            VStack(spacing: 16) {
-                cardPagerView
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .padding(.vertical)
-
-                if isLoading {
-                    ProgressView()
-                } else {
-                    indicatorView
-                }
-            }
+            cardPagerView
+                .frame(maxHeight: .infinity, alignment: .top)
+                .padding(.vertical)
         }
         .navigationTitle("glimmer.title")
         .navigationBarTitleDisplayMode(.inline)
@@ -50,6 +42,14 @@ struct GlimmerView: View {
                     Image(systemName: "ellipsis")
                 }
                 .disabled(isDeleting)
+            }
+
+            ToolbarItem(placement: .bottomBar) {
+                if isLoading {
+                    ProgressView()
+                } else {
+                    indicatorView
+                }
             }
         }
         .alert("glimmer.delete.title", isPresented: $showingDeleteAlert) {

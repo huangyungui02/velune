@@ -3,34 +3,79 @@ import SwiftUI
 struct CardPagerIndicatorView: View {
     let echoes: [Echo]
     @Binding var currentPage: CardID?
+    @State private var isScrubbing = false
+    @State private var suppressTapUntil = Date.distantPast
+
+    private let dotSize: CGFloat = 8
+    private let dotSpacing: CGFloat = 8
+
+    private var pages: [CardID] {
+        [.glimmer] + echoes.map { .echo($0.id) }
+    }
 
     var body: some View {
         if !echoes.isEmpty {
-            HStack(spacing: 8) {
-                Button {
-                    withAnimation {
-                        currentPage = .glimmer
-                    }
-                } label: {
-                    Image(systemName: "sparkle")
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(currentPage == .glimmer ? UITheme.accent : UITheme.tertiaryText)
-                        .frame(width: 10, height: 10)
-                        .scaleEffect(currentPage == .glimmer ? 1.2 : 1.0)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
-                }
-                .buttonStyle(.plain)
-
-                ForEach(echoes) { echo in
+            HStack(spacing: dotSpacing) {
+                ForEach(pages.indices, id: \.self) { index in
                     Circle()
-                        .fill(currentPage == .echo(echo.id) ? UITheme.accent : UITheme.tertiaryText)
-                        .frame(width: 8, height: 8)
-                        .scaleEffect(currentPage == .echo(echo.id) ? 1.2 : 1.0)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
+                        .fill(currentPage == pages[index] ? UITheme.accent : UITheme.tertiaryText)
+                        .frame(width: dotSize, height: dotSize)
+                        .scaleEffect(currentPage == pages[index] ? 1.2 : 1.0)
+                        .animation(.spring(response: 0.28, dampingFraction: 0.75), value: currentPage)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            guard !isScrubbing else { return }
+                            guard Date() >= suppressTapUntil else { return }
+                            selectPage(at: index)
+                        }
+                    }
+            }
+            .contentShape(Rectangle())
+            .highPriorityGesture(scrubGesture)
+            .padding()
+        }
+    }
+
+    private var scrubGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.15, maximumDistance: 20)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .local))
+            .onChanged { value in
+                switch value {
+                case .first(true):
+                    isScrubbing = false
+                case .second(true, let drag?):
+                    isScrubbing = true
+                    updateSelection(for: drag.location.x)
+                default:
+                    break
                 }
             }
-            .padding()
-            .glassEffect()
+            .onEnded { _ in
+                if isScrubbing {
+                    suppressTapUntil = Date().addingTimeInterval(0.22)
+                }
+                isScrubbing = false
+            }
+    }
+
+    private func selectPage(at index: Int) {
+        guard pages.indices.contains(index) else { return }
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+            currentPage = pages[index]
+        }
+    }
+
+    private func updateSelection(for locationX: CGFloat) {
+        guard pages.count > 1 else { return }
+
+        let step = dotSize + dotSpacing
+        let normalizedIndex = Int(round((locationX - (dotSize / 2)) / step))
+        let clampedIndex = max(0, min(pages.count - 1, normalizedIndex))
+        let targetPage = pages[clampedIndex]
+
+        guard currentPage != targetPage else { return }
+        withAnimation(.interactiveSpring(response: 0.22, dampingFraction: 0.82)) {
+            currentPage = targetPage
         }
     }
 }
