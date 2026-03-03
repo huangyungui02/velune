@@ -33,6 +33,7 @@ struct SeaStarView: View {
     @State private var showArchiveChipInToolbar = false
 
     @Namespace private var archiveAnimation
+    @Namespace private var matchingWaveAnimation
 
     private let sidebarWidth: CGFloat = 320
 
@@ -66,6 +67,32 @@ struct SeaStarView: View {
                                             .matchedGeometryEffect(id: "archive-chip", in: archiveAnimation)
                                             .allowsHitTesting(false)
                                             .offset(x: 24, y: 26)
+                                    }
+                                }
+                            }
+
+                            if stage == .matching {
+                                if manager.isMatching && !hasEchoes {
+                                    ToolbarItem(placement: .status) {
+                                        listeningToolbarChip
+                                    }
+                                } else {
+                                    if hasEchoes {
+                                        ToolbarItem(placement: .bottomBar) {
+                                            liquidSplitWaveIcon
+                                        }
+                                    }
+
+                                    if shouldShowArchiveButton {
+                                        ToolbarItem(placement: .bottomBar) {
+                                            archiveButton
+                                        }
+                                    }
+
+                                    if hasEchoes {
+                                        ToolbarItem(placement: .status) {
+                                            CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
+                                        }
                                     }
                                 }
                             }
@@ -481,34 +508,35 @@ extension SeaStarView {
             }
             .frame(maxHeight: .infinity, alignment: .top)
             .padding(.vertical)
-
-            ZStack {
-                if manager.isMatching && !hasEchoes {
-                    HStack(spacing: 12) {
-                        MatchingWaveIcon()
-
-                        Text("matching.status.listening")
-                            .font(.footnote.weight(.medium))
-                            .foregroundStyle(UITheme.secondaryText)
-                            .tracking(2)
-                    }
-                    .padding()
-                    .glassEffect()
-                } else {
-                    CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
-                }
-
-                HStack {
-                    Spacer()
-
-                    if shouldShowArchiveButton {
-                        archiveButton
-                            .transition(.opacity.combined(with: .move(edge: .trailing)))
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
         }
+    }
+
+    private var listeningToolbarChip: some View {
+        HStack(spacing: 12) {
+            MatchingWaveIcon()
+                .matchedGeometryEffect(id: "matching-wave-icon", in: matchingWaveAnimation)
+
+            Text("matching.status.listening")
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(UITheme.primaryText)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .fixedSize(horizontal: true, vertical: false)
+        .animation(.spring(response: 0.34, dampingFraction: 0.82), value: hasEchoes)
+    }
+
+    private var liquidSplitWaveIcon: some View {
+        MatchingWaveIcon()
+            .matchedGeometryEffect(id: "matching-wave-icon", in: matchingWaveAnimation)
+            .frame(width: 24, height: 24)
+            .transition(.asymmetric(
+                insertion: .move(edge: .leading).combined(with: .opacity),
+                removal: .opacity
+            ))
+            .animation(.spring(response: 0.34, dampingFraction: 0.82), value: hasEchoes)
     }
 
     private var archiveButton: some View {
@@ -517,14 +545,14 @@ extension SeaStarView {
                 .matchedGeometryEffect(id: "archive-chip", in: archiveAnimation)
         }
         .buttonStyle(.plain)
+        .transition(.opacity.combined(with: .move(edge: .trailing)))
+        .animation(.spring(response: 0.3, dampingFraction: 0.84), value: shouldShowArchiveButton)
     }
 
     private var archiveChip: some View {
         Image(systemName: "sparkles")
             .font(.footnote.weight(.semibold))
-        .foregroundStyle(UITheme.primaryText)
-        .frame(width: 36, height: 36)
-        .glassEffect(in: .circle)
+            .foregroundStyle(UITheme.primaryText)
     }
 }
 
