@@ -29,11 +29,6 @@ struct SeaStarView: View {
     @State private var currentPage: CardID? = .glimmer
     @State private var chatRoute: EchoChatRoute?
     @State private var sidebarDragOffset: CGFloat = 0
-    @State private var isArchiving = false
-    @State private var showArchiveChipInToolbar = false
-
-    @Namespace private var archiveAnimation
-    @Namespace private var matchingWaveAnimation
 
     private let sidebarWidth: CGFloat = 320
 
@@ -61,13 +56,6 @@ struct SeaStarView: View {
                                     } label: {
                                         Image(systemName: "house.fill")
                                     }
-
-                                    if showArchiveChipInToolbar {
-                                        archiveChip
-                                            .matchedGeometryEffect(id: "archive-chip", in: archiveAnimation)
-                                            .allowsHitTesting(false)
-                                            .offset(x: 24, y: 26)
-                                    }
                                 }
                             }
 
@@ -79,13 +67,15 @@ struct SeaStarView: View {
                                 } else {
                                     if hasEchoes {
                                         ToolbarItem(placement: .bottomBar) {
-                                            liquidSplitWaveIcon
+                                            Spacer()
                                         }
-                                    }
 
-                                    if shouldShowArchiveButton {
                                         ToolbarItem(placement: .bottomBar) {
-                                            archiveButton
+                                            if shouldShowArchiveButton {
+                                                archiveButton
+                                            } else if shouldShowWaveButton {
+                                                liquidSplitWaveIcon
+                                            }
                                         }
                                     }
 
@@ -167,8 +157,6 @@ struct SeaStarView: View {
 
                 if stage == .matching {
                     matchingContent
-                        .opacity(isArchiving ? 0 : 1)
-                        .scaleEffect(isArchiving ? 0.97 : 1)
                 } else {
                     VStack {
                         Spacer()
@@ -365,7 +353,11 @@ struct SeaStarView: View {
     }
 
     private var shouldShowArchiveButton: Bool {
-        stage == .matching && !manager.isMatching && manager.currentGlimmer?.status == "complete" && !showArchiveChipInToolbar
+        stage == .matching && !manager.isMatching && manager.currentGlimmer?.status == "complete"
+    }
+
+    private var shouldShowWaveButton: Bool {
+        stage == .matching && manager.isMatching && hasEchoes
     }
 
     private var magicButtonView: some View {
@@ -454,29 +446,9 @@ struct SeaStarView: View {
 
     private func archiveCurrentGlimmer() {
         guard shouldShowArchiveButton else { return }
-        isArchiving = true
-
-        Task {
-            try? await Task.sleep(for: .milliseconds(160))
-
-            await MainActor.run {
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                    showArchiveChipInToolbar = true
-                }
-            }
-
-            try? await Task.sleep(for: .milliseconds(520))
-
-            await MainActor.run {
-                manager.reset()
-                currentPage = .glimmer
-                stage = .verse
-                withAnimation(.easeOut(duration: 0.2)) {
-                    showArchiveChipInToolbar = false
-                }
-                isArchiving = false
-            }
-        }
+        manager.reset()
+        currentPage = .glimmer
+        stage = .verse
     }
 
     private func recoverToVerseAfterError() {
@@ -514,7 +486,6 @@ extension SeaStarView {
     private var listeningToolbarChip: some View {
         HStack(spacing: 12) {
             MatchingWaveIcon()
-                .matchedGeometryEffect(id: "matching-wave-icon", in: matchingWaveAnimation)
 
             Text("matching.status.listening")
                 .font(.footnote.weight(.medium))
@@ -525,28 +496,18 @@ extension SeaStarView {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .fixedSize(horizontal: true, vertical: false)
-        .animation(.spring(response: 0.34, dampingFraction: 0.82), value: hasEchoes)
     }
 
     private var liquidSplitWaveIcon: some View {
         MatchingWaveIcon()
-            .matchedGeometryEffect(id: "matching-wave-icon", in: matchingWaveAnimation)
             .frame(width: 24, height: 24)
-            .transition(.asymmetric(
-                insertion: .move(edge: .leading).combined(with: .opacity),
-                removal: .opacity
-            ))
-            .animation(.spring(response: 0.34, dampingFraction: 0.82), value: hasEchoes)
     }
 
     private var archiveButton: some View {
         Button(action: archiveCurrentGlimmer) {
             archiveChip
-                .matchedGeometryEffect(id: "archive-chip", in: archiveAnimation)
         }
         .buttonStyle(.plain)
-        .transition(.opacity.combined(with: .move(edge: .trailing)))
-        .animation(.spring(response: 0.3, dampingFraction: 0.84), value: shouldShowArchiveButton)
     }
 
     private var archiveChip: some View {
