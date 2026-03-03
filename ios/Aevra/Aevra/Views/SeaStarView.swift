@@ -19,13 +19,14 @@ struct SeaStarView: View {
     @State private var isLoadingResonances = false
     @State private var resonanceMenuError: String?
     @State private var manager = MatchingManager.shared
+    @State private var sidebarDragOffset: CGFloat = 0
+
+    private let sidebarWidth: CGFloat = 320
 
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .leading) {
+        ZStack(alignment: .leading) {
+            NavigationStack {
                 mainContent
-                    .disabled(isSidebarPresented)
-                    .blur(radius: isSidebarPresented ? 1.5 : 0)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
@@ -51,27 +52,30 @@ struct SeaStarView: View {
                     .task {
                         await loadResonancesForMenu()
                     }
+                    .navigationBarTitleDisplayMode(.inline)
+                    .navigationDestination(isPresented: $isNavigatingToMatching) {
+                        MatchingView()
+                    }
+            }
+            .offset(x: sidebarOpenOffset)
+            .disabled(sidebarProgress > 0.01)
 
-                if isSidebarPresented {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                isSidebarPresented = false
-                            }
+            if sidebarProgress > 0.001 {
+                Color.black.opacity(0.3 * sidebarProgress)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isSidebarPresented = false
                         }
-                        .transition(.opacity)
+                    }
+            }
 
-                    sidebarView
-                        .transition(.move(edge: .leading).combined(with: .opacity))
-                }
-            }
-            .animation(.easeInOut(duration: 0.22), value: isSidebarPresented)
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(isPresented: $isNavigatingToMatching) {
-                MatchingView()
-            }
+            sidebarView
+                .offset(x: sidebarOpenOffset - sidebarWidth)
         }
+        .simultaneousGesture(sidebarGesture)
+        .animation(.easeInOut(duration: 0.22), value: isSidebarPresented)
+        .animation(.interactiveSpring(response: 0.22, dampingFraction: 0.9), value: sidebarDragOffset)
         .fullScreenCover(isPresented: $isPresented) {
             ComposeView(text: $text, onSend: send)
         }
@@ -211,15 +215,54 @@ struct SeaStarView: View {
             }
         }
         .padding(12)
-        .frame(width: 320, alignment: .topLeading)
+        .frame(width: sidebarWidth, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 22))
+        .background(.ultraThinMaterial)
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(.white.opacity(0.14), lineWidth: 1)
+            Rectangle()
+                .fill(.white.opacity(0.14))
+                .frame(width: 1),
+            alignment: .trailing
         )
-        .padding(.leading, 10)
-        .padding(.vertical, 8)
+    }
+
+    private var sidebarOpenOffset: CGFloat {
+        let base = isSidebarPresented ? sidebarWidth : 0
+        return min(max(base + sidebarDragOffset, 0), sidebarWidth)
+    }
+
+    private var sidebarProgress: CGFloat {
+        guard sidebarWidth > 0 else { return 0 }
+        return sidebarOpenOffset / sidebarWidth
+    }
+
+    private var sidebarGesture: some Gesture {
+        DragGesture(minimumDistance: 10, coordinateSpace: .global)
+            .onChanged { value in
+                let isEdgeSwipe = value.startLocation.x <= 28
+                if !isSidebarPresented && !isEdgeSwipe { return }
+
+                if isSidebarPresented {
+                    sidebarDragOffset = min(0, value.translation.width)
+                } else {
+                    sidebarDragOffset = max(0, value.translation.width)
+                }
+            }
+            .onEnded { value in
+                let isEdgeSwipe = value.startLocation.x <= 28
+                guard isSidebarPresented || isEdgeSwipe else {
+                    sidebarDragOffset = 0
+                    return
+                }
+
+                let predicted = (isSidebarPresented ? sidebarWidth : 0) + value.predictedEndTranslation.width
+                let shouldOpen = predicted > sidebarWidth * 0.45
+
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    isSidebarPresented = shouldOpen
+                }
+                sidebarDragOffset = 0
+            }
     }
 
     private var selectedResonanceId: UUID? {
