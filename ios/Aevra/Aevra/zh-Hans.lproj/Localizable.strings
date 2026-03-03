@@ -63,3 +63,5 @@
 "resonance.unknownSouler" = "未命名灵魂";
 
 "app.error.unauthenticated" = "用户尚未登录";
+
+"matching.action.archive" = "归档";

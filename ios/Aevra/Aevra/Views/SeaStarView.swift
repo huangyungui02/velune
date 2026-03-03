@@ -3,6 +3,11 @@ import SwiftData
 import SwiftUI
 
 struct SeaStarView: View {
+    private enum SeaStarStage: Equatable {
+        case verse
+        case matching
+    }
+
     private enum Destination: Equatable {
         case seastar
         case chat(Resonance)
@@ -11,15 +16,23 @@ struct SeaStarView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.locale) private var locale
     @State private var text = ""
-    @State private var isNavigatingToMatching = false
     @State private var isPresented = false
     @State private var isSidebarPresented = false
     @State private var destination: Destination = .seastar
+    @State private var stage: SeaStarStage = .verse
     @State private var resonances: [Resonance] = []
     @State private var isLoadingResonances = false
     @State private var resonanceMenuError: String?
     @State private var manager = MatchingManager.shared
+    @State private var showError = false
+    @State private var shouldRecoverToVerseAfterError = false
+    @State private var currentPage: CardID? = .glimmer
+    @State private var chatRoute: EchoChatRoute?
     @State private var sidebarDragOffset: CGFloat = 0
+    @State private var isArchiving = false
+    @State private var showArchiveChipInToolbar = false
+
+    @Namespace private var archiveAnimation
 
     private let sidebarWidth: CGFloat = 320
 
@@ -41,10 +54,19 @@ struct SeaStarView: View {
 
                         if isSeaStarDestination {
                             ToolbarItem(placement: .topBarTrailing) {
-                                NavigationLink {
-                                    ProfileView()
-                                } label: {
-                                    Image(systemName: "house.fill")
+                                ZStack(alignment: .topTrailing) {
+                                    NavigationLink {
+                                        ProfileView()
+                                    } label: {
+                                        Image(systemName: "house.fill")
+                                    }
+
+                                    if showArchiveChipInToolbar {
+                                        archiveChip
+                                            .matchedGeometryEffect(id: "archive-chip", in: archiveAnimation)
+                                            .allowsHitTesting(false)
+                                            .offset(x: 24, y: 26)
+                                    }
                                 }
                             }
                         }
@@ -53,8 +75,14 @@ struct SeaStarView: View {
                         await loadResonancesForMenu()
                     }
                     .navigationBarTitleDisplayMode(.inline)
-                    .navigationDestination(isPresented: $isNavigatingToMatching) {
-                        MatchingView()
+                    .navigationDestination(item: $chatRoute) { route in
+                        ChatView(
+                            soulerId: route.soulerId,
+                            soulerName: route.soulerName,
+                            initialSeedMessages: route.initialSeedMessages,
+                            initialDisplayMessages: route.initialDisplayMessages,
+                            initialReply: route.initialReply
+                        )
                     }
             }
             .offset(x: sidebarOpenOffset)
@@ -79,6 +107,28 @@ struct SeaStarView: View {
         .fullScreenCover(isPresented: $isPresented) {
             ComposeView(text: $text, onSend: send)
         }
+        .onChange(of: manager.errorMessage) { _, newValue in
+            if stage == .matching, newValue != nil {
+                shouldRecoverToVerseAfterError = true
+            }
+            showError = newValue != nil
+        }
+        .onChange(of: showError) { _, isShowing in
+            if !isShowing, shouldRecoverToVerseAfterError {
+                recoverToVerseAfterError()
+            }
+        }
+        .alert("matching.error.title", isPresented: $showError) {
+            Button("common.ok", role: .cancel) {
+                recoverToVerseAfterError()
+            }
+        } message: {
+            if let errorMessage = manager.errorMessage {
+                Text(errorMessage)
+            } else {
+                Text("matching.error.unknown")
+            }
+        }
     }
 
     @ViewBuilder
@@ -88,14 +138,20 @@ struct SeaStarView: View {
             ZStack {
                 StarryBackgroundView()
 
-                VStack {
-                    Spacer()
+                if stage == .matching {
+                    matchingContent
+                        .opacity(isArchiving ? 0 : 1)
+                        .scaleEffect(isArchiving ? 0.97 : 1)
+                } else {
+                    VStack {
+                        Spacer()
 
-                    VerseView(textKey: "seastar.hero.verse")
+                        VerseView(textKey: "seastar.hero.verse")
 
-                    Spacer()
+                        Spacer()
 
-                    magicButtonView
+                        magicButtonView
+                    }
                 }
             }
         case let .chat(resonance):
@@ -272,6 +328,19 @@ struct SeaStarView: View {
         return nil
     }
 
+    private var echoes: [Echo] {
+        (manager.currentGlimmer?.echoes ?? [])
+            .sorted { $0.createdAt < $1.createdAt }
+    }
+
+    private var hasEchoes: Bool {
+        !echoes.isEmpty
+    }
+
+    private var shouldShowArchiveButton: Bool {
+        stage == .matching && !manager.isMatching && manager.currentGlimmer?.status == "complete" && !showArchiveChipInToolbar
+    }
+
     private var magicButtonView: some View {
         Group {
             if manager.isMatching {
@@ -312,7 +381,7 @@ struct SeaStarView: View {
         }
         .onTapGesture {
             if manager.isMatching {
-                isNavigatingToMatching = true
+                stage = .matching
             } else {
                 isPresented = true
             }
@@ -350,9 +419,112 @@ struct SeaStarView: View {
     private func send() {
         let input = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { return }
-        manager.startMatching(text: text, context: context)
+        manager.startMatching(text: input, context: context)
         text = ""
-        isNavigatingToMatching = true
+        currentPage = .glimmer
+        stage = .matching
+    }
+
+    private func archiveCurrentGlimmer() {
+        guard shouldShowArchiveButton else { return }
+        isArchiving = true
+
+        Task {
+            try? await Task.sleep(for: .milliseconds(160))
+
+            await MainActor.run {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                    showArchiveChipInToolbar = true
+                }
+            }
+
+            try? await Task.sleep(for: .milliseconds(520))
+
+            await MainActor.run {
+                manager.reset()
+                currentPage = .glimmer
+                stage = .verse
+                withAnimation(.easeOut(duration: 0.2)) {
+                    showArchiveChipInToolbar = false
+                }
+                isArchiving = false
+            }
+        }
+    }
+
+    private func recoverToVerseAfterError() {
+        manager.reset()
+        stage = .verse
+        currentPage = .glimmer
+        shouldRecoverToVerseAfterError = false
+    }
+}
+
+extension SeaStarView {
+    private var matchingContent: some View {
+        VStack(spacing: 16) {
+            CardPagerView(
+                echoes: echoes,
+                currentPage: $currentPage,
+                autoSwitchToFirstEcho: true
+            ) { maxCardHeight in
+                GlimmerCardView(content: manager.text, maxCardHeight: maxCardHeight)
+            } echoCard: { echo, maxCardHeight in
+                EchoCardView(
+                    echo: echo,
+                    glimmerContent: manager.text,
+                    maxCardHeight: maxCardHeight,
+                    onOpenChat: { route in
+                        chatRoute = route
+                    }
+                )
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+            .padding(.vertical)
+
+            ZStack {
+                if manager.isMatching && !hasEchoes {
+                    HStack(spacing: 12) {
+                        MatchingWaveIcon()
+
+                        Text("matching.status.listening")
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(UITheme.secondaryText)
+                            .tracking(2)
+                    }
+                    .padding()
+                    .glassEffect()
+                } else {
+                    CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
+                }
+
+                HStack {
+                    Spacer()
+
+                    if shouldShowArchiveButton {
+                        archiveButton
+                            .transition(.opacity.combined(with: .move(edge: .trailing)))
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    private var archiveButton: some View {
+        Button(action: archiveCurrentGlimmer) {
+            archiveChip
+                .matchedGeometryEffect(id: "archive-chip", in: archiveAnimation)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var archiveChip: some View {
+        Image(systemName: "sparkles")
+            .font(.footnote.weight(.semibold))
+        .foregroundStyle(UITheme.primaryText)
+        .frame(width: 36, height: 36)
+        .glassEffect(in: .circle)
     }
 }
 

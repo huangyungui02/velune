@@ -63,3 +63,5 @@
 "resonance.unknownSouler" = "Unknown souler";
 
 "app.error.unauthenticated" = "User is not authenticated";
+
+"matching.action.archive" = "Archive";
