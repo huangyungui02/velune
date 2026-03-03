@@ -14,6 +14,7 @@ struct ChatView: View {
     @State private var isSending = false
     @State private var errorMessage: String?
     @State private var hasTriggeredInitialReply = false
+    @State private var hasScrolledToLatestOnAppear = false
 
     init(
         soulerId: UUID,
@@ -88,15 +89,16 @@ struct ChatView: View {
                 }
                 .padding()
             }
+            .onAppear {
+                guard !hasScrolledToLatestOnAppear else { return }
+                hasScrolledToLatestOnAppear = true
+                scrollToLatest(with: proxy, animated: false)
+            }
             .onChange(of: messages.count) { _, _ in
-                guard let lastId = messages.last?.id else { return }
-                withAnimation(.easeOut(duration: 0.2)) {
-                    proxy.scrollTo(lastId, anchor: .bottom)
-                }
+                scrollToLatest(with: proxy, animated: true)
             }
             .onChange(of: messages.last?.content) { _, _ in
-                guard let lastId = messages.last?.id else { return }
-                proxy.scrollTo(lastId, anchor: .bottom)
+                scrollToLatest(with: proxy, animated: false)
             }
         }
     }
@@ -148,8 +150,20 @@ struct ChatView: View {
         inputText = ""
         errorMessage = nil
         hasTriggeredInitialReply = false
+        hasScrolledToLatestOnAppear = false
         await loadMessages()
         await triggerInitialReplyIfNeeded()
+    }
+
+    private func scrollToLatest(with proxy: ScrollViewProxy, animated: Bool) {
+        guard let lastId = messages.last?.id else { return }
+        if animated {
+            withAnimation(.easeOut(duration: 0.2)) {
+                proxy.scrollTo(lastId, anchor: .bottom)
+            }
+        } else {
+            proxy.scrollTo(lastId, anchor: .bottom)
+        }
     }
 
     @MainActor
