@@ -68,9 +68,9 @@ struct SeaStarView: View {
             }
             .animation(.easeInOut(duration: 0.22), value: isSidebarPresented)
             .navigationBarTitleDisplayMode(.inline)
-        }
-        .navigationDestination(isPresented: $isNavigatingToMatching) {
-            MatchingView()
+            .navigationDestination(isPresented: $isNavigatingToMatching) {
+                MatchingView()
+            }
         }
         .fullScreenCover(isPresented: $isPresented) {
             ComposeView(text: $text, onSend: send)
