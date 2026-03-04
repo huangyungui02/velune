@@ -3,17 +3,15 @@ import SwiftUI
 
 struct EchoChatRoute: Identifiable, Hashable {
     let id = UUID()
+    let sessionId: UUID
     let soulerId: UUID
     let soulerName: String
-    let glimmerContent: String
-    let echoContent: String
     let initialReply: String?
 
-    init(echo: Echo, glimmerContent: String, initialReply: String?) {
+    init(sessionId: UUID, echo: Echo, initialReply: String?) {
+        self.sessionId = sessionId
         soulerId = echo.soulerId
         soulerName = echo.soulerName
-        self.glimmerContent = glimmerContent
-        echoContent = echo.content
         self.initialReply = initialReply
     }
 
@@ -25,47 +23,19 @@ struct EchoChatRoute: Identifiable, Hashable {
         hasher.combine(id)
     }
 
-    var initialSeedMessages: [Message.SeedMessage] {
-        [
-            .init(role: .user, content: glimmerContent),
-            .init(role: .assistant, content: echoContent),
-        ]
-    }
-
-    var initialDisplayMessages: [Message] {
-        [
-            Message(
-                id: UUID(),
-                soulerId: soulerId,
-                role: .user,
-                content: glimmerContent,
-                createdAt: .now.addingTimeInterval(-2)
-            ),
-            Message(
-                id: UUID(),
-                soulerId: soulerId,
-                role: .assistant,
-                content: echoContent,
-                createdAt: .now.addingTimeInterval(-1)
-            ),
-        ]
-    }
 }
 
 struct EchoCardView: View {
     let echo: Echo
-    let glimmerContent: String
     let maxCardHeight: CGFloat?
     let onOpenChat: (EchoChatRoute) -> Void
 
     init(
         echo: Echo,
-        glimmerContent: String,
         maxCardHeight: CGFloat? = nil,
         onOpenChat: @escaping (EchoChatRoute) -> Void = { _ in }
     ) {
         self.echo = echo
-        self.glimmerContent = glimmerContent
         self.maxCardHeight = maxCardHeight
         self.onOpenChat = onOpenChat
     }
@@ -142,11 +112,12 @@ struct EchoCardView: View {
             .background(.white.opacity(0.08), in: .rect(cornerRadius: 14))
 
             Button {
+                guard let sessionId = echo.sessionId else { return }
                 replyText = ""
                 onOpenChat(
                     EchoChatRoute(
+                        sessionId: sessionId,
                         echo: echo,
-                        glimmerContent: glimmerContent,
                         initialReply: trimmed
                     )
                 )
@@ -157,11 +128,11 @@ struct EchoCardView: View {
                     .frame(width: 38, height: 38)
                     .background(.white.opacity(0.10), in: .circle)
             }
-            .disabled(!canSend)
+            .disabled(!canSend || echo.sessionId == nil)
         }
     }
 }
 
 #Preview {
-    EchoCardView(echo: Echo.sampleData[0], glimmerContent: Glimmer.sampleData[0].content)
+    EchoCardView(echo: Echo.sampleData[0])
 }

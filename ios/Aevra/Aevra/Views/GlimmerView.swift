@@ -78,10 +78,9 @@ struct GlimmerView: View {
         }
         .navigationDestination(item: $chatRoute) { route in
             ChatView(
+                sessionId: route.sessionId,
                 soulerId: route.soulerId,
                 soulerName: route.soulerName,
-                initialSeedMessages: route.initialSeedMessages,
-                initialDisplayMessages: route.initialDisplayMessages,
                 initialReply: route.initialReply
             )
         }
@@ -134,7 +133,6 @@ struct GlimmerView: View {
         } echoCard: { echo, maxCardHeight in
             EchoCardView(
                 echo: echo,
-                glimmerContent: glimmer.content,
                 maxCardHeight: maxCardHeight,
                 onOpenChat: { route in
                     chatRoute = route

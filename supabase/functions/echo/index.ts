@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
                 id: echo.id,
                 glimmerId: echo.glimmer_id,
                 soulerId: echo.souler_id,
+                sessionId: echo.session_id,
                 content: echo.content,
               },
             });

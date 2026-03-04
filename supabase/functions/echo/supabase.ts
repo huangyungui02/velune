@@ -140,20 +140,70 @@ export const createEcho = async (
   glimmerId: string,
   soulerId: string,
   content: string,
+  sessionId?: string,
 ) => {
+  const payload: {
+    glimmer_id: string;
+    souler_id: string;
+    content: string;
+    session_id?: string;
+  } = {
+    glimmer_id: glimmerId,
+    souler_id: soulerId,
+    content,
+  };
+  if (sessionId) {
+    payload.session_id = sessionId;
+  }
+
   const { data, error } = await supabase
     .from("echoes")
-    .insert({
-      glimmer_id: glimmerId,
-      souler_id: soulerId,
-      content,
-    })
+    .insert(payload)
     .select()
     .single();
   if (error) {
     throw error;
   }
   return data;
+};
+
+export const createSession = async (
+  userId: string,
+  soulerId: string,
+  title: string,
+) => {
+  const { data, error } = await supabase
+    .from("sessions")
+    .insert({
+      user_id: userId,
+      souler_id: soulerId,
+      title,
+    })
+    .select("id")
+    .single();
+  if (error) {
+    throw error;
+  }
+  return data as { id: string };
+};
+
+export const insertSessionMessage = async (
+  userId: string,
+  soulerId: string,
+  sessionId: string,
+  role: "user" | "assistant",
+  content: string,
+) => {
+  const { error } = await supabase.from("messages").insert({
+    user_id: userId,
+    souler_id: soulerId,
+    session_id: sessionId,
+    role,
+    content,
+  });
+  if (error) {
+    throw error;
+  }
 };
 
 export const createOrUpdateResonance = async (

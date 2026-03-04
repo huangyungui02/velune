@@ -6,6 +6,7 @@ import {
 import { soulerProfile } from "./profile.ts";
 import { soulerPrompt } from "./prompt.ts";
 import { soulerAnswer } from "./answer.ts";
+import { sessionTitle } from "./title.ts";
 
 export {
   fetchWikipediaCanonicalName,
@@ -14,4 +15,5 @@ export {
   soulerAnswer,
   soulerProfile,
   soulerPrompt,
+  sessionTitle,
 };

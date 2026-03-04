@@ -82,7 +82,12 @@ class MatchingManager {
             switch event {
             case let .echo(payload):
                 let souler = try await Souler.get(payload.soulerId)
-                let echo = Echo(id: payload.id, content: payload.content, souler: souler)
+                let echo = Echo(
+                    id: payload.id,
+                    content: payload.content,
+                    souler: souler,
+                    sessionId: payload.sessionId
+                )
                 await MainActor.run {
                     currentGlimmer?.echoes.append(echo)
                 }

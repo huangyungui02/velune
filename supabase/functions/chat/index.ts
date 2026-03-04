@@ -24,14 +24,10 @@ type MessageRow = {
   id: string;
   user_id: string;
   souler_id: string;
+  session_id: string | null;
   role: "user" | "assistant";
   content: string;
   created_at: string;
-};
-
-type SeedMessageInput = {
-  role: "user" | "assistant";
-  content: string;
 };
 
 const getUserIdFromRequest = async (request: Request) => {
@@ -52,34 +48,44 @@ const getUserIdFromRequest = async (request: Request) => {
   return data.user.id;
 };
 
-const getSouler = async (soulerId: string) => {
+const getSession = async (userId: string, sessionId: string) => {
   const { data, error } = await supabase
-    .from("soulers")
-    .select("id, name, bio, prompt")
-    .eq("id", soulerId)
+    .from("sessions")
+    .select("id, user_id, souler_id, title, soulers(id, name, bio, prompt)")
+    .eq("id", sessionId)
+    .eq("user_id", userId)
     .single();
 
   if (error || !data) {
+    throw new Error("Session not found");
+  }
+
+  const souler = Array.isArray(data.soulers) ? data.soulers[0] : data.soulers;
+  if (!souler?.id || !souler?.name) {
     throw new Error("Souler not found");
   }
 
-  return data as {
-    id: string;
-    name: string;
-    bio: string | null;
-    prompt: string | null;
+  return {
+    id: data.id as string,
+    soulerId: data.souler_id as string,
+    souler: {
+      id: souler.id as string,
+      name: souler.name as string,
+      bio: (souler.bio ?? null) as string | null,
+      prompt: (souler.prompt ?? null) as string | null,
+    },
   };
 };
 
 const getRecentMessages = async (
   userId: string,
-  soulerId: string,
+  sessionId: string,
 ): Promise<MessageRow[]> => {
   const { data, error } = await supabase
     .from("messages")
-    .select("id, user_id, souler_id, role, content, created_at")
+    .select("id, user_id, souler_id, session_id, role, content, created_at")
     .eq("user_id", userId)
-    .eq("souler_id", soulerId)
+    .eq("session_id", sessionId)
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -93,6 +99,7 @@ const getRecentMessages = async (
 const insertMessage = async (
   userId: string,
   soulerId: string,
+  sessionId: string,
   role: "user" | "assistant",
   content: string,
 ) => {
@@ -101,6 +108,7 @@ const insertMessage = async (
     .insert({
       user_id: userId,
       souler_id: soulerId,
+      session_id: sessionId,
       role,
       content,
     })
@@ -112,6 +120,18 @@ const insertMessage = async (
   }
 
   return data as { id: string; created_at: string };
+};
+
+const touchSession = async (userId: string, sessionId: string) => {
+  const { error } = await supabase
+    .from("sessions")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", sessionId)
+    .eq("user_id", userId);
+
+  if (error) {
+    throw error;
+  }
 };
 
 const createOrUpdateResonance = async (userId: string, soulerId: string) => {
@@ -193,27 +213,6 @@ const contentToText = (content: unknown): string => {
     .join("");
 };
 
-const normalizeSeedMessages = (value: unknown): SeedMessageInput[] => {
-  if (!Array.isArray(value)) return [];
-
-  const seedMessages: SeedMessageInput[] = [];
-  for (const item of value) {
-    if (!item || typeof item !== "object") continue;
-    const role = (item as { role?: unknown }).role;
-    const content = (item as { content?: unknown }).content;
-    if (role !== "user" && role !== "assistant") continue;
-    if (typeof content !== "string") continue;
-
-    const trimmed = content.trim();
-    if (!trimmed) continue;
-
-    seedMessages.push({ role, content: trimmed });
-    if (seedMessages.length >= 10) break;
-  }
-
-  return seedMessages;
-};
-
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -239,23 +238,19 @@ Deno.serve(async (req) => {
         const userId = await getUserIdFromRequest(req);
 
         const body = await req.json();
-        const soulerId = String(body?.soulerId ?? "").trim();
+        const sessionId = String(body?.sessionId ?? "").trim();
         const content = String(body?.content ?? "").trim();
-        const seedMessages = normalizeSeedMessages(body?.seedMessages);
 
-        if (!soulerId || !content) {
-          throw new Error("Missing soulerId or content");
+        if (!sessionId || !content) {
+          throw new Error("Missing sessionId or content");
         }
 
-        const souler = await getSouler(soulerId);
+        const session = await getSession(userId, sessionId);
+        const souler = session.souler;
 
-        for (const seed of seedMessages) {
-          await insertMessage(userId, soulerId, seed.role, seed.content);
-        }
+        const history = await getRecentMessages(userId, sessionId);
 
-        const history = await getRecentMessages(userId, soulerId);
-
-        await insertMessage(userId, soulerId, "user", content);
+        await insertMessage(userId, session.soulerId, sessionId, "user", content);
 
         const systemPrompt = buildSystemPrompt(
           souler.name,
@@ -288,12 +283,14 @@ Deno.serve(async (req) => {
 
         const assistantMessage = await insertMessage(
           userId,
-          soulerId,
+          session.soulerId,
+          sessionId,
           "assistant",
           finalContent,
         );
 
-        await createOrUpdateResonance(userId, soulerId);
+        await touchSession(userId, sessionId);
+        await createOrUpdateResonance(userId, session.soulerId);
         send({
           type: "done",
           assistantMessage: {

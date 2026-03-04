@@ -8,9 +8,8 @@ enum ChatStreamService {
     }
 
     private struct SendRequest: Encodable {
-        var soulerId: String
+        var sessionId: String
         var content: String
-        var seedMessages: [Message.SeedMessage]
     }
 
     private struct StreamPayload: Decodable {
@@ -20,14 +19,12 @@ enum ChatStreamService {
     }
 
     static func streamReply(
-        soulerId: UUID,
-        content: String,
-        seedMessages: [Message.SeedMessage] = []
+        sessionId: UUID,
+        content: String
     ) -> AsyncThrowingStream<Event, Error> {
         let request = SendRequest(
-            soulerId: soulerId.uuidString,
-            content: content,
-            seedMessages: seedMessages
+            sessionId: sessionId.uuidString,
+            content: content
         )
         let rawStream = supabase.functions._invokeWithStreamedResponse(
             "chat",

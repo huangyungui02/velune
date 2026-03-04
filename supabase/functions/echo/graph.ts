@@ -3,6 +3,7 @@ import {
   fetchWikipediaCanonicalName,
   matchSoulers,
   parseSouler,
+  sessionTitle,
   soulerAnswer,
   soulerProfile,
   soulerPrompt,
@@ -10,11 +11,13 @@ import {
 import { type Lang } from "./prompts.ts";
 import {
   appendSoulerAlias,
+  createSession,
   createSouler,
   createEcho,
   createOrUpdateResonance,
   getSoulerByAlias,
   getSoulerByWikiId,
+  insertSessionMessage,
   updateSouler,
 } from "./supabase.ts";
 
@@ -31,6 +34,7 @@ const graph = entrypoint(
         id: string;
         glimmer_id: string;
         souler_id: string;
+        session_id: string | null;
         content: string;
       }) => void | Promise<void>;
     },
@@ -83,7 +87,23 @@ const graph = entrypoint(
           soulerData.prompt,
           lang,
         );
-        const echo = await createEcho(glimmerId, soulerData.id, answer);
+        const title = await sessionTitle(glimmerContent, answer, lang);
+        const session = await createSession(userId, soulerData.id, title);
+        await insertSessionMessage(
+          userId,
+          soulerData.id,
+          session.id,
+          "user",
+          glimmerContent,
+        );
+        await insertSessionMessage(
+          userId,
+          soulerData.id,
+          session.id,
+          "assistant",
+          answer,
+        );
+        const echo = await createEcho(glimmerId, soulerData.id, answer, session.id);
         if (onEcho) {
           await onEcho(echo);
         }

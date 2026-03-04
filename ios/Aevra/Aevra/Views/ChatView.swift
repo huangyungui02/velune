@@ -2,56 +2,96 @@ import MarkdownUI
 import SwiftUI
 
 struct ChatView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let sessionId: UUID
     let soulerId: UUID
     let soulerName: String
-    let initialSeedMessages: [Message.SeedMessage]
-    let initialDisplayMessages: [Message]
     let initialReply: String?
+    let onOpenSeaStar: (() -> Void)?
+    let onSelectSession: ((ChatSession) -> Void)?
 
     @State private var messages: [Message] = []
     @State private var inputText = ""
     @State private var isLoading = false
     @State private var isSending = false
     @State private var errorMessage: String?
-    @State private var hasTriggeredInitialReply = false
+    @State private var autoRepliedSessionId: UUID?
     @State private var hasScrolledToLatestOnAppear = false
+    @State private var sessions: [ChatSession] = []
+    @State private var isLoadingSessions = false
+    @State private var sessionMenuError: String?
+    @State private var isSidebarPresented = false
+    @State private var pushedSession: ChatSession?
+
+    private let sidebarWidth: CGFloat = 320
 
     init(
+        sessionId: UUID,
         soulerId: UUID,
         soulerName: String,
-        initialSeedMessages: [Message.SeedMessage] = [],
-        initialDisplayMessages: [Message] = [],
-        initialReply: String? = nil
+        initialReply: String? = nil,
+        onOpenSeaStar: (() -> Void)? = nil,
+        onSelectSession: ((ChatSession) -> Void)? = nil
     ) {
+        self.sessionId = sessionId
         self.soulerId = soulerId
         self.soulerName = soulerName
-        self.initialSeedMessages = initialSeedMessages
-        self.initialDisplayMessages = initialDisplayMessages
         self.initialReply = initialReply
+        self.onOpenSeaStar = onOpenSeaStar
+        self.onSelectSession = onSelectSession
     }
 
     var body: some View {
-        ZStack {
-            BackgroundView()
+        ZStack(alignment: .leading) {
+            ZStack {
+                BackgroundView()
 
-            VStack(spacing: 0) {
-                if isLoading, messages.isEmpty {
-                    ProgressView("common.loading")
-                        .tint(UITheme.accent)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if messages.isEmpty {
-                    EmptyView(title: "resonance.chat.empty")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    messageList
+                VStack(spacing: 0) {
+                    if isLoading, messages.isEmpty {
+                        ProgressView("common.loading")
+                            .tint(UITheme.accent)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if messages.isEmpty {
+                        EmptyView(title: "resonance.chat.empty")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        messageList
+                    }
+
+                    composer
                 }
-
-                composer
             }
+            .offset(x: sidebarOpenOffset)
+            .disabled(sidebarProgress > 0.01)
+
+            if sidebarProgress > 0.001 {
+                Color.black.opacity(0.3 * sidebarProgress)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isSidebarPresented = false
+                        }
+                    }
+            }
+
+            sidebarView
+                .offset(x: sidebarOpenOffset - sidebarWidth)
         }
         .navigationTitle(soulerName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.22)) {
+                        isSidebarPresented.toggle()
+                    }
+                } label: {
+                    Image(systemName: "line.3.horizontal")
+                }
+                .accessibilityLabel(Text("seastar.action.resonances"))
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
                     SoulerView(soulerId: soulerId)
@@ -73,8 +113,19 @@ struct ChatView: View {
                 Text("matching.error.unknown")
             }
         }
-        .task(id: soulerId) {
+        .animation(.easeInOut(duration: 0.22), value: isSidebarPresented)
+        .task(id: sessionId) {
             await prepareConversation()
+            await loadSessionsForSidebar()
+        }
+        .navigationDestination(item: $pushedSession) { session in
+            ChatView(
+                sessionId: session.id,
+                soulerId: session.soulerId,
+                soulerName: session.soulerName,
+                onOpenSeaStar: onOpenSeaStar,
+                onSelectSession: onSelectSession
+            )
         }
     }
 
@@ -149,7 +200,6 @@ struct ChatView: View {
         messages = []
         inputText = ""
         errorMessage = nil
-        hasTriggeredInitialReply = false
         hasScrolledToLatestOnAppear = false
         await loadMessages()
         await triggerInitialReplyIfNeeded()
@@ -174,7 +224,7 @@ struct ChatView: View {
         defer { isLoading = false }
 
         do {
-            messages = try await Message.getHistory(soulerId: soulerId)
+            messages = try await Message.getHistory(sessionId: sessionId)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -182,8 +232,7 @@ struct ChatView: View {
 
     @MainActor
     private func sendMessage(
-        contentOverride: String? = nil,
-        seedMessages: [Message.SeedMessage] = []
+        contentOverride: String? = nil
     ) async {
         if isSending { return }
 
@@ -200,6 +249,7 @@ struct ChatView: View {
         let userLocal = Message(
             id: UUID(),
             soulerId: soulerId,
+            sessionId: sessionId,
             role: .user,
             content: content,
             createdAt: .now
@@ -210,6 +260,7 @@ struct ChatView: View {
         let assistantLocal = Message(
             id: assistantLocalId,
             soulerId: soulerId,
+            sessionId: sessionId,
             role: .assistant,
             content: "",
             createdAt: .now
@@ -218,9 +269,8 @@ struct ChatView: View {
 
         do {
             for try await event in ChatStreamService.streamReply(
-                soulerId: soulerId,
-                content: content,
-                seedMessages: seedMessages
+                sessionId: sessionId,
+                content: content
             ) {
                 switch event {
                 case let .delta(delta):
@@ -231,7 +281,7 @@ struct ChatView: View {
                     break
                 }
             }
-            messages = try await Message.getHistory(soulerId: soulerId)
+            messages = try await Message.getHistory(sessionId: sessionId)
         } catch {
             messages.removeAll { $0.id == assistantLocalId }
             errorMessage = error.localizedDescription
@@ -240,16 +290,168 @@ struct ChatView: View {
 
     @MainActor
     private func triggerInitialReplyIfNeeded() async {
-        guard !hasTriggeredInitialReply else { return }
+        guard autoRepliedSessionId != sessionId else { return }
 
         let reply = initialReply?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !reply.isEmpty else { return }
 
-        hasTriggeredInitialReply = true
-        if messages.isEmpty, !initialDisplayMessages.isEmpty {
-            messages = initialDisplayMessages
+        autoRepliedSessionId = sessionId
+        await sendMessage(contentOverride: reply)
+    }
+
+    private var sidebarView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                openSeaStar()
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "sparkles")
+                    Text("SeaStar")
+                        .font(.body.weight(.semibold))
+                        .fontDesign(.serif)
+                }
+                .foregroundStyle(UITheme.primaryText)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.clear, in: .rect(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+
+            Divider()
+                .overlay(.white.opacity(0.12))
+                .padding(.bottom, 2)
+
+            Group {
+                if let sessionMenuError {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(sessionMenuError)
+                            .font(.footnote)
+                            .foregroundStyle(UITheme.secondaryText)
+
+                        Button("common.retry") {
+                            Task { await loadSessionsForSidebar() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .padding(.top, 8)
+                } else if isLoadingSessions, sessions.isEmpty {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("common.loading")
+                            .font(.footnote)
+                            .foregroundStyle(UITheme.secondaryText)
+                    }
+                    .padding(.top, 8)
+                } else if sessions.isEmpty {
+                    Text("resonance.empty")
+                        .font(.footnote)
+                        .foregroundStyle(UITheme.secondaryText)
+                        .padding(.top, 8)
+                } else {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 4) {
+                            ForEach(sessions) { session in
+                                Button {
+                                    openSession(session)
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: selectedSessionId == session.id ? "checkmark" : "message")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(UITheme.primaryText)
+
+                                        Text(session.hasTitle ? session.title : session.soulerName)
+                                            .lineLimit(1)
+                                            .font(.body.weight(.medium))
+                                            .fontDesign(.serif)
+                                            .foregroundStyle(UITheme.primaryText)
+
+                                        Spacer(minLength: 8)
+
+                                        Text(session.updatedAt, format: .relative(presentation: .named))
+                                            .font(.caption)
+                                            .foregroundStyle(UITheme.secondaryText)
+                                            .lineLimit(1)
+                                            .monospacedDigit()
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 10)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(
+                                        selectedSessionId == session.id ? .white.opacity(0.15) : .clear,
+                                        in: .rect(cornerRadius: 12)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
         }
-        await sendMessage(contentOverride: reply, seedMessages: initialSeedMessages)
+        .padding(12)
+        .frame(width: sidebarWidth, alignment: .topLeading)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(.ultraThinMaterial)
+        .overlay(
+            Rectangle()
+                .fill(.white.opacity(0.14))
+                .frame(width: 1),
+            alignment: .trailing
+        )
+    }
+
+    private var selectedSessionId: UUID {
+        sessionId
+    }
+
+    private var sidebarOpenOffset: CGFloat {
+        isSidebarPresented ? sidebarWidth : 0
+    }
+
+    private var sidebarProgress: CGFloat {
+        guard sidebarWidth > 0 else { return 0 }
+        return sidebarOpenOffset / sidebarWidth
+    }
+
+    @MainActor
+    private func loadSessionsForSidebar() async {
+        if isLoadingSessions { return }
+        isLoadingSessions = true
+        defer { isLoadingSessions = false }
+
+        do {
+            sessions = try await ChatSession.getPage(soulerId: soulerId, limit: 20, offset: 0)
+            sessionMenuError = nil
+        } catch {
+            sessionMenuError = error.localizedDescription
+            sessions = []
+        }
+    }
+
+    @MainActor
+    private func openSeaStar() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isSidebarPresented = false
+        }
+        if let onOpenSeaStar {
+            onOpenSeaStar()
+            return
+        }
+        dismiss()
+    }
+
+    @MainActor
+    private func openSession(_ session: ChatSession) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isSidebarPresented = false
+        }
+        guard session.id != sessionId else { return }
+        if let onSelectSession {
+            onSelectSession(session)
+            return
+        }
+        pushedSession = session
     }
 }
 

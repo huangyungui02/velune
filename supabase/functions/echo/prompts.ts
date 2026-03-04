@@ -42,3 +42,8 @@ ${prompt}
 # 输出
 仅返回回复内容。`,
 };
+
+export const sessionTitlePrompt: Record<Lang, string> = {
+  en: `Create a concise chat title from the user's glimmer and souler echo. Keep it under 8 words, no punctuation, no quotes, and return only the title text.`,
+  zh: `根据用户 glimmer 和 souler echo 生成一个简洁会话标题。限制 8 个字以内，不要标点，不要引号，只返回标题文本。`,
+};

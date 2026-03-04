@@ -10,7 +10,7 @@ struct SeaStarView: View {
 
     private enum Destination: Equatable {
         case seastar
-        case chat(Resonance)
+        case chat(ChatSession)
     }
 
     @Environment(\.modelContext) private var context
@@ -43,7 +43,7 @@ struct SeaStarView: View {
                                     isSidebarPresented.toggle()
                                 }
                             } label: {
-                                Image(systemName: "line.3.horizontal")
+                                Image(systemName: "antenna.radiowaves.left.and.right")
                             }
                             .accessibilityLabel(Text("seastar.action.resonances"))
                         }
@@ -94,10 +94,9 @@ struct SeaStarView: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .navigationDestination(item: $chatRoute) { route in
                         ChatView(
+                            sessionId: route.sessionId,
                             soulerId: route.soulerId,
                             soulerName: route.soulerName,
-                            initialSeedMessages: route.initialSeedMessages,
-                            initialDisplayMessages: route.initialDisplayMessages,
                             initialReply: route.initialReply
                         )
                     }
@@ -169,10 +168,17 @@ struct SeaStarView: View {
                     }
                 }
             }
-        case let .chat(resonance):
+        case let .chat(session):
             ChatView(
-                soulerId: resonance.soulerId,
-                soulerName: resonance.soulerName
+                sessionId: session.id,
+                soulerId: session.soulerId,
+                soulerName: session.soulerName,
+                onOpenSeaStar: {
+                    destination = .seastar
+                },
+                onSelectSession: { selectedSession in
+                    destination = .chat(selectedSession)
+                }
             )
         }
     }
@@ -246,14 +252,13 @@ struct SeaStarView: View {
                         LazyVStack(alignment: .leading, spacing: 4) {
                             ForEach(resonances) { resonance in
                                 Button {
-                                    destination = .chat(resonance)
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        isSidebarPresented = false
+                                    Task {
+                                        await openLatestSession(for: resonance)
                                     }
                                 } label: {
                                     HStack(spacing: 8) {
                                         HStack(spacing: 8) {
-                                            Image(systemName: selectedResonanceId == resonance.id ? "checkmark" : "message")
+                                            Image(systemName: selectedSoulerId == resonance.soulerId ? "checkmark" : "message")
                                                 .font(.caption.weight(.semibold))
                                             Text(resonance.soulerName)
                                                 .lineLimit(1)
@@ -274,7 +279,7 @@ struct SeaStarView: View {
                                     .padding(.vertical, 10)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .background(
-                                        selectedResonanceId == resonance.id ? .white.opacity(0.15) : .clear,
+                                        selectedSoulerId == resonance.soulerId ? .white.opacity(0.15) : .clear,
                                         in: .rect(cornerRadius: 12)
                                     )
                                 }
@@ -336,9 +341,9 @@ struct SeaStarView: View {
             }
     }
 
-    private var selectedResonanceId: UUID? {
-        if case let .chat(resonance) = destination {
-            return resonance.id
+    private var selectedSoulerId: UUID? {
+        if case let .chat(session) = destination {
+            return session.soulerId
         }
         return nil
     }
@@ -424,6 +429,22 @@ struct SeaStarView: View {
         }
     }
 
+    @MainActor
+    private func openLatestSession(for resonance: Resonance) async {
+        do {
+            guard let session = try await ChatSession.getLatest(soulerId: resonance.soulerId) else {
+                resonanceMenuError = String(localized: "resonance.empty")
+                return
+            }
+            destination = .chat(session)
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isSidebarPresented = false
+            }
+        } catch {
+            resonanceMenuError = error.localizedDescription
+        }
+    }
+
     private func send() {
         let input = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { return }
@@ -460,7 +481,6 @@ extension SeaStarView {
             } echoCard: { echo, maxCardHeight in
                 EchoCardView(
                     echo: echo,
-                    glimmerContent: manager.text,
                     maxCardHeight: maxCardHeight,
                     onOpenChat: { route in
                         chatRoute = route
