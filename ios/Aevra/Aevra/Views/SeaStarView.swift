@@ -362,18 +362,7 @@ struct SeaStarView: View {
 
     private var magicButtonView: some View {
         Group {
-            if manager.isMatching {
-                HStack(spacing: 12) {
-                    MatchingWaveIcon()
-
-                    Text("matching.status.listening")
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(UITheme.secondaryText)
-                        .tracking(2)
-                }
-                .padding()
-                .glassEffect(in: .capsule)
-            } else if text.isEmpty {
+            if text.isEmpty {
                 HStack(spacing: 12) {
                     Image(systemName: "sparkles")
 
