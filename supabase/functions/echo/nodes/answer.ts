@@ -11,7 +11,8 @@ ${prompt}
 Respond to the user's soul fragment in this persona.
 
 # Output
-Return only the response content.`,
+Return only the response content.
+The response must be in English only.`,
   zh: (prompt) => `# 角色
 ${prompt}
 
@@ -19,7 +20,8 @@ ${prompt}
 以此角色身份回应用户的灵魂碎片。
 
 # 输出
-仅返回回复内容。`,
+仅返回回复内容。
+回复内容必须只使用中文。`,
 };
 
 export const soulerAnswer = task(

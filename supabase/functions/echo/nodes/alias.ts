@@ -13,7 +13,8 @@ Rules:
 2) Include common transliterations or variant spellings (e.g. Descartes -> Deka'er).
 3) Include other widely used aliases or titles.
 4) Keep aliases concise, realistic, and useful for name matching.
-5) No explanations, only aliases in JSON.`,
+5) No explanations, only aliases in JSON.
+6) Use English only for all aliases.`,
   zh:
     `你需要为人物名称生成可用于匹配的别名。
 返回 JSON：{"aliases":["..."]}。
@@ -22,7 +23,8 @@ Rules:
 2) 包含常见音译或不同写法（例如：笛卡尔 -> 笛卡儿）。
 3) 包含其他广泛使用的别称或称号。
 4) 别名应简洁、真实、可用于检索匹配。
-5) 不要解释，只返回 JSON 别名数组。`,
+5) 不要解释，只返回 JSON 别名数组。
+6) 所有别名只能使用中文。`,
 };
 
 const normalizeAliases = (name: string, aliases: string[]) => {

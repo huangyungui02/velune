@@ -11,12 +11,10 @@ const profilePrompt: Record<Lang, string> = {
 export const soulerProfile = task(
   { name: "souler_profile" },
   async (souler: string, lang: Lang) => {
-    const modelResponse = await modelS.invoke(
-      [
-        new SystemMessage(profilePrompt[lang]),
-        new HumanMessage(souler),
-      ] as unknown as Parameters<typeof modelS.invoke>[0],
-    );
+    const modelResponse = await modelS.invoke([
+      new SystemMessage(profilePrompt[lang]),
+      new HumanMessage(souler),
+    ] as unknown as Parameters<typeof modelS.invoke>[0]);
     return modelResponse.content as string;
   },
 );
