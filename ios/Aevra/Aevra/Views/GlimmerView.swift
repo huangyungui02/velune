@@ -10,6 +10,7 @@ struct GlimmerView: View {
     @State private var isLoading: Bool = false
     @State private var glimmer: Glimmer
     @State private var currentPage: CardID? = .glimmer
+    @State private var chatRoute: EchoChatRoute?
 
     init(glimmer: Glimmer) {
         self.glimmer = glimmer
@@ -44,10 +45,24 @@ struct GlimmerView: View {
             }
 
             ToolbarItem(placement: .bottomBar) {
+                Spacer()
+            }
+
+            ToolbarItem(placement: .bottomBar) {
                 if isLoading {
                     ProgressView()
                 } else {
                     indicatorView
+                }
+            }
+
+            ToolbarItem(placement: .bottomBar) {
+                Spacer()
+            }
+
+            ToolbarItem(placement: .bottomBar) {
+                if shouldShowChatButton {
+                    chatButton
                 }
             }
         }
@@ -74,6 +89,14 @@ struct GlimmerView: View {
         }
         .task {
             await refreshGlimmer()
+        }
+        .navigationDestination(item: $chatRoute) { route in
+            ChatView(
+                sessionId: route.sessionId,
+                soulerId: route.soulerId,
+                soulerName: route.soulerName,
+                focusComposerOnAppear: true
+            )
         }
     }
 
@@ -131,6 +154,32 @@ struct GlimmerView: View {
 
     private var indicatorView: some View {
         CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
+    }
+
+    private var selectedEcho: Echo? {
+        guard case let .echo(echoId) = currentPage else { return nil }
+        return echoes.first(where: { $0.id == echoId })
+    }
+
+    private var activeEchoChatRoute: EchoChatRoute? {
+        guard let selectedEcho, let sessionId = selectedEcho.sessionId else { return nil }
+        return EchoChatRoute(sessionId: sessionId, echo: selectedEcho)
+    }
+
+    private var shouldShowChatButton: Bool {
+        activeEchoChatRoute != nil
+    }
+
+    private var chatButton: some View {
+        Button {
+            guard let route = activeEchoChatRoute else { return }
+            chatRoute = route
+        } label: {
+            Image(systemName: "message")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(UITheme.primaryText)
+        }
+        .buttonStyle(.plain)
     }
 }
 
