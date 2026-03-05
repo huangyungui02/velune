@@ -3,7 +3,6 @@ CREATE TABLE soulers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(64) NOT NULL,
     aliases TEXT[] NOT NULL DEFAULT '{}',
-    wiki_id BIGINT,
     bio TEXT,
     prompt TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -13,7 +12,6 @@ CREATE TABLE soulers (
 -- Create index on name
 CREATE INDEX IF NOT EXISTS idx_soulers_name ON soulers (name);
 CREATE INDEX IF NOT EXISTS idx_soulers_aliases_gin ON soulers USING GIN (aliases);
-CREATE INDEX IF NOT EXISTS idx_soulers_wiki_id ON soulers (wiki_id);
 
 -- Enable row level security
 ALTER TABLE soulers ENABLE ROW LEVEL SECURITY;
