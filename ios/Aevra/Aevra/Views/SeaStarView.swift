@@ -67,14 +67,20 @@ struct SeaStarView: View {
                                 } else {
                                     if hasEchoes {
                                         ToolbarItem(placement: .bottomBar) {
+                                            if shouldShowWaveButton {
+                                                liquidSplitWaveIcon
+                                            } else if shouldShowArchiveButton {
+                                                archiveButton
+                                            }
+                                        }
+
+                                        ToolbarItem(placement: .bottomBar) {
                                             Spacer()
                                         }
 
                                         ToolbarItem(placement: .bottomBar) {
-                                            if shouldShowArchiveButton {
-                                                archiveButton
-                                            } else if shouldShowWaveButton {
-                                                liquidSplitWaveIcon
+                                            if shouldShowChatButton {
+                                                chatButton
                                             }
                                         }
                                     }
@@ -97,7 +103,7 @@ struct SeaStarView: View {
                             sessionId: route.sessionId,
                             soulerId: route.soulerId,
                             soulerName: route.soulerName,
-                            initialReply: route.initialReply
+                            focusComposerOnAppear: true
                         )
                     }
             }
@@ -365,6 +371,20 @@ struct SeaStarView: View {
         stage == .matching && manager.isMatching && hasEchoes
     }
 
+    private var selectedEcho: Echo? {
+        guard case let .echo(echoId) = currentPage else { return nil }
+        return echoes.first(where: { $0.id == echoId })
+    }
+
+    private var activeEchoChatRoute: EchoChatRoute? {
+        guard let selectedEcho, let sessionId = selectedEcho.sessionId else { return nil }
+        return EchoChatRoute(sessionId: sessionId, echo: selectedEcho)
+    }
+
+    private var shouldShowChatButton: Bool {
+        stage == .matching && activeEchoChatRoute != nil
+    }
+
     private var magicButtonView: some View {
         Group {
             if text.isEmpty {
@@ -481,10 +501,7 @@ extension SeaStarView {
             } echoCard: { echo, maxCardHeight in
                 EchoCardView(
                     echo: echo,
-                    maxCardHeight: maxCardHeight,
-                    onOpenChat: { route in
-                        chatRoute = route
-                    }
+                    maxCardHeight: maxCardHeight
                 )
             }
             .frame(maxHeight: .infinity, alignment: .top)
@@ -520,9 +537,21 @@ extension SeaStarView {
     }
 
     private var archiveChip: some View {
-        Image(systemName: "sparkles")
+        Image(systemName: "xmark")
             .font(.footnote.weight(.semibold))
             .foregroundStyle(UITheme.primaryText)
+    }
+
+    private var chatButton: some View {
+        Button {
+            guard let route = activeEchoChatRoute else { return }
+            chatRoute = route
+        } label: {
+            Image(systemName: "message")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(UITheme.primaryText)
+        }
+        .buttonStyle(.plain)
     }
 }
 

@@ -7,7 +7,7 @@ struct ChatView: View {
     let sessionId: UUID
     let soulerId: UUID
     let soulerName: String
-    let initialReply: String?
+    let focusComposerOnAppear: Bool
     let onOpenSeaStar: (() -> Void)?
     let onSelectSession: ((ChatSession) -> Void)?
 
@@ -18,13 +18,13 @@ struct ChatView: View {
     @State private var isLoading = false
     @State private var isSending = false
     @State private var errorMessage: String?
-    @State private var autoRepliedSessionId: UUID?
     @State private var hasScrolledToLatestOnAppear = false
     @State private var sessions: [ChatSession] = []
     @State private var isLoadingSessions = false
     @State private var sessionMenuError: String?
     @State private var isSidebarPresented = false
     @State private var pushedSession: ChatSession?
+    @FocusState private var isComposerFocused: Bool
 
     private let sidebarWidth: CGFloat = 320
 
@@ -32,14 +32,14 @@ struct ChatView: View {
         sessionId: UUID,
         soulerId: UUID,
         soulerName: String,
-        initialReply: String? = nil,
+        focusComposerOnAppear: Bool = false,
         onOpenSeaStar: (() -> Void)? = nil,
         onSelectSession: ((ChatSession) -> Void)? = nil
     ) {
         self.sessionId = sessionId
         self.soulerId = soulerId
         self.soulerName = soulerName
-        self.initialReply = initialReply
+        self.focusComposerOnAppear = focusComposerOnAppear
         self.onOpenSeaStar = onOpenSeaStar
         self.onSelectSession = onSelectSession
         _activeSessionId = State(initialValue: sessionId)
@@ -121,11 +121,16 @@ struct ChatView: View {
             guard newValue != activeSessionId else { return }
             activeSessionId = newValue
             isDraftSession = false
-            autoRepliedSessionId = nil
         }
         .task(id: activeSessionId) {
             await prepareConversation()
             await loadSessionsForSidebar()
+        }
+        .onAppear {
+            guard focusComposerOnAppear else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                isComposerFocused = true
+            }
         }
         .navigationDestination(item: $pushedSession) { session in
             ChatView(
@@ -172,6 +177,7 @@ struct ChatView: View {
                 text: $inputText,
                 axis: .vertical
             )
+            .focused($isComposerFocused)
             .lineLimit(1 ... 4)
             .textFieldStyle(.plain)
             .font(.body)
@@ -211,7 +217,6 @@ struct ChatView: View {
         errorMessage = nil
         hasScrolledToLatestOnAppear = false
         await loadMessages()
-        await triggerInitialReplyIfNeeded()
     }
 
     private func scrollToLatest(with proxy: ScrollViewProxy, animated: Bool) {
@@ -240,19 +245,14 @@ struct ChatView: View {
     }
 
     @MainActor
-    private func sendMessage(
-        contentOverride: String? = nil
-    ) async {
+    private func sendMessage() async {
         if isSending { return }
 
-        let content = (contentOverride ?? inputText)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let content = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty else { return }
 
         isSending = true
-        if contentOverride == nil {
-            inputText = ""
-        }
+        inputText = ""
         defer { isSending = false }
 
         let userLocal = Message(
@@ -326,17 +326,6 @@ struct ChatView: View {
             messages.removeAll { $0.id == assistantLocalId }
             errorMessage = error.localizedDescription
         }
-    }
-
-    @MainActor
-    private func triggerInitialReplyIfNeeded() async {
-        guard autoRepliedSessionId != activeSessionId else { return }
-
-        let reply = initialReply?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !reply.isEmpty else { return }
-
-        autoRepliedSessionId = activeSessionId
-        await sendMessage(contentOverride: reply)
     }
 
     private var sidebarView: some View {
@@ -512,7 +501,6 @@ struct ChatView: View {
         messages = []
         inputText = ""
         errorMessage = nil
-        autoRepliedSessionId = nil
         hasScrolledToLatestOnAppear = false
     }
 }
