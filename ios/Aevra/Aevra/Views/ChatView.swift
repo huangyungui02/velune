@@ -22,11 +22,8 @@ struct ChatView: View {
     @State private var sessions: [ChatSession] = []
     @State private var isLoadingSessions = false
     @State private var sessionMenuError: String?
-    @State private var isSidebarPresented = false
     @State private var pushedSession: ChatSession?
     @FocusState private var isComposerFocused: Bool
-
-    private let sidebarWidth: CGFloat = 320
 
     init(
         sessionId: UUID,
@@ -46,10 +43,10 @@ struct ChatView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .leading) {
-            ZStack {
-                BackgroundView()
+        ZStack {
+            BackgroundView()
 
+            ZStack {
                 VStack(spacing: 0) {
                     if isLoading, messages.isEmpty {
                         ProgressView("common.loading")
@@ -65,43 +62,63 @@ struct ChatView: View {
                     composer
                 }
             }
-            .offset(x: sidebarOpenOffset)
-            .disabled(sidebarProgress > 0.01)
-
-            if sidebarProgress > 0.001 {
-                Color.black.opacity(0.3 * sidebarProgress)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isSidebarPresented = false
-                        }
-                    }
-            }
-
-            sidebarView
-                .offset(x: sidebarOpenOffset - sidebarWidth)
         }
-        .navigationTitle(soulerName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.22)) {
-                        isSidebarPresented.toggle()
+            ToolbarItem(placement: .principal) {
+                NavigationLink {
+                    SoulerView(soulerId: soulerId)
+                } label: {
+                    Text(soulerName)
+                        .font(.headline)
+                        .lineLimit(1)
+                }
+                .accessibilityLabel(Text("resonance.chat.action.profile"))
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        startNewConversation()
+                    } label: {
+                        Label("resonance.chat.action.newConversation", systemImage: "plus.bubble")
+                    }
+
+                    Divider()
+
+                    if let sessionMenuError {
+                        Section {
+                            Text(sessionMenuError)
+                            Button("common.retry") {
+                                Task { await loadSessionsForSidebar() }
+                            }
+                        }
+                    } else if isLoadingSessions, sidebarSessions.isEmpty {
+                        Section {
+                            Label("common.loading", systemImage: "hourglass")
+                        }
+                    } else if sidebarSessions.isEmpty {
+                        Section {
+                            Text("resonance.empty")
+                        }
+                    } else {
+                        Section("seastar.action.resonances") {
+                            ForEach(sidebarSessions) { session in
+                                Button {
+                                    openSession(session)
+                                } label: {
+                                    Label(
+                                        session.hasTitle ? session.title : session.soulerName,
+                                        systemImage: selectedSessionId == session.id ? "checkmark" : "message"
+                                    )
+                                }
+                            }
+                        }
                     }
                 } label: {
                     Image(systemName: "line.3.horizontal")
                 }
                 .accessibilityLabel(Text("seastar.action.resonances"))
-            }
-
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    SoulerView(soulerId: soulerId)
-                } label: {
-                    Image(systemName: "person.text.rectangle")
-                }
-                .accessibilityLabel(Text("resonance.chat.action.profile"))
             }
         }
         .alert("matching.error.title", isPresented: Binding(
@@ -116,7 +133,6 @@ struct ChatView: View {
                 Text("matching.error.unknown")
             }
         }
-        .animation(.easeInOut(duration: 0.22), value: isSidebarPresented)
         .onChange(of: sessionId) { _, newValue in
             guard newValue != activeSessionId else { return }
             activeSessionId = newValue
@@ -328,108 +344,6 @@ struct ChatView: View {
         }
     }
 
-    private var sidebarView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Button {
-                startNewConversation()
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "plus.bubble")
-                    Text("resonance.chat.action.newConversation")
-                        .font(.body.weight(.semibold))
-                        .fontDesign(.serif)
-                }
-                .foregroundStyle(UITheme.primaryText)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.clear, in: .rect(cornerRadius: 12))
-            }
-            .buttonStyle(.plain)
-
-            Divider()
-                .overlay(.white.opacity(0.12))
-                .padding(.bottom, 2)
-
-            Group {
-                if let sessionMenuError {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(sessionMenuError)
-                            .font(.footnote)
-                            .foregroundStyle(UITheme.secondaryText)
-
-                        Button("common.retry") {
-                            Task { await loadSessionsForSidebar() }
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                    .padding(.top, 8)
-                } else if isLoadingSessions, sidebarSessions.isEmpty {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                        Text("common.loading")
-                            .font(.footnote)
-                            .foregroundStyle(UITheme.secondaryText)
-                    }
-                    .padding(.top, 8)
-                } else if sidebarSessions.isEmpty {
-                    Text("resonance.empty")
-                        .font(.footnote)
-                        .foregroundStyle(UITheme.secondaryText)
-                        .padding(.top, 8)
-                } else {
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 4) {
-                            ForEach(sidebarSessions) { session in
-                                Button {
-                                    openSession(session)
-                                } label: {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: selectedSessionId == session.id ? "checkmark" : "message")
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(UITheme.primaryText)
-
-                                        Text(session.hasTitle ? session.title : session.soulerName)
-                                            .lineLimit(1)
-                                            .font(.body.weight(.medium))
-                                            .fontDesign(.serif)
-                                            .foregroundStyle(UITheme.primaryText)
-
-                                        Spacer(minLength: 8)
-
-                                        Text(session.updatedAt, format: .relative(presentation: .named))
-                                            .font(.caption)
-                                            .foregroundStyle(UITheme.secondaryText)
-                                            .lineLimit(1)
-                                            .monospacedDigit()
-                                    }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 10)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(
-                                        selectedSessionId == session.id ? .white.opacity(0.15) : .clear,
-                                        in: .rect(cornerRadius: 12)
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        .padding(12)
-        .frame(width: sidebarWidth, alignment: .topLeading)
-        .frame(maxHeight: .infinity, alignment: .top)
-        .background(.ultraThinMaterial)
-        .overlay(
-            Rectangle()
-                .fill(.white.opacity(0.14))
-                .frame(width: 1),
-            alignment: .trailing
-        )
-    }
-
     private var selectedSessionId: UUID {
         activeSessionId
     }
@@ -450,15 +364,6 @@ struct ChatView: View {
         return [placeholder] + sessions.filter { $0.id != activeSessionId }
     }
 
-    private var sidebarOpenOffset: CGFloat {
-        isSidebarPresented ? sidebarWidth : 0
-    }
-
-    private var sidebarProgress: CGFloat {
-        guard sidebarWidth > 0 else { return 0 }
-        return sidebarOpenOffset / sidebarWidth
-    }
-
     @MainActor
     private func loadSessionsForSidebar() async {
         if isLoadingSessions { return }
@@ -476,9 +381,6 @@ struct ChatView: View {
 
     @MainActor
     private func openSession(_ session: ChatSession) {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isSidebarPresented = false
-        }
         guard session.id != activeSessionId else { return }
         isDraftSession = false
         if let onSelectSession {
@@ -490,9 +392,6 @@ struct ChatView: View {
 
     @MainActor
     private func startNewConversation() {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isSidebarPresented = false
-        }
         if isDraftSession, messages.isEmpty {
             return
         }
