@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS moddatetime schema extensions;
+
 CREATE TABLE IF NOT EXISTS sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -12,15 +14,6 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user_souler_updated_at
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user_updated_at
     ON sessions (user_id, updated_at DESC);
-
-ALTER TABLE messages
-    ADD CONSTRAINT fk_messages_session_id
-    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE;
-
-ALTER TABLE echoes
-    ADD CONSTRAINT fk_echoes_session_id
-    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE SET NULL;
-
 
 ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
 
