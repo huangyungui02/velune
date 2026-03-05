@@ -101,7 +101,7 @@ struct ChatView: View {
                             Text("resonance.empty")
                         }
                     } else {
-                        Section("seastar.action.resonances") {
+                        Section {
                             ForEach(sidebarSessions) { session in
                                 Button {
                                     openSession(session)
