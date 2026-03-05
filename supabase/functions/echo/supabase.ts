@@ -68,30 +68,15 @@ export const getSoulerByAlias = async (candidateName: string) => {
   return data?.[0] ?? null;
 };
 
-export const getSoulerByWikiId = async (wikiId: number) => {
-  const { data, error } = await supabase
-    .from("soulers")
-    .select()
-    .eq("wiki_id", wikiId)
-    .maybeSingle();
-  if (error) {
-    console.error(`Error querying souler by wiki_id: ${error.message}`);
-    throw error;
-  }
-  return data;
-};
-
 export const createSouler = async (
   name: string,
   aliases: string[] = [],
-  wikiId?: number | null,
 ) => {
   const { data, error } = await supabase
     .from("soulers")
     .insert({
       name,
       aliases,
-      wiki_id: wikiId ?? null,
     })
     .select()
     .single();

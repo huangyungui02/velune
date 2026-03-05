@@ -1,8 +1,7 @@
 import { entrypoint } from "@langchain/langgraph";
 import {
-  fetchWikipediaCanonicalName,
+  generateSoulerAliases,
   matchSoulers,
-  parseSouler,
   sessionTitle,
   soulerAnswer,
   soulerProfile,
@@ -16,7 +15,6 @@ import {
   createEcho,
   createOrUpdateResonance,
   getSoulerByAlias,
-  getSoulerByWikiId,
   insertSessionMessage,
   updateSouler,
 } from "./supabase.ts";
@@ -39,33 +37,21 @@ const graph = entrypoint(
       }) => void | Promise<void>;
     },
   ) => {
-    const soulers = await matchSoulers(glimmerContent, num, lang);
+    const soulers = await matchSoulers(glimmerContent, num, lang) as Array<
+      { souler: string; content: string }
+    >;
     const results = await Promise.allSettled(
       soulers.map(async (item) => {
-        const { name: parsedName } = await parseSouler(item.souler, item.content, lang);
-        let soulerData = await getSoulerByAlias(parsedName);
+        const matchedName = item.souler.trim();
+        if (!matchedName) {
+          throw new Error("Matched souler name cannot be empty");
+        }
+        let soulerData = await getSoulerByAlias(matchedName);
         if (!soulerData) {
-          const wikiResolved = await fetchWikipediaCanonicalName(parsedName, lang);
-          const canonicalName = wikiResolved.name;
-          const wikiId = wikiResolved.wikiId;
-          if (!wikiId) {
-            throw new Error(
-              `Missing wikiId for parsedName: ${parsedName}, canonicalName: ${canonicalName}`,
-            );
-          }
-          soulerData = await getSoulerByWikiId(wikiId);
-          if (soulerData) {
-            soulerData = await appendSoulerAlias(soulerData.id, parsedName);
-          } else {
-            const aliases = canonicalName === parsedName
-              ? [canonicalName]
-              : [canonicalName, parsedName];
-            soulerData = await createSouler(
-              canonicalName,
-              aliases,
-              wikiId,
-            );
-          }
+          const aliases = await generateSoulerAliases(matchedName, lang);
+          soulerData = await createSouler(matchedName, aliases);
+        } else {
+          soulerData = await appendSoulerAlias(soulerData.id, matchedName);
         }
 
         await createOrUpdateResonance(userId, soulerData.id);

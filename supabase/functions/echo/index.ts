@@ -72,7 +72,13 @@ Deno.serve(async (req) => {
           glimmerContent: glimmer.content,
           num: num,
           lang: lang,
-          onEcho: (echo) => {
+          onEcho: (echo: {
+            id: string;
+            glimmer_id: string;
+            souler_id: string;
+            session_id: string | null;
+            content: string;
+          }) => {
             send({
               type: "echo",
               echo: {
