@@ -70,7 +70,6 @@ struct ChatView: View {
                     SoulerView(soulerId: soulerId)
                 } label: {
                     Text(soulerName)
-                        .font(.headline)
                         .lineLimit(1)
                 }
                 .accessibilityLabel(Text("resonance.chat.action.profile"))
@@ -313,7 +312,8 @@ struct ChatView: View {
                     }
                     if let title = payload.title?
                         .trimmingCharacters(in: .whitespacesAndNewlines),
-                        !title.isEmpty {
+                        !title.isEmpty
+                    {
                         resolvedTitle = title
                     }
                 }
