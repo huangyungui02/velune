@@ -30,6 +30,17 @@ type MessageRow = {
   created_at: string;
 };
 
+type SessionContext = {
+  id: string;
+  soulerId: string;
+  souler: {
+    id: string;
+    name: string;
+    bio: string | null;
+    prompt: string | null;
+  };
+};
+
 const getUserIdFromRequest = async (request: Request) => {
   const authHeader = request.headers.get("Authorization");
   if (!authHeader) {
@@ -48,7 +59,30 @@ const getUserIdFromRequest = async (request: Request) => {
   return data.user.id;
 };
 
-const getSession = async (userId: string, sessionId: string) => {
+const toSouler = (raw: unknown) => {
+  const souler = Array.isArray(raw) ? raw[0] : raw;
+  if (!souler || typeof souler !== "object") {
+    throw new Error("Souler not found");
+  }
+
+  const id = String((souler as Record<string, unknown>).id ?? "").trim();
+  const name = String((souler as Record<string, unknown>).name ?? "").trim();
+  if (!id || !name) {
+    throw new Error("Souler not found");
+  }
+
+  return {
+    id,
+    name,
+    bio: ((souler as Record<string, unknown>).bio ?? null) as string | null,
+    prompt: ((souler as Record<string, unknown>).prompt ?? null) as string | null,
+  };
+};
+
+const getSessionById = async (
+  userId: string,
+  sessionId: string,
+): Promise<SessionContext> => {
   const { data, error } = await supabase
     .from("sessions")
     .select("id, user_id, souler_id, title, soulers(id, name, bio, prompt)")
@@ -60,21 +94,54 @@ const getSession = async (userId: string, sessionId: string) => {
     throw new Error("Session not found");
   }
 
-  const souler = Array.isArray(data.soulers) ? data.soulers[0] : data.soulers;
-  if (!souler?.id || !souler?.name) {
-    throw new Error("Souler not found");
-  }
-
   return {
     id: data.id as string,
     soulerId: data.souler_id as string,
-    souler: {
-      id: souler.id as string,
-      name: souler.name as string,
-      bio: (souler.bio ?? null) as string | null,
-      prompt: (souler.prompt ?? null) as string | null,
-    },
+    souler: toSouler(data.soulers),
   };
+};
+
+const getSoulerById = async (soulerId: string) => {
+  const { data, error } = await supabase
+    .from("soulers")
+    .select("id, name, bio, prompt")
+    .eq("id", soulerId)
+    .single();
+  if (error || !data) {
+    throw new Error("Souler not found");
+  }
+  return toSouler(data);
+};
+
+const createSession = async (userId: string, soulerId: string) => {
+  const { data, error } = await supabase
+    .from("sessions")
+    .insert({
+      user_id: userId,
+      souler_id: soulerId,
+      title: "",
+    })
+    .select("id")
+    .single();
+  if (error || !data?.id) {
+    throw error ?? new Error("Failed to create session");
+  }
+  return String(data.id);
+};
+
+const updateSessionTitle = async (
+  userId: string,
+  sessionId: string,
+  title: string,
+) => {
+  const { error } = await supabase
+    .from("sessions")
+    .update({ title })
+    .eq("id", sessionId)
+    .eq("user_id", userId);
+  if (error) {
+    throw error;
+  }
 };
 
 const getRecentMessages = async (
@@ -168,6 +235,33 @@ const createOrUpdateResonance = async (userId: string, soulerId: string) => {
 
 const isChineseName = (name: string) => /[\p{Script=Han}]/u.test(name);
 
+const sanitizeTitle = (raw: string) => {
+  const trimmed = raw.trim().replace(/^["'`]+|["'`]+$/g, "");
+  if (!trimmed) {
+    return "New Chat";
+  }
+
+  if (/[\p{Script=Han}]/u.test(trimmed)) {
+    return trimmed.slice(0, 16);
+  }
+
+  return trimmed
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 8)
+    .join(" ");
+};
+
+const generateSessionTitle = async (userContent: string, replyContent: string) => {
+  const response = await model.invoke([
+    new SystemMessage(
+      "Create a concise chat title based on the user message and assistant reply. Keep it under 8 words, no punctuation, no quotes, and return only title text.",
+    ),
+    new HumanMessage(`User:\n${userContent}\n\nAssistant:\n${replyContent}`),
+  ] as unknown as Parameters<typeof model.invoke>[0]);
+  return sanitizeTitle(contentToText(response.content));
+};
+
 const buildSystemPrompt = (
   name: string,
   bio: string | null,
@@ -239,18 +333,34 @@ Deno.serve(async (req) => {
 
         const body = await req.json();
         const sessionId = String(body?.sessionId ?? "").trim();
+        const soulerId = String(body?.soulerId ?? "").trim();
         const content = String(body?.content ?? "").trim();
 
-        if (!sessionId || !content) {
-          throw new Error("Missing sessionId or content");
+        if (!content) {
+          throw new Error("Missing content");
         }
 
-        const session = await getSession(userId, sessionId);
+        const isNewSession = !sessionId;
+        let session: SessionContext;
+        if (sessionId) {
+          session = await getSessionById(userId, sessionId);
+        } else {
+          if (!soulerId) {
+            throw new Error("Missing soulerId for new conversation");
+          }
+          const souler = await getSoulerById(soulerId);
+          const createdSessionId = await createSession(userId, souler.id);
+          session = {
+            id: createdSessionId,
+            soulerId: souler.id,
+            souler,
+          };
+        }
         const souler = session.souler;
 
-        const history = await getRecentMessages(userId, sessionId);
+        const history = await getRecentMessages(userId, session.id);
 
-        await insertMessage(userId, session.soulerId, sessionId, "user", content);
+        await insertMessage(userId, session.soulerId, session.id, "user", content);
 
         const systemPrompt = buildSystemPrompt(
           souler.name,
@@ -284,15 +394,23 @@ Deno.serve(async (req) => {
         const assistantMessage = await insertMessage(
           userId,
           session.soulerId,
-          sessionId,
+          session.id,
           "assistant",
           finalContent,
         );
 
-        await touchSession(userId, sessionId);
+        let generatedTitle: string | null = null;
+        if (isNewSession) {
+          generatedTitle = await generateSessionTitle(content, finalContent);
+          await updateSessionTitle(userId, session.id, generatedTitle);
+        }
+
+        await touchSession(userId, session.id);
         await createOrUpdateResonance(userId, session.soulerId);
         send({
           type: "done",
+          sessionId: session.id,
+          title: generatedTitle,
           assistantMessage: {
             id: assistantMessage.id,
             createdAt: assistantMessage.created_at,

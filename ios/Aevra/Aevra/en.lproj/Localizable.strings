@@ -60,6 +60,8 @@
 "resonance.chat.placeholder" = "Say something…";
 "resonance.chat.empty" = "Start a resonance chat";
 "resonance.chat.action.profile" = "View profile";
+"resonance.chat.action.newConversation" = "New Conversation";
+"resonance.chat.newConversation" = "New Chat";
 "resonance.unknownSouler" = "Unknown souler";
 
 "app.error.unauthenticated" = "User is not authenticated";

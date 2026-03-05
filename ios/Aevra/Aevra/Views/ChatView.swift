@@ -11,6 +11,8 @@ struct ChatView: View {
     let onOpenSeaStar: (() -> Void)?
     let onSelectSession: ((ChatSession) -> Void)?
 
+    @State private var activeSessionId: UUID
+    @State private var isDraftSession = false
     @State private var messages: [Message] = []
     @State private var inputText = ""
     @State private var isLoading = false
@@ -40,6 +42,7 @@ struct ChatView: View {
         self.initialReply = initialReply
         self.onOpenSeaStar = onOpenSeaStar
         self.onSelectSession = onSelectSession
+        _activeSessionId = State(initialValue: sessionId)
     }
 
     var body: some View {
@@ -114,7 +117,13 @@ struct ChatView: View {
             }
         }
         .animation(.easeInOut(duration: 0.22), value: isSidebarPresented)
-        .task(id: sessionId) {
+        .onChange(of: sessionId) { _, newValue in
+            guard newValue != activeSessionId else { return }
+            activeSessionId = newValue
+            isDraftSession = false
+            autoRepliedSessionId = nil
+        }
+        .task(id: activeSessionId) {
             await prepareConversation()
             await loadSessionsForSidebar()
         }
@@ -224,7 +233,7 @@ struct ChatView: View {
         defer { isLoading = false }
 
         do {
-            messages = try await Message.getHistory(sessionId: sessionId)
+            messages = try await Message.getHistory(sessionId: activeSessionId)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -249,7 +258,7 @@ struct ChatView: View {
         let userLocal = Message(
             id: UUID(),
             soulerId: soulerId,
-            sessionId: sessionId,
+            sessionId: activeSessionId,
             role: .user,
             content: content,
             createdAt: .now
@@ -260,7 +269,7 @@ struct ChatView: View {
         let assistantLocal = Message(
             id: assistantLocalId,
             soulerId: soulerId,
-            sessionId: sessionId,
+            sessionId: activeSessionId,
             role: .assistant,
             content: "",
             createdAt: .now
@@ -268,8 +277,13 @@ struct ChatView: View {
         messages.append(assistantLocal)
 
         do {
+            var resolvedSessionId: UUID?
+            var resolvedTitle: String?
+            let startedFromDraft = isDraftSession
             for try await event in ChatStreamService.streamReply(
-                sessionId: sessionId,
+                sessionId: isDraftSession ? nil : activeSessionId,
+                soulerId: soulerId,
+                soulerName: soulerName,
                 content: content
             ) {
                 switch event {
@@ -277,11 +291,37 @@ struct ChatView: View {
                     if let index = messages.firstIndex(where: { $0.id == assistantLocalId }) {
                         messages[index].content += delta
                     }
-                case .done:
-                    break
+                case let .done(payload):
+                    if let sessionId = payload.sessionId {
+                        resolvedSessionId = sessionId
+                    }
+                    if let title = payload.title?
+                        .trimmingCharacters(in: .whitespacesAndNewlines),
+                        !title.isEmpty {
+                        resolvedTitle = title
+                    }
                 }
             }
-            messages = try await Message.getHistory(sessionId: sessionId)
+            if let resolvedSessionId {
+                activeSessionId = resolvedSessionId
+                isDraftSession = false
+            }
+            messages = try await Message.getHistory(
+                sessionId: resolvedSessionId ?? activeSessionId
+            )
+            await loadSessionsForSidebar()
+            if startedFromDraft, let resolvedSessionId, let onSelectSession {
+                let fallbackTitle = resolvedTitle ?? String(localized: "resonance.chat.newConversation")
+                let routeSession = sessions.first(where: { $0.id == resolvedSessionId }) ?? ChatSession(
+                    id: resolvedSessionId,
+                    soulerId: soulerId,
+                    soulerName: soulerName,
+                    title: fallbackTitle,
+                    createdAt: .now,
+                    updatedAt: .now
+                )
+                onSelectSession(routeSession)
+            }
         } catch {
             messages.removeAll { $0.id == assistantLocalId }
             errorMessage = error.localizedDescription
@@ -290,23 +330,23 @@ struct ChatView: View {
 
     @MainActor
     private func triggerInitialReplyIfNeeded() async {
-        guard autoRepliedSessionId != sessionId else { return }
+        guard autoRepliedSessionId != activeSessionId else { return }
 
         let reply = initialReply?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !reply.isEmpty else { return }
 
-        autoRepliedSessionId = sessionId
+        autoRepliedSessionId = activeSessionId
         await sendMessage(contentOverride: reply)
     }
 
     private var sidebarView: some View {
         VStack(alignment: .leading, spacing: 10) {
             Button {
-                openSeaStar()
+                startNewConversation()
             } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: "sparkles")
-                    Text("SeaStar")
+                    Image(systemName: "plus.bubble")
+                    Text("resonance.chat.action.newConversation")
                         .font(.body.weight(.semibold))
                         .fontDesign(.serif)
                 }
@@ -335,7 +375,7 @@ struct ChatView: View {
                         .buttonStyle(.borderedProminent)
                     }
                     .padding(.top, 8)
-                } else if isLoadingSessions, sessions.isEmpty {
+                } else if isLoadingSessions, sidebarSessions.isEmpty {
                     HStack(spacing: 8) {
                         ProgressView()
                         Text("common.loading")
@@ -343,7 +383,7 @@ struct ChatView: View {
                             .foregroundStyle(UITheme.secondaryText)
                     }
                     .padding(.top, 8)
-                } else if sessions.isEmpty {
+                } else if sidebarSessions.isEmpty {
                     Text("resonance.empty")
                         .font(.footnote)
                         .foregroundStyle(UITheme.secondaryText)
@@ -351,7 +391,7 @@ struct ChatView: View {
                 } else {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 4) {
-                            ForEach(sessions) { session in
+                            ForEach(sidebarSessions) { session in
                                 Button {
                                     openSession(session)
                                 } label: {
@@ -402,7 +442,23 @@ struct ChatView: View {
     }
 
     private var selectedSessionId: UUID {
-        sessionId
+        activeSessionId
+    }
+
+    private var sidebarSessions: [ChatSession] {
+        if !isDraftSession {
+            return sessions
+        }
+
+        let placeholder = ChatSession(
+            id: activeSessionId,
+            soulerId: soulerId,
+            soulerName: soulerName,
+            title: String(localized: "resonance.chat.newConversation"),
+            createdAt: .now,
+            updatedAt: .now
+        )
+        return [placeholder] + sessions.filter { $0.id != activeSessionId }
     }
 
     private var sidebarOpenOffset: CGFloat {
@@ -430,28 +486,34 @@ struct ChatView: View {
     }
 
     @MainActor
-    private func openSeaStar() {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isSidebarPresented = false
-        }
-        if let onOpenSeaStar {
-            onOpenSeaStar()
-            return
-        }
-        dismiss()
-    }
-
-    @MainActor
     private func openSession(_ session: ChatSession) {
         withAnimation(.easeInOut(duration: 0.2)) {
             isSidebarPresented = false
         }
-        guard session.id != sessionId else { return }
+        guard session.id != activeSessionId else { return }
+        isDraftSession = false
         if let onSelectSession {
             onSelectSession(session)
             return
         }
         pushedSession = session
+    }
+
+    @MainActor
+    private func startNewConversation() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isSidebarPresented = false
+        }
+        if isDraftSession, messages.isEmpty {
+            return
+        }
+        activeSessionId = UUID()
+        isDraftSession = true
+        messages = []
+        inputText = ""
+        errorMessage = nil
+        autoRepliedSessionId = nil
+        hasScrolledToLatestOnAppear = false
     }
 }
 

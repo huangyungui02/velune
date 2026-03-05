@@ -2,13 +2,20 @@ import Foundation
 import Supabase
 
 enum ChatStreamService {
+    struct DonePayload {
+        var sessionId: UUID?
+        var title: String?
+    }
+
     enum Event {
         case delta(String)
-        case done
+        case done(DonePayload)
     }
 
     private struct SendRequest: Encodable {
-        var sessionId: String
+        var sessionId: String?
+        var soulerId: String
+        var soulerName: String
         var content: String
     }
 
@@ -16,14 +23,28 @@ enum ChatStreamService {
         var type: String
         var delta: String?
         var message: String?
+        var sessionId: String?
+        var title: String?
+
+        enum CodingKeys: String, CodingKey {
+            case type
+            case delta
+            case message
+            case sessionId = "sessionId"
+            case title
+        }
     }
 
     static func streamReply(
-        sessionId: UUID,
+        sessionId: UUID?,
+        soulerId: UUID,
+        soulerName: String,
         content: String
     ) -> AsyncThrowingStream<Event, Error> {
         let request = SendRequest(
-            sessionId: sessionId.uuidString,
+            sessionId: sessionId?.uuidString,
+            soulerId: soulerId.uuidString,
+            soulerName: soulerName,
             content: content
         )
         let rawStream = supabase.functions._invokeWithStreamedResponse(
@@ -44,7 +65,12 @@ enum ChatStreamService {
                                 continuation.yield(.delta(delta))
                             }
                         case "done":
-                            continuation.yield(.done)
+                            let resolvedSessionId = payload.sessionId.flatMap(UUID.init(uuidString:))
+                            let donePayload = DonePayload(
+                                sessionId: resolvedSessionId,
+                                title: payload.title
+                            )
+                            continuation.yield(.done(donePayload))
                         case "error":
                             let message = payload.message ?? String(localized: "matching.error.unknown")
                             throw NSError(
