@@ -7,7 +7,7 @@ import {
   soulerProfile,
   soulerPrompt,
 } from "./nodes/index.ts";
-import { type Lang } from "./prompts.ts";
+import { type Lang } from "./lang.ts";
 import {
   appendSoulerAlias,
   createSession,
@@ -21,25 +21,32 @@ import {
 
 const graph = entrypoint(
   { name: "agent" },
-  async (
-    { userId, glimmerId, glimmerContent, num, lang, onEcho }: {
-      userId: string;
-      glimmerId: string;
-      glimmerContent: string;
-      num: number;
-      lang: Lang;
-      onEcho?: (echo: {
-        id: string;
-        glimmer_id: string;
-        souler_id: string;
-        session_id: string | null;
-        content: string;
-      }) => void | Promise<void>;
-    },
-  ) => {
-    const soulers = await matchSoulers(glimmerContent, num, lang) as Array<
-      { souler: string; content: string }
-    >;
+  async ({
+    userId,
+    glimmerId,
+    glimmerContent,
+    num,
+    lang,
+    onEcho,
+  }: {
+    userId: string;
+    glimmerId: string;
+    glimmerContent: string;
+    num: number;
+    lang: Lang;
+    onEcho?: (echo: {
+      id: string;
+      glimmer_id: string;
+      souler_id: string;
+      session_id: string | null;
+      content: string;
+    }) => void | Promise<void>;
+  }) => {
+    const soulers = (await matchSoulers(glimmerContent, num, lang)) as Array<{
+      souler: string;
+      content: string;
+    }>;
+    console.log(`soulers: ${JSON.stringify(soulers)}`);
     const results = await Promise.allSettled(
       soulers.map(async (item) => {
         const matchedName = item.souler.trim();
@@ -89,7 +96,12 @@ const graph = entrypoint(
           "assistant",
           answer,
         );
-        const echo = await createEcho(glimmerId, soulerData.id, answer, session.id);
+        const echo = await createEcho(
+          glimmerId,
+          soulerData.id,
+          answer,
+          session.id,
+        );
         if (onEcho) {
           await onEcho(echo);
         }

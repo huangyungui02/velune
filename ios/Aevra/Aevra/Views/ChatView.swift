@@ -22,7 +22,6 @@ struct ChatView: View {
     @State private var sessions: [ChatSession] = []
     @State private var isLoadingSessions = false
     @State private var sessionMenuError: String?
-    @State private var pushedSession: ChatSession?
     @FocusState private var isComposerFocused: Bool
 
     init(
@@ -146,15 +145,6 @@ struct ChatView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 isComposerFocused = true
             }
-        }
-        .navigationDestination(item: $pushedSession) { session in
-            ChatView(
-                sessionId: session.id,
-                soulerId: session.soulerId,
-                soulerName: session.soulerName,
-                onOpenSeaStar: onOpenSeaStar,
-                onSelectSession: onSelectSession
-            )
         }
     }
 
@@ -387,7 +377,7 @@ struct ChatView: View {
             onSelectSession(session)
             return
         }
-        pushedSession = session
+        activeSessionId = session.id
     }
 
     @MainActor

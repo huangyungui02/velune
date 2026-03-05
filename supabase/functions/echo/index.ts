@@ -1,5 +1,5 @@
 import graph from "./graph.ts";
-import { type Lang } from "./prompts.ts";
+import { type Lang } from "./lang.ts";
 import {
   checkStatusBeforeProcessing,
   getGlimmer,

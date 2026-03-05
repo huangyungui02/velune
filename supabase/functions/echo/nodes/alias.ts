@@ -1,8 +1,29 @@
 import { task } from "@langchain/langgraph";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { modelS } from "../model.ts";
-import { aliasPrompt, type Lang } from "../prompts.ts";
+import { type Lang } from "../lang.ts";
 import { z } from "zod";
+
+const aliasPrompt: Record<Lang, string> = {
+  en:
+    `You normalize person names and generate practical aliases for matching.
+Return JSON as {"aliases":["..."]}.
+Rules:
+1) Include the canonical full name if applicable (e.g. Einstein -> Albert Einstein).
+2) Include common transliterations or variant spellings (e.g. Descartes -> Deka'er).
+3) Include other widely used aliases or titles.
+4) Keep aliases concise, realistic, and useful for name matching.
+5) No explanations, only aliases in JSON.`,
+  zh:
+    `你需要为人物名称生成可用于匹配的别名。
+返回 JSON：{"aliases":["..."]}。
+规则：
+1) 包含完整姓名（如适用，例如：爱因斯坦 -> 阿尔伯特 爱因斯坦）。
+2) 包含常见音译或不同写法（例如：笛卡尔 -> 笛卡儿）。
+3) 包含其他广泛使用的别称或称号。
+4) 别名应简洁、真实、可用于检索匹配。
+5) 不要解释，只返回 JSON 别名数组。`,
+};
 
 const normalizeAliases = (name: string, aliases: string[]) => {
   const seen = new Set<string>();
