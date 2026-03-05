@@ -34,9 +34,10 @@
 "profile.empty.noGlimmers" = "暂无微光";
 "profile.title.glimmers" = "心舍";
 
-"seastar.hero.verse" = "心有微澜\n宇宙自现";
-"seastar.prompt.glimmerWithin" = "你的心里闪烁着什么";
-"seastar.action.resonances" = "共鸣列表";
+"starsea.hero.verse" = "心有微澜\n宇宙自现";
+"starsea.prompt.glimmerWithin" = "你的心里闪烁着什么";
+"starsea.action.resonances" = "共鸣列表";
+"starsea.title" = "星海";
 
 "matching.status.listening" = "正在聆听回响";
 "matching.error.title" = "错误";

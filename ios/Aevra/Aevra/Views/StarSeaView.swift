@@ -2,14 +2,14 @@ import Supabase
 import SwiftData
 import SwiftUI
 
-struct SeaStarView: View {
-    private enum SeaStarStage: Equatable {
+struct StarSeaView: View {
+    private enum StarSeaStage: Equatable {
         case verse
         case matching
     }
 
     private enum Destination: Equatable {
-        case seastar
+        case starsea
         case chat(ChatSession)
     }
 
@@ -18,8 +18,8 @@ struct SeaStarView: View {
     @State private var text = ""
     @State private var isPresented = false
     @State private var isSidebarPresented = false
-    @State private var destination: Destination = .seastar
-    @State private var stage: SeaStarStage = .verse
+    @State private var destination: Destination = .starsea
+    @State private var stage: StarSeaStage = .verse
     @State private var resonances: [Resonance] = []
     @State private var isLoadingResonances = false
     @State private var resonanceMenuError: String?
@@ -45,10 +45,10 @@ struct SeaStarView: View {
                             } label: {
                                 Image(systemName: "antenna.radiowaves.left.and.right")
                             }
-                            .accessibilityLabel(Text("seastar.action.resonances"))
+                            .accessibilityLabel(Text("starsea.action.resonances"))
                         }
 
-                        if isSeaStarDestination {
+                        if isStarSeaDestination {
                             ToolbarItem(placement: .topBarTrailing) {
                                 ZStack(alignment: .topTrailing) {
                                     NavigationLink {
@@ -156,7 +156,7 @@ struct SeaStarView: View {
     @ViewBuilder
     private var mainContent: some View {
         switch destination {
-        case .seastar:
+        case .starsea:
             ZStack {
                 StarryBackgroundView()
 
@@ -166,7 +166,7 @@ struct SeaStarView: View {
                     VStack {
                         Spacer()
 
-                        VerseView(textKey: "seastar.hero.verse")
+                        VerseView(textKey: "starsea.hero.verse")
 
                         Spacer()
 
@@ -179,8 +179,8 @@ struct SeaStarView: View {
                 sessionId: session.id,
                 soulerId: session.soulerId,
                 soulerName: session.soulerName,
-                onOpenSeaStar: {
-                    destination = .seastar
+                onOpenStarSea: {
+                    destination = .starsea
                 },
                 onSelectSession: { selectedSession in
                     destination = .chat(selectedSession)
@@ -189,8 +189,8 @@ struct SeaStarView: View {
         }
     }
 
-    private var isSeaStarDestination: Bool {
-        if case .seastar = destination {
+    private var isStarSeaDestination: Bool {
+        if case .starsea = destination {
             return true
         }
         return false
@@ -199,23 +199,29 @@ struct SeaStarView: View {
     private var sidebarView: some View {
         VStack(alignment: .leading, spacing: 10) {
             Button {
-                destination = .seastar
+                destination = .starsea
                 withAnimation(.easeInOut(duration: 0.2)) {
                     isSidebarPresented = false
                 }
             } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: isSeaStarDestination ? "checkmark" : "sparkles")
-                    Text("SeaStar")
-                        .font(.body.weight(.semibold))
-                        .fontDesign(.serif)
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.caption.weight(.semibold))
+                        Text("starsea.title")
+                            .lineLimit(1)
+                            .font(.body.weight(.medium))
+                            .fontDesign(.serif)
+                    }
+                    .foregroundStyle(UITheme.primaryText)
+
+                    Spacer(minLength: 8)
                 }
-                .foregroundStyle(UITheme.primaryText)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
-                    isSeaStarDestination ? .white.opacity(0.18) : .clear,
+                    isStarSeaDestination ? .white.opacity(0.15) : .clear,
                     in: .rect(cornerRadius: 12)
                 )
             }
@@ -391,7 +397,7 @@ struct SeaStarView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "sparkles")
 
-                    Text("seastar.prompt.glimmerWithin")
+                    Text("starsea.prompt.glimmerWithin")
                         .foregroundStyle(UITheme.primaryText)
                         .font(.body)
                         .fontDesign(.serif)
@@ -489,7 +495,7 @@ struct SeaStarView: View {
     }
 }
 
-extension SeaStarView {
+extension StarSeaView {
     private var matchingContent: some View {
         VStack(spacing: 16) {
             CardPagerView(
@@ -591,7 +597,7 @@ private struct ComposeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                TextField("seastar.prompt.glimmerWithin", text: $text, axis: .vertical)
+                TextField("starsea.prompt.glimmerWithin", text: $text, axis: .vertical)
                     .focused($isFocused)
                     .font(.body)
                     .fontDesign(.serif)
@@ -645,5 +651,5 @@ private struct ComposeView: View {
 }
 
 #Preview {
-    SeaStarView()
+    StarSeaView()
 }

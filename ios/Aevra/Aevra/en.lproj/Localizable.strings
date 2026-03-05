@@ -34,9 +34,10 @@
 "profile.empty.noGlimmers" = "No glimmers yet";
 "profile.title.glimmers" = "Hearthaven";
 
-"seastar.hero.verse" = "When the heart ripples,\nthe universe unfolds.";
-"seastar.prompt.glimmerWithin" = "What glimmers within you";
-"seastar.action.resonances" = "Resonances";
+"starsea.hero.verse" = "When the heart ripples,\nthe universe unfolds.";
+"starsea.prompt.glimmerWithin" = "What glimmers within you";
+"starsea.action.resonances" = "Resonances";
+"starsea.title" = "StarSea";
 
 "matching.status.listening" = "Listening for echoes";
 "matching.error.title" = "Error";

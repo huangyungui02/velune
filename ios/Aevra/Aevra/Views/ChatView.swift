@@ -8,7 +8,7 @@ struct ChatView: View {
     let soulerId: UUID
     let soulerName: String
     let focusComposerOnAppear: Bool
-    let onOpenSeaStar: (() -> Void)?
+    let onOpenStarSea: (() -> Void)?
     let onSelectSession: ((ChatSession) -> Void)?
 
     @State private var activeSessionId: UUID
@@ -29,14 +29,14 @@ struct ChatView: View {
         soulerId: UUID,
         soulerName: String,
         focusComposerOnAppear: Bool = false,
-        onOpenSeaStar: (() -> Void)? = nil,
+        onOpenStarSea: (() -> Void)? = nil,
         onSelectSession: ((ChatSession) -> Void)? = nil
     ) {
         self.sessionId = sessionId
         self.soulerId = soulerId
         self.soulerName = soulerName
         self.focusComposerOnAppear = focusComposerOnAppear
-        self.onOpenSeaStar = onOpenSeaStar
+        self.onOpenStarSea = onOpenStarSea
         self.onSelectSession = onSelectSession
         _activeSessionId = State(initialValue: sessionId)
     }
@@ -116,7 +116,7 @@ struct ChatView: View {
                 } label: {
                     Image(systemName: "line.3.horizontal")
                 }
-                .accessibilityLabel(Text("seastar.action.resonances"))
+                .accessibilityLabel(Text("starsea.action.resonances"))
             }
         }
         .alert("matching.error.title", isPresented: Binding(
