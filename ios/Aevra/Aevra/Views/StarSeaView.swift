@@ -192,9 +192,6 @@ struct StarSeaView: View {
                 sessionId: session.id,
                 soulerId: session.soulerId,
                 soulerName: session.soulerName,
-                onOpenStarSea: {
-                    destination = .starsea
-                },
                 onSelectSession: { selectedSession in
                     destination = .chat(selectedSession)
                 }
@@ -405,7 +402,7 @@ struct StarSeaView: View {
                     return
                 }
 
-                let predicted = (isSidebarPresented ? sidebarWidth : 0) + value.predictedEndTranslation.width
+                let predicted = sidebarWidth + value.predictedEndTranslation.width
                 let shouldOpen = predicted > sidebarWidth * 0.45
 
                 withAnimation(.easeInOut(duration: 0.22)) {
