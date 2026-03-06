@@ -118,7 +118,7 @@ struct ChatView: View {
                         }
                     }
                 } label: {
-                    Image(systemName: "line.3.horizontal")
+                    Image(systemName: "clock.arrow.circlepath")
                 }
                 .accessibilityLabel(Text("starsea.action.resonances"))
             }

@@ -48,7 +48,7 @@ struct StarSeaView: View {
                                     isSidebarPresented.toggle()
                                 }
                             } label: {
-                                Image(systemName: "antenna.radiowaves.left.and.right")
+                                Image(systemName: "line.3.horizontal")
                             }
                             .accessibilityLabel(Text("starsea.action.resonances"))
                         }
