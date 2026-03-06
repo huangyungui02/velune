@@ -32,7 +32,6 @@ struct StarSeaView: View {
     @State private var chatRoute: EchoChatRoute?
     @State private var sidebarDragOffset: CGFloat = 0
     @State private var resonanceSearchText = ""
-    @State private var isSidebarSwipeEnabled = true
     @State private var isShowingProfile = false
 
     private let sidebarWidth: CGFloat = 320
@@ -107,10 +106,7 @@ struct StarSeaView: View {
                             sessionId: route.sessionId,
                             soulerId: route.soulerId,
                             soulerName: route.soulerName,
-                            focusComposerOnAppear: true,
-                            onSidebarSwipeEnabledChange: { isEnabled in
-                                isSidebarSwipeEnabled = isEnabled
-                            }
+                            focusComposerOnAppear: true
                         )
                     }
                     .navigationDestination(isPresented: $isShowingProfile) {
@@ -150,13 +146,7 @@ struct StarSeaView: View {
                 recoverToVerseAfterError()
             }
         }
-        .onChange(of: destination) { _, newDestination in
-            if case .starsea = newDestination {
-                isSidebarSwipeEnabled = true
-            }
-        }
         .onChange(of: isShowingProfile) { _, isShowing in
-            isSidebarSwipeEnabled = !isShowing
             if isShowing {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     isSidebarPresented = false
@@ -207,9 +197,6 @@ struct StarSeaView: View {
                 },
                 onSelectSession: { selectedSession in
                     destination = .chat(selectedSession)
-                },
-                onSidebarSwipeEnabledChange: { isEnabled in
-                    isSidebarSwipeEnabled = isEnabled
                 }
             )
         }
@@ -409,18 +396,11 @@ struct StarSeaView: View {
     private var sidebarGesture: some Gesture {
         DragGesture(minimumDistance: 10, coordinateSpace: .global)
             .onChanged { value in
-                let isEdgeSwipe = value.startLocation.x <= 28
-                if !isSidebarPresented && (!isEdgeSwipe || !isSidebarSwipeEnabled) { return }
-
-                if isSidebarPresented {
-                    sidebarDragOffset = min(0, value.translation.width)
-                } else {
-                    sidebarDragOffset = max(0, value.translation.width)
-                }
+                guard isSidebarPresented else { return }
+                sidebarDragOffset = min(0, value.translation.width)
             }
             .onEnded { value in
-                let isEdgeSwipe = value.startLocation.x <= 28
-                guard isSidebarPresented || (isEdgeSwipe && isSidebarSwipeEnabled) else {
+                guard isSidebarPresented else {
                     sidebarDragOffset = 0
                     return
                 }
