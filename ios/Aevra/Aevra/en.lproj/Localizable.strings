@@ -25,6 +25,7 @@
 "common.ok" = "OK";
 "common.retry" = "Retry";
 "common.loading" = "Loading…";
+"common.search" = "Search";
 
 "sign.slogan" = "Explore inward,\nreach the depths of the cosmos.";
 "sign.terms.full" = "By signing in, you agree to our Terms of Service and Privacy Policy.";

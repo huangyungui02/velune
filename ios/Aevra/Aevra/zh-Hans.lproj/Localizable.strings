@@ -25,6 +25,7 @@
 "common.ok" = "好的";
 "common.retry" = "重试";
 "common.loading" = "加载中…";
+"common.search" = "搜索";
 
 "sign.slogan" = "向内探索，\n直至宇宙深处";
 "sign.terms.full" = "登录即表示你同意我们的《用户协议》和《隐私政策》。";

@@ -31,6 +31,7 @@ struct StarSeaView: View {
     @State private var currentPage: CardID? = .glimmer
     @State private var chatRoute: EchoChatRoute?
     @State private var sidebarDragOffset: CGFloat = 0
+    @State private var resonanceSearchText = ""
     @State private var isSidebarSwipeEnabled = true
     @State private var isShowingProfile = false
 
@@ -223,39 +224,6 @@ struct StarSeaView: View {
 
     private var sidebarView: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Button {
-                destination = .starsea
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isSidebarPresented = false
-                }
-            } label: {
-                HStack(spacing: 10) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "sparkles")
-                            .font(.caption.weight(.semibold))
-                        Text("starsea.title")
-                            .lineLimit(1)
-                            .font(.body.weight(.medium))
-                            .fontDesign(.serif)
-                    }
-                    .foregroundStyle(UITheme.primaryText)
-
-                    Spacer(minLength: 8)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    isStarSeaDestination ? .white.opacity(0.15) : .clear,
-                    in: .rect(cornerRadius: 12)
-                )
-            }
-            .buttonStyle(.plain)
-
-            Divider()
-                .overlay(.white.opacity(0.12))
-                .padding(.bottom, 2)
-
             Group {
                 if let resonanceMenuError {
                     VStack(alignment: .leading, spacing: 10) {
@@ -279,7 +247,7 @@ struct StarSeaView: View {
                             .foregroundStyle(UITheme.secondaryText)
                     }
                     .padding(.top, 8)
-                } else if resonances.isEmpty {
+                } else if displayedResonances.isEmpty {
                     Text("resonance.empty")
                         .font(.footnote)
                         .foregroundStyle(UITheme.secondaryText)
@@ -287,7 +255,7 @@ struct StarSeaView: View {
                 } else {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 4) {
-                            ForEach(resonances) { resonance in
+                            ForEach(displayedResonances) { resonance in
                                 Button {
                                     Task {
                                         await openLatestSession(for: resonance)
@@ -331,7 +299,7 @@ struct StarSeaView: View {
                                         .foregroundStyle(UITheme.secondaryText)
                                 }
                                 .padding(.top, 8)
-                            } else if hasMoreResonances {
+                            } else if hasMoreResonances, !hasActiveResonanceSearch {
                                 Color.clear
                                     .frame(height: 1)
                                     .onAppear {
@@ -344,6 +312,48 @@ struct StarSeaView: View {
                     }
                 }
             }
+            .frame(maxHeight: .infinity, alignment: .top)
+
+            Divider()
+                .overlay(.white.opacity(0.12))
+                .padding(.top, 2)
+
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(UITheme.secondaryText)
+
+                    TextField("common.search", text: $resonanceSearchText)
+                        .textFieldStyle(.plain)
+                        .font(.footnote)
+                        .fontDesign(.serif)
+                        .foregroundStyle(UITheme.primaryText)
+                }
+                .padding(.horizontal, 12)
+                .frame(height: 40)
+                .background(Color.clear, in: .capsule)
+                .glassEffect(in: .capsule)
+
+                Spacer(minLength: 10)
+
+                Button {
+                    destination = .starsea
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isSidebarPresented = false
+                    }
+                } label: {
+                    Image(systemName: "sparkles")
+                        .font(.headline.weight(.semibold))
+                        .frame(width: 46, height: 46)
+                        .background(Color.clear, in: .circle)
+                        .glassEffect(in: .circle)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(UITheme.primaryText)
+                .accessibilityLabel(Text("starsea.title"))
+            }
+            .padding(.horizontal, 2)
         }
         .padding(12)
         .frame(width: sidebarWidth, alignment: .topLeading)
@@ -395,6 +405,16 @@ struct StarSeaView: View {
             return session.soulerId
         }
         return nil
+    }
+
+    private var hasActiveResonanceSearch: Bool {
+        !resonanceSearchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var displayedResonances: [Resonance] {
+        let keyword = resonanceSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !keyword.isEmpty else { return resonances }
+        return resonances.filter { $0.soulerName.localizedCaseInsensitiveContains(keyword) }
     }
 
     private var echoes: [Echo] {
