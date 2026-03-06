@@ -236,10 +236,15 @@ struct StarSeaView: View {
                         resonanceEmptyStateView
                             .padding(.top, 6)
                     } else {
-                        Text("resonance.empty")
-                            .font(.footnote)
-                            .foregroundStyle(UITheme.secondaryText)
-                            .padding(.top, 8)
+                        if hasActiveResonanceSearch {
+                            ContentUnavailableView.search(text: resonanceSearchText)
+                                .padding(.top, 6)
+                        } else {
+                            ContentUnavailableView {
+                                Label("resonance.empty", systemImage: "magnifyingglass")
+                            }
+                            .padding(.top, 6)
+                        }
                     }
                 } else {
                     ScrollView {
