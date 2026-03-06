@@ -23,18 +23,15 @@ struct SettingsView: View {
             }
 
             Section("settings.section.language") {
-                LabeledContent {
-                    Picker("", selection: $appLanguageRawValue) {
-                        Text("settings.language.english")
-                            .tag(AppLanguage.english.rawValue)
-                        Text("settings.language.simplifiedChinese")
-                            .tag(AppLanguage.simplifiedChinese.rawValue)
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
+                Picker(selection: $appLanguageRawValue) {
+                    Text("settings.language.english")
+                        .tag(AppLanguage.english.rawValue)
+                    Text("settings.language.simplifiedChinese")
+                        .tag(AppLanguage.simplifiedChinese.rawValue)
                 } label: {
                     Label("settings.language", systemImage: "globe")
                 }
+                .pickerStyle(.menu)
             }
 
             Section("settings.section.support") {
@@ -119,6 +116,7 @@ struct SettingsView: View {
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "-"
         return "\(short) (\(build))"
     }
+
 }
 
 // MARK: - Account Settings
