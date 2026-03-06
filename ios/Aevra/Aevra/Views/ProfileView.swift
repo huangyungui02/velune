@@ -2,55 +2,166 @@ import SwiftData
 import SwiftUI
 
 struct ProfileView: View {
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var context
     @Query(sort: \Glimmer.createdAt, order: .reverse) private var glimmers: [Glimmer]
     @State private var isRefreshing: Bool = false
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                BackgroundView()
+        ZStack {
+            BackgroundView()
 
-                Group {
-                    if isRefreshing {
-                        ProgressView()
-                    } else if glimmers.isEmpty {
-                        EmptyView(title: "profile.empty.noGlimmers")
-                    } else {
-                        glimmerListView
-                    }
+            Group {
+                if isRefreshing {
+                    ProgressView()
+                } else if glimmers.isEmpty {
+                    EmptyView(title: "profile.empty.noGlimmers")
+                } else {
+                    glimmerListView
                 }
             }
-            .navigationTitle("profile.title.glimmers")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        SettingsView()
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
+        }
+        .navigationTitle("profile.title.glimmers")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    SettingsView()
+                } label: {
+                    Image(systemName: "gearshape")
                 }
             }
-            .task {
-                await refreshGlimmers()
-            }
+        }
+        .task {
+            await refreshGlimmers()
         }
     }
 
     private var glimmerListView: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(glimmers) { glimmer in
-                    NavigationLink {
-                        GlimmerView(glimmer: glimmer)
-                    } label: {
-                        GlimmerListCard(glimmer: glimmer)
+            LazyVStack(alignment: .leading, spacing: 20) {
+                ForEach(timelineSections) { section in
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(title(for: section.bucket))
+                            .font(.title3.weight(.semibold))
+                            .fontDesign(.rounded)
+                            .foregroundStyle(UITheme.primaryText)
+                            .padding(.horizontal, 6)
+                            .padding(.bottom, 2)
+
+                        VStack(spacing: 0) {
+                            ForEach(Array(section.items.enumerated()), id: \.element.id) { index, glimmer in
+                                NavigationLink {
+                                    GlimmerView(glimmer: glimmer)
+                                } label: {
+                                    GlimmerListRow(glimmer: glimmer)
+                                }
+                                .buttonStyle(.plain)
+
+                                if index < section.items.count - 1 {
+                                    VStack(spacing: 8) {
+                                        Divider()
+                                            .overlay(.white.opacity(0.04))
+                                    }
+                                    .padding(.horizontal, 18)
+                                    .padding(.vertical, 6)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 6)
+                        .background(Color.clear, in: .rect(cornerRadius: 18))
+                        .glassEffect(in: .rect(cornerRadius: 18))
                     }
-                    .buttonStyle(.plain)
                 }
             }
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
         }
+    }
+
+    private var timelineSections: [TimelineSection] {
+        var sections: [TimelineSection] = []
+        var sectionIndices: [TimelineBucket: Int] = [:]
+        let now = Date()
+
+        for glimmer in glimmers {
+            let bucket = bucket(for: glimmer.createdAt, now: now)
+            if let sectionIndex = sectionIndices[bucket] {
+                sections[sectionIndex].items.append(glimmer)
+            } else {
+                sectionIndices[bucket] = sections.count
+                sections.append(TimelineSection(bucket: bucket, items: [glimmer]))
+            }
+        }
+
+        return sections
+    }
+
+    private func bucket(for date: Date, now: Date) -> TimelineBucket {
+        if calendar.isDateInToday(date) {
+            return .today
+        }
+        if calendar.isDateInYesterday(date) {
+            return .yesterday
+        }
+
+        let startOfToday = calendar.startOfDay(for: now)
+        if let oneWeekAgo = calendar.date(byAdding: .day, value: -7, to: startOfToday), date >= oneWeekAgo {
+            return .lastWeek
+        }
+        if let oneMonthAgo = calendar.date(byAdding: .month, value: -1, to: startOfToday), date >= oneMonthAgo {
+            return .lastMonth
+        }
+
+        let comps = calendar.dateComponents([.year, .month], from: date)
+        return .month(year: comps.year ?? 0, month: comps.month ?? 1)
+    }
+
+    private func title(for bucket: TimelineBucket) -> String {
+        switch bucket {
+        case .today:
+            return isChineseLocale ? "今天" : "Today"
+        case .yesterday:
+            return isChineseLocale ? "昨天" : "Yesterday"
+        case .lastWeek:
+            return isChineseLocale ? "过去一周" : "Past Week"
+        case .lastMonth:
+            return isChineseLocale ? "过去一个月" : "Past Month"
+        case let .month(year, month):
+            return monthTitle(year: year, month: month)
+        }
+    }
+
+    private var isChineseLocale: Bool {
+        locale.identifier.hasPrefix("zh")
+    }
+
+    private func monthTitle(year: Int, month: Int) -> String {
+        let now = Date()
+        let currentYear = calendar.component(.year, from: now)
+
+        if isChineseLocale {
+            if year == currentYear {
+                return "\(month)月"
+            }
+            return "\(year)年\(month)月"
+        }
+
+        var comps = DateComponents()
+        comps.year = year
+        comps.month = month
+        comps.day = 1
+
+        guard let date = calendar.date(from: comps) else {
+            return "\(year)-\(month)"
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate(year == currentYear ? "MMMM" : "yMMMM")
+        return formatter.string(from: date)
     }
 
     @MainActor
@@ -76,22 +187,47 @@ struct ProfileView: View {
     }
 }
 
-// MARK: - Glimmer Card
+// MARK: - Timeline
 
-private struct GlimmerListCard: View {
+private enum TimelineBucket: Hashable {
+    case today
+    case yesterday
+    case lastWeek
+    case lastMonth
+    case month(year: Int, month: Int)
+}
+
+private struct TimelineSection: Identifiable {
+    let bucket: TimelineBucket
+    var items: [Glimmer]
+
+    var id: String {
+        switch bucket {
+        case .today:
+            return "today"
+        case .yesterday:
+            return "yesterday"
+        case .lastWeek:
+            return "lastWeek"
+        case .lastMonth:
+            return "lastMonth"
+        case let .month(year, month):
+            return "\(year)-\(month)"
+        }
+    }
+}
+
+// MARK: - Row
+
+private struct GlimmerListRow: View {
     let glimmer: Glimmer
 
     var body: some View {
         content
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 15)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.clear, in: .rect(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(.white.opacity(0.18), lineWidth: 1)
-            )
-            .glassEffect(in: .rect(cornerRadius: 16))
-            .contentShape(.rect)
+        .contentShape(.rect)
     }
 
     private var content: some View {

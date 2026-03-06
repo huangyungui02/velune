@@ -349,12 +349,6 @@ struct StarSeaView: View {
         .frame(width: sidebarWidth, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(.ultraThinMaterial)
-        .overlay(
-            Rectangle()
-                .fill(.white.opacity(0.14))
-                .frame(width: 1),
-            alignment: .trailing
-        )
     }
 
     private var sidebarOpenOffset: CGFloat {
