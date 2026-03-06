@@ -248,10 +248,15 @@ struct StarSeaView: View {
                     }
                     .padding(.top, 8)
                 } else if displayedResonances.isEmpty {
-                    Text("resonance.empty")
-                        .font(.footnote)
-                        .foregroundStyle(UITheme.secondaryText)
-                        .padding(.top, 8)
+                    if resonances.isEmpty, !hasActiveResonanceSearch {
+                        resonanceEmptyStateView
+                            .padding(.top, 6)
+                    } else {
+                        Text("resonance.empty")
+                            .font(.footnote)
+                            .foregroundStyle(UITheme.secondaryText)
+                            .padding(.top, 8)
+                    }
                 } else {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 4) {
@@ -315,12 +320,42 @@ struct StarSeaView: View {
             }
             .frame(maxHeight: .infinity, alignment: .top)
 
-            sidebarFloatingToolbar
+            if !resonances.isEmpty {
+                sidebarFloatingToolbar
+            }
         }
         .padding(12)
         .frame(width: sidebarWidth, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(.ultraThinMaterial)
+    }
+
+    private var resonanceEmptyStateView: some View {
+        ContentUnavailableView {
+            Label("starsea.empty.resonanceTitle", systemImage: "sparkles")
+                .fontDesign(.serif)
+                .padding(.bottom, 6)
+        } description: {
+            Text("starsea.empty.resonanceSubtitle")
+                .fontDesign(.serif)
+                .foregroundStyle(UITheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+                .padding(.top, 4)
+        } actions: {
+            Button(action: openGlimmerComposerFromSidebar) {
+                Label("starsea.action.writeGlimmer", systemImage: "pencil.and.scribble")
+                    .font(.footnote.weight(.semibold))
+                    .fontDesign(.serif)
+                    .foregroundStyle(UITheme.primaryText)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+            }
+            .buttonStyle(.plain)
+            .background(Color.clear, in: .capsule)
+            .glassEffect(in: .capsule)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 
     private var sidebarFloatingToolbar: some View {
@@ -572,6 +607,14 @@ struct StarSeaView: View {
         stage = .verse
         currentPage = .glimmer
         shouldRecoverToVerseAfterError = false
+    }
+
+    private func openGlimmerComposerFromSidebar() {
+        destination = .starsea
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isSidebarPresented = false
+        }
+        isPresented = true
     }
 }
 

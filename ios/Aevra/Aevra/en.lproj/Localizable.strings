@@ -42,6 +42,9 @@
 "starsea.hero.verse" = "When the heart ripples,\nthe universe unfolds.";
 "starsea.prompt.glimmerWithin" = "What glimmers within you";
 "starsea.action.resonances" = "Resonances";
+"starsea.action.writeGlimmer" = "Write a glimmer";
+"starsea.empty.resonanceTitle" = "No resonances yet";
+"starsea.empty.resonanceSubtitle" = "Write your first glimmer, and let the sea answer in its own quiet way.";
 "starsea.title" = "StarSea";
 
 "matching.status.listening" = "Listening for echoes";
