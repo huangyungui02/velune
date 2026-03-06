@@ -10,6 +10,7 @@ struct ChatView: View {
     let focusComposerOnAppear: Bool
     let onOpenStarSea: (() -> Void)?
     let onSelectSession: ((ChatSession) -> Void)?
+    let onSidebarSwipeEnabledChange: ((Bool) -> Void)?
 
     @State private var activeSessionId: UUID
     @State private var isDraftSession = false
@@ -22,6 +23,7 @@ struct ChatView: View {
     @State private var sessions: [ChatSession] = []
     @State private var isLoadingSessions = false
     @State private var sessionMenuError: String?
+    @State private var isShowingSouler = false
     @FocusState private var isComposerFocused: Bool
 
     init(
@@ -30,7 +32,8 @@ struct ChatView: View {
         soulerName: String,
         focusComposerOnAppear: Bool = false,
         onOpenStarSea: (() -> Void)? = nil,
-        onSelectSession: ((ChatSession) -> Void)? = nil
+        onSelectSession: ((ChatSession) -> Void)? = nil,
+        onSidebarSwipeEnabledChange: ((Bool) -> Void)? = nil
     ) {
         self.sessionId = sessionId
         self.soulerId = soulerId
@@ -38,6 +41,7 @@ struct ChatView: View {
         self.focusComposerOnAppear = focusComposerOnAppear
         self.onOpenStarSea = onOpenStarSea
         self.onSelectSession = onSelectSession
+        self.onSidebarSwipeEnabledChange = onSidebarSwipeEnabledChange
         _activeSessionId = State(initialValue: sessionId)
     }
 
@@ -65,8 +69,8 @@ struct ChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                NavigationLink {
-                    SoulerView(soulerId: soulerId)
+                Button {
+                    isShowingSouler = true
                 } label: {
                     Text(soulerName)
                         .lineLimit(1)
@@ -136,15 +140,22 @@ struct ChatView: View {
             activeSessionId = newValue
             isDraftSession = false
         }
+        .onChange(of: isShowingSouler) { _, isShowing in
+            onSidebarSwipeEnabledChange?(!isShowing)
+        }
         .task(id: activeSessionId) {
             await prepareConversation()
             await loadSessionsForSidebar()
         }
         .onAppear {
+            onSidebarSwipeEnabledChange?(!isShowingSouler)
             guard focusComposerOnAppear else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 isComposerFocused = true
             }
+        }
+        .navigationDestination(isPresented: $isShowingSouler) {
+            SoulerView(soulerId: soulerId)
         }
     }
 

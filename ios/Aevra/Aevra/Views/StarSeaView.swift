@@ -31,6 +31,8 @@ struct StarSeaView: View {
     @State private var currentPage: CardID? = .glimmer
     @State private var chatRoute: EchoChatRoute?
     @State private var sidebarDragOffset: CGFloat = 0
+    @State private var isSidebarSwipeEnabled = true
+    @State private var isShowingProfile = false
 
     private let sidebarWidth: CGFloat = 320
     private let resonancePageSize = 20
@@ -53,12 +55,10 @@ struct StarSeaView: View {
 
                         if isStarSeaDestination {
                             ToolbarItem(placement: .topBarTrailing) {
-                                ZStack(alignment: .topTrailing) {
-                                    NavigationLink {
-                                        ProfileView()
-                                    } label: {
-                                        Image(systemName: "house.fill")
-                                    }
+                                Button {
+                                    isShowingProfile = true
+                                } label: {
+                                    Image(systemName: "house.fill")
                                 }
                             }
 
@@ -106,8 +106,14 @@ struct StarSeaView: View {
                             sessionId: route.sessionId,
                             soulerId: route.soulerId,
                             soulerName: route.soulerName,
-                            focusComposerOnAppear: true
+                            focusComposerOnAppear: true,
+                            onSidebarSwipeEnabledChange: { isEnabled in
+                                isSidebarSwipeEnabled = isEnabled
+                            }
                         )
+                    }
+                    .navigationDestination(isPresented: $isShowingProfile) {
+                        ProfileView()
                     }
             }
             .offset(x: sidebarOpenOffset)
@@ -141,6 +147,19 @@ struct StarSeaView: View {
         .onChange(of: showError) { _, isShowing in
             if !isShowing, shouldRecoverToVerseAfterError {
                 recoverToVerseAfterError()
+            }
+        }
+        .onChange(of: destination) { _, newDestination in
+            if case .starsea = newDestination {
+                isSidebarSwipeEnabled = true
+            }
+        }
+        .onChange(of: isShowingProfile) { _, isShowing in
+            isSidebarSwipeEnabled = !isShowing
+            if isShowing {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isSidebarPresented = false
+                }
             }
         }
         .alert("matching.error.title", isPresented: $showError) {
@@ -187,6 +206,9 @@ struct StarSeaView: View {
                 },
                 onSelectSession: { selectedSession in
                     destination = .chat(selectedSession)
+                },
+                onSidebarSwipeEnabledChange: { isEnabled in
+                    isSidebarSwipeEnabled = isEnabled
                 }
             )
         }
@@ -349,7 +371,7 @@ struct StarSeaView: View {
         DragGesture(minimumDistance: 10, coordinateSpace: .global)
             .onChanged { value in
                 let isEdgeSwipe = value.startLocation.x <= 28
-                if !isSidebarPresented && !isEdgeSwipe { return }
+                if !isSidebarPresented && (!isEdgeSwipe || !isSidebarSwipeEnabled) { return }
 
                 if isSidebarPresented {
                     sidebarDragOffset = min(0, value.translation.width)
@@ -359,7 +381,7 @@ struct StarSeaView: View {
             }
             .onEnded { value in
                 let isEdgeSwipe = value.startLocation.x <= 28
-                guard isSidebarPresented || isEdgeSwipe else {
+                guard isSidebarPresented || (isEdgeSwipe && isSidebarSwipeEnabled) else {
                     sidebarDragOffset = 0
                     return
                 }
