@@ -33,6 +33,10 @@
 
 "profile.empty.noGlimmers" = "No glimmers yet";
 "profile.title.glimmers" = "Hearthaven";
+"profile.section.today" = "Today";
+"profile.section.yesterday" = "Yesterday";
+"profile.section.pastWeek" = "Past Week";
+"profile.section.pastMonth" = "Past Month";
 
 "starsea.hero.verse" = "When the heart ripples,\nthe universe unfolds.";
 "starsea.prompt.glimmerWithin" = "What glimmers within you";

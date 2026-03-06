@@ -122,32 +122,21 @@ struct ProfileView: View {
     private func title(for bucket: TimelineBucket) -> String {
         switch bucket {
         case .today:
-            return isChineseLocale ? "今天" : "Today"
+            return String(localized: "profile.section.today")
         case .yesterday:
-            return isChineseLocale ? "昨天" : "Yesterday"
+            return String(localized: "profile.section.yesterday")
         case .lastWeek:
-            return isChineseLocale ? "过去一周" : "Past Week"
+            return String(localized: "profile.section.pastWeek")
         case .lastMonth:
-            return isChineseLocale ? "过去一个月" : "Past Month"
+            return String(localized: "profile.section.pastMonth")
         case let .month(year, month):
             return monthTitle(year: year, month: month)
         }
     }
 
-    private var isChineseLocale: Bool {
-        locale.identifier.hasPrefix("zh")
-    }
-
     private func monthTitle(year: Int, month: Int) -> String {
         let now = Date()
         let currentYear = calendar.component(.year, from: now)
-
-        if isChineseLocale {
-            if year == currentYear {
-                return "\(month)月"
-            }
-            return "\(year)年\(month)月"
-        }
 
         var comps = DateComponents()
         comps.year = year
