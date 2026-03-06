@@ -308,57 +308,57 @@ struct StarSeaView: View {
                                         }
                                     }
                             }
+
                         }
                     }
                 }
             }
             .frame(maxHeight: .infinity, alignment: .top)
 
-            Divider()
-                .overlay(.white.opacity(0.12))
-                .padding(.top, 2)
-
-            HStack {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(UITheme.secondaryText)
-
-                    TextField("common.search", text: $resonanceSearchText)
-                        .textFieldStyle(.plain)
-                        .font(.footnote)
-                        .fontDesign(.serif)
-                        .foregroundStyle(UITheme.primaryText)
-                }
-                .padding(.horizontal, 12)
-                .frame(height: 40)
-                .background(Color.clear, in: .capsule)
-                .glassEffect(in: .capsule)
-
-                Spacer(minLength: 10)
-
-                Button {
-                    destination = .starsea
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isSidebarPresented = false
-                    }
-                } label: {
-                    Image(systemName: "sparkles")
-                        .font(.headline.weight(.semibold))
-                        .frame(width: 46, height: 46)
-                        .background(Color.clear, in: .circle)
-                        .glassEffect(in: .circle)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(UITheme.primaryText)
-                .accessibilityLabel(Text("starsea.title"))
-            }
-            .padding(.horizontal, 2)
+            sidebarFloatingToolbar
         }
         .padding(12)
         .frame(width: sidebarWidth, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(.ultraThinMaterial)
+    }
+
+    private var sidebarFloatingToolbar: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(UITheme.secondaryText)
+
+                TextField("common.search", text: $resonanceSearchText)
+                    .textFieldStyle(.plain)
+                    .font(.footnote)
+                    .fontDesign(.serif)
+                    .foregroundStyle(UITheme.primaryText)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 44)
+            .background(Color.clear, in: .capsule)
+            .glassEffect(in: .capsule)
+
+            Button {
+                destination = .starsea
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isSidebarPresented = false
+                }
+            } label: {
+                Image(systemName: "sparkles")
+                    .font(.headline.weight(.semibold))
+                    .frame(width: 46, height: 46)
+                    .background(Color.clear, in: .circle)
+                    .glassEffect(in: .circle)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(UITheme.primaryText)
+            .accessibilityLabel(Text("starsea.title"))
+        }
+        .padding(.horizontal, 2)
+        .shadow(color: .black.opacity(0.12), radius: 14, y: 6)
     }
 
     private var sidebarOpenOffset: CGFloat {
