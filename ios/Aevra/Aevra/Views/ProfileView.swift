@@ -24,6 +24,7 @@ struct ProfileView: View {
         }
         .navigationTitle("profile.title.glimmers")
         .navigationBarTitleDisplayMode(.inline)
+        .id(locale.identifier)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
@@ -43,7 +44,7 @@ struct ProfileView: View {
             LazyVStack(alignment: .leading, spacing: 20) {
                 ForEach(timelineSections) { section in
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(title(for: section.bucket))
+                        title(for: section.bucket)
                             .font(.title3.weight(.semibold))
                             .fontDesign(.rounded)
                             .foregroundStyle(UITheme.primaryText)
@@ -119,18 +120,18 @@ struct ProfileView: View {
         return .month(year: comps.year ?? 0, month: comps.month ?? 1)
     }
 
-    private func title(for bucket: TimelineBucket) -> String {
+    private func title(for bucket: TimelineBucket) -> Text {
         switch bucket {
         case .today:
-            return String(localized: "profile.section.today")
+            return Text("profile.section.today")
         case .yesterday:
-            return String(localized: "profile.section.yesterday")
+            return Text("profile.section.yesterday")
         case .lastWeek:
-            return String(localized: "profile.section.pastWeek")
+            return Text("profile.section.pastWeek")
         case .lastMonth:
-            return String(localized: "profile.section.pastMonth")
+            return Text("profile.section.pastMonth")
         case let .month(year, month):
-            return monthTitle(year: year, month: month)
+            return Text(verbatim: monthTitle(year: year, month: month))
         }
     }
 
@@ -210,6 +211,7 @@ private struct TimelineSection: Identifiable {
 
 private struct GlimmerListRow: View {
     let glimmer: Glimmer
+    @Environment(\.locale) private var locale
 
     var body: some View {
         content
@@ -225,7 +227,7 @@ private struct GlimmerListRow: View {
                 Image(systemName: "clock.fill")
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(UITheme.tertiaryText)
-                Text(glimmer.createdAt, format: .relative(presentation: .named))
+                Text(glimmer.createdAt, format: .relative(presentation: .named).locale(locale))
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(UITheme.tertiaryText)
                 Spacer()

@@ -277,6 +277,7 @@ struct StarSeaView: View {
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 10)
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
                                     .background(
                                         selectedSoulerId == resonance.soulerId ? .white.opacity(0.15) : .clear,
                                         in: .rect(cornerRadius: 12)
