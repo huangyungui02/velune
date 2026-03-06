@@ -22,6 +22,8 @@ struct StarSeaView: View {
     @State private var stage: StarSeaStage = .verse
     @State private var resonances: [Resonance] = []
     @State private var isLoadingResonances = false
+    @State private var hasMoreResonances = true
+    @State private var resonanceOffset = 0
     @State private var resonanceMenuError: String?
     @State private var manager = MatchingManager.shared
     @State private var showError = false
@@ -31,6 +33,7 @@ struct StarSeaView: View {
     @State private var sidebarDragOffset: CGFloat = 0
 
     private let sidebarWidth: CGFloat = 320
+    private let resonancePageSize = 20
 
     var body: some View {
         ZStack(alignment: .leading) {
@@ -297,6 +300,24 @@ struct StarSeaView: View {
                                 }
                                 .buttonStyle(.plain)
                             }
+
+                            if isLoadingResonances {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                    Text("common.loading")
+                                        .font(.footnote)
+                                        .foregroundStyle(UITheme.secondaryText)
+                                }
+                                .padding(.top, 8)
+                            } else if hasMoreResonances {
+                                Color.clear
+                                    .frame(height: 1)
+                                    .onAppear {
+                                        Task {
+                                            await loadMoreResonancesForMenu()
+                                        }
+                                    }
+                            }
                         }
                     }
                 }
@@ -447,11 +468,34 @@ struct StarSeaView: View {
         defer { isLoadingResonances = false }
 
         do {
-            resonances = try await Resonance.getPage(limit: 20, offset: 0)
+            let page = try await Resonance.getPage(limit: resonancePageSize, offset: 0)
+            resonances = page
+            resonanceOffset = page.count
+            hasMoreResonances = page.count == resonancePageSize
             resonanceMenuError = nil
         } catch {
             resonanceMenuError = error.localizedDescription
             resonances = []
+            resonanceOffset = 0
+            hasMoreResonances = true
+        }
+    }
+
+    @MainActor
+    private func loadMoreResonancesForMenu() async {
+        guard !isLoadingResonances, hasMoreResonances else { return }
+
+        isLoadingResonances = true
+        defer { isLoadingResonances = false }
+
+        do {
+            let page = try await Resonance.getPage(limit: resonancePageSize, offset: resonanceOffset)
+            resonances.append(contentsOf: page)
+            resonanceOffset += page.count
+            hasMoreResonances = page.count == resonancePageSize
+            resonanceMenuError = nil
+        } catch {
+            resonanceMenuError = error.localizedDescription
         }
     }
 
