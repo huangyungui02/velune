@@ -11,8 +11,7 @@ struct StarSeaView: View {
     @Environment(\.modelContext) private var context
     @State private var text = ""
     @State private var isPresented = false
-    @State private var isSidebarPresented = false
-    @State private var activeSession: ChatSession?
+    @State private var sidebarNavigation = StarSeaSidebarNavigationState()
     @State private var stage: StarSeaStage = .verse
     @State private var manager = MatchingManager.shared
     @State private var showError = false
@@ -23,8 +22,7 @@ struct StarSeaView: View {
 
     var body: some View {
         StarSeaSidebarContainer(
-            isSidebarPresented: $isSidebarPresented,
-            activeSession: $activeSession,
+            sidebarNavigation: $sidebarNavigation,
             onOpenGlimmerComposer: openGlimmerComposerFromSidebar
         ) {
             NavigationStack {
@@ -33,7 +31,7 @@ struct StarSeaView: View {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
                                 withAnimation(.easeInOut(duration: 0.22)) {
-                                    isSidebarPresented.toggle()
+                                    sidebarNavigation.isSidebarPresented.toggle()
                                 }
                             } label: {
                                 Image(systemName: "line.3.horizontal")
@@ -116,7 +114,7 @@ struct StarSeaView: View {
         .onChange(of: isShowingProfile) { _, isShowing in
             if isShowing {
                 withAnimation(.easeInOut(duration: 0.2)) {
-                    isSidebarPresented = false
+                    sidebarNavigation.isSidebarPresented = false
                 }
             }
         }
@@ -135,7 +133,7 @@ struct StarSeaView: View {
 
     @ViewBuilder
     private var mainContent: some View {
-        if activeSession == nil {
+        if sidebarNavigation.activeSession == nil {
             ZStack {
                 StarryBackgroundView()
 
@@ -153,20 +151,20 @@ struct StarSeaView: View {
                     }
                 }
             }
-        } else if let session = activeSession {
+        } else if let session = sidebarNavigation.activeSession {
             ChatView(
                 sessionId: session.id,
                 soulerId: session.soulerId,
                 soulerName: session.soulerName,
                 onSelectSession: { selectedSession in
-                    activeSession = selectedSession
+                    sidebarNavigation.activeSession = selectedSession
                 }
             )
         }
     }
 
     private var isStarSeaDestination: Bool {
-        activeSession == nil
+        sidebarNavigation.isStarSeaDestination
     }
 
     private var echoes: [Echo] {
@@ -272,7 +270,7 @@ struct StarSeaView: View {
     }
 
     private func openGlimmerComposerFromSidebar() {
-        activeSession = nil
+        sidebarNavigation.activeSession = nil
         isPresented = true
     }
 }

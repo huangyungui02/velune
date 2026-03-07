@@ -1,8 +1,20 @@
 import SwiftUI
 
+struct StarSeaSidebarNavigationState {
+    var isSidebarPresented = false
+    var activeSession: ChatSession?
+
+    var selectedSoulerId: UUID? {
+        activeSession?.soulerId
+    }
+
+    var isStarSeaDestination: Bool {
+        activeSession == nil
+    }
+}
+
 struct StarSeaSidebarContainer<Content: View>: View {
-    @Binding var isSidebarPresented: Bool
-    @Binding var activeSession: ChatSession?
+    @Binding var sidebarNavigation: StarSeaSidebarNavigationState
     let sidebarWidth: CGFloat
     let onOpenGlimmerComposer: () -> Void
     let content: Content
@@ -10,14 +22,12 @@ struct StarSeaSidebarContainer<Content: View>: View {
     @State private var sidebarDragOffset: CGFloat = 0
 
     init(
-        isSidebarPresented: Binding<Bool>,
-        activeSession: Binding<ChatSession?>,
+        sidebarNavigation: Binding<StarSeaSidebarNavigationState>,
         sidebarWidth: CGFloat = 320,
         onOpenGlimmerComposer: @escaping () -> Void,
         @ViewBuilder content: () -> Content
     ) {
-        _isSidebarPresented = isSidebarPresented
-        _activeSession = activeSession
+        _sidebarNavigation = sidebarNavigation
         self.sidebarWidth = sidebarWidth
         self.onOpenGlimmerComposer = onOpenGlimmerComposer
         self.content = content()
@@ -38,14 +48,14 @@ struct StarSeaSidebarContainer<Content: View>: View {
             }
 
             StarSeaSidebarView(
-                selectedSoulerId: activeSession?.soulerId,
+                selectedSoulerId: sidebarNavigation.selectedSoulerId,
                 sidebarWidth: sidebarWidth,
                 onOpenSession: { session in
-                    activeSession = session
+                    sidebarNavigation.activeSession = session
                     closeSidebar()
                 },
                 onTapStarSea: {
-                    activeSession = nil
+                    sidebarNavigation.activeSession = nil
                     closeSidebar()
                 },
                 onOpenGlimmerComposer: {
@@ -56,12 +66,12 @@ struct StarSeaSidebarContainer<Content: View>: View {
             .offset(x: sidebarOpenOffset - sidebarWidth)
         }
         .simultaneousGesture(sidebarGesture)
-        .animation(.easeInOut(duration: 0.22), value: isSidebarPresented)
+        .animation(.easeInOut(duration: 0.22), value: sidebarNavigation.isSidebarPresented)
         .animation(.interactiveSpring(response: 0.22, dampingFraction: 0.9), value: sidebarDragOffset)
     }
 
     private var sidebarOpenOffset: CGFloat {
-        let base = isSidebarPresented ? sidebarWidth : 0
+        let base = sidebarNavigation.isSidebarPresented ? sidebarWidth : 0
         return min(max(base + sidebarDragOffset, 0), sidebarWidth)
     }
 
@@ -73,11 +83,11 @@ struct StarSeaSidebarContainer<Content: View>: View {
     private var sidebarGesture: some Gesture {
         DragGesture(minimumDistance: 10, coordinateSpace: .global)
             .onChanged { value in
-                guard isSidebarPresented else { return }
+                guard sidebarNavigation.isSidebarPresented else { return }
                 sidebarDragOffset = min(0, value.translation.width)
             }
             .onEnded { value in
-                guard isSidebarPresented else {
+                guard sidebarNavigation.isSidebarPresented else {
                     sidebarDragOffset = 0
                     return
                 }
@@ -86,7 +96,7 @@ struct StarSeaSidebarContainer<Content: View>: View {
                 let shouldOpen = predicted > sidebarWidth * 0.45
 
                 withAnimation(.easeInOut(duration: 0.22)) {
-                    isSidebarPresented = shouldOpen
+                    sidebarNavigation.isSidebarPresented = shouldOpen
                 }
                 sidebarDragOffset = 0
             }
@@ -94,7 +104,7 @@ struct StarSeaSidebarContainer<Content: View>: View {
 
     private func closeSidebar() {
         withAnimation(.easeInOut(duration: 0.2)) {
-            isSidebarPresented = false
+            sidebarNavigation.isSidebarPresented = false
         }
     }
 }
