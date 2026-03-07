@@ -297,13 +297,10 @@ extension StarSeaView {
                 echoes: echoes,
                 currentPage: $currentPage,
                 autoSwitchToFirstEcho: true
-            ) { maxCardHeight in
-                GlimmerCardView(content: manager.text, maxCardHeight: maxCardHeight)
-            } echoCard: { echo, maxCardHeight in
-                EchoCardView(
-                    echo: echo,
-                    maxCardHeight: maxCardHeight
-                )
+            ) {
+                GlimmerCardView(content: manager.text)
+            } echoCard: { echo in
+                EchoCardView(echo: echo)
             }
             .frame(maxHeight: .infinity, alignment: .top)
             .padding(.vertical)

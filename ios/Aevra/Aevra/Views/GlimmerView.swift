@@ -138,17 +138,13 @@ struct GlimmerView: View {
             echoes: echoes,
             currentPage: $currentPage,
             autoSwitchToFirstEcho: false
-        ) { maxCardHeight in
+        ) {
             GlimmerCardView(
                 content: glimmer.content,
-                createdAt: glimmer.createdAt,
-                maxCardHeight: maxCardHeight
+                createdAt: glimmer.createdAt
             )
-        } echoCard: { echo, maxCardHeight in
-            EchoCardView(
-                echo: echo,
-                maxCardHeight: maxCardHeight
-            )
+        } echoCard: { echo in
+            EchoCardView(echo: echo)
         }
     }
 

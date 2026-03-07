@@ -3,16 +3,14 @@ import SwiftUI
 struct GlimmerCardView: View {
     let content: String
     let createdAt: Date?
-    let maxCardHeight: CGFloat?
 
-    init(content: String, createdAt: Date? = nil, maxCardHeight: CGFloat? = nil) {
+    init(content: String, createdAt: Date? = nil) {
         self.content = content
         self.createdAt = createdAt
-        self.maxCardHeight = maxCardHeight
     }
 
     var body: some View {
-        PremiumCardView(iconName: "sparkles", maxCardHeight: maxCardHeight) {
+        PremiumCardView(iconName: "sparkles") {
             VStack(spacing: 16) {
                 Text(content)
                     .font(.body)

@@ -3,7 +3,6 @@ import SwiftUI
 struct PremiumCardView<Content: View>: View {
     private let iconName: String
     private let content: Content
-    private let maxCardHeight: CGFloat?
     private let followBottomOnContentGrowth: Bool
 
     @State private var contentHeight: CGFloat = 0
@@ -11,35 +10,50 @@ struct PremiumCardView<Content: View>: View {
 
     init(
         iconName: String,
-        maxCardHeight: CGFloat? = nil,
         followBottomOnContentGrowth: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
         self.iconName = iconName
-        self.maxCardHeight = maxCardHeight
         self.followBottomOnContentGrowth = followBottomOnContentGrowth
         self.content = content()
     }
 
     var body: some View {
-        scrollableContent
-            .padding(.vertical)
-            .frame(maxWidth: .infinity)
-            .background(Color.clear, in: .rect(cornerRadius: 28))
-            .overlay(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .stroke(
-                        LinearGradient(
-                            colors: [.white.opacity(0.30), .white.opacity(0.10)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
+        GeometryReader { proxy in
+            let cap = maxContentHeight(for: proxy.size.height)
+            let isScrollable = contentHeight > cap
+            let cardHeight = isScrollable ? cap : (contentHeight == 0 ? nil : contentHeight)
+
+            VStack(spacing: 0) {
+                if !isScrollable {
+                    Spacer(minLength: 0)
+                }
+
+                scrollableContent(maxCardHeight: cap, isScrollable: isScrollable)
+                    .frame(height: cardHeight, alignment: .top)
+                    .padding(.vertical)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.clear, in: .rect(cornerRadius: 28))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.30), .white.opacity(0.10)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
                     )
-            )
-            .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 14)
-            .glassEffect(in: .rect(cornerRadius: 28))
-            .padding(.horizontal)
+                    .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 14)
+                    .glassEffect(in: .rect(cornerRadius: 28))
+                    .padding(.horizontal)
+
+                if !isScrollable {
+                    Spacer(minLength: 0)
+                }
+            }
+        }
     }
 
     private var headerView: some View {
@@ -51,9 +65,7 @@ struct PremiumCardView<Content: View>: View {
             .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1))
     }
 
-    private var scrollableContent: some View {
-        let cap = maxContentHeight
-
+    private func scrollableContent(maxCardHeight: CGFloat, isScrollable: Bool) -> some View {
         return ScrollViewReader { proxy in
             ScrollView {
                 VStack {
@@ -77,8 +89,8 @@ struct PremiumCardView<Content: View>: View {
                     }
                 )
             }
-            .scrollDisabled(contentHeight <= cap)
-            .frame(height: contentHeight == 0 ? nil : min(contentHeight, cap), alignment: .top)
+            .scrollDisabled(!isScrollable)
+            .frame(maxHeight: maxCardHeight, alignment: .top)
             .onPreferenceChange(ContentHeightKey.self) { newValue in
                 let shouldFollow = followBottomOnContentGrowth && newValue > contentHeight
                 if contentHeight != newValue {
@@ -94,8 +106,8 @@ struct PremiumCardView<Content: View>: View {
         }
     }
 
-    private var maxContentHeight: CGFloat {
-        guard let maxCardHeight else { return .infinity }
+    private func maxContentHeight(for maxCardHeight: CGFloat) -> CGFloat {
+        guard maxCardHeight > 0 else { return .infinity }
         return max(0, maxCardHeight - 40)
     }
 }

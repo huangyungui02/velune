@@ -16,20 +16,14 @@ struct EchoChatRoute: Identifiable, Hashable {
 
 struct EchoCardView: View {
     let echo: Echo
-    let maxCardHeight: CGFloat?
 
-    init(
-        echo: Echo,
-        maxCardHeight: CGFloat? = nil
-    ) {
+    init(echo: Echo) {
         self.echo = echo
-        self.maxCardHeight = maxCardHeight
     }
 
     var body: some View {
         PremiumCardView(
-            iconName: "circle.circle",
-            maxCardHeight: maxCardHeight
+            iconName: "circle.circle"
         ) {
             VStack(alignment: .leading, spacing: 16) {
                 Markdown(echo.content)
