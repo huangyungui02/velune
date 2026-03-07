@@ -38,50 +38,8 @@ struct StarSeaView: View {
                             }
                             .accessibilityLabel(Text("starsea.action.resonances"))
                         }
-
-                        if isStarSeaDestination {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button {
-                                    isShowingProfile = true
-                                } label: {
-                                    Image(systemName: "house.fill")
-                                }
-                            }
-
-                            if stage == .matching {
-                                if manager.isMatching && !hasEchoes {
-                                    ToolbarItem(placement: .status) {
-                                        listeningToolbarChip
-                                    }
-                                } else {
-                                    if hasEchoes {
-                                        ToolbarItem(placement: .bottomBar) {
-                                            if shouldShowWaveButton {
-                                                liquidSplitWaveIcon
-                                            } else if shouldShowArchiveButton {
-                                                archiveButton
-                                            }
-                                        }
-
-                                        ToolbarItem(placement: .bottomBar) {
-                                            Spacer()
-                                        }
-
-                                        ToolbarItem(placement: .bottomBar) {
-                                            if shouldShowChatButton {
-                                                chatButton
-                                            }
-                                        }
-                                    }
-
-                                    if hasEchoes {
-                                        ToolbarItem(placement: .status) {
-                                            CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        profileToolbarItem
+                        matchingToolbarContent
                     }
                     .navigationBarTitleDisplayMode(.inline)
                     .navigationDestination(item: $chatRoute) { route in
@@ -133,7 +91,16 @@ struct StarSeaView: View {
 
     @ViewBuilder
     private var mainContent: some View {
-        if sidebarNavigation.activeSession == nil {
+        if let session = sidebarNavigation.activeSession {
+            ChatView(
+                sessionId: session.id,
+                soulerId: session.soulerId,
+                soulerName: session.soulerName,
+                onSelectSession: { selectedSession in
+                    sidebarNavigation.activeSession = selectedSession
+                }
+            )
+        } else {
             ZStack {
                 StarryBackgroundView()
 
@@ -151,15 +118,6 @@ struct StarSeaView: View {
                     }
                 }
             }
-        } else if let session = sidebarNavigation.activeSession {
-            ChatView(
-                sessionId: session.id,
-                soulerId: session.soulerId,
-                soulerName: session.soulerName,
-                onSelectSession: { selectedSession in
-                    sidebarNavigation.activeSession = selectedSession
-                }
-            )
         }
     }
 
@@ -176,7 +134,7 @@ struct StarSeaView: View {
         !echoes.isEmpty
     }
 
-    private var shouldShowArchiveButton: Bool {
+    private var shouldShowCloseButton: Bool {
         stage == .matching && !manager.isMatching && manager.currentGlimmer?.status == "complete"
     }
 
@@ -196,6 +154,61 @@ struct StarSeaView: View {
 
     private var shouldShowChatButton: Bool {
         stage == .matching && activeEchoChatRoute != nil
+    }
+
+    private var shouldShowMatchingToolbar: Bool {
+        isStarSeaDestination && stage == .matching
+    }
+
+    private var shouldShowListeningChip: Bool {
+        shouldShowMatchingToolbar && manager.isMatching && !hasEchoes
+    }
+
+    @ToolbarContentBuilder
+    private var profileToolbarItem: some ToolbarContent {
+        if isStarSeaDestination {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    isShowingProfile = true
+                } label: {
+                    Image(systemName: "house.fill")
+                }
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var matchingToolbarContent: some ToolbarContent {
+        if shouldShowMatchingToolbar {
+            if shouldShowListeningChip {
+                ToolbarItem(placement: .status) {
+                    listeningToolbarChip
+                }
+            } else if hasEchoes {
+                ToolbarItem(placement: .bottomBar) {
+                    if shouldShowWaveButton {
+                        MatchingWaveIcon()
+                            .frame(width: 24, height: 24)
+                    } else if shouldShowCloseButton {
+                        closeButton
+                    }
+                }
+
+                ToolbarItem(placement: .bottomBar) {
+                    Spacer()
+                }
+
+                ToolbarItem(placement: .bottomBar) {
+                    if shouldShowChatButton {
+                        chatButton
+                    }
+                }
+
+                ToolbarItem(placement: .status) {
+                    CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
+                }
+            }
+        }
     }
 
     private var magicButtonView: some View {
@@ -255,23 +268,25 @@ struct StarSeaView: View {
         stage = .matching
     }
 
-    private func archiveCurrentGlimmer() {
-        guard shouldShowArchiveButton else { return }
-        manager.reset()
-        currentPage = .glimmer
-        stage = .verse
+    private func closeCurrentGlimmer() {
+        guard shouldShowCloseButton else { return }
+        resetToVerse()
     }
 
     private func recoverToVerseAfterError() {
-        manager.reset()
-        stage = .verse
-        currentPage = .glimmer
+        resetToVerse()
         shouldRecoverToVerseAfterError = false
     }
 
     private func openGlimmerComposerFromSidebar() {
         sidebarNavigation.activeSession = nil
         isPresented = true
+    }
+
+    private func resetToVerse() {
+        manager.reset()
+        stage = .verse
+        currentPage = .glimmer
     }
 }
 
@@ -310,22 +325,13 @@ extension StarSeaView {
         .fixedSize(horizontal: true, vertical: false)
     }
 
-    private var liquidSplitWaveIcon: some View {
-        MatchingWaveIcon()
-            .frame(width: 24, height: 24)
-    }
-
-    private var archiveButton: some View {
-        Button(action: archiveCurrentGlimmer) {
-            archiveChip
+    private var closeButton: some View {
+        Button(action: closeCurrentGlimmer) {
+            Image(systemName: "xmark")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(UITheme.primaryText)
         }
         .buttonStyle(.plain)
-    }
-
-    private var archiveChip: some View {
-        Image(systemName: "xmark")
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(UITheme.primaryText)
     }
 
     private var chatButton: some View {
