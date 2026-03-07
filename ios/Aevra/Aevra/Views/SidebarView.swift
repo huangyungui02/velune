@@ -1,19 +1,20 @@
 import SwiftUI
 
 struct StarSeaSidebarView: View {
-    let resonances: [Resonance]
-    let isLoadingResonances: Bool
-    let hasMoreResonances: Bool
-    let resonanceMenuError: String?
+    @Environment(\.locale) private var locale
     let selectedSoulerId: UUID?
-    let locale: Locale
     let sidebarWidth: CGFloat
-    @Binding var resonanceSearchText: String
-    let onRetry: () async -> Void
-    let onLoadMore: () async -> Void
-    let onSelectResonance: (Resonance) async -> Void
+    let onOpenSession: (ChatSession) -> Void
     let onTapStarSea: () -> Void
     let onOpenGlimmerComposer: () -> Void
+    @State private var resonances: [Resonance] = []
+    @State private var isLoadingResonances = false
+    @State private var hasMoreResonances = true
+    @State private var resonanceOffset = 0
+    @State private var resonanceMenuError: String?
+    @State private var resonanceSearchText = ""
+
+    private let resonancePageSize = 20
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -26,7 +27,7 @@ struct StarSeaSidebarView: View {
 
                         Button("common.retry") {
                             Task {
-                                await onRetry()
+                                await loadResonances()
                             }
                         }
                         .buttonStyle(.borderedProminent)
@@ -61,7 +62,7 @@ struct StarSeaSidebarView: View {
                             ForEach(displayedResonances) { resonance in
                                 Button {
                                     Task {
-                                        await onSelectResonance(resonance)
+                                        await openLatestSession(for: resonance)
                                     }
                                 } label: {
                                     HStack(spacing: 8) {
@@ -108,7 +109,7 @@ struct StarSeaSidebarView: View {
                                     .frame(height: 1)
                                     .onAppear {
                                         Task {
-                                            await onLoadMore()
+                                            await loadMoreResonances()
                                         }
                                     }
                             }
@@ -126,6 +127,9 @@ struct StarSeaSidebarView: View {
         .frame(width: sidebarWidth, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(.ultraThinMaterial)
+        .task {
+            await loadResonances()
+        }
     }
 
     private var hasActiveResonanceSearch: Bool {
@@ -197,5 +201,59 @@ struct StarSeaSidebarView: View {
         }
         .padding(.horizontal, 2)
         .shadow(color: .black.opacity(0.12), radius: 14, y: 6)
+    }
+
+    @MainActor
+    private func loadResonances() async {
+        if isLoadingResonances { return }
+
+        isLoadingResonances = true
+        defer { isLoadingResonances = false }
+
+        do {
+            let page = try await Resonance.getPage(limit: resonancePageSize, offset: 0)
+            resonances = page
+            resonanceOffset = page.count
+            hasMoreResonances = page.count == resonancePageSize
+            resonanceMenuError = nil
+        } catch {
+            resonanceMenuError = error.localizedDescription
+            resonances = []
+            resonanceOffset = 0
+            hasMoreResonances = true
+        }
+    }
+
+    @MainActor
+    private func loadMoreResonances() async {
+        guard !isLoadingResonances, hasMoreResonances else { return }
+
+        isLoadingResonances = true
+        defer { isLoadingResonances = false }
+
+        do {
+            let page = try await Resonance.getPage(limit: resonancePageSize, offset: resonanceOffset)
+            resonances.append(contentsOf: page)
+            resonanceOffset += page.count
+            hasMoreResonances = page.count == resonancePageSize
+            resonanceMenuError = nil
+        } catch {
+            resonanceMenuError = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func openLatestSession(for resonance: Resonance) async {
+        do {
+            guard let session = try await ChatSession.getLatest(soulerId: resonance.soulerId) else {
+                resonanceMenuError = String(localized: "resonance.empty")
+                return
+            }
+
+            resonanceMenuError = nil
+            onOpenSession(session)
+        } catch {
+            resonanceMenuError = error.localizedDescription
+        }
     }
 }
