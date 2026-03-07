@@ -24,13 +24,20 @@ struct StarSeaView: View {
     @State private var shouldRecoverToVerseAfterError = false
     @State private var currentPage: CardID? = .glimmer
     @State private var chatRoute: EchoChatRoute?
-    @State private var sidebarDragOffset: CGFloat = 0
     @State private var isShowingProfile = false
 
-    private let sidebarWidth: CGFloat = 320
-
     var body: some View {
-        ZStack(alignment: .leading) {
+        StarSeaSidebarContainer(
+            isSidebarPresented: $isSidebarPresented,
+            selectedSoulerId: selectedSoulerId,
+            onOpenSession: { session in
+                destination = .chat(session)
+            },
+            onTapStarSea: {
+                destination = .starsea
+            },
+            onOpenGlimmerComposer: openGlimmerComposerFromSidebar
+        ) {
             NavigationStack {
                 mainContent
                     .toolbar {
@@ -102,41 +109,7 @@ struct StarSeaView: View {
                         ProfileView()
                     }
             }
-            .offset(x: sidebarOpenOffset)
-            .disabled(sidebarProgress > 0.01)
-
-            if sidebarProgress > 0.001 {
-                Color.black.opacity(0.3 * sidebarProgress)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isSidebarPresented = false
-                        }
-                    }
-            }
-
-            StarSeaSidebarView(
-                selectedSoulerId: selectedSoulerId,
-                sidebarWidth: sidebarWidth,
-                onOpenSession: { session in
-                    destination = .chat(session)
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isSidebarPresented = false
-                    }
-                },
-                onTapStarSea: {
-                    destination = .starsea
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isSidebarPresented = false
-                    }
-                },
-                onOpenGlimmerComposer: openGlimmerComposerFromSidebar
-            )
-                .offset(x: sidebarOpenOffset - sidebarWidth)
         }
-        .simultaneousGesture(sidebarGesture)
-        .animation(.easeInOut(duration: 0.22), value: isSidebarPresented)
-        .animation(.interactiveSpring(response: 0.22, dampingFraction: 0.9), value: sidebarDragOffset)
         .fullScreenCover(isPresented: $isPresented) {
             ComposeView(text: $text, onSend: send)
         }
@@ -209,38 +182,6 @@ struct StarSeaView: View {
             return true
         }
         return false
-    }
-
-    private var sidebarOpenOffset: CGFloat {
-        let base = isSidebarPresented ? sidebarWidth : 0
-        return min(max(base + sidebarDragOffset, 0), sidebarWidth)
-    }
-
-    private var sidebarProgress: CGFloat {
-        guard sidebarWidth > 0 else { return 0 }
-        return sidebarOpenOffset / sidebarWidth
-    }
-
-    private var sidebarGesture: some Gesture {
-        DragGesture(minimumDistance: 10, coordinateSpace: .global)
-            .onChanged { value in
-                guard isSidebarPresented else { return }
-                sidebarDragOffset = min(0, value.translation.width)
-            }
-            .onEnded { value in
-                guard isSidebarPresented else {
-                    sidebarDragOffset = 0
-                    return
-                }
-
-                let predicted = sidebarWidth + value.predictedEndTranslation.width
-                let shouldOpen = predicted > sidebarWidth * 0.45
-
-                withAnimation(.easeInOut(duration: 0.22)) {
-                    isSidebarPresented = shouldOpen
-                }
-                sidebarDragOffset = 0
-            }
     }
 
     private var selectedSoulerId: UUID? {
@@ -354,9 +295,6 @@ struct StarSeaView: View {
 
     private func openGlimmerComposerFromSidebar() {
         destination = .starsea
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isSidebarPresented = false
-        }
         isPresented = true
     }
 }

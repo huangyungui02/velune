@@ -1,5 +1,110 @@
 import SwiftUI
 
+struct StarSeaSidebarContainer<Content: View>: View {
+    @Binding var isSidebarPresented: Bool
+    let selectedSoulerId: UUID?
+    let sidebarWidth: CGFloat
+    let onOpenSession: (ChatSession) -> Void
+    let onTapStarSea: () -> Void
+    let onOpenGlimmerComposer: () -> Void
+    let content: Content
+
+    @State private var sidebarDragOffset: CGFloat = 0
+
+    init(
+        isSidebarPresented: Binding<Bool>,
+        selectedSoulerId: UUID?,
+        sidebarWidth: CGFloat = 320,
+        onOpenSession: @escaping (ChatSession) -> Void,
+        onTapStarSea: @escaping () -> Void,
+        onOpenGlimmerComposer: @escaping () -> Void,
+        @ViewBuilder content: () -> Content
+    ) {
+        _isSidebarPresented = isSidebarPresented
+        self.selectedSoulerId = selectedSoulerId
+        self.sidebarWidth = sidebarWidth
+        self.onOpenSession = onOpenSession
+        self.onTapStarSea = onTapStarSea
+        self.onOpenGlimmerComposer = onOpenGlimmerComposer
+        self.content = content()
+    }
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            content
+                .offset(x: sidebarOpenOffset)
+                .disabled(sidebarProgress > 0.01)
+
+            if sidebarProgress > 0.001 {
+                Color.black.opacity(0.3 * sidebarProgress)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        closeSidebar()
+                    }
+            }
+
+            StarSeaSidebarView(
+                selectedSoulerId: selectedSoulerId,
+                sidebarWidth: sidebarWidth,
+                onOpenSession: { session in
+                    onOpenSession(session)
+                    closeSidebar()
+                },
+                onTapStarSea: {
+                    onTapStarSea()
+                    closeSidebar()
+                },
+                onOpenGlimmerComposer: {
+                    onOpenGlimmerComposer()
+                    closeSidebar()
+                }
+            )
+            .offset(x: sidebarOpenOffset - sidebarWidth)
+        }
+        .simultaneousGesture(sidebarGesture)
+        .animation(.easeInOut(duration: 0.22), value: isSidebarPresented)
+        .animation(.interactiveSpring(response: 0.22, dampingFraction: 0.9), value: sidebarDragOffset)
+    }
+
+    private var sidebarOpenOffset: CGFloat {
+        let base = isSidebarPresented ? sidebarWidth : 0
+        return min(max(base + sidebarDragOffset, 0), sidebarWidth)
+    }
+
+    private var sidebarProgress: CGFloat {
+        guard sidebarWidth > 0 else { return 0 }
+        return sidebarOpenOffset / sidebarWidth
+    }
+
+    private var sidebarGesture: some Gesture {
+        DragGesture(minimumDistance: 10, coordinateSpace: .global)
+            .onChanged { value in
+                guard isSidebarPresented else { return }
+                sidebarDragOffset = min(0, value.translation.width)
+            }
+            .onEnded { value in
+                guard isSidebarPresented else {
+                    sidebarDragOffset = 0
+                    return
+                }
+
+                let predicted = sidebarWidth + value.predictedEndTranslation.width
+                let shouldOpen = predicted > sidebarWidth * 0.45
+
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    isSidebarPresented = shouldOpen
+                }
+                sidebarDragOffset = 0
+            }
+    }
+
+    private func closeSidebar() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isSidebarPresented = false
+        }
+    }
+}
+
 struct StarSeaSidebarView: View {
     @Environment(\.locale) private var locale
     let selectedSoulerId: UUID?
