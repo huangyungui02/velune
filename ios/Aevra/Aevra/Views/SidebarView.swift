@@ -2,10 +2,8 @@ import SwiftUI
 
 struct StarSeaSidebarContainer<Content: View>: View {
     @Binding var isSidebarPresented: Bool
-    let selectedSoulerId: UUID?
+    @Binding var activeSession: ChatSession?
     let sidebarWidth: CGFloat
-    let onOpenSession: (ChatSession) -> Void
-    let onTapStarSea: () -> Void
     let onOpenGlimmerComposer: () -> Void
     let content: Content
 
@@ -13,18 +11,14 @@ struct StarSeaSidebarContainer<Content: View>: View {
 
     init(
         isSidebarPresented: Binding<Bool>,
-        selectedSoulerId: UUID?,
+        activeSession: Binding<ChatSession?>,
         sidebarWidth: CGFloat = 320,
-        onOpenSession: @escaping (ChatSession) -> Void,
-        onTapStarSea: @escaping () -> Void,
         onOpenGlimmerComposer: @escaping () -> Void,
         @ViewBuilder content: () -> Content
     ) {
         _isSidebarPresented = isSidebarPresented
-        self.selectedSoulerId = selectedSoulerId
+        _activeSession = activeSession
         self.sidebarWidth = sidebarWidth
-        self.onOpenSession = onOpenSession
-        self.onTapStarSea = onTapStarSea
         self.onOpenGlimmerComposer = onOpenGlimmerComposer
         self.content = content()
     }
@@ -44,14 +38,14 @@ struct StarSeaSidebarContainer<Content: View>: View {
             }
 
             StarSeaSidebarView(
-                selectedSoulerId: selectedSoulerId,
+                selectedSoulerId: activeSession?.soulerId,
                 sidebarWidth: sidebarWidth,
                 onOpenSession: { session in
-                    onOpenSession(session)
+                    activeSession = session
                     closeSidebar()
                 },
                 onTapStarSea: {
-                    onTapStarSea()
+                    activeSession = nil
                     closeSidebar()
                 },
                 onOpenGlimmerComposer: {

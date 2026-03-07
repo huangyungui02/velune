@@ -8,16 +8,11 @@ struct StarSeaView: View {
         case matching
     }
 
-    private enum Destination: Equatable {
-        case starsea
-        case chat(ChatSession)
-    }
-
     @Environment(\.modelContext) private var context
     @State private var text = ""
     @State private var isPresented = false
     @State private var isSidebarPresented = false
-    @State private var destination: Destination = .starsea
+    @State private var activeSession: ChatSession?
     @State private var stage: StarSeaStage = .verse
     @State private var manager = MatchingManager.shared
     @State private var showError = false
@@ -29,13 +24,7 @@ struct StarSeaView: View {
     var body: some View {
         StarSeaSidebarContainer(
             isSidebarPresented: $isSidebarPresented,
-            selectedSoulerId: selectedSoulerId,
-            onOpenSession: { session in
-                destination = .chat(session)
-            },
-            onTapStarSea: {
-                destination = .starsea
-            },
+            activeSession: $activeSession,
             onOpenGlimmerComposer: openGlimmerComposerFromSidebar
         ) {
             NavigationStack {
@@ -146,8 +135,7 @@ struct StarSeaView: View {
 
     @ViewBuilder
     private var mainContent: some View {
-        switch destination {
-        case .starsea:
+        if activeSession == nil {
             ZStack {
                 StarryBackgroundView()
 
@@ -165,30 +153,20 @@ struct StarSeaView: View {
                     }
                 }
             }
-        case let .chat(session):
+        } else if let session = activeSession {
             ChatView(
                 sessionId: session.id,
                 soulerId: session.soulerId,
                 soulerName: session.soulerName,
                 onSelectSession: { selectedSession in
-                    destination = .chat(selectedSession)
+                    activeSession = selectedSession
                 }
             )
         }
     }
 
     private var isStarSeaDestination: Bool {
-        if case .starsea = destination {
-            return true
-        }
-        return false
-    }
-
-    private var selectedSoulerId: UUID? {
-        if case let .chat(session) = destination {
-            return session.soulerId
-        }
-        return nil
+        activeSession == nil
     }
 
     private var echoes: [Echo] {
@@ -294,7 +272,7 @@ struct StarSeaView: View {
     }
 
     private func openGlimmerComposerFromSidebar() {
-        destination = .starsea
+        activeSession = nil
         isPresented = true
     }
 }
