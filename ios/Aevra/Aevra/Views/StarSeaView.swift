@@ -11,7 +11,7 @@ struct StarSeaView: View {
     @Environment(\.modelContext) private var context
     @State private var text = ""
     @State private var isPresented = false
-    @State private var sidebarNavigation = StarSeaSidebarNavigationState()
+    @State private var sidebarNavigation = SidebarNavigationState()
     @State private var stage: StarSeaStage = .verse
     @State private var manager = MatchingManager.shared
     @State private var showError = false
@@ -21,7 +21,7 @@ struct StarSeaView: View {
     @State private var isShowingProfile = false
 
     var body: some View {
-        StarSeaSidebarContainer(
+        SidebarContainer(
             sidebarNavigation: $sidebarNavigation,
             onOpenGlimmerComposer: openGlimmerComposerFromSidebar
         ) {

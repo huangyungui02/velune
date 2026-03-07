@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct StarSeaSidebarNavigationState {
+struct SidebarNavigationState {
     var isSidebarPresented = false
     var activeSession: ChatSession?
 
@@ -13,8 +13,8 @@ struct StarSeaSidebarNavigationState {
     }
 }
 
-struct StarSeaSidebarContainer<Content: View>: View {
-    @Binding var sidebarNavigation: StarSeaSidebarNavigationState
+struct SidebarContainer<Content: View>: View {
+    @Binding var sidebarNavigation: SidebarNavigationState
     let sidebarWidth: CGFloat
     let onOpenGlimmerComposer: () -> Void
     let content: Content
@@ -22,7 +22,7 @@ struct StarSeaSidebarContainer<Content: View>: View {
     @State private var sidebarDragOffset: CGFloat = 0
 
     init(
-        sidebarNavigation: Binding<StarSeaSidebarNavigationState>,
+        sidebarNavigation: Binding<SidebarNavigationState>,
         sidebarWidth: CGFloat = 320,
         onOpenGlimmerComposer: @escaping () -> Void,
         @ViewBuilder content: () -> Content
@@ -47,7 +47,7 @@ struct StarSeaSidebarContainer<Content: View>: View {
                     }
             }
 
-            StarSeaSidebarView(
+            SidebarView(
                 selectedSoulerId: sidebarNavigation.selectedSoulerId,
                 sidebarWidth: sidebarWidth,
                 onOpenSession: { session in
@@ -109,7 +109,7 @@ struct StarSeaSidebarContainer<Content: View>: View {
     }
 }
 
-struct StarSeaSidebarView: View {
+struct SidebarView: View {
     @Environment(\.locale) private var locale
     let selectedSoulerId: UUID?
     let sidebarWidth: CGFloat
