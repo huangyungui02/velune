@@ -127,6 +127,10 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            if !resonances.isEmpty {
+                sidebarTopToolbar
+            }
+
             Group {
                 if let resonanceMenuError {
                     VStack(alignment: .leading, spacing: 10) {
@@ -227,10 +231,6 @@ struct SidebarView: View {
                 }
             }
             .frame(maxHeight: .infinity, alignment: .top)
-
-            if !resonances.isEmpty {
-                sidebarFloatingToolbar
-            }
         }
         .padding(12)
         .frame(width: sidebarWidth, alignment: .topLeading)
@@ -279,7 +279,7 @@ struct SidebarView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 
-    private var sidebarFloatingToolbar: some View {
+    private var sidebarTopToolbar: some View {
         HStack(spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
