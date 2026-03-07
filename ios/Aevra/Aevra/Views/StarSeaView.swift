@@ -299,8 +299,6 @@ extension StarSeaView {
                 autoSwitchToFirstEcho: true
             ) {
                 GlimmerCardView(content: manager.text)
-            } echoCard: { echo in
-                EchoCardView(echo: echo)
             }
             .frame(maxHeight: .infinity, alignment: .top)
             .padding(.vertical)

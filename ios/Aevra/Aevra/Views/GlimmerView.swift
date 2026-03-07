@@ -143,8 +143,6 @@ struct GlimmerView: View {
                 content: glimmer.content,
                 createdAt: glimmer.createdAt
             )
-        } echoCard: { echo in
-            EchoCardView(echo: echo)
         }
     }
 

@@ -1,11 +1,10 @@
 import SwiftUI
 
-struct CardPagerView<GlimmerCard: View, EchoCard: View>: View {
+struct CardPagerView<GlimmerCard: View>: View {
     let echoes: [Echo]
     @Binding var currentPage: CardID?
     let autoSwitchToFirstEcho: Bool
     let glimmerCard: () -> GlimmerCard
-    let echoCard: (Echo) -> EchoCard
 
     private var hasEchoes: Bool {
         !echoes.isEmpty
@@ -19,7 +18,7 @@ struct CardPagerView<GlimmerCard: View, EchoCard: View>: View {
                     .id(CardID.glimmer)
 
                 ForEach(echoes) { echo in
-                    echoCard(echo)
+                    EchoCardView(echo: echo)
                         .containerRelativeFrame(.horizontal)
                         .id(CardID.echo(echo.id))
                 }
