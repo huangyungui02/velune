@@ -111,6 +111,7 @@ struct SidebarContainer<Content: View>: View {
 
 struct SidebarView: View {
     @Environment(\.locale) private var locale
+    @State private var authManager = AuthManager.shared
     let selectedSoulerId: UUID?
     let sidebarWidth: CGFloat
     let onOpenSession: (ChatSession) -> Void
@@ -127,117 +128,130 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if !resonances.isEmpty {
-                sidebarTopToolbar
-            }
+            if authManager.isAnonymous {
+                AppleSignInPromptCard(
+                    icon: "bubble.left.and.bubble.right.fill",
+                    title: "anonymous.restricted.sidebar.title",
+                    description: "anonymous.restricted.sidebar.description"
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            } else {
+                if !resonances.isEmpty {
+                    sidebarTopToolbar
+                }
 
-            Group {
-                if let resonanceMenuError {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(resonanceMenuError)
-                            .font(.footnote)
-                            .foregroundStyle(UITheme.secondaryText)
+                Group {
+                    if let resonanceMenuError {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(resonanceMenuError)
+                                .font(.footnote)
+                                .foregroundStyle(UITheme.secondaryText)
 
-                        Button("common.retry") {
-                            Task {
-                                await loadResonances()
+                            Button("common.retry") {
+                                Task {
+                                    await loadResonances()
+                                }
                             }
+                            .buttonStyle(.borderedProminent)
                         }
-                        .buttonStyle(.borderedProminent)
-                    }
-                    .padding(.top, 8)
-                } else if isLoadingResonances, resonances.isEmpty {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                        Text("common.loading")
-                            .font(.footnote)
-                            .foregroundStyle(UITheme.secondaryText)
-                    }
-                    .padding(.top, 8)
-                } else if displayedResonances.isEmpty {
-                    if resonances.isEmpty, !hasActiveResonanceSearch {
-                        resonanceEmptyStateView
-                            .padding(.top, 6)
-                    } else {
-                        if hasActiveResonanceSearch {
-                            ContentUnavailableView.search(text: resonanceSearchText)
+                        .padding(.top, 8)
+                    } else if isLoadingResonances, resonances.isEmpty {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text("common.loading")
+                                .font(.footnote)
+                                .foregroundStyle(UITheme.secondaryText)
+                        }
+                        .padding(.top, 8)
+                    } else if displayedResonances.isEmpty {
+                        if resonances.isEmpty, !hasActiveResonanceSearch {
+                            resonanceEmptyStateView
                                 .padding(.top, 6)
                         } else {
-                            ContentUnavailableView {
-                                Label("resonance.empty", systemImage: "magnifyingglass")
+                            if hasActiveResonanceSearch {
+                                ContentUnavailableView.search(text: resonanceSearchText)
+                                    .padding(.top, 6)
+                            } else {
+                                ContentUnavailableView {
+                                    Label("resonance.empty", systemImage: "magnifyingglass")
+                                }
+                                .padding(.top, 6)
                             }
-                            .padding(.top, 6)
                         }
-                    }
-                } else {
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 4) {
-                            ForEach(displayedResonances) { resonance in
-                                Button {
-                                    Task {
-                                        await openLatestSession(for: resonance)
-                                    }
-                                } label: {
-                                    HStack(spacing: 8) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: selectedSoulerId == resonance.soulerId ? "checkmark" : "message")
-                                                .font(.caption.weight(.semibold))
-                                            Text(resonance.soulerName)
-                                                .lineLimit(1)
-                                                .font(.body.weight(.medium))
-                                                .fontDesign(.serif)
-                                        }
-                                        .foregroundStyle(UITheme.primaryText)
-
-                                        Spacer(minLength: 8)
-
-                                        Text(resonance.updatedAt, format: .relative(presentation: .named).locale(locale))
-                                            .font(.caption)
-                                            .foregroundStyle(UITheme.secondaryText)
-                                            .lineLimit(1)
-                                            .monospacedDigit()
-                                    }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 10)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .contentShape(Rectangle())
-                                    .background(
-                                        selectedSoulerId == resonance.soulerId ? .white.opacity(0.15) : .clear,
-                                        in: .rect(cornerRadius: 12)
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                            }
-
-                            if isLoadingResonances {
-                                HStack(spacing: 8) {
-                                    ProgressView()
-                                    Text("common.loading")
-                                        .font(.footnote)
-                                        .foregroundStyle(UITheme.secondaryText)
-                                }
-                                .padding(.top, 8)
-                            } else if hasMoreResonances, !hasActiveResonanceSearch {
-                                Color.clear
-                                    .frame(height: 1)
-                                    .onAppear {
+                    } else {
+                        ScrollView {
+                            LazyVStack(alignment: .leading, spacing: 4) {
+                                ForEach(displayedResonances) { resonance in
+                                    Button {
                                         Task {
-                                            await loadMoreResonances()
+                                            await openLatestSession(for: resonance)
                                         }
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: selectedSoulerId == resonance.soulerId ? "checkmark" : "message")
+                                                    .font(.caption.weight(.semibold))
+                                                Text(resonance.soulerName)
+                                                    .lineLimit(1)
+                                                    .font(.body.weight(.medium))
+                                                    .fontDesign(.serif)
+                                            }
+                                            .foregroundStyle(UITheme.primaryText)
+
+                                            Spacer(minLength: 8)
+
+                                            Text(resonance.updatedAt, format: .relative(presentation: .named).locale(locale))
+                                                .font(.caption)
+                                                .foregroundStyle(UITheme.secondaryText)
+                                                .lineLimit(1)
+                                                .monospacedDigit()
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .contentShape(Rectangle())
+                                        .background(
+                                            selectedSoulerId == resonance.soulerId ? .white.opacity(0.15) : .clear,
+                                            in: .rect(cornerRadius: 12)
+                                        )
                                     }
+                                    .buttonStyle(.plain)
+                                }
+
+                                if isLoadingResonances {
+                                    HStack(spacing: 8) {
+                                        ProgressView()
+                                        Text("common.loading")
+                                            .font(.footnote)
+                                            .foregroundStyle(UITheme.secondaryText)
+                                    }
+                                    .padding(.top, 8)
+                                } else if hasMoreResonances, !hasActiveResonanceSearch {
+                                    Color.clear
+                                        .frame(height: 1)
+                                        .onAppear {
+                                            Task {
+                                                await loadMoreResonances()
+                                            }
+                                        }
+                                }
                             }
                         }
                     }
                 }
+                .frame(maxHeight: .infinity, alignment: .top)
             }
-            .frame(maxHeight: .infinity, alignment: .top)
         }
         .padding(12)
         .frame(width: sidebarWidth, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(.ultraThinMaterial)
-        .task {
-            await loadResonances()
+        .task(id: authManager.isAnonymous) {
+            if authManager.isAnonymous {
+                resetResonanceState()
+            } else {
+                await loadResonances()
+            }
         }
     }
 
@@ -310,6 +324,16 @@ struct SidebarView: View {
         }
         .padding(.horizontal, 2)
         .shadow(color: .black.opacity(0.12), radius: 14, y: 6)
+    }
+
+    @MainActor
+    private func resetResonanceState() {
+        resonances = []
+        isLoadingResonances = false
+        hasMoreResonances = true
+        resonanceOffset = 0
+        resonanceMenuError = nil
+        resonanceSearchText = ""
     }
 
     @MainActor

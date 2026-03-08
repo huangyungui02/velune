@@ -28,9 +28,16 @@
 "common.search" = "Search";
 
 "sign.slogan" = "Explore inward,\nreach the depths of the cosmos.";
+"sign.action.skip" = "Skip for now";
 "sign.terms.full" = "By signing in, you agree to our Terms of Service and Privacy Policy.";
 "sign.terms.label" = "Terms of Service";
 "sign.privacy.label" = "Privacy Policy";
+
+"anonymous.action.signInWithApple" = "Sign in with Apple";
+"anonymous.restricted.profile.title" = "Unlock Hearthaven";
+"anonymous.restricted.profile.description" = "Sign in with Apple to view, keep, and revisit your glimmers.";
+"anonymous.restricted.sidebar.title" = "Open Resonance Threads";
+"anonymous.restricted.sidebar.description" = "Sign in with Apple to browse resonances and return to each conversation.";
 
 "profile.empty.noGlimmers" = "No glimmers yet";
 "profile.title.glimmers" = "Hearthaven";

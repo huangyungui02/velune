@@ -5,6 +5,7 @@ import SwiftUI
 // MARK: - Settings
 
 struct SettingsView: View {
+    @State private var authManager = AuthManager.shared
     @State private var showSignOutConfirmation = false
     @State private var isSigningOut = false
     @State private var feedbackMessage: String?
@@ -14,11 +15,13 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            Section("settings.section.account") {
-                NavigationLink {
-                    AccountSettingsView()
-                } label: {
-                    Label("settings.account", systemImage: "person.crop.circle")
+            if !authManager.isAnonymous {
+                Section("settings.section.account") {
+                    NavigationLink {
+                        AccountSettingsView()
+                    } label: {
+                        Label("settings.account", systemImage: "person.crop.circle")
+                    }
                 }
             }
 
@@ -65,17 +68,27 @@ struct SettingsView: View {
                 }
             }
 
-            Section {
-                Button(role: .destructive) {
-                    showSignOutConfirmation = true
-                } label: {
-                    actionRow(
-                        title: "settings.action.signOut",
-                        systemImage: "rectangle.portrait.and.arrow.right",
-                        isLoading: isSigningOut
-                    )
+            if !authManager.isAnonymous {
+                Section {
+                    Button(role: .destructive) {
+                        showSignOutConfirmation = true
+                    } label: {
+                        actionRow(
+                            title: "settings.action.signOut",
+                            systemImage: "rectangle.portrait.and.arrow.right",
+                            isLoading: isSigningOut
+                        )
+                    }
+                    .disabled(isSigningOut)
                 }
-                .disabled(isSigningOut)
+            }
+
+            if authManager.isAnonymous {
+                AppleSignInSettingsRow { error in
+                    feedbackMessage = error
+                }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
         }
         .listStyle(.insetGrouped)

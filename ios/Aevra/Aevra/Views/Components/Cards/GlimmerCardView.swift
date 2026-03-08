@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct GlimmerCardView: View {
+    @Environment(\.locale) private var locale
     let content: String
     let createdAt: Date?
 
@@ -35,6 +36,7 @@ struct GlimmerCardView: View {
                                     .day()
                                     .hour()
                                     .minute()
+                                    .locale(locale)
                             )
                         )
                         .font(.footnote.weight(.medium))

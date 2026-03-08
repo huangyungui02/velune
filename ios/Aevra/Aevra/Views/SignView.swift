@@ -1,122 +1,114 @@
-import AuthenticationServices
-import Supabase
 import SwiftUI
 
 struct SignView: View {
     @Environment(\.locale) private var locale
+    @State private var authManager = AuthManager.shared
     @State private var errorMessage: String? = nil
+    @State private var isSigningInAnonymously = false
 
     var body: some View {
         ZStack {
             StarryBackgroundView()
 
-            VStack(spacing: 32) {
-                Spacer()
+            VStack(spacing: 0) {
+                Spacer(minLength: 22)
 
-                VStack(spacing: 32) {
-                    Image(systemName: "circle.circle")
-                        .font(.largeTitle)
-                        .foregroundStyle(UITheme.primaryText)
+                brandBlock
 
-                    Text("Aevra")
-                        .font(.largeTitle.weight(.semibold))
-                        .fontDesign(.serif)
-                        .foregroundStyle(UITheme.primaryText)
+                Spacer(minLength: 18)
 
-                    Text("sign.slogan")
-                        .font(.title3)
-                        .fontDesign(.serif)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(8)
-                        .tracking(1.5)
-                        .foregroundStyle(UITheme.secondaryText)
-                }
-                .padding(.bottom, 40)
+                actionBlock
 
-                appleSignInView
-                    .frame(height: 50)
-                    .padding(.horizontal, 50)
+                Spacer(minLength: 14)
 
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(UITheme.secondaryText)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
-                }
-
-                Spacer()
-
-                Text(termsAttributedText)
-                    .multilineTextAlignment(.center)
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(UITheme.tertiaryText)
-                    .padding(.horizontal, 40)
-                    .padding(.bottom, 12)
+                termsBlock
             }
+            .padding(.horizontal, 26)
+            .padding(.vertical, 12)
         }
     }
 
-    private var appleSignInView: some View {
-        SignInWithAppleButton { request in
-            request.requestedScopes = [.email, .fullName]
-        } onCompletion: { result in
-            Task {
-                do {
-                    guard let credential = try result.get().credential as? ASAuthorizationAppleIDCredential
-                    else {
-                        return
+    private var brandBlock: some View {
+        VStack(spacing: 40) {
+            VStack(spacing: 10) {
+                AppMarkView()
+                    .frame(width: 98, height: 98)
+                    .foregroundStyle(UITheme.primaryText.opacity(0.92))
+                
+                Text("Aevra")
+                    .font(.largeTitle.weight(.semibold))
+                    .fontDesign(.serif)
+                    .foregroundStyle(UITheme.primaryText)
+            }
+
+            Text("sign.slogan")
+                .font(.title3.weight(.semibold))
+                .fontDesign(.serif)
+                .multilineTextAlignment(.center)
+                .lineSpacing(7)
+                .tracking(0.9)
+                .foregroundStyle(UITheme.secondaryText)
+                .frame(maxWidth: 320)
+        }
+        .padding(.horizontal, 10)
+    }
+
+    private var actionBlock: some View {
+        VStack(spacing: 8) {
+            AppleSignInActionButton(
+                title: "anonymous.action.signInWithApple",
+                visualStyle: .capsule,
+                height: 46
+            )
+
+            Button {
+                Task {
+                    isSigningInAnonymously = true
+                    defer { isSigningInAnonymously = false }
+
+                    do {
+                        try await authManager.signInAnonymously()
+                        errorMessage = nil
+                    } catch {
+                        errorMessage = error.localizedDescription
                     }
-
-                    guard let idToken = credential.identityToken
-                        .flatMap({ String(data: $0, encoding: .utf8) })
-                    else {
-                        return
-                    }
-
-                    try await supabase.auth.signInWithIdToken(
-                        credentials: .init(
-                            provider: .apple,
-                            idToken: idToken
-                        )
-                    )
-
-                    // Apple only provides the user's full name on the first sign-in
-                    // Save it to user metadata if available
-                    if let fullName = credential.fullName {
-                        var nameParts: [String] = []
-                        if let givenName = fullName.givenName {
-                            nameParts.append(givenName)
-                        }
-                        if let middleName = fullName.middleName {
-                            nameParts.append(middleName)
-                        }
-                        if let familyName = fullName.familyName {
-                            nameParts.append(familyName)
-                        }
-
-                        let fullNameString = nameParts.joined(separator: " ")
-
-                        try await supabase.auth.update(
-                            user: UserAttributes(
-                                data: [
-                                    "full_name": .string(fullNameString),
-                                    "given_name": .string(fullName.givenName ?? ""),
-                                    "family_name": .string(fullName.familyName ?? "")
-                                ]
-                            )
-                        )
-                    }
-
-                    // User successfully signed in
-                    print("Sign in with Apple successful!")
-                } catch {
-                    errorMessage = error.localizedDescription
-                    print("Sign in with Apple failed: \(error.localizedDescription)")
+                }
+            } label: {
+                if isSigningInAnonymously {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                } else {
+                    Text("sign.action.skip")
+                        .font(.footnote.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
                 }
             }
+            .buttonStyle(.plain)
+            .foregroundStyle(UITheme.secondaryText)
+            .disabled(isSigningInAnonymously)
+
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.footnote)
+                    .foregroundStyle(UITheme.secondaryText)
+                    .multilineTextAlignment(.center)
+            }
         }
-        .signInWithAppleButtonStyle(.whiteOutline)
+        .padding(.horizontal, 8)
+        .frame(maxWidth: 420)
+    }
+
+    private var termsBlock: some View {
+        VStack(spacing: 12) {
+            Text(termsAttributedText)
+                .multilineTextAlignment(.center)
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(UITheme.tertiaryText)
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 8)
     }
 
     private var termsAttributedText: AttributedString {
@@ -139,6 +131,30 @@ struct SignView: View {
         return text
     }
 
+}
+
+private struct AppMarkView: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let side = min(proxy.size.width, proxy.size.height)
+            let outerDiameter = side * (704.0 / 1024.0)
+            let innerDiameter = side * (448.0 / 1024.0)
+            let outerStroke = side * (24.0 / 1024.0)
+            let innerStroke = side * (20.0 / 1024.0)
+
+            ZStack {
+                Circle()
+                    .stroke(style: StrokeStyle(lineWidth: outerStroke))
+                    .frame(width: outerDiameter, height: outerDiameter)
+
+                Circle()
+                    .stroke(style: StrokeStyle(lineWidth: innerStroke))
+                    .frame(width: innerDiameter, height: innerDiameter)
+                    .opacity(0.5)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+        }
+    }
 }
 
 #Preview {

@@ -10,13 +10,16 @@ class DataContainer {
         modelContainer.mainContext
     }
 
-    init(sampleData: Bool = false) {
+    init(sampleData: Bool = false, inMemoryOnly: Bool = false) {
         let schema = Schema([
             Glimmer.self,
             Echo.self,
         ])
 
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: sampleData)
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: sampleData || inMemoryOnly
+        )
 
         do {
             modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])

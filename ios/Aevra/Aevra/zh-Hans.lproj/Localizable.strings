@@ -28,9 +28,16 @@
 "common.search" = "搜索";
 
 "sign.slogan" = "向内探索，\n直至宇宙深处";
+"sign.action.skip" = "暂时跳过";
 "sign.terms.full" = "登录即表示你同意我们的《用户协议》和《隐私政策》。";
 "sign.terms.label" = "《用户协议》";
 "sign.privacy.label" = "《隐私政策》";
+
+"anonymous.action.signInWithApple" = "使用 Apple 登录";
+"anonymous.restricted.profile.title" = "登录后开启心舍";
+"anonymous.restricted.profile.description" = "使用 Apple 登录后，可查看、保存并回望你的心光。";
+"anonymous.restricted.sidebar.title" = "登录后开启共鸣";
+"anonymous.restricted.sidebar.description" = "使用 Apple 登录后，可浏览共鸣并回到每段会话。";
 
 "profile.empty.noGlimmers" = "暂无心光";
 "profile.title.glimmers" = "心舍";

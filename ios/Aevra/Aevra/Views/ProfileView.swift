@@ -5,6 +5,7 @@ struct ProfileView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var context
+    @State private var authManager = AuthManager.shared
     @Query(sort: \Glimmer.createdAt, order: .reverse) private var glimmers: [Glimmer]
     @State private var isRefreshing: Bool = false
 
@@ -12,13 +13,21 @@ struct ProfileView: View {
         ZStack {
             BackgroundView()
 
-            Group {
-                if isRefreshing {
-                    ProgressView()
-                } else if glimmers.isEmpty {
-                    EmptyView(title: "profile.empty.noGlimmers")
-                } else {
-                    glimmerListView
+            if authManager.isAnonymous {
+                AppleSignInPromptCard(
+                    icon: "person.crop.circle.badge.checkmark",
+                    title: "anonymous.restricted.profile.title",
+                    description: "anonymous.restricted.profile.description"
+                )
+            } else {
+                Group {
+                    if isRefreshing {
+                        ProgressView()
+                    } else if glimmers.isEmpty {
+                        EmptyView(title: "profile.empty.noGlimmers")
+                    } else {
+                        glimmerListView
+                    }
                 }
             }
         }
@@ -35,7 +44,9 @@ struct ProfileView: View {
             }
         }
         .task {
-            await refreshGlimmers()
+            if !authManager.isAnonymous {
+                await refreshGlimmers()
+            }
         }
     }
 

@@ -5,7 +5,8 @@ import SwiftUI
 struct AevraApp: App {
     @State private var authManager = AuthManager.shared
     @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.systemDefault.rawValue
-    let dataContainer = DataContainer()
+    private let dataContainer = DataContainer()
+    private let transientDataContainer = DataContainer(inMemoryOnly: true)
 
     init() {
         (AppLanguage(rawValue: UserDefaults.standard.string(forKey: AppLanguage.storageKey) ?? "") ?? .systemDefault)
@@ -32,7 +33,8 @@ struct AevraApp: App {
                 (AppLanguage(rawValue: newValue) ?? .systemDefault).applyAsPreferredLanguage()
             }
             .animation(.easeInOut, value: authManager.isAuthenticated)
+            .animation(.easeInOut, value: authManager.isAnonymous)
         }
-        .modelContainer(dataContainer.modelContainer)
+        .modelContainer(authManager.isAnonymous ? transientDataContainer.modelContainer : dataContainer.modelContainer)
     }
 }
