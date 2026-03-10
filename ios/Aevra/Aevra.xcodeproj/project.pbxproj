@@ -110,6 +110,7 @@
 			packageReferences = (
 				328EC26E2EE2FE26000D601B /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				3299B1592EF39406009A60EF /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+				323FF1AA2F60029600423EAA /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 321D07BE2EDA8CD8007F4762 /* Products */;
@@ -365,6 +366,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		323FF1AA2F60029600423EAA /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.61.0;
+			};
+		};
 		328EC26E2EE2FE26000D601B /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase-community/supabase-swift.git";
