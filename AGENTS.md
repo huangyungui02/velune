@@ -12,4 +12,6 @@
 
 # 技术展
 
-swift6，ios26，astro5，supabase
+移动端：swift6，ios26
+官网展示：astro5
+后端：supabase
