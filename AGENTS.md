@@ -10,8 +10,8 @@
 
 遇到版本敏感、接口易变、或需要确认最新官方用法时，用 Context7 查文档。
 
-# 技术展
+# 技术栈
 
-移动端：swift6，ios26
-官网展示：astro5
-后端：supabase
+- 移动端：swift6，ios26
+- 产品官网：astro5
+- 后端：supabase
