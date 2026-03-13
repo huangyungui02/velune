@@ -1,7 +1,0 @@
----
-alwaysApply: true
----
-
-ios：swift6+ios26
-site：astro5.17
-supabase：newest version
