@@ -397,3 +397,15 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/chat/deno.json"
 entrypoint = "./functions/chat/index.ts"
+
+[functions.billing-sync]
+enabled = true
+verify_jwt = false
+import_map = "./functions/billing-sync/deno.json"
+entrypoint = "./functions/billing-sync/index.ts"
+
+[functions.revenuecat-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/revenuecat-webhook/deno.json"
+entrypoint = "./functions/revenuecat-webhook/index.ts"

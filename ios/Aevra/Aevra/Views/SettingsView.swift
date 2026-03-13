@@ -6,12 +6,17 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var authManager = AuthManager.shared
+    @State private var subscriptionManager = SubscriptionManager.shared
     @State private var showSignOutConfirmation = false
     @State private var isSigningOut = false
     @State private var feedbackMessage: String?
     @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.systemDefault.rawValue
     @Environment(\.dismiss) private var dismiss
     @Environment(\.requestReview) private var requestReview
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .systemDefault
+    }
 
     var body: some View {
         List {
@@ -22,6 +27,84 @@ struct SettingsView: View {
                     } label: {
                         Label("settings.account", systemImage: "person.crop.circle")
                     }
+                }
+            }
+
+            Section("settings.section.billing") {
+                LabeledContent {
+                    Text("\(subscriptionManager.creditsRemaining) / \(subscriptionManager.monthlyLimit)")
+                        .foregroundStyle(.secondary)
+                } label: {
+                    Label("settings.billing.credits", systemImage: "sparkles")
+                }
+
+                LabeledContent {
+                    Text(
+                        subscriptionManager.isPremium
+                            ? String(localized: "settings.billing.plan.premium")
+                            : String(localized: "settings.billing.plan.free")
+                    )
+                    .foregroundStyle(.secondary)
+                } label: {
+                    Label("settings.billing.plan", systemImage: "crown")
+                }
+
+                LabeledContent {
+                    Text(
+                        subscriptionManager.nextResetAt?.formatted(
+                            .dateTime
+                                .year(.defaultDigits)
+                                .month(.defaultDigits)
+                                .day(.defaultDigits)
+                                .locale(appLanguage.locale)
+                        ) ?? "--"
+                    )
+                        .foregroundStyle(.secondary)
+                } label: {
+                    Label("settings.billing.resetAt", systemImage: "clock.arrow.circlepath")
+                }
+
+                if !subscriptionManager.isPremium {
+                    Button {
+                        Task { await purchasePremium() }
+                    } label: {
+                        actionRow(
+                            title: "settings.billing.action.upgrade",
+                            systemImage: "arrow.up.circle",
+                            isLoading: subscriptionManager.isPurchasing
+                        )
+                    }
+                    .disabled(subscriptionManager.isPurchasing || !subscriptionManager.isRevenueCatAvailable)
+
+                    LabeledContent {
+                        Text(subscriptionManager.monthlyPriceText)
+                            .foregroundStyle(.secondary)
+                    } label: {
+                        Label("settings.billing.price", systemImage: "dollarsign.circle")
+                    }
+                }
+
+                Button {
+                    Task { await restorePurchases() }
+                } label: {
+                    actionRow(
+                        title: "settings.billing.action.restore",
+                        systemImage: "arrow.clockwise.circle",
+                        isLoading: subscriptionManager.isRestoring
+                    )
+                }
+                .disabled(subscriptionManager.isRestoring || !subscriptionManager.isRevenueCatAvailable)
+
+                if !subscriptionManager.isRevenueCatAvailable {
+                    Text("settings.billing.revenuecat.missingKey")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let billingError = subscriptionManager.lastErrorMessage, !billingError.isEmpty {
+                    Text(billingError)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -110,6 +193,9 @@ struct SettingsView: View {
         } message: {
             Text(feedbackMessage ?? "")
         }
+        .task {
+            await subscriptionManager.refreshBillingState()
+        }
     }
 
     private func signOut() async {
@@ -130,6 +216,21 @@ struct SettingsView: View {
         return "\(short) (\(build))"
     }
 
+    private func purchasePremium() async {
+        do {
+            try await subscriptionManager.purchasePremium()
+        } catch {
+            feedbackMessage = error.localizedDescription
+        }
+    }
+
+    private func restorePurchases() async {
+        do {
+            try await subscriptionManager.restorePurchases()
+        } catch {
+            feedbackMessage = error.localizedDescription
+        }
+    }
 }
 
 // MARK: - Account Settings

@@ -5,6 +5,9 @@ enum ChatStreamService {
     struct DonePayload {
         var sessionId: UUID?
         var title: String?
+        var plan: String?
+        var monthlyLimit: Int?
+        var creditsRemaining: Int?
     }
 
     enum Event {
@@ -23,15 +26,23 @@ enum ChatStreamService {
         var type: String
         var delta: String?
         var message: String?
+        var code: String?
         var sessionId: String?
         var title: String?
+        var plan: String?
+        var monthlyLimit: Int?
+        var creditsRemaining: Int?
 
         enum CodingKeys: String, CodingKey {
             case type
             case delta
             case message
+            case code
             case sessionId = "sessionId"
             case title
+            case plan
+            case monthlyLimit = "monthlyLimit"
+            case creditsRemaining = "creditsRemaining"
         }
     }
 
@@ -68,11 +79,19 @@ enum ChatStreamService {
                             let resolvedSessionId = payload.sessionId.flatMap(UUID.init(uuidString:))
                             let donePayload = DonePayload(
                                 sessionId: resolvedSessionId,
-                                title: payload.title
+                                title: payload.title,
+                                plan: payload.plan,
+                                monthlyLimit: payload.monthlyLimit,
+                                creditsRemaining: payload.creditsRemaining
                             )
                             continuation.yield(.done(donePayload))
                         case "error":
-                            let message = payload.message ?? String(localized: "matching.error.unknown")
+                            let message: String
+                            if payload.code == "INSUFFICIENT_CREDITS" {
+                                message = String(localized: "billing.error.insufficientCredits")
+                            } else {
+                                message = payload.message ?? String(localized: "matching.error.unknown")
+                            }
                             throw NSError(
                                 domain: "ResonanceChat",
                                 code: -1,

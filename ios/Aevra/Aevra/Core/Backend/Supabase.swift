@@ -1,10 +1,19 @@
 import Foundation
 import Supabase
 
-let supabaseURL = URL(string: "http://127.0.0.1:54321")!
-let supabaseKey = "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH"
-// let supabaseURL = URL(string: "https://vskjfzcykzqieztpputw.supabase.co")!
-// let supabaseKey = "sb_publishable_FmmDe_Ttr-9Dcr_tV2vNmw_2CbyJz6p"
+private func requiredInfoValue(_ key: String) -> String {
+    let value = (Bundle.main.object(forInfoDictionaryKey: key) as? String)?
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let value, !value.isEmpty else {
+        fatalError("Missing required Info.plist key: \(key)")
+    }
+    return value
+}
+
+private let supabaseURLString = requiredInfoValue("SUPABASE_URL")
+private let supabaseKey = requiredInfoValue("SUPABASE_PUBLISHABLE_KEY")
+
+let supabaseURL = URL(string: supabaseURLString)!
 
 let supabase = SupabaseClient(
     supabaseURL: supabaseURL,

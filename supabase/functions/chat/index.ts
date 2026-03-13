@@ -41,6 +41,80 @@ type SessionContext = {
   };
 };
 
+type CreditState = {
+  plan: string;
+  monthlyLimit: number;
+  creditsRemaining: number;
+};
+
+class CreditLimitError extends Error {
+  code: string;
+  plan: string;
+  monthlyLimit: number;
+  creditsRemaining: number;
+
+  constructor(
+    message: string,
+    code: string,
+    plan: string,
+    monthlyLimit: number,
+    creditsRemaining: number,
+  ) {
+    super(message);
+    this.name = "CreditLimitError";
+    this.code = code;
+    this.plan = plan;
+    this.monthlyLimit = monthlyLimit;
+    this.creditsRemaining = creditsRemaining;
+  }
+}
+
+const safeJsonStringify = (value: unknown) => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return undefined;
+  }
+};
+
+const errorMessage = (error: unknown) => {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+  if (error && typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    const candidate = [
+      record.message,
+      record.error,
+      record.details,
+      record.hint,
+    ].find((value) => typeof value === "string" && value.trim().length > 0);
+    if (typeof candidate === "string") {
+      return candidate;
+    }
+
+    const serialized = safeJsonStringify(error);
+    if (serialized && serialized !== "{}") {
+      return serialized;
+    }
+  }
+  return "Unknown error";
+};
+
+const errorLogPayload = (error: unknown) => {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+  }
+  return safeJsonStringify(error) ?? String(error);
+};
+
 const getUserIdFromRequest = async (request: Request) => {
   const authHeader = request.headers.get("Authorization");
   if (!authHeader) {
@@ -233,6 +307,44 @@ const createOrUpdateResonance = async (userId: string, soulerId: string) => {
   }
 };
 
+const consumeUserCredit = async (userId: string): Promise<CreditState> => {
+  const { data, error } = await supabase.rpc("consume_user_credit", {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    throw new Error("Failed to consume credit");
+  }
+
+  const plan = String(row.plan ?? "free");
+  const monthlyLimit = Number(row.monthly_limit ?? 50);
+  const creditsRemaining = Number(row.credits_remaining ?? 0);
+  const ok = Boolean(row.ok);
+
+  if (!ok) {
+    const message = String(row.message ?? "Not enough credits for this request");
+    const code = String(row.code ?? "INSUFFICIENT_CREDITS");
+    throw new CreditLimitError(
+      message,
+      code,
+      plan,
+      monthlyLimit,
+      creditsRemaining,
+    );
+  }
+
+  return {
+    plan,
+    monthlyLimit,
+    creditsRemaining,
+  };
+};
+
 const isChineseName = (name: string) => /[\p{Script=Han}]/u.test(name);
 
 const sanitizeTitle = (raw: string) => {
@@ -340,6 +452,8 @@ Deno.serve(async (req) => {
           throw new Error("Missing content");
         }
 
+        const creditState = await consumeUserCredit(userId);
+
         const isNewSession = !sessionId;
         let session: SessionContext;
         if (sessionId) {
@@ -411,15 +525,30 @@ Deno.serve(async (req) => {
           type: "done",
           sessionId: session.id,
           title: generatedTitle,
+          creditsRemaining: creditState.creditsRemaining,
+          monthlyLimit: creditState.monthlyLimit,
+          plan: creditState.plan,
           assistantMessage: {
             id: assistantMessage.id,
             createdAt: assistantMessage.created_at,
           },
         });
       } catch (error) {
+        if (error instanceof CreditLimitError) {
+          send({
+            type: "error",
+            code: error.code,
+            message: error.message,
+            plan: error.plan,
+            creditsRemaining: error.creditsRemaining,
+            monthlyLimit: error.monthlyLimit,
+          });
+          return;
+        }
+        console.error("Failed to process chat request", errorLogPayload(error));
         send({
           type: "error",
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage(error),
         });
       } finally {
         controller.close();

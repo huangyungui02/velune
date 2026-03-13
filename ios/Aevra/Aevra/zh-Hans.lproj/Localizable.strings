@@ -3,6 +3,7 @@
 "settings.section.legal" = "法律";
 "settings.section.support" = "支持";
 "settings.section.language" = "语言";
+"settings.section.billing" = "订阅与额度";
 "settings.section.about" = "关于";
 "settings.account" = "账号";
 "settings.language" = "应用语言";
@@ -15,6 +16,15 @@
 "settings.link.privacy" = "隐私政策";
 "settings.link.contactSupport" = "联系支持";
 "settings.version" = "版本";
+"settings.billing.credits" = "本月额度";
+"settings.billing.plan" = "当前方案";
+"settings.billing.resetAt" = "额度重置时间";
+"settings.billing.plan.free" = "免费版";
+"settings.billing.plan.premium" = "付费版";
+"settings.billing.action.upgrade" = "升级到付费版";
+"settings.billing.action.restore" = "恢复购买";
+"settings.billing.price" = "订阅价格";
+"settings.billing.revenuecat.missingKey" = "未配置 RevenueCat 公钥，暂不可购买。";
 "settings.error.title" = "操作失败";
 "settings.signOut.confirm.title" = "确认退出登录？";
 "settings.signOut.confirm.message" = "你将需要重新登录后才能继续使用。";
@@ -81,5 +91,10 @@
 "resonance.unknownSouler" = "未命名灵魂";
 
 "app.error.unauthenticated" = "用户尚未登录";
+"billing.price.perMonthSuffix" = "/月";
+"billing.error.insufficientCredits" = "本月 credits 已用完。免费版每月 50，付费版每月 1000。";
+"billing.error.missingRevenueCatKey" = "未配置 RevenueCat 公钥。";
+"billing.error.offeringUnavailable" = "当前暂无可购买套餐，请稍后重试。";
+"billing.error.syncTimeout" = "购买成功，但付费状态尚未同步。请稍等片刻后点击“恢复购买”。";
 
 "matching.action.archive" = "归档";

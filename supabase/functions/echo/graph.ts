@@ -10,6 +10,8 @@ import {
 import { type Lang } from "./lang.ts";
 import {
   appendSoulerAlias,
+  consumeUserCredit,
+  CreditLimitError,
   createSession,
   createSouler,
   createEcho,
@@ -18,6 +20,47 @@ import {
   insertSessionMessage,
   updateSouler,
 } from "./supabase.ts";
+
+const safeJsonStringify = (value: unknown) => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return undefined;
+  }
+};
+
+const reasonToMessage = (reason: unknown) => {
+  if (reason instanceof Error && reason.message.trim()) {
+    return reason.message;
+  }
+  if (typeof reason === "string" && reason.trim()) {
+    return reason;
+  }
+  if (reason && typeof reason === "object") {
+    const record = reason as Record<string, unknown>;
+    const candidate = [
+      record.message,
+      record.error,
+      record.details,
+      record.hint,
+    ].find((value) => typeof value === "string" && value.trim().length > 0);
+    if (typeof candidate === "string") {
+      return candidate;
+    }
+
+    const serialized = safeJsonStringify(reason);
+    if (serialized && serialized !== "{}") {
+      return serialized;
+    }
+  }
+  return "Unknown failure";
+};
+
+type GraphCreditState = {
+  plan: string;
+  monthlyLimit: number;
+  creditsRemaining: number;
+};
 
 const graph = entrypoint(
   { name: "agent" },
@@ -61,8 +104,6 @@ const graph = entrypoint(
           soulerData = await appendSoulerAlias(soulerData.id, matchedName);
         }
 
-        await createOrUpdateResonance(userId, soulerData.id);
-
         if (!soulerData.bio) {
           const bio = await soulerProfile(soulerData.name, lang);
           soulerData.bio = bio;
@@ -75,6 +116,7 @@ const graph = entrypoint(
           await updateSouler(soulerData.id, { prompt });
         }
 
+        const creditState = await consumeUserCredit(userId);
         const answer = await soulerAnswer(
           glimmerContent,
           soulerData.prompt,
@@ -102,27 +144,59 @@ const graph = entrypoint(
           answer,
           session.id,
         );
+        await createOrUpdateResonance(userId, soulerData.id);
         if (onEcho) {
           await onEcho(echo);
         }
+        return creditState;
       }),
     );
 
-    const errors: Error[] = [];
+    const errors: string[] = [];
+    let firstCreditLimitError: CreditLimitError | null = null;
+    let finalCreditState: GraphCreditState | null = null;
     let completed = true;
     for (const result of results) {
       if (result.status === "rejected") {
-        errors.push(result.reason);
+        errors.push(reasonToMessage(result.reason));
+        if (
+          !firstCreditLimitError &&
+          result.reason instanceof CreditLimitError
+        ) {
+          firstCreditLimitError = result.reason;
+        }
+        continue;
       }
+
+      if (!finalCreditState) {
+        finalCreditState = result.value;
+        continue;
+      }
+
+      finalCreditState = {
+        plan: result.value.plan,
+        monthlyLimit: result.value.monthlyLimit,
+        creditsRemaining: Math.min(
+          finalCreditState.creditsRemaining,
+          result.value.creditsRemaining,
+        ),
+      };
     }
+
     if (errors.length === num) {
-      throw new Error(`Errors when creating echoes: ${JSON.stringify(errors)}`);
+      if (firstCreditLimitError) {
+        throw firstCreditLimitError;
+      }
+      throw new Error(`Errors when creating echoes: ${errors.join(" | ")}`);
     }
     if (errors.length > 0) {
-      console.error(`Errors when creating echoes: ${JSON.stringify(errors)}`);
+      console.error(`Errors when creating echoes: ${errors.join(" | ")}`);
       completed = false;
     }
-    return completed;
+    return {
+      completed,
+      creditState: finalCreditState,
+    };
   },
 );
 

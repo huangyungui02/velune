@@ -2,10 +2,57 @@ import graph from "./graph.ts";
 import { type Lang } from "./lang.ts";
 import {
   checkStatusBeforeProcessing,
+  CreditLimitError,
   getGlimmer,
   updateGlimmerStatus,
 } from "./supabase.ts";
 import { getUserIdFromRequest } from "./utils.ts";
+
+const safeJsonStringify = (value: unknown) => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return undefined;
+  }
+};
+
+const errorMessage = (error: unknown) => {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+  if (error && typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    const candidate = [
+      record.message,
+      record.error,
+      record.details,
+      record.hint,
+    ].find((value) => typeof value === "string" && value.trim().length > 0);
+    if (typeof candidate === "string") {
+      return candidate;
+    }
+
+    const serialized = safeJsonStringify(error);
+    if (serialized && serialized !== "{}") {
+      return serialized;
+    }
+  }
+  return "Unknown error";
+};
+
+const errorLogPayload = (error: unknown) => {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+  }
+  return safeJsonStringify(error) ?? String(error);
+};
 
 Deno.serve(async (req) => {
   let glimmerId: string | undefined;
@@ -45,6 +92,7 @@ Deno.serve(async (req) => {
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
+      let processingStarted = false;
       const send = (payload: Record<string, unknown>) => {
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify(payload)}\n\n`),
@@ -63,10 +111,11 @@ Deno.serve(async (req) => {
 
         // Mark as processing
         await updateGlimmerStatus(glimmerId, "processing");
+        processingStarted = true;
 
         const num = 5;
         // Invoke the graph and stream echoes as they are created
-        const completed = await graph.invoke({
+        const { completed, creditState } = await graph.invoke({
           userId: userId,
           glimmerId: glimmerId,
           glimmerContent: glimmer.content,
@@ -100,19 +149,38 @@ Deno.serve(async (req) => {
           console.log(`Incomplete glimmer: ${glimmer.id}`);
         }
 
-        send({ type: "done" });
+        send({
+          type: "done",
+          creditsRemaining: creditState?.creditsRemaining,
+          monthlyLimit: creditState?.monthlyLimit,
+          plan: creditState?.plan,
+        });
       } catch (error: unknown) {
-        try {
-          await updateGlimmerStatus(glimmerId, "failed");
-        } catch {
-          // Ignore status update failure if request itself failed
+        if (processingStarted) {
+          try {
+            await updateGlimmerStatus(glimmerId, "failed");
+          } catch {
+            // Ignore status update failure if request itself failed
+          }
         }
         console.error(
-          `Failed to process glimmer: ${glimmerId}, error: ${error}`,
+          `Failed to process glimmer: ${glimmerId}`,
+          errorLogPayload(error),
         );
+        if (error instanceof CreditLimitError) {
+          send({
+            type: "error",
+            code: error.code,
+            message: error.message,
+            plan: error.plan,
+            creditsRemaining: error.creditsRemaining,
+            monthlyLimit: error.monthlyLimit,
+          });
+          return;
+        }
         send({
           type: "error",
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage(error),
         });
       } finally {
         controller.close();

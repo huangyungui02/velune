@@ -5,6 +5,34 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+export type CreditState = {
+  plan: string;
+  monthlyLimit: number;
+  creditsRemaining: number;
+};
+
+export class CreditLimitError extends Error {
+  code: string;
+  plan: string;
+  monthlyLimit: number;
+  creditsRemaining: number;
+
+  constructor(
+    message: string,
+    code: string,
+    plan: string,
+    monthlyLimit: number,
+    creditsRemaining: number,
+  ) {
+    super(message);
+    this.name = "CreditLimitError";
+    this.code = code;
+    this.plan = plan;
+    this.monthlyLimit = monthlyLimit;
+    this.creditsRemaining = creditsRemaining;
+  }
+}
+
 export const getUserId = async (jwt: string) => {
   const { data } = await supabase.auth.getUser(jwt);
   return data.user?.id;
@@ -239,4 +267,44 @@ const updateResonance = async (id: string, data: Record<string, unknown>) => {
     throw error;
   }
   return updatedData;
+};
+
+export const consumeUserCredit = async (
+  userId: string,
+): Promise<CreditState> => {
+  const { data, error } = await supabase.rpc("consume_user_credit", {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    throw new Error("Failed to consume credit");
+  }
+
+  const plan = String(row.plan ?? "free");
+  const monthlyLimit = Number(row.monthly_limit ?? 50);
+  const creditsRemaining = Number(row.credits_remaining ?? 0);
+  const ok = Boolean(row.ok);
+
+  if (!ok) {
+    const message = String(row.message ?? "Not enough credits for this request");
+    const code = String(row.code ?? "INSUFFICIENT_CREDITS");
+    throw new CreditLimitError(
+      message,
+      code,
+      plan,
+      monthlyLimit,
+      creditsRemaining,
+    );
+  }
+
+  return {
+    plan,
+    monthlyLimit,
+    creditsRemaining,
+  };
 };

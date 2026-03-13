@@ -2,6 +2,12 @@ import Foundation
 import Supabase
 
 enum EchoStreamService {
+    struct DonePayload {
+        let plan: String?
+        let monthlyLimit: Int?
+        let creditsRemaining: Int?
+    }
+
     struct EchoPayload {
         let id: UUID
         let glimmerId: UUID
@@ -12,7 +18,7 @@ enum EchoStreamService {
 
     enum Event {
         case echo(EchoPayload)
-        case done
+        case done(DonePayload)
     }
 
     private struct RequestBody: Encodable {
@@ -32,6 +38,20 @@ enum EchoStreamService {
         let type: String
         let echo: StreamEcho?
         let message: String?
+        let code: String?
+        let plan: String?
+        let monthlyLimit: Int?
+        let creditsRemaining: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case type
+            case echo
+            case message
+            case code
+            case plan
+            case monthlyLimit = "monthlyLimit"
+            case creditsRemaining = "creditsRemaining"
+        }
     }
 
     static func stream(glimmerId: UUID, lang: String) -> AsyncThrowingStream<Event, Error> {
@@ -65,9 +85,22 @@ enum EchoStreamService {
                                 )
                             }
                         case "done":
-                            continuation.yield(.done)
+                            continuation.yield(
+                                .done(
+                                    DonePayload(
+                                        plan: payload.plan,
+                                        monthlyLimit: payload.monthlyLimit,
+                                        creditsRemaining: payload.creditsRemaining
+                                    )
+                                )
+                            )
                         case "error":
-                            let message = payload.message ?? "Unknown error from echo stream"
+                            let message: String
+                            if payload.code == "INSUFFICIENT_CREDITS" {
+                                message = String(localized: "billing.error.insufficientCredits")
+                            } else {
+                                message = payload.message ?? "Unknown error from echo stream"
+                            }
                             throw NSError(
                                 domain: "EchoStream",
                                 code: -1,

@@ -299,6 +299,11 @@ struct ChatView: View {
                     if let sessionId = payload.sessionId {
                         resolvedSessionId = sessionId
                     }
+                    SubscriptionManager.shared.applyServerCreditSnapshot(
+                        plan: payload.plan,
+                        monthlyLimit: payload.monthlyLimit,
+                        creditsRemaining: payload.creditsRemaining
+                    )
                     if let title = payload.title?
                         .trimmingCharacters(in: .whitespacesAndNewlines),
                         !title.isEmpty

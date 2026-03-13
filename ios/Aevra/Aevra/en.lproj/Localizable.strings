@@ -3,6 +3,7 @@
 "settings.section.legal" = "Legal";
 "settings.section.support" = "Support";
 "settings.section.language" = "Language";
+"settings.section.billing" = "Subscription & Credits";
 "settings.section.about" = "About";
 "settings.account" = "Account";
 "settings.language" = "App Language";
@@ -15,6 +16,15 @@
 "settings.link.privacy" = "Privacy Policy";
 "settings.link.contactSupport" = "Contact Support";
 "settings.version" = "Version";
+"settings.billing.credits" = "Monthly Credits";
+"settings.billing.plan" = "Current Plan";
+"settings.billing.resetAt" = "Credits Reset Time";
+"settings.billing.plan.free" = "Free";
+"settings.billing.plan.premium" = "Premium";
+"settings.billing.action.upgrade" = "Upgrade to Premium";
+"settings.billing.action.restore" = "Restore Purchases";
+"settings.billing.price" = "Subscription Price";
+"settings.billing.revenuecat.missingKey" = "RevenueCat public key is missing. Purchases are disabled.";
 "settings.error.title" = "Action Failed";
 "settings.signOut.confirm.title" = "Are you sure you want to sign out?";
 "settings.signOut.confirm.message" = "You’ll need to sign in again to continue using the app.";
@@ -81,5 +91,10 @@
 "resonance.unknownSouler" = "Unknown souler";
 
 "app.error.unauthenticated" = "User is not authenticated";
+"billing.price.perMonthSuffix" = "/month";
+"billing.error.insufficientCredits" = "You are out of credits this month. Free users get 50/month, premium users get 1000/month.";
+"billing.error.missingRevenueCatKey" = "RevenueCat public key is missing.";
+"billing.error.offeringUnavailable" = "No purchasable package is available right now. Please try again later.";
+"billing.error.syncTimeout" = "Purchase succeeded, but premium status has not synced yet. Please wait a moment and tap Restore Purchases.";
 
 "matching.action.archive" = "Archive";

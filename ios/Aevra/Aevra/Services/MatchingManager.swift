@@ -91,8 +91,15 @@ class MatchingManager {
                 await MainActor.run {
                     currentGlimmer?.echoes.append(echo)
                 }
-            case .done:
+            case let .done(payload):
                 receivedDone = true
+                await MainActor.run {
+                    SubscriptionManager.shared.applyServerCreditSnapshot(
+                        plan: payload.plan,
+                        monthlyLimit: payload.monthlyLimit,
+                        creditsRemaining: payload.creditsRemaining
+                    )
+                }
             }
         }
 

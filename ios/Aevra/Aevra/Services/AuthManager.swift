@@ -10,6 +10,8 @@ final class AuthManager {
     
     var isAuthenticated: Bool = false
     var isAnonymous: Bool = false
+    var currentUserId: UUID? { currentUser?.id }
+    var currentAccessToken: String? { supabase.auth.currentSession?.accessToken }
     
     private var currentUser: User?
     private var authStateChangeTask: Task<Void, Never>?

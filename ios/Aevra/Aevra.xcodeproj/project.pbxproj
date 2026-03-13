@@ -8,17 +8,33 @@
 
 /* Begin PBXBuildFile section */
 		321220EA2EE30B3C00E3705D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 321220E92EE30B3C00E3705D /* Supabase */; };
+		323FF3BA2F6087A300423EAA /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 323FF3B92F6087A300423EAA /* StoreKit.framework */; };
 		3299B15B2EF39407009A60EF /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3299B15A2EF39407009A60EF /* MarkdownUI */; };
 		32B3CE312EEBFF130041F499 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 32B3CE302EEBFF130041F499 /* Realtime */; };
+		32F5A0012F70000100423EAA /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 32F5A0022F70000100423EAA /* RevenueCat */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		321D07BD2EDA8CD8007F4762 /* Aevra.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aevra.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		323FF3B92F6087A300423EAA /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		323FF3542F6037C300423EAA /* Exceptions for "Aevra" folder in "Aevra" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 321D07BC2EDA8CD8007F4762 /* Aevra */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		321D07BF2EDA8CD8007F4762 /* Aevra */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				323FF3542F6037C300423EAA /* Exceptions for "Aevra" folder in "Aevra" target */,
+			);
 			path = Aevra;
 			sourceTree = "<group>";
 		};
@@ -29,7 +45,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				32F5A0012F70000100423EAA /* RevenueCat in Frameworks */,
 				3299B15B2EF39407009A60EF /* MarkdownUI in Frameworks */,
+				323FF3BA2F6087A300423EAA /* StoreKit.framework in Frameworks */,
 				321220EA2EE30B3C00E3705D /* Supabase in Frameworks */,
 				32B3CE312EEBFF130041F499 /* Realtime in Frameworks */,
 			);
@@ -42,6 +60,7 @@
 			isa = PBXGroup;
 			children = (
 				321D07BF2EDA8CD8007F4762 /* Aevra */,
+				323FF3B82F6087A300423EAA /* Frameworks */,
 				321D07BE2EDA8CD8007F4762 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -52,6 +71,14 @@
 				321D07BD2EDA8CD8007F4762 /* Aevra.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		323FF3B82F6087A300423EAA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				323FF3B92F6087A300423EAA /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -77,6 +104,7 @@
 				321220E92EE30B3C00E3705D /* Supabase */,
 				32B3CE302EEBFF130041F499 /* Realtime */,
 				3299B15A2EF39407009A60EF /* MarkdownUI */,
+				32F5A0022F70000100423EAA /* RevenueCat */,
 			);
 			productName = Resona;
 			productReference = 321D07BD2EDA8CD8007F4762 /* Aevra.app */;
@@ -278,6 +306,8 @@
 				DEVELOPMENT_TEAM = LQK5WB3692;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Aevra/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -291,7 +321,10 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = aevra.echoversa.com;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				REVENUECAT_PUBLIC_SDK_KEY = appl_jJGpHfwBivSsFhipOMFkdeSljyp;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPABASE_PUBLISHABLE_KEY = "sb_publishable_FmmDe_Ttr-9Dcr_tV2vNmw_2CbyJz6p";
+				SUPABASE_URL = "https://vskjfzcykzqieztpputw.supabase.co";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -315,6 +348,8 @@
 				DEVELOPMENT_TEAM = LQK5WB3692;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Aevra/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -328,7 +363,10 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = aevra.echoversa.com;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				REVENUECAT_PUBLIC_SDK_KEY = appl_jJGpHfwBivSsFhipOMFkdeSljyp;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPABASE_PUBLISHABLE_KEY = "sb_publishable_FmmDe_Ttr-9Dcr_tV2vNmw_2CbyJz6p";
+				SUPABASE_URL = "https://vskjfzcykzqieztpputw.supabase.co";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -407,6 +445,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 328EC26E2EE2FE26000D601B /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Realtime;
+		};
+		32F5A0022F70000100423EAA /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 323FF1AA2F60029600423EAA /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
