@@ -346,7 +346,7 @@
 		321D07CC2EDA8CD9007F4762 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				API_BASE_URL = "http://127.0.0.1:8000";
+				API_BASE_URL = "https://api.echoversa.com";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Aevra/Aevra.entitlements;
 				CODE_SIGN_STYLE = Automatic;
