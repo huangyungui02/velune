@@ -35,6 +35,27 @@ supabase/.temp/
 !.env.example
 !.env.sample
 !.env.template
+agent/.env
+agent/.env.*
+!agent/.env.example
+!agent/.env.sample
+!agent/.env.template
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.python-version
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
 
 # Astro site build/cache artifacts
 site/dist/
