@@ -44,11 +44,9 @@ struct GlimmerView: View {
                 .disabled(isDeleting)
             }
 
-            ToolbarItem(placement: .bottomBar) {
-                Spacer()
-            }
+            ToolbarSpacer(placement: .bottomBar)
 
-            ToolbarItem(placement: .bottomBar) {
+            ToolbarItem(placement: .status) {
                 if isLoading {
                     ProgressView()
                 } else {
@@ -56,15 +54,21 @@ struct GlimmerView: View {
                 }
             }
 
-            ToolbarItem(placement: .bottomBar) {
-                Spacer()
-            }
+            ToolbarSpacer(placement: .bottomBar)
 
             ToolbarItem(placement: .bottomBar) {
                 if shouldShowChatButton {
                     chatButton
                 }
             }
+        }
+        .navigationDestination(item: $chatRoute) { route in
+            ChatView(
+                sessionId: route.sessionId,
+                soulerId: route.soulerId,
+                soulerName: route.soulerName,
+                focusComposerOnAppear: true
+            )
         }
         .alert("glimmer.delete.title", isPresented: $showingDeleteAlert) {
             Button("common.cancel", role: .cancel) {}
@@ -89,14 +93,6 @@ struct GlimmerView: View {
         }
         .task {
             await refreshGlimmer()
-        }
-        .navigationDestination(item: $chatRoute) { route in
-            ChatView(
-                sessionId: route.sessionId,
-                soulerId: route.soulerId,
-                soulerName: route.soulerName,
-                focusComposerOnAppear: true
-            )
         }
     }
 
@@ -165,15 +161,19 @@ struct GlimmerView: View {
     }
 
     private var chatButton: some View {
-        Button {
-            guard let route = activeEchoChatRoute else { return }
-            chatRoute = route
-        } label: {
-            Image(systemName: "message")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(UITheme.primaryText)
+        Button("resonance.chat.newConversation", systemImage: "message") {
+            openChat()
         }
-        .buttonStyle(.plain)
+        .labelStyle(.iconOnly)
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(UITheme.primaryText)
+        .contentShape(.rect)
+        .accessibilityLabel(Text("resonance.chat.newConversation"))
+    }
+
+    private func openChat() {
+        guard let route = activeEchoChatRoute else { return }
+        chatRoute = route
     }
 }
 

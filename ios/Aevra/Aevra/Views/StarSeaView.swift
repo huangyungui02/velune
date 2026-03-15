@@ -17,8 +17,8 @@ struct StarSeaView: View {
     @State private var showError = false
     @State private var shouldRecoverToVerseAfterError = false
     @State private var currentPage: CardID? = .glimmer
-    @State private var chatRoute: EchoChatRoute?
     @State private var isShowingProfile = false
+    @State private var chatRoute: EchoChatRoute?
 
     var body: some View {
         SidebarContainer(
@@ -42,6 +42,9 @@ struct StarSeaView: View {
                         matchingToolbarContent
                     }
                     .navigationBarTitleDisplayMode(.inline)
+                    .navigationDestination(isPresented: $isShowingProfile) {
+                        ProfileView()
+                    }
                     .navigationDestination(item: $chatRoute) { route in
                         ChatView(
                             sessionId: route.sessionId,
@@ -49,9 +52,6 @@ struct StarSeaView: View {
                             soulerName: route.soulerName,
                             focusComposerOnAppear: true
                         )
-                    }
-                    .navigationDestination(isPresented: $isShowingProfile) {
-                        ProfileView()
                     }
             }
         }
@@ -194,9 +194,7 @@ struct StarSeaView: View {
                     }
                 }
 
-                ToolbarItem(placement: .bottomBar) {
-                    Spacer()
-                }
+                ToolbarSpacer(placement: .bottomBar)
 
                 ToolbarItem(placement: .bottomBar) {
                     if shouldShowChatButton {
@@ -330,15 +328,19 @@ extension StarSeaView {
     }
 
     private var chatButton: some View {
-        Button {
-            guard let route = activeEchoChatRoute else { return }
-            chatRoute = route
-        } label: {
-            Image(systemName: "message")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(UITheme.primaryText)
+        Button("resonance.chat.newConversation", systemImage: "message") {
+            openChat()
         }
-        .buttonStyle(.plain)
+        .labelStyle(.iconOnly)
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(UITheme.primaryText)
+        .contentShape(.rect)
+        .accessibilityLabel(Text("resonance.chat.newConversation"))
+    }
+
+    private func openChat() {
+        guard let route = activeEchoChatRoute else { return }
+        chatRoute = route
     }
 }
 
