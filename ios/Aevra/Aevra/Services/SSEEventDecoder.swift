@@ -1,49 +1,133 @@
 import Foundation
+import EventSource
 
-enum SSEEventDecoder {
-    static func decode(from rawStream: AsyncThrowingStream<Data, Error>) -> AsyncThrowingStream<Data, Error> {
+enum APISSEClient {
+    private static let decoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return decoder
+    }()
+
+    static func stream<Body: Encodable>(
+        path: String,
+        body: Body
+    ) -> AsyncThrowingStream<Data, Error> {
         AsyncThrowingStream { continuation in
-            Task {
-                var buffer = Data()
+            let encodedBody: Data
+            do {
+                encodedBody = try JSONEncoder().encode(body)
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
 
+            let task = Task(priority: .userInitiated) {
                 do {
-                    func drainBuffer() throws {
-                        let delimiter = Data([0x0A, 0x0A]) // "\n\n"
-                        while let range = buffer.range(of: delimiter) {
-                            let eventData = buffer.subdata(in: buffer.startIndex..<range.lowerBound)
-                            buffer.removeSubrange(buffer.startIndex..<range.upperBound)
+                    let request = try await makeRequest(path: path, body: encodedBody)
+                    let eventSource = EventSource(mode: .default)
+                    let dataTask = eventSource.dataTask(for: request)
 
-                            if eventData.isEmpty { continue }
+                    for await event in dataTask.events() {
+                        if Task.isCancelled { break }
 
-                            let eventText = String(decoding: eventData, as: UTF8.self)
-                            let dataLines = eventText
-                                .split(separator: "\n")
-                                .compactMap { line -> Substring? in
-                                    let trimmed = line.trimmingCharacters(in: .whitespaces)
-                                    if trimmed.hasPrefix("data:") {
-                                        return trimmed.dropFirst(5).trimmingCharacters(in: .whitespaces)[...]
-                                    }
-                                    return nil
-                                }
-
-                            let payloadString = dataLines.joined(separator: "\n")
-                            if payloadString.isEmpty { continue }
-
-                            continuation.yield(Data(payloadString.utf8))
+                        switch event {
+                        case .open:
+                            continue
+                        case .closed:
+                            continuation.finish()
+                            return
+                        case let .event(message):
+                            guard let raw = message.data?
+                                .trimmingCharacters(in: .whitespacesAndNewlines),
+                                !raw.isEmpty,
+                                raw != "[DONE]"
+                            else {
+                                continue
+                            }
+                            continuation.yield(Data(raw.utf8))
+                        case let .error(error):
+                            throw resolveEventSourceError(error)
                         }
                     }
-
-                    for try await chunk in rawStream {
-                        if Task.isCancelled { break }
-                        buffer.append(chunk)
-                        try drainBuffer()
-                    }
-
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)
                 }
             }
+            continuation.onTermination = { _ in
+                task.cancel()
+            }
         }
+    }
+
+    nonisolated private static func makeRequest(path: String, body: Data) async throws -> URLRequest {
+        let accessToken = await MainActor.run { AuthManager.shared.currentAccessToken }
+        guard let accessToken else {
+            throw NSError(
+                domain: "APISSEClient",
+                code: 401,
+                userInfo: [NSLocalizedDescriptionKey: "Missing Supabase access token"]
+            )
+        }
+
+        let endpoint = await MainActor.run { apiBaseURL.appending(path: path) }
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.httpBody = body
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        return request
+    }
+
+    nonisolated private static func resolveEventSourceError(_ error: Error) -> Error {
+        guard case let EventSourceError.connectionError(statusCode, response) = error else {
+            return error
+        }
+
+        let message = parseAPIErrorMessage(from: response)
+            ?? HTTPURLResponse.localizedString(forStatusCode: statusCode)
+        return NSError(
+            domain: "APISSEClient",
+            code: statusCode,
+            userInfo: [NSLocalizedDescriptionKey: message]
+        )
+    }
+
+    static func decode<Payload: Decodable>(
+        _ payloadType: Payload.Type,
+        from data: Data,
+        domain: String
+    ) throws -> Payload {
+        do {
+            return try decoder.decode(payloadType, from: data)
+        } catch {
+            throw NSError(
+                domain: domain,
+                code: -2,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Invalid stream payload format",
+                    NSUnderlyingErrorKey: error,
+                ]
+            )
+        }
+    }
+
+    nonisolated private static func parseAPIErrorMessage(from data: Data) -> String? {
+        guard !data.isEmpty else { return nil }
+        if let text = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           !text.isEmpty
+        {
+            if
+                let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let message = object["message"] as? String ?? object["error"] as? String,
+                !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            {
+                return message
+            }
+            return text
+        }
+        return nil
     }
 }

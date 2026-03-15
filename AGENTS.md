@@ -14,4 +14,5 @@
 
 - 移动端：swift6，ios26
 - 产品官网：astro5
-- 后端：supabase
+- 数据库：supabase
+- Agent(chat/echo): python3.14, fastapi

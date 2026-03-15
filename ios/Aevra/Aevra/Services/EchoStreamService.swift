@@ -1,7 +1,8 @@
 import Foundation
-import Supabase
 
 enum EchoStreamService {
+    private static let domain = "EchoStream"
+
     struct DonePayload {
         let plan: String?
         let monthlyLimit: Int?
@@ -12,6 +13,7 @@ enum EchoStreamService {
         let id: UUID
         let glimmerId: UUID
         let soulerId: UUID
+        let soulerName: String?
         let sessionId: UUID?
         let content: String
     }
@@ -23,99 +25,94 @@ enum EchoStreamService {
 
     private struct RequestBody: Encodable {
         let glimmerId: UUID
-        let lang: String
     }
 
-    private struct StreamEcho: Decodable {
-        let id: UUID
-        let glimmerId: UUID
-        let soulerId: UUID
-        let sessionId: UUID?
-        let content: String
-    }
+    private struct StreamEvent: Decodable {
+        struct EchoData: Decodable {
+            let id: UUID
+            let glimmerId: UUID
+            let soulerId: UUID
+            let soulerName: String?
+            let sessionId: UUID?
+            let content: String
+        }
 
-    private struct StreamPayload: Decodable {
         let type: String
-        let echo: StreamEcho?
-        let message: String?
-        let code: String?
+        let echo: EchoData?
         let plan: String?
         let monthlyLimit: Int?
         let creditsRemaining: Int?
-
-        enum CodingKeys: String, CodingKey {
-            case type
-            case echo
-            case message
-            case code
-            case plan
-            case monthlyLimit = "monthlyLimit"
-            case creditsRemaining = "creditsRemaining"
-        }
+        let code: String?
+        let message: String?
     }
 
-    static func stream(glimmerId: UUID, lang: String) -> AsyncThrowingStream<Event, Error> {
-        let rawStream = supabase.functions._invokeWithStreamedResponse(
-            "echo",
-            options: FunctionInvokeOptions(
-                body: RequestBody(glimmerId: glimmerId, lang: lang)
-            )
+    static func stream(glimmerId: UUID, path: String) -> AsyncThrowingStream<Event, Error> {
+        let payloadDataStream = APISSEClient.stream(
+            path: path,
+            body: RequestBody(glimmerId: glimmerId)
         )
-        let payloadDataStream = SSEEventDecoder.decode(from: rawStream)
 
         return AsyncThrowingStream { continuation in
-            Task {
-                let decoder = JSONDecoder()
+            let task = Task {
                 do {
                     for try await payloadData in payloadDataStream {
-                        let payload = try decoder.decode(StreamPayload.self, from: payloadData)
-                        switch payload.type {
-                        case "echo":
-                            if let echo = payload.echo {
-                                continuation.yield(
-                                    .echo(
-                                        EchoPayload(
-                                            id: echo.id,
-                                            glimmerId: echo.glimmerId,
-                                            soulerId: echo.soulerId,
-                                            sessionId: echo.sessionId,
-                                            content: echo.content
-                                        )
-                                    )
-                                )
-                            }
-                        case "done":
-                            continuation.yield(
-                                .done(
-                                    DonePayload(
-                                        plan: payload.plan,
-                                        monthlyLimit: payload.monthlyLimit,
-                                        creditsRemaining: payload.creditsRemaining
-                                    )
-                                )
-                            )
-                        case "error":
-                            let message: String
-                            if payload.code == "INSUFFICIENT_CREDITS" {
-                                message = String(localized: "billing.error.insufficientCredits")
-                            } else {
-                                message = payload.message ?? "Unknown error from echo stream"
-                            }
-                            throw NSError(
-                                domain: "EchoStream",
-                                code: -1,
-                                userInfo: [NSLocalizedDescriptionKey: message]
-                            )
-                        default:
-                            continue
-                        }
+                        let payload = try APISSEClient.decode(
+                            StreamEvent.self,
+                            from: payloadData,
+                            domain: domain
+                        )
+                        guard let event = try mapEvent(payload) else { continue }
+                        continuation.yield(event)
                     }
-
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)
                 }
             }
+
+            continuation.onTermination = { _ in
+                task.cancel()
+            }
         }
+    }
+
+    private static func mapEvent(_ payload: StreamEvent) throws -> Event? {
+        switch payload.type {
+        case "echo":
+            guard let echoData = payload.echo else { return nil }
+            return .echo(
+                EchoPayload(
+                    id: echoData.id,
+                    glimmerId: echoData.glimmerId,
+                    soulerId: echoData.soulerId,
+                    soulerName: echoData.soulerName,
+                    sessionId: echoData.sessionId,
+                    content: echoData.content
+                )
+            )
+        case "done":
+            return .done(
+                DonePayload(
+                    plan: payload.plan,
+                    monthlyLimit: payload.monthlyLimit,
+                    creditsRemaining: payload.creditsRemaining
+                )
+            )
+        case "error":
+            throw NSError(
+                domain: domain,
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: errorMessage(for: payload)]
+            )
+        default:
+            return nil
+        }
+    }
+
+    private static func errorMessage(for payload: StreamEvent) -> String {
+        if payload.code == "INSUFFICIENT_CREDITS" {
+            return String(localized: "billing.error.insufficientCredits")
+        }
+        return payload.message ?? "Unknown error from echo stream"
     }
 }

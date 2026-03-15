@@ -1,7 +1,8 @@
 import Foundation
-import Supabase
 
 enum ChatStreamService {
+    private static let domain = "ResonanceChat"
+
     struct DonePayload {
         var sessionId: UUID?
         var title: String?
@@ -22,34 +23,23 @@ enum ChatStreamService {
         var content: String
     }
 
-    private struct StreamPayload: Decodable {
-        var type: String
-        var delta: String?
-        var message: String?
-        var code: String?
-        var sessionId: String?
-        var title: String?
-        var plan: String?
-        var monthlyLimit: Int?
-        var creditsRemaining: Int?
-
-        enum CodingKeys: String, CodingKey {
-            case type
-            case delta
-            case message
-            case code
-            case sessionId = "sessionId"
-            case title
-            case plan
-            case monthlyLimit = "monthlyLimit"
-            case creditsRemaining = "creditsRemaining"
-        }
+    private struct StreamEvent: Decodable {
+        let type: String
+        let delta: String?
+        let sessionId: UUID?
+        let title: String?
+        let plan: String?
+        let monthlyLimit: Int?
+        let creditsRemaining: Int?
+        let code: String?
+        let message: String?
     }
 
     static func streamReply(
         sessionId: UUID?,
         soulerId: UUID,
         soulerName: String,
+        path: String,
         content: String
     ) -> AsyncThrowingStream<Event, Error> {
         let request = SendRequest(
@@ -58,55 +48,62 @@ enum ChatStreamService {
             soulerName: soulerName,
             content: content
         )
-        let rawStream = supabase.functions._invokeWithStreamedResponse(
-            "chat",
-            options: FunctionInvokeOptions(body: request)
-        )
-        let payloadDataStream = SSEEventDecoder.decode(from: rawStream)
+        let payloadDataStream = APISSEClient.stream(path: path, body: request)
 
         return AsyncThrowingStream { continuation in
-            Task {
-                let decoder = JSONDecoder()
+            let task = Task {
                 do {
                     for try await payloadData in payloadDataStream {
-                        let payload = try decoder.decode(StreamPayload.self, from: payloadData)
-                        switch payload.type {
-                        case "delta":
-                            if let delta = payload.delta, !delta.isEmpty {
-                                continuation.yield(.delta(delta))
-                            }
-                        case "done":
-                            let resolvedSessionId = payload.sessionId.flatMap(UUID.init(uuidString:))
-                            let donePayload = DonePayload(
-                                sessionId: resolvedSessionId,
-                                title: payload.title,
-                                plan: payload.plan,
-                                monthlyLimit: payload.monthlyLimit,
-                                creditsRemaining: payload.creditsRemaining
-                            )
-                            continuation.yield(.done(donePayload))
-                        case "error":
-                            let message: String
-                            if payload.code == "INSUFFICIENT_CREDITS" {
-                                message = String(localized: "billing.error.insufficientCredits")
-                            } else {
-                                message = payload.message ?? String(localized: "matching.error.unknown")
-                            }
-                            throw NSError(
-                                domain: "ResonanceChat",
-                                code: -1,
-                                userInfo: [NSLocalizedDescriptionKey: message]
-                            )
-                        default:
-                            continue
-                        }
+                        let payload = try APISSEClient.decode(
+                            StreamEvent.self,
+                            from: payloadData,
+                            domain: domain
+                        )
+                        guard let event = try mapEvent(payload) else { continue }
+                        continuation.yield(event)
                     }
-
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)
                 }
             }
+
+            continuation.onTermination = { _ in
+                task.cancel()
+            }
         }
+    }
+
+    private static func mapEvent(_ payload: StreamEvent) throws -> Event? {
+        switch payload.type {
+        case "delta":
+            guard let delta = payload.delta, !delta.isEmpty else { return nil }
+            return .delta(delta)
+        case "done":
+            return .done(
+                DonePayload(
+                    sessionId: payload.sessionId,
+                    title: payload.title,
+                    plan: payload.plan,
+                    monthlyLimit: payload.monthlyLimit,
+                    creditsRemaining: payload.creditsRemaining
+                )
+            )
+        case "error":
+            throw NSError(
+                domain: domain,
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: errorMessage(for: payload)]
+            )
+        default:
+            return nil
+        }
+    }
+
+    private static func errorMessage(for payload: StreamEvent) -> String {
+        if payload.code == "INSUFFICIENT_CREDITS" {
+            return String(localized: "billing.error.insufficientCredits")
+        }
+        return payload.message ?? String(localized: "matching.error.unknown")
     }
 }

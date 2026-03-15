@@ -42,6 +42,15 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         }
     }
 
+    var apiLanguageCode: String {
+        switch self {
+        case .english:
+            "en"
+        case .simplifiedChinese:
+            "chs"
+        }
+    }
+
     func applyAsPreferredLanguage() {
         UserDefaults.standard.set([appleLanguageIdentifier], forKey: "AppleLanguages")
     }

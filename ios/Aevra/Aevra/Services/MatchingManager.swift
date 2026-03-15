@@ -75,17 +75,28 @@ class MatchingManager {
 
         for try await event in EchoStreamService.stream(
             glimmerId: glimmer.id,
-            lang: AppLanguage.current.rawValue
+            path: "\(AppLanguage.current.apiLanguageCode)/echo"
         ) {
             if Task.isCancelled { break }
 
             switch event {
             case let .echo(payload):
-                let souler = try await Souler.get(payload.soulerId)
+                let displayName: String
+                if let inlineName = payload.soulerName?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !inlineName.isEmpty
+                {
+                    displayName = inlineName
+                } else if let souler = try? await Souler.get(payload.soulerId) {
+                    displayName = souler.name
+                } else {
+                    displayName = String(localized: "resonance.unknownSouler")
+                }
+
                 let echo = Echo(
                     id: payload.id,
                     content: payload.content,
-                    souler: souler,
+                    soulerId: payload.soulerId,
+                    soulerName: displayName,
                     sessionId: payload.sessionId
                 )
                 await MainActor.run {

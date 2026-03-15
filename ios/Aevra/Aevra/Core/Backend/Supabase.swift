@@ -12,8 +12,10 @@ private func requiredInfoValue(_ key: String) -> String {
 
 private let supabaseURLString = requiredInfoValue("SUPABASE_URL")
 private let supabaseKey = requiredInfoValue("SUPABASE_PUBLISHABLE_KEY")
+private let apiBaseURLString = requiredInfoValue("API_BASE_URL")
 
 let supabaseURL = URL(string: supabaseURLString)!
+let apiBaseURL = URL(string: apiBaseURLString)!
 
 let supabase = SupabaseClient(
     supabaseURL: supabaseURL,

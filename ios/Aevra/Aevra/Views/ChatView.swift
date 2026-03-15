@@ -259,26 +259,7 @@ struct ChatView: View {
         inputText = ""
         defer { isSending = false }
 
-        let userLocal = Message(
-            id: UUID(),
-            soulerId: soulerId,
-            sessionId: activeSessionId,
-            role: .user,
-            content: content,
-            createdAt: .now
-        )
-        messages.append(userLocal)
-
-        let assistantLocalId = UUID()
-        let assistantLocal = Message(
-            id: assistantLocalId,
-            soulerId: soulerId,
-            sessionId: activeSessionId,
-            role: .assistant,
-            content: "",
-            createdAt: .now
-        )
-        messages.append(assistantLocal)
+        let assistantLocalId = appendPendingMessages(for: content)
 
         do {
             var resolvedSessionId: UUID?
@@ -288,6 +269,7 @@ struct ChatView: View {
                 sessionId: isDraftSession ? nil : activeSessionId,
                 soulerId: soulerId,
                 soulerName: soulerName,
+                path: "\(AppLanguage.current.apiLanguageCode)/chat",
                 content: content
             ) {
                 switch event {
@@ -296,46 +278,92 @@ struct ChatView: View {
                         messages[index].content += delta
                     }
                 case let .done(payload):
-                    if let sessionId = payload.sessionId {
-                        resolvedSessionId = sessionId
-                    }
-                    SubscriptionManager.shared.applyServerCreditSnapshot(
-                        plan: payload.plan,
-                        monthlyLimit: payload.monthlyLimit,
-                        creditsRemaining: payload.creditsRemaining
-                    )
-                    if let title = payload.title?
-                        .trimmingCharacters(in: .whitespacesAndNewlines),
-                        !title.isEmpty
-                    {
-                        resolvedTitle = title
-                    }
+                    let result = applyDonePayload(payload)
+                    resolvedSessionId = result.sessionId ?? resolvedSessionId
+                    resolvedTitle = result.title ?? resolvedTitle
                 }
             }
-            if let resolvedSessionId {
-                activeSessionId = resolvedSessionId
-                isDraftSession = false
-            }
-            messages = try await Message.getHistory(
-                sessionId: resolvedSessionId ?? activeSessionId
+            try await finalizeSend(
+                resolvedSessionId: resolvedSessionId,
+                resolvedTitle: resolvedTitle,
+                startedFromDraft: startedFromDraft
             )
-            await loadSessionsForSidebar()
-            if startedFromDraft, let resolvedSessionId, let onSelectSession {
-                let fallbackTitle = resolvedTitle ?? String(localized: "resonance.chat.newConversation")
-                let routeSession = sessions.first(where: { $0.id == resolvedSessionId }) ?? ChatSession(
-                    id: resolvedSessionId,
-                    soulerId: soulerId,
-                    soulerName: soulerName,
-                    title: fallbackTitle,
-                    createdAt: .now,
-                    updatedAt: .now
-                )
-                onSelectSession(routeSession)
-            }
         } catch {
             messages.removeAll { $0.id == assistantLocalId }
             errorMessage = error.localizedDescription
         }
+    }
+
+    @MainActor
+    private func appendPendingMessages(for content: String) -> UUID {
+        messages.append(
+            Message(
+                id: UUID(),
+                soulerId: soulerId,
+                sessionId: activeSessionId,
+                role: .user,
+                content: content,
+                createdAt: .now
+            )
+        )
+
+        let assistantLocalId = UUID()
+        messages.append(
+            Message(
+                id: assistantLocalId,
+                soulerId: soulerId,
+                sessionId: activeSessionId,
+                role: .assistant,
+                content: "",
+                createdAt: .now
+            )
+        )
+        return assistantLocalId
+    }
+
+    @MainActor
+    private func applyDonePayload(_ payload: ChatStreamService.DonePayload) -> (sessionId: UUID?, title: String?) {
+        SubscriptionManager.shared.applyServerCreditSnapshot(
+            plan: payload.plan,
+            monthlyLimit: payload.monthlyLimit,
+            creditsRemaining: payload.creditsRemaining
+        )
+
+        let title = payload.title?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return (
+            payload.sessionId,
+            title.flatMap { $0.isEmpty ? nil : $0 }
+        )
+    }
+
+    @MainActor
+    private func finalizeSend(
+        resolvedSessionId: UUID?,
+        resolvedTitle: String?,
+        startedFromDraft: Bool
+    ) async throws {
+        if let resolvedSessionId {
+            activeSessionId = resolvedSessionId
+            isDraftSession = false
+        }
+
+        let sessionId = resolvedSessionId ?? activeSessionId
+        messages = try await Message.getHistory(sessionId: sessionId)
+        await loadSessionsForSidebar()
+
+        guard startedFromDraft, let resolvedSessionId, let onSelectSession else { return }
+
+        let fallbackTitle = resolvedTitle ?? String(localized: "resonance.chat.newConversation")
+        let routeSession = sessions.first(where: { $0.id == resolvedSessionId }) ?? ChatSession(
+            id: resolvedSessionId,
+            soulerId: soulerId,
+            soulerName: soulerName,
+            title: fallbackTitle,
+            createdAt: .now,
+            updatedAt: .now
+        )
+        onSelectSession(routeSession)
     }
 
     private var selectedSessionId: UUID {
@@ -417,15 +445,15 @@ private struct ResonanceChatBubble: View {
                 }
                 .fontDesign(.serif)
                 .lineSpacing(5)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(
-                    isUser
-                        ? .white.opacity(0.16)
-                        : .white.opacity(0.08),
-                    in: .rect(cornerRadius: 14)
-                )
-                .frame(maxWidth: 320, alignment: isUser ? .trailing : .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                isUser
+                    ? .white.opacity(0.16)
+                    : .white.opacity(0.08),
+                in: .rect(cornerRadius: 14)
+            )
+            .frame(maxWidth: 320, alignment: isUser ? .trailing : .leading)
 
             if !isUser {
                 Spacer(minLength: 32)

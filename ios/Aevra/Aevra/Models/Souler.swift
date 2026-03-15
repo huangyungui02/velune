@@ -18,7 +18,7 @@ extension Souler {
         struct Response: Codable {
             var id: UUID
             var name: String
-            var bio: String
+            var bio: String?
         }
 
         let res: Response = try await supabase
@@ -29,7 +29,7 @@ extension Souler {
             .execute()
             .value
 
-        return Souler(id: res.id, name: res.name, bio: res.bio)
+        return Souler(id: res.id, name: res.name, bio: res.bio ?? "")
     }
 }
 
