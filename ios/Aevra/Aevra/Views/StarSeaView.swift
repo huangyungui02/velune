@@ -187,7 +187,6 @@ struct StarSeaView: View {
                 ToolbarItem(placement: .bottomBar) {
                     if shouldShowWaveButton {
                         MatchingWaveIcon()
-                            .frame(width: 44, height: 44)
                     } else if shouldShowCloseButton {
                         closeButton
                     }
@@ -307,7 +306,6 @@ extension StarSeaView {
             MatchingWaveIcon()
 
             Text("matching.status.listening")
-                .font(.footnote.weight(.medium))
                 .foregroundStyle(UITheme.primaryText)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
@@ -318,19 +316,13 @@ extension StarSeaView {
     }
 
     private var closeButton: some View {
-        Button(action: closeCurrentGlimmer) {
-            Image(systemName: "xmark")
-                .foregroundStyle(UITheme.primaryText)
-        }
-        .frame(width: 44, height: 44)
+        Button(role: .cancel, action: closeCurrentGlimmer)
     }
 
     private var chatButton: some View {
         Button("resonance.chat.newConversation", systemImage: "message") {
             openChat()
         }
-        .foregroundStyle(UITheme.primaryText)
-        .frame(width: 44, height: 44)
     }
 
     private func openChat() {
@@ -399,26 +391,17 @@ private struct ComposeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(action: {
+                    Button(role: .close) {
                         dismiss()
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.title3.weight(.medium))
-                            .foregroundStyle(UITheme.secondaryText)
                     }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: {
+                    Button(role: .confirm) {
                         onSend()
                         dismiss()
-                    }) {
-                        Image(systemName: "checkmark")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(UITheme.primaryText)
                     }
                     .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .opacity(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.3 : 1)
                 }
             }
         }

@@ -19,7 +19,7 @@ struct MatchingWaveIcon: View {
                     )
             }
         }
-        .frame(width: 8, height: 8)
+        .frame(width: 12, height: 12)
         .onAppear {
             animate = true
         }
