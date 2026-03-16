@@ -148,19 +148,3 @@ enum AppleSignInFlow {
         try await AuthManager.shared.signInWithAppleCredential(credential)
     }
 }
-
-#Preview {
-    VStack(spacing: 20) {
-        AppleSignInActionButton(visualStyle: .capsule)
-        AppleSignInPromptCard(
-            icon: "person.crop.circle.badge.exclamationmark",
-            title: "anonymous.restricted.profile.title",
-            description: "anonymous.restricted.profile.description"
-        )
-        AppleSignInSettingsRow { _ in
-            // Preview only
-        }
-    }
-    .padding()
-    .background(BackgroundView())
-}

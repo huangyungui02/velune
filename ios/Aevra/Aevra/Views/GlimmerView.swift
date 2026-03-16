@@ -175,11 +175,3 @@ struct GlimmerView: View {
         chatRoute = route
     }
 }
-
-#Preview {
-    let glimmer = Glimmer.sampleData[0]
-    NavigationStack {
-        GlimmerView(glimmer: glimmer)
-            .sampleDataContainer()
-    }
-}

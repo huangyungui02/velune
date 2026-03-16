@@ -155,7 +155,3 @@ private struct AppMarkView: View {
         }
     }
 }
-
-#Preview {
-    SignView()
-}

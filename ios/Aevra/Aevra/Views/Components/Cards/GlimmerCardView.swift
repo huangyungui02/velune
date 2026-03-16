@@ -47,8 +47,3 @@ struct GlimmerCardView: View {
         }
     }
 }
-
-#Preview {
-    let glimmer = Glimmer.sampleData[0]
-    GlimmerCardView(content: glimmer.content, createdAt: glimmer.createdAt)
-}

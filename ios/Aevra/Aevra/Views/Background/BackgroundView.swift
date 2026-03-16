@@ -261,7 +261,3 @@ struct StarFieldView: View {
         return wrapped < 0 ? wrapped + 1.0 : wrapped
     }
 }
-
-#Preview {
-    BackgroundView()
-}

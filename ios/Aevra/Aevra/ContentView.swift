@@ -5,8 +5,3 @@ struct ContentView: View {
         StarSeaView()
     }
 }
-
-#Preview {
-    ContentView()
-        .sampleDataContainer()
-}

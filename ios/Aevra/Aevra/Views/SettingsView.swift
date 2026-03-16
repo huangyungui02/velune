@@ -305,9 +305,3 @@ private func actionRow(title: LocalizedStringKey, systemImage: String, isLoading
         }
     }
 }
-
-#Preview {
-    NavigationStack {
-        SettingsView()
-    }
-}

@@ -254,8 +254,3 @@ private struct GlimmerListRow: View {
         }
     }
 }
-
-#Preview {
-    ProfileView()
-        .sampleDataContainer()
-}

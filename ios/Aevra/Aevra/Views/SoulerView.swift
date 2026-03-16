@@ -141,9 +141,3 @@ struct SoulerView: View {
         }
     }
 }
-
-#Preview {
-    NavigationStack {
-        SoulerView(soulerId: Souler.sampleData[0].id)
-    }
-}

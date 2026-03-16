@@ -109,34 +109,3 @@ extension Glimmer {
             .execute()
     }
 }
-
-extension Glimmer {
-    @MainActor static let sampleData: [Glimmer] =
-        [
-            Glimmer(
-                content: "Today I suddenly had a great idea! I want to write these concepts down—maybe they’ll come in handy one day.",
-                createdAt: Date().addingTimeInterval(-7 * 24 * 60 * 60),
-                status: "completed"
-            ),
-            Glimmer(
-                content: "What if I build an app that helps people capture glimmer anytime, anywhere—before those fleeting thoughts disappear?",
-                createdAt: Date().addingTimeInterval(-5 * 24 * 60 * 60),
-                status: "completed"
-            ),
-            Glimmer(
-                content: "Inspired by a book: the best ideas often come from collisions across disciplines. Stay curious and expose yourself to new things.",
-                createdAt: Date().addingTimeInterval(-3 * 24 * 60 * 60),
-                status: "completed"
-            ),
-            Glimmer(
-                content: "Walking in the park today, I saw sunlight filtering through the leaves and thought: this could be a great visual motif for design. Nature really is the best teacher.",
-                createdAt: Date().addingTimeInterval(-1 * 24 * 60 * 60),
-                status: "completed"
-            ),
-            Glimmer(
-                content: "A sudden spark: what if I combine this concept with that technology? Worth exploring.",
-                createdAt: Date(),
-                status: "completed"
-            )
-        ]
-}

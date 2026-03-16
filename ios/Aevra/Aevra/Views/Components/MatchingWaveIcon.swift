@@ -25,7 +25,3 @@ struct MatchingWaveIcon: View {
         }
     }
 }
-
-#Preview {
-    MatchingWaveIcon()
-}

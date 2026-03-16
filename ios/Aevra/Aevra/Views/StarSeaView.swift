@@ -427,7 +427,3 @@ private struct ComposeView: View {
         }
     }
 }
-
-#Preview {
-    StarSeaView()
-}

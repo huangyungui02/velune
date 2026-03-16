@@ -64,7 +64,3 @@ struct EchoCardView: View {
         .buttonStyle(.plain)
     }
 }
-
-#Preview {
-    EchoCardView(echo: Echo.sampleData[0])
-}
