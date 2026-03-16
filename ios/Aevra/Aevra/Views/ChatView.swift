@@ -21,6 +21,7 @@ struct ChatView: View {
     @State private var sessionMenuError: String?
     @State private var isShowingSouler = false
     @FocusState private var isComposerFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(
         sessionId: UUID,
@@ -192,10 +193,16 @@ struct ChatView: View {
             .font(.body)
             .fontDesign(.serif)
             .foregroundStyle(UITheme.primaryText)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(Color.clear, in: .rect(cornerRadius: 18))
-            .glassEffect(in: .rect(cornerRadius: 18))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.clear, in: .rect(cornerRadius: 16))
+            .glassEffect(in: .rect(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(.white.opacity(isComposerFocused ? 0.18 : 0.10), lineWidth: 0.8)
+            }
+            .shadow(color: .black.opacity(0.10), radius: 14, y: 2)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: isComposerFocused)
 
             Button {
                 Task {
@@ -203,20 +210,27 @@ struct ChatView: View {
                 }
             } label: {
                 Image(systemName: "arrow.up")
-                    .font(.title3.weight(.semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(canSend ? UITheme.primaryText : UITheme.tertiaryText)
-                    .frame(width: 45, height: 45)
+                    .frame(width: 40, height: 40)
                     .background(Color.clear, in: .circle)
                     .glassEffect(in: .circle)
+                    .overlay {
+                        Circle()
+                            .strokeBorder(.white.opacity(canSend ? 0.16 : 0.08), lineWidth: 0.8)
+                    }
+                    .shadow(color: .black.opacity(canSend ? 0.12 : 0.08), radius: 12, y: 2)
             }
             .disabled(!canSend)
-            .scaleEffect(canSend ? 1 : 0.96)
-            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: canSend)
+            .scaleEffect(canSend ? 1 : 0.94)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: canSend)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .padding(.horizontal)
+        .padding(.horizontal, 8)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .padding(.horizontal, 10)
         .padding(.bottom, 6)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: isSending)
     }
 
     @MainActor
