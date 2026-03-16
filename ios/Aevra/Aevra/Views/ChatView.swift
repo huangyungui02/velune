@@ -47,9 +47,13 @@ struct ChatView: View {
                         ProgressView("common.loading")
                             .tint(UITheme.accent)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .contentShape(.rect)
+                            .onTapGesture(perform: dismissComposer)
                     } else if messages.isEmpty {
                         EmptyView(title: "resonance.chat.empty")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .contentShape(.rect)
+                            .onTapGesture(perform: dismissComposer)
                     } else {
                         messageList
                     }
@@ -156,6 +160,9 @@ struct ChatView: View {
                 }
                 .padding()
             }
+            .scrollDismissesKeyboard(.interactively)
+            .contentShape(.rect)
+            .onTapGesture(perform: dismissComposer)
             .onAppear {
                 guard !hasScrolledToLatestOnAppear else { return }
                 hasScrolledToLatestOnAppear = true
@@ -181,6 +188,7 @@ struct ChatView: View {
             )
             .focused($isComposerFocused)
             .lineLimit(1 ... 4)
+            .submitLabel(.send)
             .textFieldStyle(.plain)
             .font(.body)
             .fontDesign(.serif)
@@ -189,6 +197,11 @@ struct ChatView: View {
             .padding(.vertical, 10)
             .background(Color.clear, in: .rect(cornerRadius: 18))
             .glassEffect(in: .rect(cornerRadius: 18))
+            .onSubmit {
+                Task {
+                    await sendMessage()
+                }
+            }
 
             Button {
                 Task {
@@ -232,6 +245,14 @@ struct ChatView: View {
         }
     }
 
+    private func dismissComposer() {
+        guard isComposerFocused else { return }
+        isComposerFocused = false
+        Task { @MainActor in
+            Keyboard.dismiss()
+        }
+    }
+
     @MainActor
     private func loadMessages() async {
         if isLoading { return }
@@ -254,6 +275,7 @@ struct ChatView: View {
         guard !content.isEmpty else { return }
 
         isSending = true
+        dismissComposer()
         inputText = ""
         defer { isSending = false }
 

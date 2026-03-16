@@ -126,6 +126,9 @@ struct SidebarContainer<Content: View>: View {
     }
 
     private func closeSidebar() {
+        Task { @MainActor in
+            Keyboard.dismiss()
+        }
         withAnimation(.easeInOut(duration: 0.2)) {
             sidebarNavigation.isSidebarPresented = false
         }
@@ -145,6 +148,7 @@ struct SidebarView: View {
     @State private var resonanceOffset = 0
     @State private var resonanceMenuError: String?
     @State private var resonanceSearchText = ""
+    @FocusState private var isSearchFocused: Bool
 
     private let resonancePageSize = 20
 
@@ -170,6 +174,7 @@ struct SidebarView: View {
                                 .foregroundStyle(UITheme.secondaryText)
 
                             Button("common.retry") {
+                                dismissSearch()
                                 Task {
                                     await loadResonances()
                                 }
@@ -185,19 +190,27 @@ struct SidebarView: View {
                                 .foregroundStyle(UITheme.secondaryText)
                         }
                         .padding(.top, 8)
+                        .contentShape(.rect)
+                        .onTapGesture(perform: dismissSearch)
                     } else if displayedResonances.isEmpty {
                         if resonances.isEmpty, !hasActiveResonanceSearch {
                             resonanceEmptyStateView
                                 .padding(.top, 6)
+                                .contentShape(.rect)
+                                .onTapGesture(perform: dismissSearch)
                         } else {
                             if hasActiveResonanceSearch {
                                 ContentUnavailableView.search(text: resonanceSearchText)
                                     .padding(.top, 6)
+                                    .contentShape(.rect)
+                                    .onTapGesture(perform: dismissSearch)
                             } else {
                                 ContentUnavailableView {
                                     Label("resonance.empty", systemImage: "magnifyingglass")
                                 }
                                 .padding(.top, 6)
+                                .contentShape(.rect)
+                                .onTapGesture(perform: dismissSearch)
                             }
                         }
                     } else {
@@ -205,6 +218,7 @@ struct SidebarView: View {
                             LazyVStack(alignment: .leading, spacing: 4) {
                                 ForEach(displayedResonances) { resonance in
                                     Button {
+                                        dismissSearch()
                                         Task {
                                             await openLatestSession(for: resonance)
                                         }
@@ -253,6 +267,9 @@ struct SidebarView: View {
                                 }
                             }
                         }
+                        .scrollDismissesKeyboard(.interactively)
+                        .contentShape(.rect)
+                        .onTapGesture(perform: dismissSearch)
                         .padding(.horizontal, -12)
                         .contentMargins(.horizontal, 12, for: .scrollContent)
                         .contentMargins(.horizontal, 0, for: .scrollIndicators)
@@ -323,6 +340,8 @@ struct SidebarView: View {
                     .foregroundStyle(UITheme.secondaryText)
 
                 TextField("common.search", text: $resonanceSearchText)
+                    .focused($isSearchFocused)
+                    .submitLabel(.search)
                     .textFieldStyle(.plain)
                     .font(.footnote)
                     .fontDesign(.serif)
@@ -333,7 +352,10 @@ struct SidebarView: View {
             .background(Color.clear, in: .capsule)
             .glassEffect(in: .capsule)
 
-            Button(action: onTapStarSea) {
+            Button {
+                dismissSearch()
+                onTapStarSea()
+            } label: {
                 Image(systemName: "sparkles")
                     .font(.headline.weight(.semibold))
                     .frame(width: 46, height: 46)
@@ -416,6 +438,14 @@ struct SidebarView: View {
             onOpenSession(session)
         } catch {
             resonanceMenuError = error.localizedDescription
+        }
+    }
+
+    private func dismissSearch() {
+        guard isSearchFocused else { return }
+        isSearchFocused = false
+        Task { @MainActor in
+            Keyboard.dismiss()
         }
     }
 }

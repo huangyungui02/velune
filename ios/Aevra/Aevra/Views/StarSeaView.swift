@@ -372,10 +372,13 @@ private struct ComposeView: View {
                     .font(.body)
                     .fontDesign(.serif)
                     .lineSpacing(6)
+                    .submitLabel(.done)
                     .padding(24)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Spacer()
+                    .contentShape(.rect)
+                    .onTapGesture(perform: dismissKeyboard)
             }
             .background(
                 LinearGradient(
@@ -392,12 +395,14 @@ private struct ComposeView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(role: .close) {
+                        dismissKeyboard()
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(role: .confirm) {
+                        dismissKeyboard()
                         onSend()
                         dismiss()
                     }
@@ -407,6 +412,14 @@ private struct ComposeView: View {
         }
         .onAppear {
             isFocused = true
+        }
+    }
+
+    private func dismissKeyboard() {
+        guard isFocused else { return }
+        isFocused = false
+        Task { @MainActor in
+            Keyboard.dismiss()
         }
     }
 }
