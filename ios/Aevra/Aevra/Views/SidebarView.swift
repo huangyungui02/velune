@@ -20,6 +20,7 @@ struct SidebarContainer<Content: View>: View {
     let content: Content
 
     @State private var sidebarDragOffset: CGFloat = 0
+    private let sidebarEdgeActivationWidth: CGFloat = 28
 
     init(
         sidebarNavigation: Binding<SidebarNavigationState>,
@@ -83,23 +84,45 @@ struct SidebarContainer<Content: View>: View {
     private var sidebarGesture: some Gesture {
         DragGesture(minimumDistance: 10, coordinateSpace: .global)
             .onChanged { value in
-                guard sidebarNavigation.isSidebarPresented else { return }
-                sidebarDragOffset = min(0, value.translation.width)
-            }
-            .onEnded { value in
-                guard sidebarNavigation.isSidebarPresented else {
-                    sidebarDragOffset = 0
+                guard isHorizontalSidebarGesture(value) else { return }
+
+                if sidebarNavigation.isSidebarPresented {
+                    sidebarDragOffset = min(0, value.translation.width)
                     return
                 }
 
-                let predicted = sidebarWidth + value.predictedEndTranslation.width
-                let shouldOpen = predicted > sidebarWidth * 0.45
+                guard canBeginOpeningSidebar(with: value) else { return }
+                sidebarDragOffset = min(max(0, value.translation.width), sidebarWidth)
+            }
+            .onEnded { value in
+                defer { sidebarDragOffset = 0 }
+                guard isHorizontalSidebarGesture(value) else { return }
+
+                if sidebarNavigation.isSidebarPresented {
+                    let predicted = sidebarWidth + value.predictedEndTranslation.width
+                    let shouldOpen = predicted > sidebarWidth * 0.45
+
+                    withAnimation(.easeInOut(duration: 0.22)) {
+                        sidebarNavigation.isSidebarPresented = shouldOpen
+                    }
+                    return
+                }
+
+                guard canBeginOpeningSidebar(with: value) else { return }
+                let shouldOpen = value.predictedEndTranslation.width > sidebarWidth * 0.28
 
                 withAnimation(.easeInOut(duration: 0.22)) {
                     sidebarNavigation.isSidebarPresented = shouldOpen
                 }
-                sidebarDragOffset = 0
             }
+    }
+
+    private func isHorizontalSidebarGesture(_ value: DragGesture.Value) -> Bool {
+        abs(value.translation.width) > abs(value.translation.height)
+    }
+
+    private func canBeginOpeningSidebar(with value: DragGesture.Value) -> Bool {
+        value.startLocation.x <= sidebarEdgeActivationWidth && value.translation.width > 0
     }
 
     private func closeSidebar() {
@@ -110,7 +133,6 @@ struct SidebarContainer<Content: View>: View {
 }
 
 struct SidebarView: View {
-    @Environment(\.locale) private var locale
     @State private var authManager = AuthManager.shared
     let selectedSoulerId: UUID?
     let sidebarWidth: CGFloat
@@ -187,36 +209,21 @@ struct SidebarView: View {
                                             await openLatestSession(for: resonance)
                                         }
                                     } label: {
-                                        HStack(spacing: 8) {
-                                            HStack(alignment: .top, spacing: 8) {
-                                                Image(systemName: selectedSoulerId == resonance.soulerId ? "checkmark" : "message")
-                                                    .font(.caption.weight(.semibold))
-
-                                                VStack(alignment: .leading, spacing: 3) {
-                                                    Text(resonance.soulerName)
-                                                        .lineLimit(1)
-                                                        .font(.body.weight(.medium))
-                                                        .fontDesign(.serif)
-
-                                                    Text(resonance.lastSessionTitle)
-                                                        .lineLimit(1)
-                                                        .font(.footnote)
-                                                        .foregroundStyle(UITheme.secondaryText)
-                                                        .fontDesign(.serif)
-                                                }
-                                            }
-                                            .foregroundStyle(UITheme.primaryText)
-
-                                            Spacer(minLength: 8)
-
-                                            Text(resonance.updatedAt, format: .relative(presentation: .named).locale(locale))
-                                                .font(.caption)
-                                                .foregroundStyle(UITheme.secondaryText)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(resonance.soulerName)
                                                 .lineLimit(1)
-                                                .monospacedDigit()
+                                                .font(.body.weight(.medium))
+                                                .fontDesign(.serif)
+
+                                            Text(resonance.lastSessionTitle)
+                                                .lineLimit(1)
+                                                .font(.footnote)
+                                                .foregroundStyle(UITheme.secondaryText)
+                                                .fontDesign(.serif)
                                         }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 10)
+                                        .foregroundStyle(UITheme.primaryText)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 12)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .contentShape(Rectangle())
                                         .background(
@@ -246,6 +253,9 @@ struct SidebarView: View {
                                 }
                             }
                         }
+                        .padding(.horizontal, -12)
+                        .contentMargins(.horizontal, 12, for: .scrollContent)
+                        .contentMargins(.horizontal, 0, for: .scrollIndicators)
                     }
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
