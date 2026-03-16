@@ -20,6 +20,7 @@ struct SidebarContainer<Content: View>: View {
     let content: Content
 
     @State private var sidebarDragOffset: CGFloat = 0
+    @FocusState private var isSidebarSearchFocused: Bool
     private let sidebarEdgeActivationWidth: CGFloat = 28
 
     init(
@@ -50,6 +51,7 @@ struct SidebarContainer<Content: View>: View {
 
             SidebarView(
                 selectedSoulerId: sidebarNavigation.selectedSoulerId,
+                isSearchFocused: $isSidebarSearchFocused,
                 sidebarWidth: sidebarWidth,
                 onOpenSession: { session in
                     sidebarNavigation.activeSession = session
@@ -126,9 +128,7 @@ struct SidebarContainer<Content: View>: View {
     }
 
     private func closeSidebar() {
-        Task { @MainActor in
-            Keyboard.dismiss()
-        }
+        isSidebarSearchFocused = false
         withAnimation(.easeInOut(duration: 0.2)) {
             sidebarNavigation.isSidebarPresented = false
         }
@@ -138,6 +138,7 @@ struct SidebarContainer<Content: View>: View {
 struct SidebarView: View {
     @State private var authManager = AuthManager.shared
     let selectedSoulerId: UUID?
+    @FocusState.Binding var isSearchFocused: Bool
     let sidebarWidth: CGFloat
     let onOpenSession: (ChatSession) -> Void
     let onTapStarSea: () -> Void
@@ -148,7 +149,6 @@ struct SidebarView: View {
     @State private var resonanceOffset = 0
     @State private var resonanceMenuError: String?
     @State private var resonanceSearchText = ""
-    @FocusState private var isSearchFocused: Bool
 
     private let resonancePageSize = 20
 
@@ -442,10 +442,6 @@ struct SidebarView: View {
     }
 
     private func dismissSearch() {
-        guard isSearchFocused else { return }
         isSearchFocused = false
-        Task { @MainActor in
-            Keyboard.dismiss()
-        }
     }
 }

@@ -416,10 +416,6 @@ private struct ComposeView: View {
     }
 
     private func dismissKeyboard() {
-        guard isFocused else { return }
         isFocused = false
-        Task { @MainActor in
-            Keyboard.dismiss()
-        }
     }
 }

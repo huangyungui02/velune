@@ -188,7 +188,6 @@ struct ChatView: View {
             )
             .focused($isComposerFocused)
             .lineLimit(1 ... 4)
-            .submitLabel(.send)
             .textFieldStyle(.plain)
             .font(.body)
             .fontDesign(.serif)
@@ -197,11 +196,6 @@ struct ChatView: View {
             .padding(.vertical, 10)
             .background(Color.clear, in: .rect(cornerRadius: 18))
             .glassEffect(in: .rect(cornerRadius: 18))
-            .onSubmit {
-                Task {
-                    await sendMessage()
-                }
-            }
 
             Button {
                 Task {
@@ -246,11 +240,7 @@ struct ChatView: View {
     }
 
     private func dismissComposer() {
-        guard isComposerFocused else { return }
         isComposerFocused = false
-        Task { @MainActor in
-            Keyboard.dismiss()
-        }
     }
 
     @MainActor
