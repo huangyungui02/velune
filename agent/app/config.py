@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "qwen-plus"
 
     CHAT_TEMPERATURE: float = 0.5
+    MODEL_XS_TEMPERATURE: float = 0.1
     MODEL_S_TEMPERATURE: float = 0.25
     MODEL_M_TEMPERATURE: float = 0.5
     MODEL_L_TEMPERATURE: float = 0.75

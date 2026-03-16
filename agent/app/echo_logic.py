@@ -7,8 +7,8 @@ from typing import Any
 
 from app.echo_nodes import (
     Lang,
-    generate_souler_aliases,
     match_soulers,
+    resolve_souler_name,
     session_title,
     souler_answer,
     souler_profile,
@@ -16,13 +16,14 @@ from app.echo_nodes import (
 )
 from app.errors import CreditLimitError, CreditState
 from app.supabase_repo import (
-    append_souler_alias,
+    add_souler_alias,
     consume_user_credit,
     create_echo,
     create_or_update_resonance,
     create_session,
     create_souler,
     get_souler_by_alias,
+    get_souler_by_name,
     insert_session_message,
     update_souler,
 )
@@ -32,6 +33,14 @@ from app.supabase_repo import (
 class GraphResult:
     completed: bool
     credit_state: CreditState | None
+
+
+def _souler_id(souler_data: dict[str, Any]) -> str:
+    return str(souler_data["id"])
+
+
+def _souler_name(souler_data: dict[str, Any]) -> str:
+    return str(souler_data["name"]).strip()
 
 
 def _reason_to_message(reason: Any) -> str:
@@ -45,6 +54,43 @@ def _reason_to_message(reason: Any) -> str:
             if isinstance(value, str) and value.strip():
                 return value
     return "Unknown failure"
+
+
+async def _resolve_souler(matched_name: str, lang: Lang) -> dict[str, Any]:
+    souler_data = get_souler_by_alias(matched_name)
+    if souler_data:
+        return souler_data
+
+    souler_data = get_souler_by_name(matched_name)
+    if souler_data:
+        return souler_data
+
+    resolved_name = await resolve_souler_name(matched_name, lang)
+    souler_data = get_souler_by_name(resolved_name)
+    if not souler_data:
+        souler_data = create_souler(resolved_name)
+
+    add_souler_alias(_souler_id(souler_data), _souler_name(souler_data), matched_name)
+    return souler_data
+
+
+async def _ensure_souler_assets(souler_data: dict[str, Any], lang: Lang) -> dict[str, Any]:
+    souler_id = _souler_id(souler_data)
+    souler_name = _souler_name(souler_data)
+
+    bio = souler_data.get("bio")
+    if not isinstance(bio, str) or not bio.strip():
+        generated_bio = await souler_profile(souler_name, lang)
+        souler_data["bio"] = generated_bio
+        update_souler(souler_id, {"bio": generated_bio})
+
+    prompt = souler_data.get("prompt")
+    if not isinstance(prompt, str) or not prompt.strip():
+        generated_prompt = await souler_prompt(souler_name, lang)
+        souler_data["prompt"] = generated_prompt
+        update_souler(souler_id, {"prompt": generated_prompt})
+
+    return souler_data
 
 
 async def invoke_echo_graph(
@@ -63,24 +109,10 @@ async def invoke_echo_graph(
         if not matched_name:
             raise ValueError("Matched souler name cannot be empty")
 
-        souler_data = get_souler_by_alias(matched_name)
-        if not souler_data:
-            aliases = await generate_souler_aliases(matched_name, lang)
-            souler_data = create_souler(matched_name, aliases)
-        else:
-            souler_data = append_souler_alias(str(souler_data["id"]), matched_name)
-
-        bio = souler_data.get("bio")
-        if not isinstance(bio, str) or not bio.strip():
-            generated_bio = await souler_profile(str(souler_data["name"]), lang)
-            souler_data["bio"] = generated_bio
-            update_souler(str(souler_data["id"]), {"bio": generated_bio})
-
-        prompt = souler_data.get("prompt")
-        if not isinstance(prompt, str) or not prompt.strip():
-            generated_prompt = await souler_prompt(str(souler_data["name"]), lang)
-            souler_data["prompt"] = generated_prompt
-            update_souler(str(souler_data["id"]), {"prompt": generated_prompt})
+        souler_data = await _resolve_souler(matched_name, lang)
+        souler_data = await _ensure_souler_assets(souler_data, lang)
+        souler_id = _souler_id(souler_data)
+        souler_name = _souler_name(souler_data)
 
         credit_state = consume_user_credit(user_id)
         answer = await souler_answer(
@@ -92,20 +124,20 @@ async def invoke_echo_graph(
 
         session_id = create_session(
             user_id,
-            str(souler_data["id"]),
+            souler_id,
             title,
         )
 
         insert_session_message(
             user_id,
-            str(souler_data["id"]),
+            souler_id,
             session_id,
             "user",
             glimmer_content,
         )
         insert_session_message(
             user_id,
-            str(souler_data["id"]),
+            souler_id,
             session_id,
             "assistant",
             answer,
@@ -113,14 +145,14 @@ async def invoke_echo_graph(
 
         echo = create_echo(
             glimmer_id,
-            str(souler_data["id"]),
+            souler_id,
             answer,
             session_id,
         )
-        echo["souler_name"] = str(souler_data.get("name", "")).strip()
+        echo["souler_name"] = souler_name
         create_or_update_resonance(
             user_id,
-            str(souler_data["id"]),
+            souler_id,
             session_id,
             title,
         )

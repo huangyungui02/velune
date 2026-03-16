@@ -4,15 +4,14 @@ from typing import Any, Literal
 
 Lang = Literal["chs", "en"]
 
-ALIASES_SCHEMA: dict[str, Any] = {
+RESOLVED_NAME_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
-        "aliases": {
-            "type": "array",
-            "items": {"type": "string"},
+        "resolved_name": {
+            "type": "string",
         }
     },
-    "required": ["aliases"],
+    "required": ["resolved_name"],
     "additionalProperties": False,
 }
 
@@ -39,28 +38,6 @@ def build_match_schema(num: int) -> dict[str, Any]:
         "required": ["data"],
         "additionalProperties": False,
     }
-
-
-def normalize_aliases(name: str, aliases: list[str]) -> list[str]:
-    seen: set[str] = set()
-    normalized: list[str] = []
-
-    def push(candidate: str) -> None:
-        cleaned = candidate.strip()
-        if not cleaned:
-            return
-        key = cleaned.lower()
-        if key in seen:
-            return
-        seen.add(key)
-        normalized.append(cleaned)
-
-    push(name)
-    for alias in aliases:
-        push(alias)
-
-    return normalized
-
 
 def sanitize_title(raw: str, lang: Lang) -> str:
     trimmed = raw.strip().strip('"\'`')

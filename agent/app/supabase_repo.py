@@ -321,7 +321,7 @@ def create_or_update_resonance(
     )
 
 
-def get_souler_by_alias(candidate_name: str) -> dict[str, Any] | None:
+def get_souler_by_name(candidate_name: str) -> dict[str, Any] | None:
     query = candidate_name.strip()
     if not query:
         return None
@@ -329,20 +329,50 @@ def get_souler_by_alias(candidate_name: str) -> dict[str, Any] | None:
     response = (
         supabase.table("soulers")
         .select("*")
-        .contains("aliases", [query])
+        .eq("name", query)
         .limit(1)
         .execute()
     )
     return _first_row(response.data)
 
 
-def create_souler(name: str, aliases: list[str]) -> dict[str, Any]:
+def get_souler_by_alias(candidate_name: str) -> dict[str, Any] | None:
+    query = candidate_name.strip()
+    if not query:
+        return None
+
+    alias_response = (
+        supabase.table("souler_aliases")
+        .select("souler_id")
+        .eq("alias", query)
+        .limit(1)
+        .execute()
+    )
+    alias_row = _first_row(alias_response.data)
+    souler_id = str(alias_row.get("souler_id", "")).strip() if alias_row else ""
+    if not souler_id:
+        return None
+
+    souler_response = (
+        supabase.table("soulers")
+        .select("*")
+        .eq("id", souler_id)
+        .limit(1)
+        .execute()
+    )
+    return _first_row(souler_response.data)
+
+
+def create_souler(name: str) -> dict[str, Any]:
+    cleaned_name = name.strip()
+    if not cleaned_name:
+        raise ValueError("Souler name cannot be empty")
+
     response = (
         supabase.table("soulers")
         .insert(
             {
-                "name": name,
-                "aliases": aliases,
+                "name": cleaned_name,
             },
             returning="representation",
         )
@@ -355,23 +385,28 @@ def create_souler(name: str, aliases: list[str]) -> dict[str, Any]:
     return row
 
 
-def append_souler_alias(souler_id: str, alias: str) -> dict[str, Any]:
+def add_souler_alias(souler_id: str, souler_name: str, alias: str) -> None:
     cleaned_alias = alias.strip()
     if not cleaned_alias:
-        raise ValueError("Alias cannot be empty")
+        return
 
-    response = supabase.rpc(
-        "append_souler_alias",
-        {
-            "souler_id": souler_id,
-            "alias_to_add": cleaned_alias,
-        },
-    ).execute()
+    if souler_name.strip() == cleaned_alias:
+        return
 
-    row = _first_row(response.data)
-    if not row:
-        raise ValueError("Souler not found when appending alias")
-    return row
+    existing = get_souler_by_alias(cleaned_alias)
+    if existing:
+        return
+
+    (
+        supabase.table("souler_aliases")
+        .insert(
+            {
+                "souler_id": souler_id,
+                "alias": cleaned_alias,
+            }
+        )
+        .execute()
+    )
 
 
 def update_souler(souler_id: str, data: dict[str, Any]) -> dict[str, Any]:
