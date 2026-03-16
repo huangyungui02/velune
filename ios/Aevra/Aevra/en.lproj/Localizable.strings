@@ -43,7 +43,6 @@
 "sign.terms.label" = "Terms of Service";
 "sign.privacy.label" = "Privacy Policy";
 
-"anonymous.action.signInWithApple" = "Sign in with Apple";
 "anonymous.restricted.profile.title" = "Unlock Hearthaven";
 "anonymous.restricted.profile.description" = "Sign in with Apple to view, keep, and revisit your glimmers.";
 "anonymous.restricted.sidebar.title" = "Open Resonance Threads";
@@ -58,11 +57,9 @@
 
 "starsea.hero.verse" = "When the heart ripples,\nthe universe unfolds.";
 "starsea.prompt.glimmerWithin" = "What glimmers within you";
-"starsea.action.resonances" = "Resonances";
 "starsea.action.writeGlimmer" = "Write a glimmer";
 "starsea.empty.resonanceTitle" = "No resonances yet";
 "starsea.empty.resonanceSubtitle" = "Write your first glimmer, and let the sea answer in its own quiet way.";
-"starsea.title" = "StarSea";
 
 "matching.status.listening" = "Listening for echoes";
 "matching.error.title" = "Error";
@@ -85,7 +82,6 @@
 "resonance.sort.count" = "Most resonated";
 "resonance.chat.placeholder" = "Say something…";
 "resonance.chat.empty" = "Start a resonance chat";
-"resonance.chat.action.profile" = "View profile";
 "resonance.chat.action.newConversation" = "New Conversation";
 "resonance.chat.newConversation" = "New Chat";
 "resonance.unknownSouler" = "Unknown souler";
@@ -96,5 +92,3 @@
 "billing.error.missingRevenueCatKey" = "RevenueCat public key is missing.";
 "billing.error.offeringUnavailable" = "No purchasable package is available right now. Please try again later.";
 "billing.error.syncTimeout" = "Purchase succeeded, but premium status has not synced yet. Please wait a moment and tap Restore Purchases.";
-
-"matching.action.archive" = "Archive";

@@ -67,7 +67,6 @@ struct ChatView: View {
                     Text(soulerName)
                         .lineLimit(1)
                 }
-                .accessibilityLabel(Text("resonance.chat.action.profile"))
             }
 
             ToolbarItem(placement: .topBarTrailing) {
@@ -112,7 +111,6 @@ struct ChatView: View {
                 } label: {
                     Image(systemName: "clock.arrow.circlepath")
                 }
-                .accessibilityLabel(Text("starsea.action.resonances"))
             }
         }
         .alert("matching.error.title", isPresented: Binding(

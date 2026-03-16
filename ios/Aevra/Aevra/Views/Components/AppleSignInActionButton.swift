@@ -7,7 +7,6 @@ struct AppleSignInActionButton: View {
         case capsule
     }
 
-    var title: LocalizedStringKey = "anonymous.action.signInWithApple"
     var visualStyle: VisualStyle = .plain
     var height: CGFloat = 50
     var showInlineError = true
@@ -41,7 +40,6 @@ struct AppleSignInActionButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: visualStyle == .capsule ? 46 : height)
             .modifier(AppleSignInButtonChrome(style: visualStyle))
-            .accessibilityLabel(title)
             .overlay {
                 if isProcessing {
                     ProgressView()

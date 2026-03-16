@@ -332,7 +332,6 @@ struct SidebarView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(UITheme.primaryText)
-            .accessibilityLabel(Text("starsea.title"))
         }
         .padding(.horizontal, 2)
         .shadow(color: .black.opacity(0.12), radius: 14, y: 6)

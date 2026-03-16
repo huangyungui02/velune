@@ -56,7 +56,6 @@ struct SignView: View {
     private var actionBlock: some View {
         VStack(spacing: 8) {
             AppleSignInActionButton(
-                title: "anonymous.action.signInWithApple",
                 visualStyle: .capsule,
                 height: 46
             )

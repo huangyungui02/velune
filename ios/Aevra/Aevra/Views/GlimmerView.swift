@@ -168,7 +168,6 @@ struct GlimmerView: View {
         .font(.footnote.weight(.semibold))
         .foregroundStyle(UITheme.primaryText)
         .contentShape(.rect)
-        .accessibilityLabel(Text("resonance.chat.newConversation"))
     }
 
     private func openChat() {

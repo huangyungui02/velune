@@ -36,7 +36,6 @@ struct StarSeaView: View {
                             } label: {
                                 Image(systemName: "line.3.horizontal")
                             }
-                            .accessibilityLabel(Text("starsea.action.resonances"))
                         }
                         profileToolbarItem
                         matchingToolbarContent
@@ -188,7 +187,7 @@ struct StarSeaView: View {
                 ToolbarItem(placement: .bottomBar) {
                     if shouldShowWaveButton {
                         MatchingWaveIcon()
-                            .frame(width: 24, height: 24)
+                            .frame(width: 44, height: 44)
                     } else if shouldShowCloseButton {
                         closeButton
                     }
@@ -321,21 +320,17 @@ extension StarSeaView {
     private var closeButton: some View {
         Button(action: closeCurrentGlimmer) {
             Image(systemName: "xmark")
-                .font(.footnote.weight(.semibold))
                 .foregroundStyle(UITheme.primaryText)
         }
-        .buttonStyle(.plain)
+        .frame(width: 44, height: 44)
     }
 
     private var chatButton: some View {
         Button("resonance.chat.newConversation", systemImage: "message") {
             openChat()
         }
-        .labelStyle(.iconOnly)
-        .font(.footnote.weight(.semibold))
         .foregroundStyle(UITheme.primaryText)
-        .contentShape(.rect)
-        .accessibilityLabel(Text("resonance.chat.newConversation"))
+        .frame(width: 44, height: 44)
     }
 
     private func openChat() {

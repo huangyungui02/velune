@@ -43,7 +43,6 @@
 "sign.terms.label" = "《用户协议》";
 "sign.privacy.label" = "《隐私政策》";
 
-"anonymous.action.signInWithApple" = "使用 Apple 登录";
 "anonymous.restricted.profile.title" = "登录后开启心舍";
 "anonymous.restricted.profile.description" = "使用 Apple 登录后，可查看、保存并回望你的心光。";
 "anonymous.restricted.sidebar.title" = "登录后开启共鸣";
@@ -58,11 +57,9 @@
 
 "starsea.hero.verse" = "心有微澜\n宇宙自现";
 "starsea.prompt.glimmerWithin" = "你的心里闪烁着什么";
-"starsea.action.resonances" = "共鸣列表";
 "starsea.action.writeGlimmer" = "写下心光";
 "starsea.empty.resonanceTitle" = "还没有共鸣";
 "starsea.empty.resonanceSubtitle" = "先写下一道心光吧，让星海温柔地回应你。";
-"starsea.title" = "星海";
 
 "matching.status.listening" = "正在聆听回响";
 "matching.error.title" = "错误";
@@ -85,7 +82,6 @@
 "resonance.sort.count" = "最多共鸣";
 "resonance.chat.placeholder" = "对Ta说点什么…";
 "resonance.chat.empty" = "开始一段共鸣对话";
-"resonance.chat.action.profile" = "查看人物简介";
 "resonance.chat.action.newConversation" = "新建对话";
 "resonance.chat.newConversation" = "新对话";
 "resonance.unknownSouler" = "未命名灵魂";
@@ -96,5 +92,3 @@
 "billing.error.missingRevenueCatKey" = "未配置 RevenueCat 公钥。";
 "billing.error.offeringUnavailable" = "当前暂无可购买套餐，请稍后重试。";
 "billing.error.syncTimeout" = "购买成功，但付费状态尚未同步。请稍等片刻后点击“恢复购买”。";
-
-"matching.action.archive" = "归档";
