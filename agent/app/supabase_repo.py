@@ -28,6 +28,7 @@ class Souler(TypedDict):
 class SessionContext(TypedDict):
     id: str
     soulerId: str
+    title: str
     souler: Souler
 
 
@@ -140,6 +141,7 @@ def get_session_by_id(user_id: str, session_id: str) -> SessionContext:
     return {
         "id": str(row.get("id")),
         "soulerId": str(row.get("souler_id")),
+        "title": str(row.get("title", "")),
         "souler": _to_souler(row.get("soulers")),
     }
 
@@ -275,10 +277,15 @@ def consume_user_credit(user_id: str) -> CreditState:
     )
 
 
-def create_or_update_resonance(user_id: str, souler_id: str) -> None:
+def create_or_update_resonance(
+    user_id: str,
+    souler_id: str,
+    last_session_id: str,
+    last_session_title: str,
+) -> None:
     response = (
         supabase.table("resonances")
-        .select("id, count")
+        .select("id")
         .eq("user_id", user_id)
         .eq("souler_id", souler_id)
         .limit(1)
@@ -293,7 +300,8 @@ def create_or_update_resonance(user_id: str, souler_id: str) -> None:
                 {
                     "user_id": user_id,
                     "souler_id": souler_id,
-                    "count": 1,
+                    "last_session_id": last_session_id,
+                    "last_session_title": last_session_title,
                 }
             )
             .execute()
@@ -302,7 +310,12 @@ def create_or_update_resonance(user_id: str, souler_id: str) -> None:
 
     (
         supabase.table("resonances")
-        .update({"count": int(row.get("count", 0)) + 1})
+        .update(
+            {
+                "last_session_id": last_session_id,
+                "last_session_title": last_session_title,
+            }
+        )
         .eq("id", row.get("id"))
         .execute()
     )

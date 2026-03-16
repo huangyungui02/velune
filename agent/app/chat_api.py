@@ -214,6 +214,7 @@ async def _prepare_chat_request(
         session = {
             "id": created_session_id,
             "soulerId": souler["id"],
+            "title": "",
             "souler": souler,
         }
     log_stage("session_ready")
@@ -329,6 +330,8 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
                 create_or_update_resonance,
                 prepared.user_id,
                 prepared.session["soulerId"],
+                prepared.session["id"],
+                generated_title or prepared.session["title"],
                 timeout=settings.POST_STREAM_TIMEOUT_SECONDS,
             )
             log_stage("stream_done")

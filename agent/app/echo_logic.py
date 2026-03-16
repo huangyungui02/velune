@@ -118,7 +118,12 @@ async def invoke_echo_graph(
             session_id,
         )
         echo["souler_name"] = str(souler_data.get("name", "")).strip()
-        create_or_update_resonance(user_id, str(souler_data["id"]))
+        create_or_update_resonance(
+            user_id,
+            str(souler_data["id"]),
+            session_id,
+            title,
+        )
 
         if on_echo:
             maybe_awaitable = on_echo(echo)

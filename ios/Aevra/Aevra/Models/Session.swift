@@ -37,6 +37,20 @@ extension ChatSession {
         var name: String
     }
 
+    private static func mapResponse(_ response: [Response]) -> [ChatSession] {
+        let fallbackName = String(localized: "resonance.unknownSouler")
+        return response.map { item in
+            ChatSession(
+                id: item.id,
+                soulerId: item.soulerId,
+                soulerName: item.souler?.name ?? fallbackName,
+                title: item.title,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt
+            )
+        }
+    }
+
     static func getPage(limit: Int, offset: Int) async throws -> [ChatSession] {
         try await getPage(soulerId: nil, limit: limit, offset: offset)
     }
@@ -67,21 +81,23 @@ extension ChatSession {
                 .value
         }
 
-        let fallbackName = String(localized: "resonance.unknownSouler")
-        return response.map { item in
-            ChatSession(
-                id: item.id,
-                soulerId: item.soulerId,
-                soulerName: item.souler?.name ?? fallbackName,
-                title: item.title,
-                createdAt: item.createdAt,
-                updatedAt: item.updatedAt
-            )
-        }
+        return mapResponse(response)
     }
 
     static func getLatest(soulerId: UUID) async throws -> ChatSession? {
         let list = try await getPage(soulerId: soulerId, limit: 1, offset: 0)
         return list.first
+    }
+
+    static func get(id: UUID) async throws -> ChatSession? {
+        let response: [Response] = try await supabase
+            .from("sessions")
+            .select("id, souler_id, title, created_at, updated_at, soulers(name)")
+            .eq("id", value: id.uuidString)
+            .limit(1)
+            .execute()
+            .value
+
+        return mapResponse(response).first
     }
 }

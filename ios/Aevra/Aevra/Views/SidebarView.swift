@@ -188,13 +188,22 @@ struct SidebarView: View {
                                         }
                                     } label: {
                                         HStack(spacing: 8) {
-                                            HStack(spacing: 8) {
+                                            HStack(alignment: .top, spacing: 8) {
                                                 Image(systemName: selectedSoulerId == resonance.soulerId ? "checkmark" : "message")
                                                     .font(.caption.weight(.semibold))
-                                                Text(resonance.soulerName)
-                                                    .lineLimit(1)
-                                                    .font(.body.weight(.medium))
-                                                    .fontDesign(.serif)
+
+                                                VStack(alignment: .leading, spacing: 3) {
+                                                    Text(resonance.soulerName)
+                                                        .lineLimit(1)
+                                                        .font(.body.weight(.medium))
+                                                        .fontDesign(.serif)
+
+                                                    Text(resonance.lastSessionTitle)
+                                                        .lineLimit(1)
+                                                        .font(.footnote)
+                                                        .foregroundStyle(UITheme.secondaryText)
+                                                        .fontDesign(.serif)
+                                                }
                                             }
                                             .foregroundStyle(UITheme.primaryText)
 
@@ -262,7 +271,10 @@ struct SidebarView: View {
     private var displayedResonances: [Resonance] {
         let keyword = resonanceSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !keyword.isEmpty else { return resonances }
-        return resonances.filter { $0.soulerName.localizedCaseInsensitiveContains(keyword) }
+        return resonances.filter {
+            $0.soulerName.localizedCaseInsensitiveContains(keyword)
+                || $0.lastSessionTitle.localizedCaseInsensitiveContains(keyword)
+        }
     }
 
     private var resonanceEmptyStateView: some View {
@@ -378,6 +390,14 @@ struct SidebarView: View {
     @MainActor
     private func openLatestSession(for resonance: Resonance) async {
         do {
+            if let lastSessionId = resonance.lastSessionId,
+               let session = try await ChatSession.get(id: lastSessionId)
+            {
+                resonanceMenuError = nil
+                onOpenSession(session)
+                return
+            }
+
             guard let session = try await ChatSession.getLatest(soulerId: resonance.soulerId) else {
                 resonanceMenuError = String(localized: "resonance.empty")
                 return

@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS resonances (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     souler_id UUID NOT NULL REFERENCES soulers(id),
-    count INT NOT NULL DEFAULT 1,
+    last_session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
+    last_session_title TEXT NOT NULL DEFAULT '',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
