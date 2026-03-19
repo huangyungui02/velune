@@ -155,9 +155,12 @@ struct ChatView: View {
             await loadSessionsForSidebar()
         }
         .onAppear {
-            guard focusComposerOnAppear else { return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                isComposerFocused = true
+            if focusComposerOnAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    isComposerFocused = true
+                }
+            } else {
+                isComposerFocused = false
             }
         }
         .navigationDestination(isPresented: $isShowingSouler) {

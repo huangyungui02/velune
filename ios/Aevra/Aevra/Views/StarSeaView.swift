@@ -97,6 +97,7 @@ struct StarSeaView: View {
                 sessionId: session.id,
                 soulerId: session.soulerId,
                 soulerName: session.soulerName,
+                focusComposerOnAppear: false,
                 onSelectSession: { selectedSession in
                     sidebarNavigation.showSession(selectedSession)
                 }
@@ -106,6 +107,7 @@ struct StarSeaView: View {
                 sessionId: nil,
                 soulerId: draftChat.soulerId,
                 soulerName: draftChat.soulerName,
+                focusComposerOnAppear: false,
                 onSelectSession: { selectedSession in
                     sidebarNavigation.showSession(selectedSession)
                 }
