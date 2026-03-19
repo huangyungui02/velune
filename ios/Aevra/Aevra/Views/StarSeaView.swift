@@ -23,18 +23,21 @@ struct StarSeaView: View {
     var body: some View {
         SidebarContainer(
             sidebarNavigation: $sidebarNavigation,
+            isSidebarEnabled: isSidebarEnabled,
             onOpenGlimmerComposer: openGlimmerComposerFromSidebar
         ) {
             NavigationStack {
                 mainContent
                     .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button {
-                                withAnimation(.easeInOut(duration: 0.22)) {
-                                    sidebarNavigation.isSidebarPresented.toggle()
+                        if isSidebarEnabled {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button {
+                                    withAnimation(.easeInOut(duration: 0.22)) {
+                                        sidebarNavigation.isSidebarPresented.toggle()
+                                    }
+                                } label: {
+                                    Image(systemName: "line.3.horizontal")
                                 }
-                            } label: {
-                                Image(systemName: "line.3.horizontal")
                             }
                         }
                         profileToolbarItem
@@ -43,6 +46,22 @@ struct StarSeaView: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .navigationDestination(isPresented: $isShowingProfile) {
                         ProfileView()
+                    }
+                    .navigationDestination(item: $sidebarNavigation.activeSession) { session in
+                        ChatView(
+                            sessionId: session.id,
+                            soulerId: session.soulerId,
+                            soulerName: session.soulerName,
+                            focusComposerOnAppear: false
+                        )
+                    }
+                    .navigationDestination(item: $sidebarNavigation.activeDraftChat) { draftTarget in
+                        ChatView(
+                            sessionId: nil,
+                            soulerId: draftTarget.soulerId,
+                            soulerName: draftTarget.soulerName,
+                            focusComposerOnAppear: false
+                        )
                     }
                     .navigationDestination(item: $chatRoute) { route in
                         ChatView(
@@ -90,51 +109,24 @@ struct StarSeaView: View {
         }
     }
 
-    @ViewBuilder
     private var mainContent: some View {
-        if let session = sidebarNavigation.activeSession {
-            ChatView(
-                sessionId: session.id,
-                soulerId: session.soulerId,
-                soulerName: session.soulerName,
-                focusComposerOnAppear: false,
-                onSelectSession: { selectedSession in
-                    sidebarNavigation.showSession(selectedSession)
-                }
-            )
-        } else if let draftChat = sidebarNavigation.activeDraftChat {
-            ChatView(
-                sessionId: nil,
-                soulerId: draftChat.soulerId,
-                soulerName: draftChat.soulerName,
-                focusComposerOnAppear: false,
-                onSelectSession: { selectedSession in
-                    sidebarNavigation.showSession(selectedSession)
-                }
-            )
-        } else {
-            ZStack {
-                StarryBackgroundView()
+        ZStack {
+            StarryBackgroundView()
 
-                if stage == .matching {
-                    matchingContent
-                } else {
-                    VStack {
-                        Spacer()
+            if stage == .matching {
+                matchingContent
+            } else {
+                VStack {
+                    Spacer()
 
-                        VerseView(textKey: "starsea.hero.verse")
+                    VerseView(textKey: "starsea.hero.verse")
 
-                        Spacer()
+                    Spacer()
 
-                        magicButtonView
-                    }
+                    magicButtonView
                 }
             }
         }
-    }
-
-    private var isStarSeaDestination: Bool {
-        sidebarNavigation.isStarSeaDestination
     }
 
     private var echoes: [Echo] {
@@ -172,7 +164,11 @@ struct StarSeaView: View {
     }
 
     private var shouldShowMatchingToolbar: Bool {
-        isStarSeaDestination && stage == .matching
+        stage == .matching
+    }
+
+    private var isSidebarEnabled: Bool {
+        sidebarNavigation.isStarSeaDestination && chatRoute == nil && !isShowingProfile
     }
 
     private var shouldShowListeningChip: Bool {
@@ -181,7 +177,7 @@ struct StarSeaView: View {
 
     @ToolbarContentBuilder
     private var profileToolbarItem: some ToolbarContent {
-        if isStarSeaDestination {
+        if isSidebarEnabled {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     isShowingProfile = true
@@ -291,7 +287,6 @@ struct StarSeaView: View {
     }
 
     private func openGlimmerComposerFromSidebar() {
-        sidebarNavigation.showStarSea()
         isPresented = true
     }
 

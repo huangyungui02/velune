@@ -1,8 +1,9 @@
 import SwiftUI
 
-struct SidebarDraftChatTarget: Equatable {
+struct SidebarDraftChatTarget: Identifiable, Hashable {
     var soulerId: UUID
     var soulerName: String
+    var id: UUID { soulerId }
 }
 
 struct SidebarNavigationState {
@@ -20,11 +21,6 @@ struct SidebarNavigationState {
         activeDraftChat = draftTarget
     }
 
-    mutating func showStarSea() {
-        activeSession = nil
-        activeDraftChat = nil
-    }
-
     var selectedSoulerId: UUID? {
         activeSession?.soulerId ?? activeDraftChat?.soulerId
     }
@@ -37,6 +33,7 @@ struct SidebarNavigationState {
 struct SidebarContainer<Content: View>: View {
     @Binding var sidebarNavigation: SidebarNavigationState
     let sidebarWidth: CGFloat
+    let isSidebarEnabled: Bool
     let onOpenGlimmerComposer: () -> Void
     let content: Content
 
@@ -46,12 +43,14 @@ struct SidebarContainer<Content: View>: View {
 
     init(
         sidebarNavigation: Binding<SidebarNavigationState>,
-        sidebarWidth: CGFloat = 320,
+        sidebarWidth: CGFloat = 280,
+        isSidebarEnabled: Bool = true,
         onOpenGlimmerComposer: @escaping () -> Void,
         @ViewBuilder content: () -> Content
     ) {
         _sidebarNavigation = sidebarNavigation
         self.sidebarWidth = sidebarWidth
+        self.isSidebarEnabled = isSidebarEnabled
         self.onOpenGlimmerComposer = onOpenGlimmerComposer
         self.content = content()
     }
@@ -82,10 +81,6 @@ struct SidebarContainer<Content: View>: View {
                     sidebarNavigation.showDraftChat(draftTarget)
                     closeSidebar()
                 },
-                onTapStarSea: {
-                    sidebarNavigation.showStarSea()
-                    closeSidebar()
-                },
                 onOpenGlimmerComposer: {
                     onOpenGlimmerComposer()
                     closeSidebar()
@@ -96,6 +91,11 @@ struct SidebarContainer<Content: View>: View {
         .simultaneousGesture(sidebarGesture)
         .animation(.easeInOut(duration: 0.22), value: sidebarNavigation.isSidebarPresented)
         .animation(.interactiveSpring(response: 0.22, dampingFraction: 0.9), value: sidebarDragOffset)
+        .onChange(of: isSidebarEnabled) { _, isEnabled in
+            if !isEnabled {
+                closeSidebar(animated: false)
+            }
+        }
     }
 
     private var sidebarOpenOffset: CGFloat {
@@ -111,6 +111,7 @@ struct SidebarContainer<Content: View>: View {
     private var sidebarGesture: some Gesture {
         DragGesture(minimumDistance: 10, coordinateSpace: .global)
             .onChanged { value in
+                guard isSidebarEnabled else { return }
                 guard isHorizontalSidebarGesture(value) else { return }
 
                 if sidebarNavigation.isSidebarPresented {
@@ -123,6 +124,7 @@ struct SidebarContainer<Content: View>: View {
             }
             .onEnded { value in
                 defer { sidebarDragOffset = 0 }
+                guard isSidebarEnabled else { return }
                 guard isHorizontalSidebarGesture(value) else { return }
 
                 if sidebarNavigation.isSidebarPresented {
@@ -152,10 +154,15 @@ struct SidebarContainer<Content: View>: View {
         value.startLocation.x <= sidebarEdgeActivationWidth && value.translation.width > 0
     }
 
-    private func closeSidebar() {
+    private func closeSidebar(animated: Bool = true) {
         isSidebarSearchFocused = false
-        withAnimation(.easeInOut(duration: 0.2)) {
+        let closeAction = {
             sidebarNavigation.isSidebarPresented = false
+        }
+        if animated {
+            withAnimation(.easeInOut(duration: 0.2), closeAction)
+        } else {
+            closeAction()
         }
     }
 }
@@ -167,7 +174,6 @@ struct SidebarView: View {
     let sidebarWidth: CGFloat
     let onOpenSession: (ChatSession) -> Void
     let onOpenDraftChat: (SidebarDraftChatTarget) -> Void
-    let onTapStarSea: () -> Void
     let onOpenGlimmerComposer: () -> Void
     @State private var resonances: [Resonance] = []
     @State private var isLoadingResonances = false
@@ -332,7 +338,7 @@ struct SidebarView: View {
 
     private var resonanceEmptyStateView: some View {
         ContentUnavailableView {
-            Label("starsea.empty.resonanceTitle", systemImage: "sparkles")
+            Text("starsea.empty.resonanceTitle")
                 .fontDesign(.serif)
                 .padding(.bottom, 6)
         } description: {
@@ -359,38 +365,23 @@ struct SidebarView: View {
     }
 
     private var sidebarTopToolbar: some View {
-        HStack(spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(UITheme.secondaryText)
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(UITheme.secondaryText)
 
-                TextField("common.search", text: $resonanceSearchText)
-                    .focused($isSearchFocused)
-                    .submitLabel(.search)
-                    .textFieldStyle(.plain)
-                    .font(.footnote)
-                    .fontDesign(.serif)
-                    .foregroundStyle(UITheme.primaryText)
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 44)
-            .background(Color.clear, in: .capsule)
-            .glassEffect(in: .capsule)
-
-            Button {
-                dismissSearch()
-                onTapStarSea()
-            } label: {
-                Image(systemName: "sparkles")
-                    .font(.headline.weight(.semibold))
-                    .frame(width: 46, height: 46)
-                    .background(Color.clear, in: .circle)
-                    .glassEffect(in: .circle)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(UITheme.primaryText)
+            TextField("common.search", text: $resonanceSearchText)
+                .focused($isSearchFocused)
+                .submitLabel(.search)
+                .textFieldStyle(.plain)
+                .font(.footnote)
+                .fontDesign(.serif)
+                .foregroundStyle(UITheme.primaryText)
         }
+        .padding(.horizontal, 12)
+        .frame(height: 44)
+        .background(Color.clear, in: .capsule)
+        .glassEffect(in: .capsule)
         .padding(.horizontal, 2)
         .shadow(color: .black.opacity(0.12), radius: 14, y: 6)
     }
