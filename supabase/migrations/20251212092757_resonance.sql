@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS resonances (
     souler_id UUID NOT NULL REFERENCES soulers(id),
     last_session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
     last_session_title TEXT NOT NULL DEFAULT '',
+    count INT NOT NULL DEFAULT 1 CHECK (count >= 1),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

@@ -9,7 +9,6 @@ from app.echo_nodes import (
     Lang,
     match_soulers,
     resolve_souler_name,
-    session_title,
     souler_answer,
     souler_profile,
     souler_prompt,
@@ -20,11 +19,9 @@ from app.supabase_repo import (
     consume_user_credit,
     create_echo,
     create_or_update_resonance,
-    create_session,
     create_souler,
     get_souler_by_alias,
     get_souler_by_name,
-    insert_session_message,
     update_souler,
 )
 
@@ -120,41 +117,18 @@ async def invoke_echo_graph(
             str(souler_data["prompt"]),
             lang,
         )
-        title = await session_title(glimmer_content, answer, lang)
-
-        session_id = create_session(
-            user_id,
-            souler_id,
-            title,
-        )
-
-        insert_session_message(
-            user_id,
-            souler_id,
-            session_id,
-            "user",
-            glimmer_content,
-        )
-        insert_session_message(
-            user_id,
-            souler_id,
-            session_id,
-            "assistant",
-            answer,
-        )
 
         echo = create_echo(
             glimmer_id,
             souler_id,
             answer,
-            session_id,
         )
         echo["souler_name"] = souler_name
         create_or_update_resonance(
             user_id,
             souler_id,
-            session_id,
-            title,
+            None,
+            "",
         )
 
         if on_echo:

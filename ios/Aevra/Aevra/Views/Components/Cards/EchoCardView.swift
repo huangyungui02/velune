@@ -2,15 +2,20 @@ import MarkdownUI
 import SwiftUI
 
 struct EchoChatRoute: Identifiable, Hashable {
-    let sessionId: UUID
     let soulerId: UUID
     let soulerName: String
-    var id: UUID { sessionId }
+    let draftEchoId: UUID
+    let draftPrelude: ChatView.DraftPrelude
+    var id: UUID { draftEchoId }
 
-    init(sessionId: UUID, echo: Echo) {
-        self.sessionId = sessionId
+    init(echo: Echo, glimmerContent: String? = nil) {
         soulerId = echo.soulerId
         soulerName = echo.soulerName
+        draftEchoId = echo.id
+        draftPrelude = .init(
+            glimmerContent: glimmerContent ?? echo.glimmer?.content ?? "",
+            echoContent: echo.content
+        )
     }
 }
 

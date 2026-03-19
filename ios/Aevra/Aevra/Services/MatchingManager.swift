@@ -96,8 +96,7 @@ class MatchingManager {
                     id: payload.id,
                     content: payload.content,
                     soulerId: payload.soulerId,
-                    soulerName: displayName,
-                    sessionId: payload.sessionId
+                    soulerName: displayName
                 )
                 await MainActor.run {
                     currentGlimmer?.echoes.append(echo)

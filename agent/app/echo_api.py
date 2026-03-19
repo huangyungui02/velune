@@ -71,7 +71,6 @@ async def echo(lang: Lang, request: Request):
                                 "glimmerId": echo_row.get("glimmer_id"),
                                 "soulerId": echo_row.get("souler_id"),
                                 "soulerName": echo_row.get("souler_name"),
-                                "sessionId": echo_row.get("session_id"),
                                 "content": echo_row.get("content"),
                             },
                         }

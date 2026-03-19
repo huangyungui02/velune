@@ -46,7 +46,9 @@ struct StarSeaView: View {
                     }
                     .navigationDestination(item: $chatRoute) { route in
                         ChatView(
-                            sessionId: route.sessionId,
+                            sessionId: nil,
+                            echoId: route.draftEchoId,
+                            draftPrelude: route.draftPrelude,
                             soulerId: route.soulerId,
                             soulerName: route.soulerName,
                             focusComposerOnAppear: true
@@ -96,7 +98,16 @@ struct StarSeaView: View {
                 soulerId: session.soulerId,
                 soulerName: session.soulerName,
                 onSelectSession: { selectedSession in
-                    sidebarNavigation.activeSession = selectedSession
+                    sidebarNavigation.showSession(selectedSession)
+                }
+            )
+        } else if let draftChat = sidebarNavigation.activeDraftChat {
+            ChatView(
+                sessionId: nil,
+                soulerId: draftChat.soulerId,
+                soulerName: draftChat.soulerName,
+                onSelectSession: { selectedSession in
+                    sidebarNavigation.showSession(selectedSession)
                 }
             )
         } else {
@@ -147,8 +158,11 @@ struct StarSeaView: View {
     }
 
     private var activeEchoChatRoute: EchoChatRoute? {
-        guard let selectedEcho, let sessionId = selectedEcho.sessionId else { return nil }
-        return EchoChatRoute(sessionId: sessionId, echo: selectedEcho)
+        guard let selectedEcho else { return nil }
+        return EchoChatRoute(
+            echo: selectedEcho,
+            glimmerContent: manager.currentGlimmer?.content ?? manager.text
+        )
     }
 
     private var shouldShowChatButton: Bool {
@@ -275,7 +289,7 @@ struct StarSeaView: View {
     }
 
     private func openGlimmerComposerFromSidebar() {
-        sidebarNavigation.activeSession = nil
+        sidebarNavigation.showStarSea()
         isPresented = true
     }
 

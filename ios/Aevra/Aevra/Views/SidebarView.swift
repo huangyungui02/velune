@@ -1,15 +1,36 @@
 import SwiftUI
 
+struct SidebarDraftChatTarget: Equatable {
+    var soulerId: UUID
+    var soulerName: String
+}
+
 struct SidebarNavigationState {
     var isSidebarPresented = false
     var activeSession: ChatSession?
+    var activeDraftChat: SidebarDraftChatTarget?
+
+    mutating func showSession(_ session: ChatSession) {
+        activeSession = session
+        activeDraftChat = nil
+    }
+
+    mutating func showDraftChat(_ draftTarget: SidebarDraftChatTarget) {
+        activeSession = nil
+        activeDraftChat = draftTarget
+    }
+
+    mutating func showStarSea() {
+        activeSession = nil
+        activeDraftChat = nil
+    }
 
     var selectedSoulerId: UUID? {
-        activeSession?.soulerId
+        activeSession?.soulerId ?? activeDraftChat?.soulerId
     }
 
     var isStarSeaDestination: Bool {
-        activeSession == nil
+        activeSession == nil && activeDraftChat == nil
     }
 }
 
@@ -54,11 +75,15 @@ struct SidebarContainer<Content: View>: View {
                 isSearchFocused: $isSidebarSearchFocused,
                 sidebarWidth: sidebarWidth,
                 onOpenSession: { session in
-                    sidebarNavigation.activeSession = session
+                    sidebarNavigation.showSession(session)
+                    closeSidebar()
+                },
+                onOpenDraftChat: { draftTarget in
+                    sidebarNavigation.showDraftChat(draftTarget)
                     closeSidebar()
                 },
                 onTapStarSea: {
-                    sidebarNavigation.activeSession = nil
+                    sidebarNavigation.showStarSea()
                     closeSidebar()
                 },
                 onOpenGlimmerComposer: {
@@ -141,6 +166,7 @@ struct SidebarView: View {
     @FocusState.Binding var isSearchFocused: Bool
     let sidebarWidth: CGFloat
     let onOpenSession: (ChatSession) -> Void
+    let onOpenDraftChat: (SidebarDraftChatTarget) -> Void
     let onTapStarSea: () -> Void
     let onOpenGlimmerComposer: () -> Void
     @State private var resonances: [Resonance] = []
@@ -430,7 +456,8 @@ struct SidebarView: View {
             }
 
             guard let session = try await ChatSession.getLatest(soulerId: resonance.soulerId) else {
-                resonanceMenuError = String(localized: "resonance.empty")
+                resonanceMenuError = nil
+                onOpenDraftChat(draftTarget(for: resonance))
                 return
             }
 
@@ -443,5 +470,12 @@ struct SidebarView: View {
 
     private func dismissSearch() {
         isSearchFocused = false
+    }
+
+    private func draftTarget(for resonance: Resonance) -> SidebarDraftChatTarget {
+        SidebarDraftChatTarget(
+            soulerId: resonance.soulerId,
+            soulerName: resonance.soulerName
+        )
     }
 }

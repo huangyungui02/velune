@@ -5,6 +5,7 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from typing import TypeVar
+from uuid import UUID
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -16,11 +17,13 @@ from app.errors import CreditLimitError, CreditState, credit_error_payload, erro
 from app.llm import complete_text, stream_text
 from app.sse import emit_once, sse_event, sse_response
 from app.supabase_repo import (
+    EchoContext,
     MessageRow,
     SessionContext,
     create_or_update_resonance,
     create_session,
     consume_user_credit,
+    get_echo_context,
     get_recent_messages,
     get_session_by_id,
     get_souler_by_id,
@@ -34,6 +37,13 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 settings = get_settings()
 T = TypeVar("T")
+
+
+def _normalize_uuid(value: str) -> str:
+    trimmed = value.strip()
+    if not trimmed:
+        return ""
+    return str(UUID(trimmed))
 
 
 @dataclass(frozen=True)
@@ -176,8 +186,12 @@ async def _prepare_chat_request(
     body = await request.json()
     log_stage("request_parsed")
 
-    session_id = str(body.get("sessionId", "")).strip()
-    souler_id = str(body.get("soulerId", "")).strip()
+    try:
+        session_id = _normalize_uuid(str(body.get("sessionId", "")))
+        souler_id = _normalize_uuid(str(body.get("soulerId", "")))
+        echo_id = _normalize_uuid(str(body.get("echoId", "")))
+    except ValueError as error:
+        raise ValueError("Invalid UUID in request body") from error
     content = str(body.get("content", "")).strip()
     if not content:
         raise ValueError("Missing content")
@@ -200,6 +214,18 @@ async def _prepare_chat_request(
     else:
         if not souler_id:
             raise ValueError("Missing soulerId for new conversation")
+
+        echo_context: EchoContext | None = None
+        if echo_id:
+            echo_context = await _run_blocking(
+                "Load echo context",
+                get_echo_context,
+                user_id,
+                echo_id,
+            )
+            if echo_context["souler_id"] != souler_id:
+                raise ValueError("Echo souler does not match request soulerId")
+
         souler = await _run_blocking(
             "Load souler",
             get_souler_by_id,
@@ -217,6 +243,26 @@ async def _prepare_chat_request(
             "title": "",
             "souler": souler,
         }
+
+        if echo_context:
+            await _run_blocking(
+                "Insert glimmer context message",
+                insert_message,
+                user_id,
+                session["soulerId"],
+                session["id"],
+                "user",
+                echo_context["glimmer_content"],
+            )
+            await _run_blocking(
+                "Insert echo context message",
+                insert_message,
+                user_id,
+                session["soulerId"],
+                session["id"],
+                "assistant",
+                echo_context["content"],
+            )
     log_stage("session_ready")
 
     history = await _run_blocking(

@@ -14,7 +14,6 @@ enum EchoStreamService {
         let glimmerId: UUID
         let soulerId: UUID
         let soulerName: String?
-        let sessionId: UUID?
         let content: String
     }
 
@@ -33,7 +32,6 @@ enum EchoStreamService {
             let glimmerId: UUID
             let soulerId: UUID
             let soulerName: String?
-            let sessionId: UUID?
             let content: String
         }
 
@@ -86,7 +84,6 @@ enum EchoStreamService {
                     glimmerId: echoData.glimmerId,
                     soulerId: echoData.soulerId,
                     soulerName: echoData.soulerName,
-                    sessionId: echoData.sessionId,
                     content: echoData.content
                 )
             )

@@ -2,7 +2,12 @@ import MarkdownUI
 import SwiftUI
 
 struct ChatView: View {
-    let sessionId: UUID
+    struct DraftPrelude: Hashable {
+        let glimmerContent: String
+        let echoContent: String
+    }
+
+    let sessionId: UUID?
     let soulerId: UUID
     let soulerName: String
     let focusComposerOnAppear: Bool
@@ -20,22 +25,30 @@ struct ChatView: View {
     @State private var isLoadingSessions = false
     @State private var sessionMenuError: String?
     @State private var isShowingSouler = false
+    @State private var draftEchoId: UUID?
+    @State private var activeDraftPrelude: DraftPrelude?
     @FocusState private var isComposerFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(
-        sessionId: UUID,
+        sessionId: UUID?,
+        echoId: UUID? = nil,
+        draftPrelude: DraftPrelude? = nil,
         soulerId: UUID,
         soulerName: String,
         focusComposerOnAppear: Bool = false,
         onSelectSession: ((ChatSession) -> Void)? = nil
     ) {
+        let isDraft = sessionId == nil
         self.sessionId = sessionId
         self.soulerId = soulerId
         self.soulerName = soulerName
         self.focusComposerOnAppear = focusComposerOnAppear
         self.onSelectSession = onSelectSession
-        _activeSessionId = State(initialValue: sessionId)
+        _activeSessionId = State(initialValue: sessionId ?? UUID())
+        _isDraftSession = State(initialValue: isDraft)
+        _draftEchoId = State(initialValue: isDraft ? echoId : nil)
+        _activeDraftPrelude = State(initialValue: isDraft ? draftPrelude : nil)
     }
 
     var body: some View {
@@ -131,9 +144,11 @@ struct ChatView: View {
             }
         }
         .onChange(of: sessionId) { _, newValue in
-            guard newValue != activeSessionId else { return }
+            guard let newValue, newValue != activeSessionId else { return }
             activeSessionId = newValue
             isDraftSession = false
+            draftEchoId = nil
+            activeDraftPrelude = nil
         }
         .task(id: activeSessionId) {
             await prepareConversation()
@@ -239,6 +254,10 @@ struct ChatView: View {
         inputText = ""
         errorMessage = nil
         hasScrolledToLatestOnAppear = false
+        if isDraftSession {
+            applyDraftPreludeIfNeeded()
+            return
+        }
         await loadMessages()
     }
 
@@ -259,6 +278,10 @@ struct ChatView: View {
 
     @MainActor
     private func loadMessages() async {
+        if isDraftSession {
+            messages = []
+            return
+        }
         if isLoading { return }
 
         isLoading = true
@@ -291,6 +314,7 @@ struct ChatView: View {
             let startedFromDraft = isDraftSession
             for try await event in ChatStreamService.streamReply(
                 sessionId: isDraftSession ? nil : activeSessionId,
+                echoId: isDraftSession ? draftEchoId : nil,
                 soulerId: soulerId,
                 soulerName: soulerName,
                 path: "\(AppLanguage.current.apiLanguageCode)/chat",
@@ -324,7 +348,7 @@ struct ChatView: View {
             Message(
                 id: UUID(),
                 soulerId: soulerId,
-                sessionId: activeSessionId,
+                sessionId: isDraftSession ? nil : activeSessionId,
                 role: .user,
                 content: content,
                 createdAt: .now
@@ -336,7 +360,7 @@ struct ChatView: View {
             Message(
                 id: assistantLocalId,
                 soulerId: soulerId,
-                sessionId: activeSessionId,
+                sessionId: isDraftSession ? nil : activeSessionId,
                 role: .assistant,
                 content: "",
                 createdAt: .now
@@ -370,6 +394,8 @@ struct ChatView: View {
         if let resolvedSessionId {
             activeSessionId = resolvedSessionId
             isDraftSession = false
+            draftEchoId = nil
+            activeDraftPrelude = nil
         }
 
         let sessionId = resolvedSessionId ?? activeSessionId
@@ -443,10 +469,46 @@ struct ChatView: View {
         }
         activeSessionId = UUID()
         isDraftSession = true
+        draftEchoId = nil
+        activeDraftPrelude = nil
         messages = []
         inputText = ""
         errorMessage = nil
         hasScrolledToLatestOnAppear = false
+    }
+
+    @MainActor
+    private func applyDraftPreludeIfNeeded() {
+        guard let activeDraftPrelude else { return }
+
+        let trimmedGlimmer = activeDraftPrelude.glimmerContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedEcho = activeDraftPrelude.echoContent.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !trimmedGlimmer.isEmpty {
+            messages.append(
+                Message(
+                    id: UUID(),
+                    soulerId: soulerId,
+                    sessionId: nil,
+                    role: .user,
+                    content: trimmedGlimmer,
+                    createdAt: .now
+                )
+            )
+        }
+
+        if !trimmedEcho.isEmpty {
+            messages.append(
+                Message(
+                    id: UUID(),
+                    soulerId: soulerId,
+                    sessionId: nil,
+                    role: .assistant,
+                    content: trimmedEcho,
+                    createdAt: .now
+                )
+            )
+        }
     }
 }
 

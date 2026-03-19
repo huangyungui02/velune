@@ -42,6 +42,13 @@ class MessageRow(TypedDict):
     created_at: str
 
 
+class EchoContext(TypedDict):
+    id: str
+    souler_id: str
+    content: str
+    glimmer_content: str
+
+
 def get_user_id_from_auth_header(authorization: str | None) -> str:
     if not authorization:
         raise UnauthorizedError("Unauthorized")
@@ -158,6 +165,32 @@ def get_souler_by_id(souler_id: str) -> Souler:
     if not row:
         raise ValueError("Souler not found")
     return _to_souler(row)
+
+
+def get_echo_context(user_id: str, echo_id: str) -> EchoContext:
+    response = (
+        supabase.table("echoes")
+        .select("id, souler_id, content, glimmers!inner(user_id, content)")
+        .eq("id", echo_id)
+        .eq("glimmers.user_id", user_id)
+        .single()
+        .execute()
+    )
+    row = _first_row(response.data)
+    if not row:
+        raise ValueError("Echo not found")
+
+    glimmer = row.get("glimmers")
+    glimmer_row = glimmer[0] if isinstance(glimmer, list) and glimmer else glimmer
+    if not isinstance(glimmer_row, dict):
+        raise ValueError("Echo not found")
+
+    return {
+        "id": str(row.get("id", "")),
+        "souler_id": str(row.get("souler_id", "")),
+        "content": str(row.get("content", "")),
+        "glimmer_content": str(glimmer_row.get("content", "")),
+    }
 
 
 def create_session(user_id: str, souler_id: str, title: str = "") -> str:
@@ -280,12 +313,12 @@ def consume_user_credit(user_id: str) -> CreditState:
 def create_or_update_resonance(
     user_id: str,
     souler_id: str,
-    last_session_id: str,
+    last_session_id: str | None,
     last_session_title: str,
 ) -> None:
     response = (
         supabase.table("resonances")
-        .select("id")
+        .select("id, count")
         .eq("user_id", user_id)
         .eq("souler_id", souler_id)
         .limit(1)
@@ -302,6 +335,7 @@ def create_or_update_resonance(
                     "souler_id": souler_id,
                     "last_session_id": last_session_id,
                     "last_session_title": last_session_title,
+                    "count": 1,
                 }
             )
             .execute()
@@ -314,6 +348,7 @@ def create_or_update_resonance(
             {
                 "last_session_id": last_session_id,
                 "last_session_title": last_session_title,
+                "count": int(row.get("count", 0)) + 1,
             }
         )
         .eq("id", row.get("id"))
@@ -427,19 +462,17 @@ def create_echo(
     glimmer_id: str,
     souler_id: str,
     content: str,
-    session_id: str | None = None,
 ) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "glimmer_id": glimmer_id,
-        "souler_id": souler_id,
-        "content": content,
-    }
-    if session_id:
-        payload["session_id"] = session_id
-
     response = (
         supabase.table("echoes")
-        .insert(payload, returning="representation")
+        .insert(
+            {
+                "glimmer_id": glimmer_id,
+                "souler_id": souler_id,
+                "content": content,
+            },
+            returning="representation",
+        )
         .execute()
     )
 

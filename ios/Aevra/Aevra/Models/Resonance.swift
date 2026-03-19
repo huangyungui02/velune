@@ -7,6 +7,7 @@ struct Resonance: Identifiable, Equatable {
     var soulerName: String
     var lastSessionId: UUID?
     var lastSessionTitle: String
+    var count: Int
     var createdAt: Date
     var updatedAt: Date
 }
@@ -17,6 +18,7 @@ extension Resonance {
         var soulerId: UUID
         var lastSessionId: UUID?
         var lastSessionTitle: String?
+        var count: Int?
         var createdAt: Date
         var updatedAt: Date
         var souler: SoulerName?
@@ -40,7 +42,7 @@ extension Resonance {
         let upperBound = max(offset + limit - 1, offset)
         let response: [Response] = try await supabase
             .from("resonances")
-            .select("id, souler_id, last_session_id, last_session_title, created_at, updated_at, soulers(name)")
+            .select("id, souler_id, last_session_id, last_session_title, count, created_at, updated_at, soulers(name)")
             .order("updated_at", ascending: false)
             .range(from: offset, to: upperBound)
             .execute()
@@ -56,6 +58,7 @@ extension Resonance {
                 soulerName: res.souler?.name ?? fallbackName,
                 lastSessionId: res.lastSessionId,
                 lastSessionTitle: trimmedTitle.isEmpty ? fallbackTitle : trimmedTitle,
+                count: max(res.count ?? 1, 1),
                 createdAt: res.createdAt,
                 updatedAt: res.updatedAt
             )

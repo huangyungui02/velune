@@ -64,7 +64,9 @@ struct GlimmerView: View {
         }
         .navigationDestination(item: $chatRoute) { route in
             ChatView(
-                sessionId: route.sessionId,
+                sessionId: nil,
+                echoId: route.draftEchoId,
+                draftPrelude: route.draftPrelude,
                 soulerId: route.soulerId,
                 soulerName: route.soulerName,
                 focusComposerOnAppear: true
@@ -152,8 +154,11 @@ struct GlimmerView: View {
     }
 
     private var activeEchoChatRoute: EchoChatRoute? {
-        guard let selectedEcho, let sessionId = selectedEcho.sessionId else { return nil }
-        return EchoChatRoute(sessionId: sessionId, echo: selectedEcho)
+        guard let selectedEcho else { return nil }
+        return EchoChatRoute(
+            echo: selectedEcho,
+            glimmerContent: glimmer.content
+        )
     }
 
     private var shouldShowChatButton: Bool {

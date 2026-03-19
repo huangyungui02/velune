@@ -11,38 +11,33 @@ class Echo {
     var glimmer: Glimmer?
     var soulerId: UUID
     var soulerName: String
-    var sessionId: UUID?
 
     init(
         id: UUID = UUID(),
         content: String,
         createdAt: Date = .now,
         soulerId: UUID,
-        soulerName: String,
-        sessionId: UUID? = nil
+        soulerName: String
     ) {
         self.id = id
         self.content = content
         self.createdAt = createdAt
         self.soulerId = soulerId
         self.soulerName = soulerName
-        self.sessionId = sessionId
     }
 
     convenience init(
         id: UUID = UUID(),
         content: String,
         createdAt: Date = .now,
-        souler: Souler,
-        sessionId: UUID? = nil
+        souler: Souler
     ) {
         self.init(
             id: id,
             content: content,
             createdAt: createdAt,
             soulerId: souler.id,
-            soulerName: souler.name,
-            sessionId: sessionId
+            soulerName: souler.name
         )
     }
 }
@@ -55,7 +50,6 @@ extension Echo {
             var createdAt: Date
             var soulerId: UUID
             var soulerName: String
-            var sessionId: UUID?
 
             enum CodingKeys: String, CodingKey {
                 case id
@@ -63,7 +57,6 @@ extension Echo {
                 case createdAt = "created_at"
                 case soulerId = "souler_id"
                 case soulerName = "souler_name"
-                case sessionId = "session_id"
             }
         }
 
@@ -79,8 +72,7 @@ extension Echo {
                  content: res.content,
                  createdAt: res.createdAt,
                  soulerId: res.soulerId,
-                 soulerName: res.soulerName,
-                 sessionId: res.sessionId)
+                 soulerName: res.soulerName)
         }
     }
 }

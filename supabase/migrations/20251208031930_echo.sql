@@ -3,7 +3,6 @@ CREATE TABLE echoes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     glimmer_id UUID NOT NULL REFERENCES glimmers(id) ON DELETE CASCADE,
     souler_id UUID NOT NULL REFERENCES soulers(id),
-    session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -12,7 +11,6 @@ CREATE TABLE echoes (
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_echoes_glimmer_id ON echoes (glimmer_id);
 CREATE INDEX IF NOT EXISTS idx_echoes_souler_id ON echoes (souler_id);
-CREATE INDEX IF NOT EXISTS idx_echoes_session_id ON echoes (session_id);
 
 -- Enable row level security
 ALTER TABLE echoes ENABLE ROW LEVEL SECURITY;
@@ -33,7 +31,6 @@ SELECT
     e.id,
     e.glimmer_id,
     e.souler_id,
-    e.session_id,
     s.name AS souler_name,
     e.content,
     e.created_at
