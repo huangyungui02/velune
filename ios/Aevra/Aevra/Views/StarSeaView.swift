@@ -29,15 +29,13 @@ struct StarSeaView: View {
             NavigationStack {
                 mainContent
                     .toolbar {
-                        if isSidebarEnabled {
-                            ToolbarItem(placement: .topBarLeading) {
-                                Button {
-                                    withAnimation(.easeInOut(duration: 0.22)) {
-                                        sidebarNavigation.isSidebarPresented.toggle()
-                                    }
-                                } label: {
-                                    Image(systemName: "line.3.horizontal")
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.22)) {
+                                    sidebarNavigation.isSidebarPresented.toggle()
                                 }
+                            } label: {
+                                Image(systemName: "line.3.horizontal")
                             }
                         }
                         profileToolbarItem
@@ -177,13 +175,11 @@ struct StarSeaView: View {
 
     @ToolbarContentBuilder
     private var profileToolbarItem: some ToolbarContent {
-        if isSidebarEnabled {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    isShowingProfile = true
-                } label: {
-                    Image(systemName: "house.fill")
-                }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                isShowingProfile = true
+            } label: {
+                Image(systemName: "house.fill")
             }
         }
     }
