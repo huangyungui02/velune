@@ -28,6 +28,7 @@ extension Resonance {
             case soulerId = "souler_id"
             case lastSessionId = "last_session_id"
             case lastSessionTitle = "last_session_title"
+            case count
             case createdAt = "created_at"
             case updatedAt = "updated_at"
             case souler = "soulers"

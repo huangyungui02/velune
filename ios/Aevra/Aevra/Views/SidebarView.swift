@@ -70,6 +70,7 @@ struct SidebarContainer<Content: View>: View {
             }
 
             SidebarView(
+                isPresented: sidebarNavigation.isSidebarPresented,
                 selectedSoulerId: sidebarNavigation.selectedSoulerId,
                 isSearchFocused: $isSidebarSearchFocused,
                 sidebarWidth: sidebarWidth,
@@ -169,6 +170,7 @@ struct SidebarContainer<Content: View>: View {
 
 struct SidebarView: View {
     @State private var authManager = AuthManager.shared
+    let isPresented: Bool
     let selectedSoulerId: UUID?
     @FocusState.Binding var isSearchFocused: Bool
     let sidebarWidth: CGFloat
@@ -318,6 +320,10 @@ struct SidebarView: View {
             } else {
                 await loadResonances()
             }
+        }
+        .onChange(of: isPresented) { _, presented in
+            guard presented, !authManager.isAnonymous else { return }
+            Task { await loadResonances() }
         }
     }
 
