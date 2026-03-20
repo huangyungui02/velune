@@ -12,19 +12,20 @@ struct GlimmerCardView: View {
 
     var body: some View {
         PremiumCardView {
-            VStack(spacing: 16) {
+            VStack(spacing: 24) {
                 Text(content)
                     .font(.body)
                     .fontDesign(.serif)
-                    .lineSpacing(12)
+                    .lineSpacing(8)
                     .tracking(0.5)
                     .multilineTextAlignment(.leading)
-                    .foregroundStyle(UITheme.secondaryText)
+                    .foregroundStyle(UITheme.primaryText)
 
                 if let createdAt {
                     Divider()
                         .background(.white.opacity(0.01))
-                        .padding(.top)
+                        .padding(.top, 4)
+                        .padding(.bottom, 4)
 
                     HStack {
                         Spacer()

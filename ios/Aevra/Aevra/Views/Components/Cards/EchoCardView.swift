@@ -28,20 +28,24 @@ struct EchoCardView: View {
 
     var body: some View {
         PremiumCardView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 24) {
                 Markdown(echo.content)
                     .markdownTextStyle {
                         ForegroundColor(UITheme.primaryText)
                     }
+                    .markdownBlockStyle(\.paragraph) { configuration in
+                        configuration.label
+                            .lineSpacing(8)
+                            .markdownMargin(top: .zero, bottom: .em(1))
+                    }
                     .fontDesign(.serif)
                     .multilineTextAlignment(.leading)
-                    .lineSpacing(12)
                     .tracking(0.5)
 
                 Divider()
                     .background(.white.opacity(0.01))
-                    .padding(.top, 2)
-                    .padding(.bottom, 2)
+                    .padding(.top, 4)
+                    .padding(.bottom, 4)
 
                 soulerSignature
             }
