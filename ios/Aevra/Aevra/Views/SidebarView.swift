@@ -251,9 +251,7 @@ struct SidebarView: View {
                                 ForEach(displayedResonances) { resonance in
                                     Button {
                                         dismissSearch()
-                                        Task {
-                                            await openLatestSession(for: resonance)
-                                        }
+                                        openResonance(resonance)
                                     } label: {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(resonance.soulerName)
@@ -435,27 +433,18 @@ struct SidebarView: View {
         }
     }
 
-    @MainActor
-    private func openLatestSession(for resonance: Resonance) async {
-        do {
-            if let lastSessionId = resonance.lastSessionId,
-               let session = try await ChatSession.get(id: lastSessionId)
-            {
-                resonanceMenuError = nil
-                onOpenSession(session)
-                return
-            }
-
-            guard let session = try await ChatSession.getLatest(soulerId: resonance.soulerId) else {
-                resonanceMenuError = nil
-                onOpenDraftChat(draftTarget(for: resonance))
-                return
-            }
-
-            resonanceMenuError = nil
-            onOpenSession(session)
-        } catch {
-            resonanceMenuError = error.localizedDescription
+    private func openResonance(_ resonance: Resonance) {
+        if let sessionId = resonance.lastSessionId {
+            onOpenSession(ChatSession(
+                id: sessionId,
+                soulerId: resonance.soulerId,
+                soulerName: resonance.soulerName,
+                title: resonance.lastSessionTitle,
+                createdAt: resonance.createdAt,
+                updatedAt: resonance.updatedAt
+            ))
+        } else {
+            onOpenDraftChat(draftTarget(for: resonance))
         }
     }
 
