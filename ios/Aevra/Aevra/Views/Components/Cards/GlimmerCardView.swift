@@ -16,7 +16,8 @@ struct GlimmerCardView: View {
                 Text(content)
                     .font(.body)
                     .fontDesign(.serif)
-                    .lineSpacing(8)
+                    .lineSpacing(12)
+                    .tracking(0.5)
                     .multilineTextAlignment(.leading)
                     .foregroundStyle(UITheme.primaryText)
 

@@ -75,6 +75,7 @@ struct StarSeaView: View {
         }
         .fullScreenCover(isPresented: $isPresented) {
             ComposeView(text: $text, onSend: send)
+                .presentationBackground(.clear)
         }
         .onChange(of: manager.errorMessage) { _, newValue in
             if stage == .matching, newValue != nil {
@@ -123,6 +124,8 @@ struct StarSeaView: View {
 
                     magicButtonView
                 }
+                .opacity(isPresented ? 0 : 1)
+                .animation(.easeInOut(duration: 0.2), value: isPresented)
             }
         }
     }
@@ -187,11 +190,7 @@ struct StarSeaView: View {
     @ToolbarContentBuilder
     private var matchingToolbarContent: some ToolbarContent {
         if shouldShowMatchingToolbar {
-            if shouldShowListeningChip {
-                ToolbarItem(placement: .status) {
-                    listeningToolbarChip
-                }
-            } else if hasEchoes {
+            if hasEchoes {
                 ToolbarItem(placement: .bottomBar) {
                     if shouldShowWaveButton {
                         MatchingWaveIcon()
@@ -266,10 +265,16 @@ struct StarSeaView: View {
     private func send() {
         let input = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { return }
+        
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        
         manager.startMatching(text: input, context: context)
         text = ""
         currentPage = .glimmer
-        stage = .matching
+        
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            stage = .matching
+        }
     }
 
     private func closeCurrentGlimmer() {
@@ -305,23 +310,21 @@ extension StarSeaView {
             }
             .frame(maxHeight: .infinity, alignment: .top)
             .padding(.vertical)
+            
+            if shouldShowListeningChip {
+                VStack(spacing: 16) {
+                    MatchingWaveIcon(ringSize: 12, containerSize: 24)
+                    
+                    Text("matching.status.listening")
+                        .font(.subheadline)
+                        .tracking(1.5)
+                        .foregroundStyle(UITheme.secondaryText)
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                .padding(.bottom, 60)
+            }
         }
-    }
-
-    private var listeningToolbarChip: some View {
-        HStack(spacing: 8) {
-            MatchingWaveIcon(ringSize: 6, containerSize: 10)
-
-            Text("matching.status.listening")
-                .font(.caption)
-                .tracking(0.3)
-                .foregroundStyle(UITheme.primaryText)
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .fixedSize(horizontal: true, vertical: false)
+        .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
     }
 
     private var closeButton: some View {
@@ -389,18 +392,10 @@ private struct ComposeView: View {
                     .contentShape(.rect)
                     .onTapGesture(perform: dismissKeyboard)
             }
-            .background(
-                LinearGradient(
-                    colors: [
-                        Color(white: 0.06),
-                        Color(white: 0.12),
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+            .background(.clear)
             .navigationTitle("glimmer.title")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(role: .close) {
@@ -419,6 +414,7 @@ private struct ComposeView: View {
                 }
             }
         }
+        .background(.black.opacity(0.4))
         .onAppear {
             isFocused = true
         }

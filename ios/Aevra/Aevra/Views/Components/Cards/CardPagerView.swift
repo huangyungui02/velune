@@ -33,7 +33,9 @@ struct CardPagerView<GlimmerCard: View>: View {
             guard case .glimmer = currentPage else { return }
             guard let firstEcho = echoes.first else { return }
 
-            withAnimation {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+            withAnimation(.easeInOut(duration: 0.8)) {
                 currentPage = .echo(firstEcho.id)
             }
         }

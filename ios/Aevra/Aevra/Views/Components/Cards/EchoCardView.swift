@@ -37,7 +37,8 @@ struct EchoCardView: View {
                     }
                     .fontDesign(.serif)
                     .multilineTextAlignment(.leading)
-                    .lineSpacing(8)
+                    .lineSpacing(12)
+                    .tracking(0.5)
 
                 Divider()
                     .background(.white.opacity(0.01))
