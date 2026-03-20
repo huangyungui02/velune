@@ -27,6 +27,7 @@ struct ChatView: View {
     @State private var isShowingSouler = false
     @State private var draftEchoId: UUID?
     @State private var activeDraftPrelude: DraftPrelude?
+    @State private var hasPerformedInitialLoad = false
     @FocusState private var isComposerFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -145,12 +146,13 @@ struct ChatView: View {
         }
         .onChange(of: sessionId) { _, newValue in
             guard let newValue, newValue != activeSessionId else { return }
-            activeSessionId = newValue
-            isDraftSession = false
-            draftEchoId = nil
-            activeDraftPrelude = nil
+            Task {
+                await switchToExistingSession(newValue)
+            }
         }
-        .task(id: activeSessionId) {
+        .task {
+            guard !hasPerformedInitialLoad else { return }
+            hasPerformedInitialLoad = true
             await prepareConversation()
             await loadSessionsForSidebar()
         }
@@ -457,12 +459,13 @@ struct ChatView: View {
     @MainActor
     private func openSession(_ session: ChatSession) {
         guard session.id != activeSessionId else { return }
-        isDraftSession = false
         if let onSelectSession {
             onSelectSession(session)
             return
         }
-        activeSessionId = session.id
+        Task {
+            await switchToExistingSession(session.id)
+        }
     }
 
     @MainActor
@@ -512,6 +515,16 @@ struct ChatView: View {
                 )
             )
         }
+    }
+
+    @MainActor
+    private func switchToExistingSession(_ sessionId: UUID) async {
+        activeSessionId = sessionId
+        isDraftSession = false
+        draftEchoId = nil
+        activeDraftPrelude = nil
+        await prepareConversation()
+        await loadSessionsForSidebar()
     }
 }
 
