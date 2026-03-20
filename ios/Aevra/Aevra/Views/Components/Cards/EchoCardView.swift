@@ -27,9 +27,7 @@ struct EchoCardView: View {
     }
 
     var body: some View {
-        PremiumCardView(
-            iconName: "circle.circle"
-        ) {
+        PremiumCardView {
             VStack(alignment: .leading, spacing: 16) {
                 Markdown(echo.content)
                     .markdownTextStyle {
@@ -54,16 +52,17 @@ struct EchoCardView: View {
         NavigationLink {
             SoulerView(soulerId: echo.soulerId)
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: 4) {
                 Spacer()
                 Text(echo.soulerName)
                     .font(.body.weight(.medium))
                     .fontDesign(.serif)
-                    .foregroundStyle(UITheme.accent)
-
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(UITheme.secondaryText)
+                    .foregroundStyle(UITheme.primaryText.opacity(0.85))
+                
+                Image(systemName: "arrow.up.right")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(UITheme.tertiaryText)
+                    .offset(y: -2)
             }
             .contentShape(.rect)
         }

@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct PremiumCardView<Content: View>: View {
-    private let iconName: String
     private let content: Content
     private let followBottomOnContentGrowth: Bool
 
@@ -9,11 +8,9 @@ struct PremiumCardView<Content: View>: View {
     private let bottomAnchorId = "premium-card-bottom-anchor"
 
     init(
-        iconName: String,
         followBottomOnContentGrowth: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
-        self.iconName = iconName
         self.followBottomOnContentGrowth = followBottomOnContentGrowth
         self.content = content()
     }
@@ -38,7 +35,7 @@ struct PremiumCardView<Content: View>: View {
                         RoundedRectangle(cornerRadius: 28, style: .continuous)
                             .stroke(
                                 LinearGradient(
-                                    colors: [.white.opacity(0.30), .white.opacity(0.10)],
+                                    colors: [.white.opacity(0.15), .white.opacity(0.05)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
@@ -56,31 +53,20 @@ struct PremiumCardView<Content: View>: View {
         }
     }
 
-    private var headerView: some View {
-        Image(systemName: iconName)
-            .font(.headline.weight(.semibold))
-            .foregroundStyle(UITheme.primaryText)
-            .frame(width: 40, height: 40)
-            .background(.white.opacity(0.14), in: Circle())
-            .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1))
-    }
-
     private func scrollableContent(maxCardHeight: CGFloat, isScrollable: Bool) -> some View {
         return ScrollViewReader { proxy in
             ScrollView {
                 VStack {
                     VStack(spacing: 20) {
-                        headerView
-
                         content
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 24)
                     }
+                    .padding(.vertical, 32)
 
                     Color.clear
                         .frame(height: 1)
                         .id(bottomAnchorId)
                 }
-                .padding(.vertical, 8)
                 .frame(maxWidth: .infinity)
                 .background(
                     GeometryReader { proxy in

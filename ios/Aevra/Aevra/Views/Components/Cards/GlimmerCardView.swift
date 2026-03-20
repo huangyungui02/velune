@@ -11,7 +11,7 @@ struct GlimmerCardView: View {
     }
 
     var body: some View {
-        PremiumCardView(iconName: "sparkles") {
+        PremiumCardView {
             VStack(spacing: 16) {
                 Text(content)
                     .font(.body)
@@ -19,7 +19,7 @@ struct GlimmerCardView: View {
                     .lineSpacing(12)
                     .tracking(0.5)
                     .multilineTextAlignment(.leading)
-                    .foregroundStyle(UITheme.primaryText)
+                    .foregroundStyle(UITheme.secondaryText)
 
                 if let createdAt {
                     Divider()
