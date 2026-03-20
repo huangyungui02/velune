@@ -24,15 +24,7 @@ def build_match_schema(num: int) -> dict[str, Any]:
                 "type": "array",
                 "minItems": num,
                 "maxItems": num,
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "souler": {"type": "string"},
-                        "content": {"type": "string"},
-                    },
-                    "required": ["souler", "content"],
-                    "additionalProperties": False,
-                },
+                "items": {"type": "string"},
             }
         },
         "required": ["data"],

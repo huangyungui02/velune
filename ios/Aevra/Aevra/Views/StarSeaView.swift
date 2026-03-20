@@ -139,14 +139,6 @@ struct StarSeaView: View {
         !echoes.isEmpty
     }
 
-    private var shouldShowCloseButton: Bool {
-        stage == .matching && !manager.isMatching && manager.currentGlimmer?.status == "complete"
-    }
-
-    private var shouldShowWaveButton: Bool {
-        stage == .matching && manager.isMatching && hasEchoes
-    }
-
     private var selectedEcho: Echo? {
         guard case let .echo(echoId) = currentPage else { return nil }
         return echoes.first(where: { $0.id == echoId })
@@ -192,11 +184,7 @@ struct StarSeaView: View {
         if shouldShowMatchingToolbar {
             if hasEchoes {
                 ToolbarItem(placement: .bottomBar) {
-                    if shouldShowWaveButton {
-                        MatchingWaveIcon()
-                    } else if shouldShowCloseButton {
-                        closeButton
-                    }
+                    closeButton
                 }
 
                 ToolbarSpacer(placement: .bottomBar)
@@ -208,7 +196,7 @@ struct StarSeaView: View {
                 }
 
                 ToolbarItem(placement: .status) {
-                    CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage)
+                    CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage, isMatching: manager.isMatching)
                 }
             }
         }
@@ -265,20 +253,19 @@ struct StarSeaView: View {
     private func send() {
         let input = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { return }
-        
+
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        
+
         manager.startMatching(text: input, context: context)
         text = ""
         currentPage = .glimmer
-        
+
         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
             stage = .matching
         }
     }
 
     private func closeCurrentGlimmer() {
-        guard shouldShowCloseButton else { return }
         resetToVerse()
     }
 
@@ -310,11 +297,11 @@ extension StarSeaView {
             }
             .frame(maxHeight: .infinity, alignment: .top)
             .padding(.vertical)
-            
+
             if shouldShowListeningChip {
                 VStack(spacing: 16) {
                     MatchingWaveIcon(ringSize: 12, containerSize: 24)
-                    
+
                     Text("matching.status.listening")
                         .font(.subheadline)
                         .tracking(1.5)

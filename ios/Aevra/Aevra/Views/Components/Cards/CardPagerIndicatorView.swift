@@ -3,6 +3,7 @@ import SwiftUI
 struct CardPagerIndicatorView: View {
     let echoes: [Echo]
     @Binding var currentPage: CardID?
+    let isMatching: Bool
     @State private var isScrubbing = false
     @State private var suppressTapUntil = Date.distantPast
 
@@ -28,12 +29,25 @@ struct CardPagerIndicatorView: View {
                             guard Date() >= suppressTapUntil else { return }
                             selectPage(at: index)
                         }
-                    }
+                }
+                if isMatching {
+                    MatchingWaveIcon(ringSize: 6, containerSize: 12)
+                }
             }
             .contentShape(Rectangle())
             .highPriorityGesture(scrubGesture)
             .padding()
         }
+    }
+
+    init(
+        echoes: [Echo],
+        currentPage: Binding<CardID?>,
+        isMatching: Bool = false
+    ) {
+        self.echoes = echoes
+        self._currentPage = currentPage
+        self.isMatching = isMatching
     }
 
     private var scrubGesture: some Gesture {

@@ -99,12 +99,9 @@ async def invoke_echo_graph(
     lang: Lang,
     on_echo: Callable[[dict[str, Any]], Awaitable[None] | None] | None = None,
 ) -> GraphResult:
-    soulers = await match_soulers(glimmer_content, num, lang)
+    souler_names = await match_soulers(glimmer_content, num, lang)
 
-    async def process_item(item: dict[str, str]) -> CreditState:
-        matched_name = item.get("souler", "").strip()
-        if not matched_name:
-            raise ValueError("Matched souler name cannot be empty")
+    async def process_item(matched_name: str) -> CreditState:
 
         souler_data = await _resolve_souler(matched_name, lang)
         souler_data = await _ensure_souler_assets(souler_data, lang)
@@ -139,7 +136,7 @@ async def invoke_echo_graph(
         return credit_state
 
     results = await asyncio.gather(
-        *(process_item(item) for item in soulers),
+        *(process_item(name) for name in souler_names),
         return_exceptions=True,
     )
 
