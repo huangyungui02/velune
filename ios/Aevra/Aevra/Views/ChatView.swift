@@ -28,6 +28,7 @@ struct ChatView: View {
     @State private var draftEchoId: UUID?
     @State private var activeDraftPrelude: DraftPrelude?
     @State private var hasPerformedInitialLoad = false
+    @State private var shouldPauseAutoScrollDuringStreaming = false
     @FocusState private var isComposerFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -190,11 +191,19 @@ struct ChatView: View {
                 scrollToLatest(with: proxy, animated: false)
             }
             .onChange(of: messages.count) { _, _ in
-                scrollToLatest(with: proxy, animated: true)
+                scrollToLatest(with: proxy, animated: true, reason: .countChanged)
             }
             .onChange(of: messages.last?.content) { _, _ in
-                scrollToLatest(with: proxy, animated: false)
+                scrollToLatest(with: proxy, animated: false, reason: .contentChanged)
             }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        if isSending {
+                            shouldPauseAutoScrollDuringStreaming = true
+                        }
+                    }
+            )
         }
     }
 
@@ -266,7 +275,15 @@ struct ChatView: View {
         await loadMessages()
     }
 
-    private func scrollToLatest(with proxy: ScrollViewProxy, animated: Bool) {
+    private enum ScrollTrigger {
+        case countChanged
+        case contentChanged
+    }
+
+    private func scrollToLatest(with proxy: ScrollViewProxy, animated: Bool, reason: ScrollTrigger? = nil) {
+        if isSending, shouldPauseAutoScrollDuringStreaming, reason != nil {
+            return
+        }
         guard let lastId = messages.last?.id else { return }
         if animated {
             withAnimation(.easeOut(duration: 0.2)) {
@@ -307,9 +324,13 @@ struct ChatView: View {
         guard !content.isEmpty else { return }
 
         isSending = true
+        shouldPauseAutoScrollDuringStreaming = false
         dismissComposer()
         inputText = ""
-        defer { isSending = false }
+        defer {
+            isSending = false
+            shouldPauseAutoScrollDuringStreaming = false
+        }
 
         let assistantLocalId = appendPendingMessages(for: content)
 
