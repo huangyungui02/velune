@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct MatchingWaveIcon: View {
+    var ringSize: CGFloat = 8
+    var containerSize: CGFloat = 12
+
     @State private var animate = false
 
     var body: some View {
@@ -8,7 +11,7 @@ struct MatchingWaveIcon: View {
             ForEach(0 ..< 3, id: \.self) { index in
                 Circle()
                     .stroke(UITheme.accent, lineWidth: 1)
-                    .frame(width: 8, height: 8)
+                    .frame(width: ringSize, height: ringSize)
                     .scaleEffect(animate ? 2.1 : 0.2)
                     .opacity(animate ? 0.0 : 0.75)
                     .animation(
@@ -19,7 +22,7 @@ struct MatchingWaveIcon: View {
                     )
             }
         }
-        .frame(width: 12, height: 12)
+        .frame(width: containerSize, height: containerSize)
         .onAppear {
             animate = true
         }

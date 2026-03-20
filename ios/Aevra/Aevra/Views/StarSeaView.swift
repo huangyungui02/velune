@@ -309,16 +309,18 @@ extension StarSeaView {
     }
 
     private var listeningToolbarChip: some View {
-        HStack(spacing: 12) {
-            MatchingWaveIcon()
+        HStack(spacing: 8) {
+            MatchingWaveIcon(ringSize: 6, containerSize: 10)
 
             Text("matching.status.listening")
+                .font(.caption)
+                .tracking(0.3)
                 .foregroundStyle(UITheme.primaryText)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
         .fixedSize(horizontal: true, vertical: false)
     }
 
