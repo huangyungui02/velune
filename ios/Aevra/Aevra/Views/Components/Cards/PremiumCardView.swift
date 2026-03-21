@@ -31,18 +31,6 @@ struct PremiumCardView<Content: View>: View {
                     .padding(.vertical)
                     .frame(maxWidth: .infinity)
                     .background(Color.clear, in: .rect(cornerRadius: 28))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [.white.opacity(0.15), .white.opacity(0.05)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                    )
-                    .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 14)
                     .glassEffect(in: .rect(cornerRadius: 28))
                     .padding(.horizontal)
 
@@ -61,7 +49,7 @@ struct PremiumCardView<Content: View>: View {
                         content
                             .padding(.horizontal, 24)
                     }
-                    .padding(.vertical, 32)
+                    .padding(.vertical, 28)
 
                     Color.clear
                         .frame(height: 1)
