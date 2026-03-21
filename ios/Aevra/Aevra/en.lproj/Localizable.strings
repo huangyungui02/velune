@@ -3,7 +3,7 @@
 "settings.section.legal" = "Legal";
 "settings.section.support" = "Support";
 "settings.section.language" = "Language";
-"settings.section.billing" = "Subscription & Stardust";
+"settings.section.billing" = "Subscription";
 "settings.section.about" = "About";
 "settings.account" = "Account";
 "settings.manageAccount" = "Manage Account";

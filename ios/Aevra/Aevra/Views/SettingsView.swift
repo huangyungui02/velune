@@ -57,7 +57,7 @@ struct SettingsView: View {
                 Section {
                     HStack(spacing: 10) {
                         HStack(spacing: 8) {
-                            settingsRowLabel("settings.billing.credits.short", systemImage: "sparkles")
+                            settingsRowLabel("settings.billing.credits.short", systemImage: "sparkle")
                             Button {
                                 showStardustInfo = true
                             } label: {
@@ -111,16 +111,11 @@ struct SettingsView: View {
                 } header: {
                     sectionHeader("settings.section.billing")
                 } footer: {
-                    VStack(alignment: .leading, spacing: 6) {
-                        if !subscriptionManager.isRevenueCatAvailable {
-                            Text("settings.billing.revenuecat.missingKey")
-                        }
-                        if let billingError = subscriptionManager.lastErrorMessage, !billingError.isEmpty {
-                            Text(billingError)
-                        }
+                    if let billingFooterText {
+                        Text(billingFooterText)
+                            .font(.footnote)
+                            .foregroundStyle(UITheme.secondaryText)
                     }
-                    .font(.footnote)
-                    .foregroundStyle(UITheme.secondaryText)
                 }
 
                 Section {
@@ -181,18 +176,20 @@ struct SettingsView: View {
                         Button(role: .destructive) {
                             showSignOutConfirmation = true
                         } label: {
-                            actionRow(
-                                title: "settings.action.signOut",
-                                systemImage: "rectangle.portrait.and.arrow.right",
-                                isLoading: isSigningOut
-                            )
+                            HStack(spacing: 10) {
+                                settingsRowLabel("settings.action.signOut", systemImage: "rectangle.portrait.and.arrow.right")
+                                Spacer(minLength: 0)
+                                if isSigningOut {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
+                            }
                         }
                         .disabled(isSigningOut)
                     }
                 }
             }
             .listStyle(.insetGrouped)
-            .listSectionSpacing(.compact)
             .scrollContentBackground(.hidden)
             .background(Color.clear)
             .environment(\.defaultMinListRowHeight, 50)
@@ -257,22 +254,7 @@ struct SettingsView: View {
     private func sectionHeader(_ key: LocalizedStringKey) -> some View {
         Text(key)
             .textCase(nil)
-            .font(.system(.footnote, design: .rounded, weight: .semibold))
             .foregroundStyle(UITheme.tertiaryText)
-            .tracking(0.5)
-    }
-
-    private func settingsRowLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
-        Label {
-            Text(title)
-                .foregroundStyle(UITheme.primaryText)
-                .lineLimit(1)
-        } icon: {
-            Image(systemName: systemImage)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(UITheme.secondaryText)
-                .frame(width: 20)
-        }
     }
 
     private var stardustInfoPopover: some View {
@@ -343,6 +325,17 @@ struct SettingsView: View {
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "-"
         return "\(short) (\(build))"
     }
+
+    private var billingFooterText: String? {
+        var lines: [String] = []
+        if !subscriptionManager.isRevenueCatAvailable {
+            lines.append(String(localized: "settings.billing.revenuecat.missingKey"))
+        }
+        if let billingError = subscriptionManager.lastErrorMessage, !billingError.isEmpty {
+            lines.append(billingError)
+        }
+        return lines.isEmpty ? nil : lines.joined(separator: "\n")
+    }
 }
 
 private struct SettingsListChrome: ViewModifier {
@@ -390,20 +383,16 @@ struct AccountSettingsView: View {
                         }
                     }
                 } label: {
-                    Label("settings.account.name", systemImage: "person")
+                    settingsRowLabel("settings.account.name", systemImage: "person")
                 }
-            } header: {
-                Text("settings.account").textCase(nil)
-            }
 
-            Section {
                 LabeledContent {
                     Text(authManager.userEmail ?? "--")
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 } label: {
-                    Label("settings.account.email", systemImage: "envelope")
+                    settingsRowLabel("settings.account.email", systemImage: "envelope")
                 }
 
                 LabeledContent {
@@ -414,20 +403,22 @@ struct AccountSettingsView: View {
                     )
                     .foregroundStyle(.secondary)
                 } label: {
-                    Label("settings.billing.plan", systemImage: "sparkles.rectangle.stack")
+                    settingsRowLabel("settings.billing.plan", systemImage: "sparkles.rectangle.stack")
                 }
             }
-            
+
             Section {
                 Button {
                     showDeleteConfirmation = true
                 } label: {
-                    actionRow(
-                        title: "settings.action.deleteAccount",
-                        systemImage: "trash",
-                        isLoading: isDeleting
-                    )
-                    .foregroundStyle(.primary)
+                    HStack(spacing: 10) {
+                        settingsRowLabel("settings.action.deleteAccount", systemImage: "trash")
+                        Spacer(minLength: 0)
+                        if isDeleting {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                    }
                 }
                 .disabled(isDeleting)
             }
@@ -463,7 +454,7 @@ struct AccountSettingsView: View {
         guard !editingName.isEmpty, editingName != authManager.userName else { return }
         isUpdatingName = true
         defer { isUpdatingName = false }
-        
+
         do {
             try await authManager.updateUserName(editingName)
         } catch {
@@ -490,18 +481,15 @@ struct AccountSettingsView: View {
 
 // MARK: - Shared Components
 
-private func actionRow(title: LocalizedStringKey, systemImage: String, isLoading: Bool, isProminent: Bool = false) -> some View {
-    HStack(spacing: 12) {
-        Label {
-            Text(title)
-                .fontWeight(isProminent ? .medium : .regular)
-        } icon: {
-            Image(systemName: systemImage)
-        }
-        Spacer()
-        if isLoading {
-            ProgressView()
-                .controlSize(.small)
-        }
+private func settingsRowLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
+    Label {
+        Text(title)
+            .foregroundStyle(UITheme.primaryText)
+            .lineLimit(1)
+    } icon: {
+        Image(systemName: systemImage)
+            .font(.system(size: 14, weight: .medium))
+            .foregroundStyle(UITheme.secondaryText)
+            .frame(width: 20)
     }
 }
