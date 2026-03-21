@@ -88,6 +88,7 @@ struct SettingsView: View {
                                     .font(.system(size: 12, weight: .medium))
                                     .foregroundStyle(UITheme.tertiaryText)
                             }
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
@@ -237,7 +238,7 @@ struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(authManager.userName ?? String(localized: "settings.account.defaultName", defaultValue: "灵魂旅人"))
-                    .font(.system(.headline, design: .serif))
+                    .font(.headline)
                     .foregroundStyle(UITheme.primaryText)
 
                 if let email = authManager.userEmail {
@@ -248,12 +249,6 @@ struct SettingsView: View {
                         .truncationMode(.middle)
                 }
             }
-
-            Spacer(minLength: 0)
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(UITheme.tertiaryText)
         }
         .padding(.vertical, 4)
     }
@@ -381,7 +376,7 @@ struct AccountSettingsView: View {
                     HStack(spacing: 8) {
                         TextField("settings.account.defaultName", text: $editingName)
                             .multilineTextAlignment(.trailing)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.primary)
                             .onSubmit {
                                 Task { await updateName() }
                             }
@@ -400,10 +395,16 @@ struct AccountSettingsView: View {
                 } label: {
                     Label("settings.account.name", systemImage: "person")
                 }
+            } header: {
+                Text("settings.account").textCase(nil)
+            }
 
+            Section {
                 LabeledContent {
                     Text(authManager.userEmail ?? "--")
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                 } label: {
                     Label("settings.account.email", systemImage: "envelope")
                 }
@@ -418,8 +419,6 @@ struct AccountSettingsView: View {
                 } label: {
                     Label("settings.billing.plan", systemImage: "sparkles.rectangle.stack")
                 }
-            } header: {
-                Text("settings.account").textCase(nil)
             }
             
             Section {
