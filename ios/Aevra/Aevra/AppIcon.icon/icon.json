@@ -1,79 +1,77 @@
 {
-  "fill-specializations" : [
+  "fill-specializations": [
     {
-      "value" : "system-dark"
+      "value": "system-dark"
     },
     {
-      "appearance" : "dark",
-      "value" : "system-dark"
+      "appearance": "dark",
+      "value": "system-dark"
     }
   ],
-  "groups" : [
+  "groups": [
     {
-      "layers" : [
+      "layers": [
         {
-          "blend-mode" : "normal",
-          "fill-specializations" : [
+          "blend-mode": "normal",
+          "fill-specializations": [
             {
-              "appearance" : "dark",
-              "value" : "none"
+              "appearance": "dark",
+              "value": "none"
             }
           ],
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "zen-circle-inner.svg",
-          "name" : "zen-circle-inner",
-          "opacity" : 0.8
+          "glass": true,
+          "hidden": false,
+          "image-name": "zen-circle-inner.svg",
+          "name": "zen-circle-inner",
+          "opacity": 0.8
         }
       ],
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
       },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
       }
     },
     {
-      "layers" : [
+      "layers": [
         {
-          "blend-mode-specializations" : [
+          "blend-mode-specializations": [
             {
-              "value" : "normal"
+              "value": "normal"
             },
             {
-              "appearance" : "dark",
-              "value" : "normal"
+              "appearance": "dark",
+              "value": "normal"
             }
           ],
-          "fill-specializations" : [
+          "fill-specializations": [
             {
-              "appearance" : "dark",
-              "value" : "none"
+              "appearance": "dark",
+              "value": "none"
             }
           ],
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "zen-circle-outer.svg",
-          "name" : "zen-circle-outer",
-          "opacity" : 0.6
+          "glass": true,
+          "hidden": false,
+          "image-name": "zen-circle-outer.svg",
+          "name": "zen-circle-outer",
+          "opacity": 0.5
         }
       ],
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
       },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
       }
     }
   ],
-  "supported-platforms" : {
-    "circles" : [
-      "watchOS"
-    ],
-    "squares" : "shared"
+  "supported-platforms": {
+    "circles": ["watchOS"],
+    "squares": "shared"
   }
 }
