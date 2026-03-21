@@ -310,6 +310,37 @@ def consume_user_credit(user_id: str) -> CreditState:
     )
 
 
+def get_user_credit_state(user_id: str) -> CreditState:
+    response = supabase.rpc("get_user_credit_state", {"p_user_id": user_id}).execute()
+
+    row = _first_row(response.data)
+    if not row:
+        raise ValueError("Failed to load credit state")
+
+    return CreditState(
+        plan=str(row.get("plan", "free")),
+        monthly_limit=int(row.get("monthly_limit", 50)),
+        credits_remaining=int(row.get("credits_remaining", 0)),
+    )
+
+
+def ensure_user_credit_capacity(user_id: str, required_credits: int) -> CreditState:
+    if required_credits <= 0:
+        return get_user_credit_state(user_id)
+
+    credit_state = get_user_credit_state(user_id)
+    if credit_state.credits_remaining >= required_credits:
+        return credit_state
+
+    raise CreditLimitError(
+        "Not enough credits for this request",
+        "INSUFFICIENT_CREDITS",
+        credit_state.plan,
+        credit_state.monthly_limit,
+        credit_state.credits_remaining,
+    )
+
+
 def create_or_update_resonance(
     user_id: str,
     souler_id: str,

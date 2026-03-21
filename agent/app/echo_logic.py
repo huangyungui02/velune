@@ -20,6 +20,7 @@ from app.supabase_repo import (
     create_echo,
     create_or_update_resonance,
     create_souler,
+    ensure_user_credit_capacity,
     get_souler_by_alias,
     get_souler_by_name,
     update_souler,
@@ -101,6 +102,7 @@ async def invoke_echo_graph(
     lang: Lang,
     on_echo: Callable[[dict[str, Any]], Awaitable[None] | None] | None = None,
 ) -> GraphResult:
+    ensure_user_credit_capacity(user_id, num)
     souler_names = await match_soulers(glimmer_content, num, lang)
 
     async def process_item(matched_name: str) -> CreditState:
