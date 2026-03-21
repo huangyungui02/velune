@@ -34,16 +34,18 @@ struct SettingsView: View {
                         AccountSettingsView()
                     } label: {
                         HStack(spacing: 16) {
-                            Image(systemName: "person.crop.circle.fill")
-                                .font(.system(size: 40))
-                                .foregroundStyle(.tertiary)
+                            Image(systemName: "person.crop.circle")
+                                .font(.system(size: 36))
+                                .foregroundStyle(.secondary)
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("settings.account")
+                                Text(authManager.userName ?? String(localized: "settings.account.defaultName", defaultValue: "灵魂旅人"))
                                     .font(.headline)
-                                Text("settings.manageAccount")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                if let email = authManager.userEmail {
+                                    Text(email)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                         .padding(.vertical, 4)
@@ -128,7 +130,7 @@ struct SettingsView: View {
                 if let billingError = subscriptionManager.lastErrorMessage, !billingError.isEmpty {
                     Text(billingError)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.primary)
                 }
             } header: {
                 Text("settings.section.billing").textCase(nil)
@@ -190,7 +192,7 @@ struct SettingsView: View {
             // MARK: Sign Out Section
             if !authManager.isAnonymous {
                 Section {
-                    Button(role: .destructive) {
+                    Button {
                         showSignOutConfirmation = true
                     } label: {
                         actionRow(
@@ -198,6 +200,7 @@ struct SettingsView: View {
                             systemImage: "rectangle.portrait.and.arrow.right",
                             isLoading: isSigningOut
                         )
+                        .foregroundStyle(.primary)
                     }
                     .disabled(isSigningOut)
                 }
@@ -207,7 +210,7 @@ struct SettingsView: View {
         .navigationTitle("settings.title")
         .navigationBarTitleDisplayMode(.inline)
         .alert("settings.signOut.confirm.title", isPresented: $showSignOutConfirmation) {
-            Button("settings.action.signOut", role: .destructive) {
+            Button("settings.action.signOut") {
                 Task { await signOut() }
             }
             Button("common.cancel", role: .cancel) {}
@@ -260,16 +263,54 @@ struct SettingsView: View {
 // MARK: - Account Settings
 
 struct AccountSettingsView: View {
+    @State private var authManager = AuthManager.shared
     @State private var showDeleteConfirmation = false
     @State private var isDeleting = false
+    @State private var isUpdatingName = false
     @State private var feedbackMessage: String?
+    @State private var editingName: String = ""
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         List {
             Section {
-                Button(role: .destructive) {
+                LabeledContent {
+                    HStack(spacing: 8) {
+                        TextField("settings.account.defaultName", text: $editingName)
+                            .multilineTextAlignment(.trailing)
+                            .foregroundStyle(.secondary)
+                            .onSubmit {
+                                Task { await updateName() }
+                            }
+                            .submitLabel(.done)
+                            .disabled(isUpdatingName)
+
+                        if isUpdatingName {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemName: "pencil")
+                                .foregroundStyle(.tertiary)
+                                .font(.subheadline)
+                        }
+                    }
+                } label: {
+                    Label("settings.account.name", systemImage: "person")
+                }
+
+                LabeledContent {
+                    Text(authManager.userEmail ?? "--")
+                        .foregroundStyle(.secondary)
+                } label: {
+                    Label("settings.account.email", systemImage: "envelope")
+                }
+            } header: {
+                Text("settings.account").textCase(nil)
+            }
+            
+            Section {
+                Button {
                     showDeleteConfirmation = true
                 } label: {
                     actionRow(
@@ -277,15 +318,17 @@ struct AccountSettingsView: View {
                         systemImage: "trash",
                         isLoading: isDeleting
                     )
+                    .foregroundStyle(.primary)
                 }
                 .disabled(isDeleting)
-            } footer: {
-                Text("settings.delete.warning")
             }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("settings.account")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            editingName = authManager.userName ?? String(localized: "settings.account.defaultName", defaultValue: "灵魂旅人")
+        }
         .alert("settings.delete.confirm.title", isPresented: $showDeleteConfirmation) {
             Button("settings.action.deleteAccount", role: .destructive) {
                 Task { await deleteAccount() }
@@ -301,6 +344,20 @@ struct AccountSettingsView: View {
             Button("common.ok", role: .cancel) {}
         } message: {
             Text(feedbackMessage ?? "")
+        }
+    }
+
+    private func updateName() async {
+        guard !editingName.isEmpty, editingName != authManager.userName else { return }
+        isUpdatingName = true
+        defer { isUpdatingName = false }
+        
+        do {
+            try await authManager.updateUserName(editingName)
+        } catch {
+            feedbackMessage = error.localizedDescription
+            // Revert on failure
+            editingName = authManager.userName ?? String(localized: "settings.account.defaultName", defaultValue: "灵魂旅人")
         }
     }
 

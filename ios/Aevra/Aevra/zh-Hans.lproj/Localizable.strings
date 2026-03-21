@@ -6,6 +6,12 @@
 "settings.section.billing" = "订阅与额度";
 "settings.section.about" = "关于";
 "settings.account" = "账号";
+"settings.manageAccount" = "管理账号";
+"settings.account.email" = "邮箱";
+"settings.account.name" = "昵称";
+"settings.account.defaultName" = "灵魂旅人";
+"settings.section.profile" = "个人资料";
+"settings.delete.warning" = "删除账号将永久清除你的所有数据。";
 "settings.language" = "应用语言";
 "settings.language.english" = "English";
 "settings.language.simplifiedChinese" = "简体中文";

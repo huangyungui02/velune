@@ -6,6 +6,12 @@
 "settings.section.billing" = "Subscription & Credits";
 "settings.section.about" = "About";
 "settings.account" = "Account";
+"settings.manageAccount" = "Manage Account";
+"settings.account.email" = "Email";
+"settings.account.name" = "Name";
+"settings.account.defaultName" = "Soul Traveler";
+"settings.section.profile" = "Profile";
+"settings.delete.warning" = "Deleting your account will permanently remove all your data.";
 "settings.language" = "App Language";
 "settings.language.english" = "English";
 "settings.language.simplifiedChinese" = "简体中文";

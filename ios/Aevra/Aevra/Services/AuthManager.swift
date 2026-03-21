@@ -12,6 +12,15 @@ final class AuthManager {
     var isAnonymous: Bool = false
     var currentUserId: UUID? { currentUser?.id }
     var currentAccessToken: String? { supabase.auth.currentSession?.accessToken }
+    var userEmail: String? { currentUser?.email }
+    var userName: String? {
+        if let metadata = currentUser?.userMetadata,
+           case let .string(name) = metadata["full_name"],
+           !name.isEmpty {
+            return name
+        }
+        return nil
+    }
     
     private var currentUser: User?
     private var authStateChangeTask: Task<Void, Never>?
@@ -104,6 +113,17 @@ final class AuthManager {
         isAuthenticated = false
         currentUser = nil
         isAnonymous = false
+    }
+
+    func updateUserName(_ name: String) async throws {
+        let response = try await supabase.auth.update(
+            user: UserAttributes(
+                data: [
+                    "full_name": .string(name)
+                ]
+            )
+        )
+        self.currentUser = response
     }
 
     private func updateUserMetadataIfAvailable(from credential: ASAuthorizationAppleIDCredential) async throws {
