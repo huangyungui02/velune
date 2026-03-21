@@ -371,7 +371,6 @@ private struct ComposeView: View {
                     .font(.body)
                     .fontDesign(.serif)
                     .lineSpacing(6)
-                    .submitLabel(.done)
                     .padding(24)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
