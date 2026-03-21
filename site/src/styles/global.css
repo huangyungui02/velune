@@ -101,18 +101,30 @@ main {
   width: 110px;
   height: 110px;
   margin-bottom: 1.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
   position: relative;
   transition: transform 220ms ease;
 }
 
+.hero-mark::before,
 .hero-mark::after {
   content: "";
   position: absolute;
-  inset: 20px;
+  top: 50%;
+  left: 50%;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.42);
+  transform: translate(-50%, -50%);
+}
+
+.hero-mark::before {
+  width: 77.344px;
+  height: 77.344px;
+  border: 1.719px solid rgba(255, 255, 255, 0.5);
+}
+
+.hero-mark::after {
+  width: 51.563px;
+  height: 51.563px;
+  border: 2.148px solid rgba(255, 255, 255, 0.8);
 }
 
 .eyebrow {

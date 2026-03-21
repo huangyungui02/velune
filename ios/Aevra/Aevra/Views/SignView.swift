@@ -136,20 +136,21 @@ private struct AppMarkView: View {
     var body: some View {
         GeometryReader { proxy in
             let side = min(proxy.size.width, proxy.size.height)
-            let outerDiameter = side * (704.0 / 1024.0)
-            let innerDiameter = side * (448.0 / 1024.0)
-            let outerStroke = side * (24.0 / 1024.0)
+            let outerDiameter = side * (720.0 / 1024.0)
+            let innerDiameter = side * (480.0 / 1024.0)
+            let outerStroke = side * (16.0 / 1024.0)
             let innerStroke = side * (20.0 / 1024.0)
 
             ZStack {
                 Circle()
                     .stroke(style: StrokeStyle(lineWidth: outerStroke))
                     .frame(width: outerDiameter, height: outerDiameter)
+                    .opacity(0.5)
 
                 Circle()
                     .stroke(style: StrokeStyle(lineWidth: innerStroke))
                     .frame(width: innerDiameter, height: innerDiameter)
-                    .opacity(0.5)
+                    .opacity(0.8)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
