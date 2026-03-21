@@ -96,19 +96,31 @@ enum EchoStreamService {
                 )
             )
         case "error":
-            throw NSError(
-                domain: domain,
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: errorMessage(for: payload)]
-            )
+            throw streamError(for: payload)
         default:
             return nil
         }
     }
 
+    private static func streamError(for payload: StreamEvent) -> NSError {
+        var userInfo: [String: Any] = [
+            NSLocalizedDescriptionKey: errorMessage(for: payload)
+        ]
+        if let code = payload.code, !code.isEmpty {
+            userInfo[AppErrorUserInfoKey.billingCode] = code
+        }
+        if let plan = payload.plan, !plan.isEmpty {
+            userInfo[AppErrorUserInfoKey.billingPlan] = plan
+        }
+
+        return NSError(domain: domain, code: -1, userInfo: userInfo)
+    }
+
     private static func errorMessage(for payload: StreamEvent) -> String {
         if payload.code == "INSUFFICIENT_CREDITS" {
-            return String(localized: "billing.error.insufficientCredits")
+            return payload.plan == "premium"
+                ? NSLocalizedString("billing.error.insufficientStardust.premium", comment: "")
+                : NSLocalizedString("billing.error.insufficientStardust.free", comment: "")
         }
         return payload.message ?? "Unknown error from echo stream"
     }

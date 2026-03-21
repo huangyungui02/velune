@@ -33,13 +33,13 @@ struct PaywallView: View {
                         FeatureRow(
                             icon: "infinity",
                             title: "Unlimited Echoes",
-                            subtitle: "Connect without boundaries. 1000 credits per month."
+                            subtitle: "Connect without boundaries. 1000 stardust per month."
                         )
                         
                         FeatureRow(
                             icon: "sparkles.rectangle.stack",
-                            title: "Deeper Resonances",
-                            subtitle: "Experience more profound and meaningful interactions."
+                            title: "More Stardust",
+                            subtitle: "Keep the thread going with a deeper monthly reserve."
                         )
                         
                         FeatureRow(

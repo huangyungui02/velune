@@ -3,7 +3,7 @@
 "settings.section.legal" = "法律";
 "settings.section.support" = "支持";
 "settings.section.language" = "语言";
-"settings.section.billing" = "订阅与额度";
+"settings.section.billing" = "订阅与星尘";
 "settings.section.about" = "关于";
 "settings.account" = "账号";
 "settings.manageAccount" = "管理账号";
@@ -22,14 +22,22 @@
 "settings.link.privacy" = "隐私政策";
 "settings.link.contactSupport" = "联系支持";
 "settings.version" = "版本";
-"settings.billing.credits" = "本月额度";
+"settings.billing.credits" = "本月星尘";
+"settings.billing.credits.short" = "星尘";
 "settings.billing.plan" = "当前方案";
-"settings.billing.resetAt" = "额度重置时间";
+"settings.billing.resetAt" = "星尘重置时间";
 "settings.billing.plan.free" = "免费版";
 "settings.billing.plan.premium" = "付费版";
 "settings.billing.action.upgrade" = "升级到付费版";
 "settings.billing.action.restore" = "恢复购买";
 "settings.billing.price" = "订阅价格";
+"settings.billing.stardust.description" = "生成 Echo 与继续一段共鸣对话时，都会消耗星尘。";
+"settings.billing.stardust.remaining.free" = "本月共 %d 星尘";
+"settings.billing.stardust.remaining.premium" = "本周期共 %d 星尘";
+"settings.billing.info.title" = "星尘说明";
+"settings.billing.info.consume" = "每次 Echo 或继续 Chat 都会消耗 1 星尘。";
+"settings.billing.info.reset" = "恢复时间：%@";
+"settings.billing.info.monthly" = "每月恢复：%d 星尘";
 "settings.billing.revenuecat.missingKey" = "未配置 RevenueCat 公钥，暂不可购买。";
 "settings.error.title" = "操作失败";
 "settings.signOut.confirm.title" = "确认退出登录？";
@@ -94,7 +102,9 @@
 
 "app.error.unauthenticated" = "用户尚未登录";
 "billing.price.perMonthSuffix" = "/月";
-"billing.error.insufficientCredits" = "本月 credits 已用完。免费版每月 50，付费版每月 1000。";
+"billing.action.openPaywall" = "前往升级";
+"billing.error.insufficientStardust.free" = "本月星尘已用尽。升级到付费版后，每月可获得 1000 星尘。";
+"billing.error.insufficientStardust.premium" = "本周期星尘已用尽。待订阅周期更新后会自动恢复。";
 "billing.error.missingRevenueCatKey" = "未配置 RevenueCat 公钥。";
 "billing.error.offeringUnavailable" = "当前暂无可购买套餐，请稍后重试。";
 "paywall.restore.notFound" = "未找到有效订阅。如果刚刚完成购买，请稍后再试。";

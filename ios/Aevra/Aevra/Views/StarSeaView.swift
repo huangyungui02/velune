@@ -15,6 +15,7 @@ struct StarSeaView: View {
     @State private var stage: StarSeaStage = .verse
     @State private var manager = MatchingManager.shared
     @State private var showError = false
+    @State private var showPaywall = false
     @State private var shouldRecoverToVerseAfterError = false
     @State private var currentPage: CardID? = .glimmer
     @State private var isShowingProfile = false
@@ -77,6 +78,9 @@ struct StarSeaView: View {
             ComposeView(text: $text, onSend: send)
                 .presentationBackground(.clear)
         }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
         .onChange(of: manager.errorMessage) { _, newValue in
             if stage == .matching, newValue != nil {
                 shouldRecoverToVerseAfterError = true
@@ -96,6 +100,11 @@ struct StarSeaView: View {
             }
         }
         .alert("matching.error.title", isPresented: $showError) {
+            if manager.billingErrorContext?.shouldOfferUpgrade == true {
+                Button("billing.action.openPaywall") {
+                    showPaywall = true
+                }
+            }
             Button("common.ok", role: .cancel) {
                 recoverToVerseAfterError()
             }

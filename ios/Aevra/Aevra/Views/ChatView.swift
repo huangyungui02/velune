@@ -25,10 +25,12 @@ struct ChatView: View {
     @State private var isLoadingSessions = false
     @State private var sessionMenuError: String?
     @State private var isShowingSouler = false
+    @State private var showPaywall = false
     @State private var draftEchoId: UUID?
     @State private var activeDraftPrelude: DraftPrelude?
     @State private var hasPerformedInitialLoad = false
     @State private var shouldPauseAutoScrollDuringStreaming = false
+    @State private var billingErrorContext: BillingErrorContext?
     @FocusState private var isComposerFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -135,8 +137,18 @@ struct ChatView: View {
         }
         .alert("matching.error.title", isPresented: Binding(
             get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
+            set: {
+                if !$0 {
+                    errorMessage = nil
+                    billingErrorContext = nil
+                }
+            }
         )) {
+            if billingErrorContext?.shouldOfferUpgrade == true {
+                Button("billing.action.openPaywall") {
+                    showPaywall = true
+                }
+            }
             Button("common.ok", role: .cancel) {}
         } message: {
             if let errorMessage {
@@ -144,6 +156,9 @@ struct ChatView: View {
             } else {
                 Text("matching.error.unknown")
             }
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
         }
         .onChange(of: sessionId) { _, newValue in
             guard let newValue, newValue != activeSessionId else { return }
@@ -267,6 +282,7 @@ struct ChatView: View {
         messages = []
         inputText = ""
         errorMessage = nil
+        billingErrorContext = nil
         hasScrolledToLatestOnAppear = false
         if isDraftSession {
             applyDraftPreludeIfNeeded()
@@ -313,6 +329,7 @@ struct ChatView: View {
             messages = try await Message.getHistory(sessionId: activeSessionId)
         } catch {
             errorMessage = error.localizedDescription
+            billingErrorContext = error.billingErrorContext
         }
     }
 
@@ -365,6 +382,7 @@ struct ChatView: View {
         } catch {
             messages.removeAll { $0.id == assistantLocalId }
             errorMessage = error.localizedDescription
+            billingErrorContext = error.billingErrorContext
         }
     }
 
@@ -501,6 +519,7 @@ struct ChatView: View {
         messages = []
         inputText = ""
         errorMessage = nil
+        billingErrorContext = nil
         hasScrolledToLatestOnAppear = false
     }
 

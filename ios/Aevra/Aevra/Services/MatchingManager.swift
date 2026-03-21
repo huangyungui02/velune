@@ -10,6 +10,7 @@ class MatchingManager {
     var isMatching = false
     var currentGlimmer: Glimmer?
     var errorMessage: String?
+    var billingErrorContext: BillingErrorContext?
     private var matchingTask: Task<Void, Never>?
     
     private init() {}
@@ -20,6 +21,7 @@ class MatchingManager {
         currentGlimmer = nil
         isMatching = true
         errorMessage = nil
+        billingErrorContext = nil
                 
         matchingTask = Task { [weak self] in
             await self?.performMatching(context: context)
@@ -35,6 +37,7 @@ class MatchingManager {
                 text = ""
                 currentGlimmer = nil
                 errorMessage = nil
+                billingErrorContext = nil
             }
         }
     }
@@ -48,6 +51,7 @@ class MatchingManager {
         } catch {
             await MainActor.run {
                 errorMessage = error.localizedDescription
+                billingErrorContext = error.billingErrorContext
             }
             print("Matching error: \(error)")
         }
