@@ -35,7 +35,7 @@
 "settings.billing.stardust.remaining.free" = "本月共 %d 星尘";
 "settings.billing.stardust.remaining.premium" = "本周期共 %d 星尘";
 "settings.billing.info.title" = "星尘说明";
-"settings.billing.info.consume" = "每次 Echo 或继续 Chat 都会消耗 1 星尘。";
+"settings.billing.info.consume" = "每次回响或深入对话都会消耗 1 星尘。";
 "settings.billing.info.reset" = "恢复时间：%@";
 "settings.billing.info.monthly" = "每月恢复：%d 星尘";
 "settings.billing.revenuecat.missingKey" = "未配置 RevenueCat 公钥，暂不可购买。";

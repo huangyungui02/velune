@@ -64,6 +64,7 @@ struct SettingsView: View {
                                 Image(systemName: "info.circle")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(UITheme.tertiaryText)
+                                    .padding(4)
                             }
                             .buttonStyle(.plain)
                             .popover(isPresented: $showStardustInfo, arrowEdge: .top) {
@@ -276,10 +277,6 @@ struct SettingsView: View {
 
     private var stardustInfoPopover: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("settings.billing.info.title")
-                .font(.headline)
-                .foregroundStyle(UITheme.primaryText)
-
             Text("settings.billing.info.consume")
                 .font(.subheadline)
                 .foregroundStyle(UITheme.secondaryText)
