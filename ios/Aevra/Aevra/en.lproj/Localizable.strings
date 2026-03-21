@@ -91,4 +91,4 @@
 "billing.error.insufficientCredits" = "You are out of credits this month. Free users get 50/month, premium users get 1000/month.";
 "billing.error.missingRevenueCatKey" = "RevenueCat public key is missing.";
 "billing.error.offeringUnavailable" = "No purchasable package is available right now. Please try again later.";
-"billing.error.syncTimeout" = "Purchase succeeded, but premium status has not synced yet. Please wait a moment and tap Restore Purchases.";
+"paywall.restore.notFound" = "No active subscription found. If you recently purchased, please try again in a moment.";

@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var subscriptionManager = SubscriptionManager.shared
     @State private var showSignOutConfirmation = false
     @State private var isSigningOut = false
+    @State private var showPaywall = false
     @State private var feedbackMessage: String?
     @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.systemDefault.rawValue
     @Environment(\.dismiss) private var dismiss
@@ -20,20 +21,42 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            if !authManager.isAnonymous {
-                Section("settings.section.account") {
+            // MARK: Account Section
+            Section {
+                if authManager.isAnonymous {
+                    AppleSignInSettingsRow { error in
+                        feedbackMessage = error
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                } else {
                     NavigationLink {
                         AccountSettingsView()
                     } label: {
-                        Label("settings.account", systemImage: "person.crop.circle")
+                        HStack(spacing: 16) {
+                            Image(systemName: "person.crop.circle.fill")
+                                .font(.system(size: 40))
+                                .foregroundStyle(.tertiary)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("settings.account")
+                                    .font(.headline)
+                                Text("settings.manageAccount")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
                     }
                 }
             }
 
-            Section("settings.section.billing") {
+            // MARK: Billing Section
+            Section {
                 LabeledContent {
                     Text("\(subscriptionManager.creditsRemaining) / \(subscriptionManager.monthlyLimit)")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.primary)
+                        .font(.system(.body, design: .rounded).monospacedDigit())
                 } label: {
                     Label("settings.billing.credits", systemImage: "sparkles")
                 }
@@ -44,7 +67,7 @@ struct SettingsView: View {
                             ? String(localized: "settings.billing.plan.premium")
                             : String(localized: "settings.billing.plan.free")
                     )
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(subscriptionManager.isPremium ? .primary : .secondary)
                 } label: {
                     Label("settings.billing.plan", systemImage: "crown")
                 }
@@ -59,22 +82,23 @@ struct SettingsView: View {
                                 .locale(appLanguage.locale)
                         ) ?? "--"
                     )
-                        .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondary)
+                    .font(.system(.body, design: .rounded).monospacedDigit())
                 } label: {
                     Label("settings.billing.resetAt", systemImage: "clock.arrow.circlepath")
                 }
 
                 if !subscriptionManager.isPremium {
                     Button {
-                        Task { await purchasePremium() }
+                        showPaywall = true
                     } label: {
                         actionRow(
                             title: "settings.billing.action.upgrade",
-                            systemImage: "arrow.up.circle",
-                            isLoading: subscriptionManager.isPurchasing
+                            systemImage: "arrow.up.circle.fill",
+                            isLoading: false,
+                            isProminent: true
                         )
                     }
-                    .disabled(subscriptionManager.isPurchasing || !subscriptionManager.isRevenueCatAvailable)
 
                     LabeledContent {
                         Text(subscriptionManager.monthlyPriceText)
@@ -104,11 +128,14 @@ struct SettingsView: View {
                 if let billingError = subscriptionManager.lastErrorMessage, !billingError.isEmpty {
                     Text(billingError)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.red)
                 }
+            } header: {
+                Text("settings.section.billing").textCase(nil)
             }
 
-            Section("settings.section.language") {
+            // MARK: Preferences Section
+            Section {
                 Picker(selection: $appLanguageRawValue) {
                     Text("settings.language.english")
                         .tag(AppLanguage.english.rawValue)
@@ -118,39 +145,49 @@ struct SettingsView: View {
                     Label("settings.language", systemImage: "globe")
                 }
                 .pickerStyle(.menu)
+            } header: {
+                Text("settings.section.language").textCase(nil)
             }
 
-            Section("settings.section.support") {
+            // MARK: Support & Legal Section
+            Section {
                 Link(destination: AppLinks.contactEmail) {
                     Label("settings.link.contactSupport", systemImage: "envelope")
                 }
+                .foregroundStyle(.primary)
 
                 Button {
                     requestReview()
                 } label: {
                     Label("settings.rateApp", systemImage: "star")
+                        .foregroundStyle(.primary)
                 }
-            }
-
-            Section("settings.section.legal") {
+                
                 Link(destination: AppLinks.terms) {
                     Label("settings.link.terms", systemImage: "doc.text")
                 }
+                .foregroundStyle(.primary)
 
                 Link(destination: AppLinks.privacy) {
                     Label("settings.link.privacy", systemImage: "hand.raised")
                 }
+                .foregroundStyle(.primary)
+            } header: {
+                Text("settings.section.support").textCase(nil)
             }
 
-            Section("settings.section.about") {
+            // MARK: About Section
+            Section {
                 LabeledContent {
                     Text(appVersion)
                         .foregroundStyle(.secondary)
+                        .font(.system(.body, design: .rounded).monospacedDigit())
                 } label: {
-                    Label("settings.version", systemImage: "app.badge")
+                    Label("settings.version", systemImage: "info.circle")
                 }
             }
 
+            // MARK: Sign Out Section
             if !authManager.isAnonymous {
                 Section {
                     Button(role: .destructive) {
@@ -164,14 +201,6 @@ struct SettingsView: View {
                     }
                     .disabled(isSigningOut)
                 }
-            }
-
-            if authManager.isAnonymous {
-                AppleSignInSettingsRow { error in
-                    feedbackMessage = error
-                }
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
             }
         }
         .listStyle(.insetGrouped)
@@ -196,6 +225,9 @@ struct SettingsView: View {
         .task {
             await subscriptionManager.refreshBillingState()
         }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
     }
 
     private func signOut() async {
@@ -210,26 +242,18 @@ struct SettingsView: View {
         }
     }
 
-    private var appVersion: String {
-        let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "-"
-        return "\(short) (\(build))"
-    }
-
-    private func purchasePremium() async {
-        do {
-            try await subscriptionManager.purchasePremium()
-        } catch {
-            feedbackMessage = error.localizedDescription
-        }
-    }
-
     private func restorePurchases() async {
         do {
             try await subscriptionManager.restorePurchases()
         } catch {
             feedbackMessage = error.localizedDescription
         }
+    }
+
+    private var appVersion: String {
+        let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "-"
+        return "\(short) (\(build))"
     }
 }
 
@@ -255,6 +279,8 @@ struct AccountSettingsView: View {
                     )
                 }
                 .disabled(isDeleting)
+            } footer: {
+                Text("settings.delete.warning")
             }
         }
         .listStyle(.insetGrouped)
@@ -295,9 +321,14 @@ struct AccountSettingsView: View {
 
 // MARK: - Shared Components
 
-private func actionRow(title: LocalizedStringKey, systemImage: String, isLoading: Bool) -> some View {
+private func actionRow(title: LocalizedStringKey, systemImage: String, isLoading: Bool, isProminent: Bool = false) -> some View {
     HStack(spacing: 12) {
-        Label(title, systemImage: systemImage)
+        Label {
+            Text(title)
+                .fontWeight(isProminent ? .medium : .regular)
+        } icon: {
+            Image(systemName: systemImage)
+        }
         Spacer()
         if isLoading {
             ProgressView()

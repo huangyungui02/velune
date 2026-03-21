@@ -71,7 +71,9 @@ async def _resolve_souler(matched_name: str, lang: Lang) -> dict[str, Any]:
     return souler_data
 
 
-async def _ensure_souler_assets(souler_data: dict[str, Any], lang: Lang) -> dict[str, Any]:
+async def _ensure_souler_assets(
+    souler_data: dict[str, Any], lang: Lang
+) -> dict[str, Any]:
     souler_id = _souler_id(souler_data)
     souler_name = _souler_name(souler_data)
 

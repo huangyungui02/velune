@@ -72,20 +72,19 @@ final class SubscriptionManager {
             throw NSError(
                 domain: "RevenueCat",
                 code: -2,
-                userInfo: [
-                    NSLocalizedDescriptionKey: message
-                ]
+                userInfo: [NSLocalizedDescriptionKey: message]
             )
         }
 
         isPurchasing = true
         defer { isPurchasing = false }
 
-        let purchaseResult = try await Purchases.shared.purchase(package: package)
+        let result = try await Purchases.shared.purchase(package: package)
         print(
-            "rc purchase appUserID=\(Purchases.shared.appUserID) activeEntitlements=\(Array(purchaseResult.customerInfo.entitlements.active.keys)) activeSubscriptions=\(Array(purchaseResult.customerInfo.activeSubscriptions))"
+            "rc purchase appUserID=\(Purchases.shared.appUserID) activeEntitlements=\(Array(result.customerInfo.entitlements.active.keys)) activeSubscriptions=\(Array(result.customerInfo.activeSubscriptions))"
         )
-        await refreshBillingStateAfterTransaction(expectPremium: true)
+        applyCustomerInfo(result.customerInfo)
+        Task { await syncBillingStateQuietly() }
     }
 
     func restorePurchases() async throws {
@@ -95,8 +94,9 @@ final class SubscriptionManager {
         isRestoring = true
         defer { isRestoring = false }
 
-        _ = try await Purchases.shared.restorePurchases()
-        await refreshBillingStateAfterTransaction(expectPremium: false)
+        let customerInfo = try await Purchases.shared.restorePurchases()
+        applyCustomerInfo(customerInfo)
+        await syncBillingStateQuietly()
     }
 
     func applyServerCreditSnapshot(plan: String?, monthlyLimit: Int?, creditsRemaining: Int?) {
@@ -219,12 +219,18 @@ final class SubscriptionManager {
         nextResetAt = parseISODate(payload.nextResetAt)
     }
 
-    private func refreshBillingStateAfterTransaction(expectPremium: Bool) async {
-        // RevenueCat webhook/state propagation can be slightly delayed after purchase/restore.
-        let hasMetExpectation = await syncBillingState(maxAttempts: 5, expectPremium: expectPremium)
-        if expectPremium && !hasMetExpectation {
-            lastErrorMessage = String(localized: "billing.error.syncTimeout")
-            print("billing-sync completed but plan still free after purchase retries")
+    private func applyCustomerInfo(_ info: CustomerInfo) {
+        if !info.entitlements.active.isEmpty {
+            isPremium = true
+            plan = "premium"
+        }
+    }
+
+    /// Background sync that never surfaces errors to the user.
+    private func syncBillingStateQuietly() async {
+        let synced = await syncBillingState(maxAttempts: 5, expectPremium: isPremium)
+        if !synced {
+            print("billing-sync: backend not yet reflecting premium after retries, webhook will reconcile")
         }
     }
 

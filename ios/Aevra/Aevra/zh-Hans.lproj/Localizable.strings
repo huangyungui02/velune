@@ -91,4 +91,4 @@
 "billing.error.insufficientCredits" = "本月 credits 已用完。免费版每月 50，付费版每月 1000。";
 "billing.error.missingRevenueCatKey" = "未配置 RevenueCat 公钥。";
 "billing.error.offeringUnavailable" = "当前暂无可购买套餐，请稍后重试。";
-"billing.error.syncTimeout" = "购买成功，但付费状态尚未同步。请稍等片刻后点击“恢复购买”。";
+"paywall.restore.notFound" = "未找到有效订阅。如果刚刚完成购买，请稍后再试。";
