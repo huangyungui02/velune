@@ -26,10 +26,8 @@ final class SubscriptionManager {
     private var hasConfiguredRevenueCat = false
     private var activeAppUserID: String?
     private var monthlyPackage: Package?
-    private var lastBillingRefreshAt: Date?
     private var currentBillingUserID: UUID?
     private var pendingForcedRefresh = false
-    private static let minimumBillingRefreshInterval: TimeInterval = 30
     private static let iso8601Formatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
@@ -46,7 +44,6 @@ final class SubscriptionManager {
     func bootstrap(userId: UUID?) async {
         if currentBillingUserID != userId {
             currentBillingUserID = userId
-            lastBillingRefreshAt = nil
         }
 
         configureRevenueCatIfNeeded()
@@ -69,25 +66,13 @@ final class SubscriptionManager {
             return
         }
 
-        var shouldForce = force
         while true {
-            if !shouldForce,
-               let lastBillingRefreshAt,
-               Date().timeIntervalSince(lastBillingRefreshAt) < Self.minimumBillingRefreshInterval
-            {
-                return
-            }
-
             isSyncing = true
-            let synced = await syncBillingState(maxAttempts: 1, expectPremium: false)
+            _ = await syncBillingState(maxAttempts: 1, expectPremium: false)
             isSyncing = false
-            if synced {
-                lastBillingRefreshAt = Date()
-            }
 
             if pendingForcedRefresh {
                 pendingForcedRefresh = false
-                shouldForce = true
                 continue
             }
 
@@ -244,7 +229,6 @@ final class SubscriptionManager {
         applyDefaultMonthlyPrice()
         lastSyncedAt = nil
         nextResetAt = nil
-        lastBillingRefreshAt = nil
         pendingForcedRefresh = false
         currentBillingUserID = nil
     }
