@@ -18,12 +18,14 @@ enum EchoStreamService {
     }
 
     enum Event {
+        case ready
         case echo(EchoPayload)
         case done(DonePayload)
     }
 
     private struct RequestBody: Encodable {
         let glimmerId: UUID
+        let content: String?
     }
 
     private struct StreamEvent: Decodable {
@@ -44,10 +46,14 @@ enum EchoStreamService {
         let message: String?
     }
 
-    static func stream(glimmerId: UUID, path: String) -> AsyncThrowingStream<Event, Error> {
+    static func stream(
+        glimmerId: UUID,
+        content: String? = nil,
+        path: String
+    ) -> AsyncThrowingStream<Event, Error> {
         let payloadDataStream = APISSEClient.stream(
             path: path,
-            body: RequestBody(glimmerId: glimmerId)
+            body: RequestBody(glimmerId: glimmerId, content: content)
         )
 
         return AsyncThrowingStream { continuation in
@@ -76,6 +82,8 @@ enum EchoStreamService {
 
     private static func mapEvent(_ payload: StreamEvent) throws -> Event? {
         switch payload.type {
+        case "ready":
+            return .ready
         case "echo":
             guard let echoData = payload.echo else { return nil }
             return .echo(

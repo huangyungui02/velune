@@ -46,12 +46,12 @@ class MatchingManager {
     
     private func performMatching(context: ModelContext) async {
         do {
-            try await createGlimmer(context: context)
-            try await streamEchoes(context: context)
+            try await composeAndStreamEchoes(context: context)
         } catch {
             await MainActor.run {
                 errorMessage = error.localizedDescription
                 billingErrorContext = error.billingErrorContext
+                currentGlimmer?.status = "failed"
             }
             print("Matching error: \(error)")
         }
@@ -61,30 +61,28 @@ class MatchingManager {
         }
     }
     
-    private func createGlimmer(context: ModelContext) async throws {
+    private func composeAndStreamEchoes(context: ModelContext) async throws {
         let userId = try AuthManager.shared.getUserId()
         let newGlimmer = Glimmer(userId: userId.uuidString, content: text)
-        try await Glimmer.create(newGlimmer)
-        
         await MainActor.run {
             context.insert(newGlimmer)
             currentGlimmer = newGlimmer
+            currentGlimmer?.status = "processing"
         }
-    }
-    
-    private func streamEchoes(context: ModelContext) async throws {
-        guard let glimmer = currentGlimmer else {
-            return
-        }
+
+        let glimmer = newGlimmer
         var receivedDone = false
 
         for try await event in EchoStreamService.stream(
             glimmerId: glimmer.id,
-            path: "\(AppLanguage.current.apiLanguageCode)/echo"
+            content: glimmer.content,
+            path: "\(AppLanguage.current.apiLanguageCode)/glimmers/compose"
         ) {
             if Task.isCancelled { break }
 
             switch event {
+            case .ready:
+                break
             case let .echo(payload):
                 let displayName: String
                 if let inlineName = payload.soulerName?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -105,7 +103,9 @@ class MatchingManager {
                     soulerName: displayName
                 )
                 await MainActor.run {
-                    currentGlimmer?.echoes.append(echo)
+                    if currentGlimmer?.echoes.contains(where: { $0.id == echo.id }) == false {
+                        currentGlimmer?.echoes.append(echo)
+                    }
                 }
             case let .done(payload):
                 receivedDone = true
