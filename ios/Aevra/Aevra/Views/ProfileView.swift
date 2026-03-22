@@ -24,15 +24,7 @@ struct ProfileView: View {
                     description: "anonymous.restricted.profile.description"
                 )
             } else {
-                Group {
-                    if isRefreshing && glimmers.isEmpty {
-                        ProgressView()
-                    } else if glimmers.isEmpty {
-                        EmptyView(title: "profile.empty.noGlimmers")
-                    } else {
-                        glimmerListView
-                    }
-                }
+                glimmerListView
             }
         }
         .navigationTitle("profile.title.glimmers")
@@ -48,51 +40,71 @@ struct ProfileView: View {
             }
         }
         .task(id: authManager.currentUserId) {
-            guard !authManager.isAnonymous else { return }
+            guard !authManager.isAnonymous else {
+                glimmers = []
+                isRefreshing = false
+                return
+            }
+            loadLocalGlimmers()
             await refreshGlimmers()
         }
     }
 
     private var glimmerListView: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 20) {
-                ForEach(timelineSections) { section in
-                    VStack(alignment: .leading, spacing: 12) {
-                        title(for: section.bucket)
-                            .font(.title3.weight(.semibold))
-                            .fontDesign(.rounded)
-                            .foregroundStyle(UITheme.primaryText)
-                            .padding(.horizontal, 6)
-                            .padding(.bottom, 2)
+            if isRefreshing && glimmers.isEmpty {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: 320)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 24)
+            } else if glimmers.isEmpty {
+                EmptyView(title: "profile.empty.noGlimmers")
+                    .frame(maxWidth: .infinity, minHeight: 320)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 24)
+            } else {
+                LazyVStack(alignment: .leading, spacing: 20) {
+                    ForEach(timelineSections) { section in
+                        VStack(alignment: .leading, spacing: 12) {
+                            title(for: section.bucket)
+                                .font(.title3.weight(.semibold))
+                                .fontDesign(.rounded)
+                                .foregroundStyle(UITheme.primaryText)
+                                .padding(.horizontal, 6)
+                                .padding(.bottom, 2)
 
-                        VStack(spacing: 0) {
-                            ForEach(Array(section.items.enumerated()), id: \.element.id) { index, glimmer in
-                                NavigationLink {
-                                    GlimmerView(glimmer: glimmer)
-                                } label: {
-                                    GlimmerListRow(glimmer: glimmer)
-                                }
-                                .buttonStyle(.plain)
-
-                                if index < section.items.count - 1 {
-                                    VStack(spacing: 8) {
-                                        Divider()
-                                            .overlay(.white.opacity(0.04))
+                            VStack(spacing: 0) {
+                                ForEach(Array(section.items.enumerated()), id: \.element.id) { index, glimmer in
+                                    NavigationLink {
+                                        GlimmerView(glimmer: glimmer)
+                                    } label: {
+                                        GlimmerListRow(glimmer: glimmer)
                                     }
-                                    .padding(.horizontal, 18)
-                                    .padding(.vertical, 6)
+                                    .buttonStyle(.plain)
+
+                                    if index < section.items.count - 1 {
+                                        VStack(spacing: 8) {
+                                            Divider()
+                                                .overlay(.white.opacity(0.04))
+                                        }
+                                        .padding(.horizontal, 18)
+                                        .padding(.vertical, 6)
+                                    }
                                 }
                             }
+                            .padding(.vertical, 6)
+                            .background(Color.clear, in: .rect(cornerRadius: 18))
+                            .glassEffect(in: .rect(cornerRadius: 18))
                         }
-                        .padding(.vertical, 6)
-                        .background(Color.clear, in: .rect(cornerRadius: 18))
-                        .glassEffect(in: .rect(cornerRadius: 18))
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+        }
+        .refreshable {
+            await refreshGlimmers()
         }
     }
 
@@ -169,10 +181,19 @@ struct ProfileView: View {
     }
 
     @MainActor
-    func refreshGlimmers() async {
+    private func loadLocalGlimmers() {
         do {
             glimmers = try fetchLocalGlimmers()
-            isRefreshing = glimmers.isEmpty
+        } catch {
+            print("error loading local glimmers: \(error.localizedDescription)")
+        }
+    }
+
+    @MainActor
+    private func refreshGlimmers() async {
+        isRefreshing = glimmers.isEmpty
+
+        do {
             let remoteGlimmers = try await Glimmer.getAll()
             try await reconcileLocalGlimmers(with: remoteGlimmers)
             glimmers = try fetchLocalGlimmers()
@@ -180,6 +201,7 @@ struct ProfileView: View {
             let errorMessage = error.localizedDescription
             print("error refreshing glimmers: \(errorMessage)")
         }
+
         isRefreshing = false
     }
 
