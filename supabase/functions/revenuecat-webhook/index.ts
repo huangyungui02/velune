@@ -430,20 +430,6 @@ const syncBillingSubscription = async (
   return data;
 };
 
-const userExists = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("user_billing_state")
-    .select("user_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error && error.code !== "PGRST116") {
-    throw error;
-  }
-
-  return Boolean(data?.user_id);
-};
-
 const extractUserIds = (event: RevenueCatWebhookEvent) => {
   const candidates: unknown[] = [
     event.app_user_id,
@@ -526,28 +512,39 @@ Deno.serve(async (req) => {
     const processed: Array<Record<string, unknown>> = [];
 
     for (const userId of userIds) {
-      if (!await userExists(userId)) {
-        processed.push({ userId, skipped: true, reason: "user_not_found" });
-        continue;
+      try {
+        const subscriptions = await fetchRevenueCatSubscriptions(projectId, apiKey, userId);
+        const baseState = parseRevenueCatState(subscriptions, entitlementId);
+        const fallbackState = subscriptions.length === 0
+          ? parseWebhookFallbackState(event, entitlementId)
+          : null;
+        const state = fallbackState ?? baseState;
+
+        await syncBillingSubscription(userId, state);
+
+        processed.push({
+          userId,
+          active: state.active,
+          productId: state.productId,
+          matchedEntitlementId: state.matchedEntitlementId,
+          usedSubscriptionFallback: state.usedSubscriptionFallback,
+          usedWebhookFallback: state.usedWebhookFallback,
+        });
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        console.error(
+          JSON.stringify({
+            source: "revenuecat-webhook",
+            level: "error",
+            message: "Failed to sync user billing state",
+            userId,
+            eventId,
+            eventType,
+            detail,
+          }),
+        );
+        processed.push({ userId, skipped: true, reason: "sync_failed", detail });
       }
-
-      const subscriptions = await fetchRevenueCatSubscriptions(projectId, apiKey, userId);
-      const baseState = parseRevenueCatState(subscriptions, entitlementId);
-      const fallbackState = subscriptions.length === 0
-        ? parseWebhookFallbackState(event, entitlementId)
-        : null;
-      const state = fallbackState ?? baseState;
-
-      await syncBillingSubscription(userId, state);
-
-      processed.push({
-        userId,
-        active: state.active,
-        productId: state.productId,
-        matchedEntitlementId: state.matchedEntitlementId,
-        usedSubscriptionFallback: state.usedSubscriptionFallback,
-        usedWebhookFallback: state.usedWebhookFallback,
-      });
     }
 
     console.log(

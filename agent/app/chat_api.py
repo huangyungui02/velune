@@ -20,6 +20,7 @@ from app.supabase_repo import (
     EchoContext,
     MessageRow,
     SessionContext,
+    Souler,
     create_or_update_resonance,
     create_session,
     consume_user_credit,
@@ -196,14 +197,9 @@ async def _prepare_chat_request(
     if not content:
         raise ValueError("Missing content")
 
-    credit_state = await _run_blocking(
-        "Credit check",
-        consume_user_credit,
-        user_id,
-    )
     is_new_session = not session_id
-    log_stage("credit_checked")
-
+    echo_context: EchoContext | None = None
+    pending_souler: Souler | None = None
     if session_id:
         session = await _run_blocking(
             "Load session",
@@ -215,7 +211,6 @@ async def _prepare_chat_request(
         if not souler_id:
             raise ValueError("Missing soulerId for new conversation")
 
-        echo_context: EchoContext | None = None
         if echo_id:
             echo_context = await _run_blocking(
                 "Load echo context",
@@ -226,22 +221,34 @@ async def _prepare_chat_request(
             if echo_context["souler_id"] != souler_id:
                 raise ValueError("Echo souler does not match request soulerId")
 
-        souler = await _run_blocking(
+        pending_souler = await _run_blocking(
             "Load souler",
             get_souler_by_id,
             souler_id,
         )
+
+    credit_state = await _run_blocking(
+        "Credit check",
+        consume_user_credit,
+        user_id,
+    )
+    log_stage("credit_checked")
+
+    if is_new_session:
+        if not pending_souler:
+            raise ValueError("Souler not found")
+
         created_session_id = await _run_blocking(
             "Create session",
             create_session,
             user_id,
-            souler["id"],
+            str(pending_souler["id"]),
         )
         session = {
             "id": created_session_id,
-            "soulerId": souler["id"],
+            "soulerId": str(pending_souler["id"]),
             "title": "",
-            "souler": souler,
+            "souler": pending_souler,
         }
 
         if echo_context:

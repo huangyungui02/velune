@@ -347,44 +347,15 @@ def create_or_update_resonance(
     last_session_id: str | None,
     last_session_title: str,
 ) -> None:
-    response = (
-        supabase.table("resonances")
-        .select("id, count")
-        .eq("user_id", user_id)
-        .eq("souler_id", souler_id)
-        .limit(1)
-        .execute()
-    )
-
-    row = _first_row(getattr(response, "data", None))
-    if not row:
-        (
-            supabase.table("resonances")
-            .insert(
-                {
-                    "user_id": user_id,
-                    "souler_id": souler_id,
-                    "last_session_id": last_session_id,
-                    "last_session_title": last_session_title,
-                    "count": 1,
-                }
-            )
-            .execute()
-        )
-        return
-
-    (
-        supabase.table("resonances")
-        .update(
-            {
-                "last_session_id": last_session_id,
-                "last_session_title": last_session_title,
-                "count": int(row.get("count", 0)) + 1,
-            }
-        )
-        .eq("id", row.get("id"))
-        .execute()
-    )
+    supabase.rpc(
+        "touch_resonance",
+        {
+            "p_user_id": user_id,
+            "p_souler_id": souler_id,
+            "p_last_session_id": last_session_id,
+            "p_last_session_title": last_session_title,
+        },
+    ).execute()
 
 
 def get_souler_by_name(candidate_name: str) -> dict[str, Any] | None:

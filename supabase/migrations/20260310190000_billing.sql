@@ -115,6 +115,24 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.compute_billing_next_reset_at(
+    p_plan billing_plan,
+    p_cycle_month_start TIMESTAMPTZ,
+    p_entitlement_expires_at TIMESTAMPTZ
+)
+RETURNS TIMESTAMPTZ
+LANGUAGE sql
+STABLE
+SET search_path = public
+AS $$
+    SELECT CASE
+        WHEN p_plan = 'premium'::billing_plan
+            AND p_entitlement_expires_at IS NOT NULL
+        THEN p_entitlement_expires_at
+        ELSE (p_cycle_month_start + INTERVAL '1 month')
+    END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user_billing_state()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -195,15 +213,20 @@ BEGIN
         v_new_remaining := LEAST(v_state.credits_remaining, v_monthly_limit);
     END IF;
 
-    UPDATE public.user_billing_state
-    SET
-        plan = v_plan,
-        monthly_limit = v_monthly_limit,
-        credits_remaining = v_new_remaining,
-        cycle_month_start = v_current_cycle_start,
-        updated_at = NOW()
-    WHERE user_id = p_user_id
-    RETURNING * INTO v_state;
+    IF v_state.plan IS DISTINCT FROM v_plan
+        OR v_state.monthly_limit IS DISTINCT FROM v_monthly_limit
+        OR v_state.credits_remaining IS DISTINCT FROM v_new_remaining
+        OR v_state.cycle_month_start IS DISTINCT FROM v_current_cycle_start
+    THEN
+        UPDATE public.user_billing_state
+        SET
+            plan = v_plan,
+            monthly_limit = v_monthly_limit,
+            credits_remaining = v_new_remaining,
+            cycle_month_start = v_current_cycle_start
+        WHERE user_id = p_user_id
+        RETURNING * INTO v_state;
+    END IF;
 
     RETURN v_state;
 END;
@@ -238,12 +261,11 @@ BEGIN
         v_state.is_entitlement_active,
         v_state.entitlement_expires_at,
         v_state.rc_last_synced_at,
-        CASE
-            WHEN v_state.plan = 'premium'::billing_plan
-                AND v_state.entitlement_expires_at IS NOT NULL
-            THEN v_state.entitlement_expires_at
-            ELSE (v_state.cycle_month_start + INTERVAL '1 month')
-        END;
+        public.compute_billing_next_reset_at(
+            v_state.plan,
+            v_state.cycle_month_start,
+            v_state.entitlement_expires_at
+        );
 END;
 $$;
 
@@ -314,17 +336,16 @@ BEGIN
         is_entitlement_active = COALESCE(p_is_entitlement_active, false),
         entitlement_expires_at = p_entitlement_expires_at,
         rc_environment = NULLIF(trim(COALESCE(p_rc_environment, '')), ''),
-        rc_last_synced_at = NOW(),
-        updated_at = NOW()
+        rc_last_synced_at = NOW()
     WHERE user_id = p_user_id;
 
     v_state := public.refresh_user_billing_state(p_user_id);
 
-    IF v_should_reset_credits THEN
+    IF v_should_reset_credits
+        AND v_state.credits_remaining IS DISTINCT FROM v_state.monthly_limit
+    THEN
         UPDATE public.user_billing_state
-        SET
-            credits_remaining = v_state.monthly_limit,
-            updated_at = NOW()
+        SET credits_remaining = v_state.monthly_limit
         WHERE user_id = p_user_id
         RETURNING * INTO v_state;
     END IF;
@@ -338,12 +359,11 @@ BEGIN
         v_state.is_entitlement_active,
         v_state.entitlement_expires_at,
         v_state.rc_last_synced_at,
-        CASE
-            WHEN v_state.plan = 'premium'::billing_plan
-                AND v_state.entitlement_expires_at IS NOT NULL
-            THEN v_state.entitlement_expires_at
-            ELSE (v_state.cycle_month_start + INTERVAL '1 month')
-        END;
+        public.compute_billing_next_reset_at(
+            v_state.plan,
+            v_state.cycle_month_start,
+            v_state.entitlement_expires_at
+        );
 END;
 $$;
 
@@ -380,9 +400,7 @@ BEGIN
     END IF;
 
     UPDATE public.user_billing_state AS ubs
-    SET
-        credits_remaining = ubs.credits_remaining - 1,
-        updated_at = NOW()
+    SET credits_remaining = ubs.credits_remaining - 1
     WHERE ubs.user_id = p_user_id
     RETURNING ubs.* INTO v_state;
 
@@ -397,14 +415,50 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.touch_resonance(
+    p_user_id UUID,
+    p_souler_id UUID,
+    p_last_session_id UUID,
+    p_last_session_title TEXT
+)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    INSERT INTO public.resonances (
+        user_id,
+        souler_id,
+        last_session_id,
+        last_session_title,
+        count
+    )
+    VALUES (
+        p_user_id,
+        p_souler_id,
+        p_last_session_id,
+        COALESCE(p_last_session_title, ''),
+        1
+    )
+    ON CONFLICT (user_id, souler_id)
+    DO UPDATE SET
+        last_session_id = EXCLUDED.last_session_id,
+        last_session_title = EXCLUDED.last_session_title,
+        count = public.resonances.count + 1;
+$$;
+
 REVOKE ALL ON FUNCTION public.ensure_user_billing_state(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.handle_new_auth_user_billing_state() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.compute_billing_cycle_start(TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.compute_billing_next_reset_at(billing_plan, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.refresh_user_billing_state(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.get_user_credit_state(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.consume_user_credit(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.touch_resonance(UUID, UUID, UUID, TEXT) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.get_user_credit_state(UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.consume_user_credit(UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.compute_billing_next_reset_at(billing_plan, TIMESTAMPTZ, TIMESTAMPTZ) TO service_role;
+GRANT EXECUTE ON FUNCTION public.touch_resonance(UUID, UUID, UUID, TEXT) TO service_role;
