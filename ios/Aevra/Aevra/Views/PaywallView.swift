@@ -18,40 +18,36 @@ struct PaywallView: View {
                             .foregroundStyle(.primary)
                             .padding(.top, 40)
                         
-                        Text("Aevra Premium")
+                        Text("paywall.title")
                             .font(.system(.largeTitle, design: .serif))
                             .fontWeight(.medium)
                         
-                        Text("Unlock the full depth of the cosmos.")
+                        Text("paywall.subtitle")
                             .font(.body)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                     }
                     
+                    Spacer()
+                    
                     // Features
                     VStack(spacing: 24) {
                         FeatureRow(
-                            icon: "infinity",
-                            title: "Unlimited Echoes",
-                            subtitle: "Connect without boundaries. 1000 stardust per month."
-                        )
-                        
-                        FeatureRow(
                             icon: "sparkles.rectangle.stack",
-                            title: "More Stardust",
-                            subtitle: "Keep the thread going with a deeper monthly reserve."
+                            title: String(localized: "paywall.feature.moreStardust.title"),
+                            subtitle: String(localized: "paywall.feature.moreStardust.subtitle")
                         )
                         
                         FeatureRow(
                             icon: "lock.open",
-                            title: "Priority Access",
-                            subtitle: "Be the first to experience new features and capabilities."
+                            title: String(localized: "paywall.feature.priorityAccess.title"),
+                            subtitle: String(localized: "paywall.feature.priorityAccess.subtitle")
                         )
                     }
                     .padding(.horizontal, 32)
                     
-                    Spacer(minLength: 40)
+                    Spacer()
                     
                     // Action Area
                     VStack(spacing: 16) {
@@ -64,8 +60,11 @@ struct PaywallView: View {
                                         .tint(UITheme.primaryActionForeground(for: colorScheme))
                                         .padding(.trailing, 8)
                                 }
-                                Text("Subscribe for \(subscriptionManager.monthlyPriceText)")
-                                    .fontWeight(.medium)
+                                Text(String(
+                                    format: NSLocalizedString("paywall.action.subscribe", comment: ""),
+                                    subscriptionManager.monthlyPriceText
+                                ))
+                                .fontWeight(.medium)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
