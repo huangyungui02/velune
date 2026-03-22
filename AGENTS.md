@@ -16,3 +16,6 @@
 - 产品官网：astro5
 - 数据库：supabase
 - Agent(chat/echo): python3.14, fastapi
+
+# ios app 规范
+尽量使用最简洁、最原生、最干净的代码
