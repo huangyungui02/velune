@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var subscriptionManager = SubscriptionManager.shared
     @State private var feedbackMessage: String?
     @State private var isSuccess = false
@@ -60,7 +61,7 @@ struct PaywallView: View {
                             HStack {
                                 if subscriptionManager.isPurchasing {
                                     ProgressView()
-                                        .tint(.white)
+                                        .tint(UITheme.primaryActionForeground(for: colorScheme))
                                         .padding(.trailing, 8)
                                 }
                                 Text("Subscribe for \(subscriptionManager.monthlyPriceText)")
@@ -68,8 +69,8 @@ struct PaywallView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color.primary)
-                            .foregroundStyle(Color(UIColor.systemBackground))
+                            .background(UITheme.primaryActionBackground(for: colorScheme))
+                            .foregroundStyle(UITheme.primaryActionForeground(for: colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
                         .disabled(subscriptionManager.isPurchasing || !subscriptionManager.isRevenueCatAvailable)

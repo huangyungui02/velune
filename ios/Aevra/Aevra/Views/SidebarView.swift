@@ -202,10 +202,11 @@ struct SidebarView: View {
 
                 Group {
                     if let resonanceMenuError {
-                        VStack(alignment: .leading, spacing: 10) {
+                        centeredSidebarStatus {
                             Text(resonanceMenuError)
                                 .font(.footnote)
                                 .foregroundStyle(UITheme.secondaryText)
+                                .multilineTextAlignment(.center)
 
                             Button("common.retry") {
                                 dismissSearch()
@@ -213,19 +214,29 @@ struct SidebarView: View {
                                     await loadResonances()
                                 }
                             }
-                            .buttonStyle(.borderedProminent)
+                            .font(.footnote.weight(.semibold))
+                            .fontDesign(.serif)
+                            .foregroundStyle(UITheme.primaryText)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
+                            .background(.white.opacity(0.12), in: .capsule)
+                            .overlay {
+                                Capsule()
+                                    .stroke(.white.opacity(0.2), lineWidth: 1)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .padding(.top, 8)
                     } else if isLoadingResonances, resonances.isEmpty {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                            Text("common.loading")
-                                .font(.footnote)
-                                .foregroundStyle(UITheme.secondaryText)
+                        centeredSidebarStatus {
+                            VStack(spacing: 10) {
+                                ProgressView()
+                                    .tint(UITheme.primaryText)
+
+                                Text("common.loading")
+                                    .font(.footnote)
+                                    .foregroundStyle(UITheme.secondaryText)
+                            }
                         }
-                        .padding(.top, 8)
-                        .contentShape(.rect)
-                        .onTapGesture(perform: dismissSearch)
                     } else if displayedResonances.isEmpty {
                         if resonances.isEmpty, !hasActiveResonanceSearch {
                             resonanceEmptyStateView
@@ -388,6 +399,15 @@ struct SidebarView: View {
         .glassEffect(in: .capsule)
         .padding(.horizontal, 2)
         .shadow(color: .black.opacity(0.12), radius: 14, y: 6)
+    }
+
+    private func centeredSidebarStatus<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(spacing: 12) {
+            content()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .contentShape(.rect)
+        .onTapGesture(perform: dismissSearch)
     }
 
     @MainActor
