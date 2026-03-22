@@ -5,6 +5,7 @@ import SwiftData
 @Model
 class Glimmer {
     @Attribute(.unique) var id: UUID
+    var userId: String
     var content: String
     var createdAt: Date
     var status: String
@@ -12,8 +13,15 @@ class Glimmer {
     @Relationship(deleteRule: .cascade, inverse: \Echo.glimmer)
     var echoes: [Echo] = []
 
-    init(id: UUID = UUID(), content: String, createdAt: Date = .now, status: String = "pending") {
+    init(
+        id: UUID = UUID(),
+        userId: String = "",
+        content: String,
+        createdAt: Date = .now,
+        status: String = "pending"
+    ) {
         self.id = id
+        self.userId = userId
         self.content = content
         self.createdAt = createdAt
         self.status = status
@@ -53,7 +61,14 @@ extension Glimmer {
             .execute()
             .value
 
-        return Glimmer(id: response.id, content: response.content, createdAt: response.createdAt, status: response.status)
+        let userId = try await AuthManager.shared.getUserId()
+        return Glimmer(
+            id: response.id,
+            userId: userId.uuidString,
+            content: response.content,
+            createdAt: response.createdAt,
+            status: response.status
+        )
     }
 
     static func getAll() async throws -> [Glimmer] {
@@ -68,7 +83,13 @@ extension Glimmer {
             .value
 
         return response.map { response in
-            Glimmer(id: response.id, content: response.content, createdAt: response.createdAt)
+            Glimmer(
+                id: response.id,
+                userId: userId.uuidString,
+                content: response.content,
+                createdAt: response.createdAt,
+                status: response.status
+            )
         }
     }
 

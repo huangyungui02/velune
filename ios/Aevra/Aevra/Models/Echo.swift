@@ -5,6 +5,7 @@ import SwiftData
 @Model
 class Echo {
     @Attribute(.unique) var id: UUID
+    var userId: String
     var content: String
     var createdAt: Date
 
@@ -14,12 +15,14 @@ class Echo {
 
     init(
         id: UUID = UUID(),
+        userId: String = "",
         content: String,
         createdAt: Date = .now,
         soulerId: UUID,
         soulerName: String
     ) {
         self.id = id
+        self.userId = userId
         self.content = content
         self.createdAt = createdAt
         self.soulerId = soulerId
@@ -28,12 +31,14 @@ class Echo {
 
     convenience init(
         id: UUID = UUID(),
+        userId: String = "",
         content: String,
         createdAt: Date = .now,
         souler: Souler
     ) {
         self.init(
             id: id,
+            userId: userId,
             content: content,
             createdAt: createdAt,
             soulerId: souler.id,
@@ -60,6 +65,7 @@ extension Echo {
             }
         }
 
+        let userId = try await AuthManager.shared.getUserId()
         let response: [Response] = try await supabase
             .from("echoes_with_souler")
             .select()
@@ -68,11 +74,14 @@ extension Echo {
             .value
 
         return response.map { res in
-            Echo(id: res.id,
-                 content: res.content,
-                 createdAt: res.createdAt,
-                 soulerId: res.soulerId,
-                 soulerName: res.soulerName)
+            Echo(
+                id: res.id,
+                userId: userId.uuidString,
+                content: res.content,
+                createdAt: res.createdAt,
+                soulerId: res.soulerId,
+                soulerName: res.soulerName
+            )
         }
     }
 }

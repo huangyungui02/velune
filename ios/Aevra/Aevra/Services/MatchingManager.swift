@@ -62,7 +62,8 @@ class MatchingManager {
     }
     
     private func createGlimmer(context: ModelContext) async throws {
-        let newGlimmer = Glimmer(content: text)
+        let userId = try AuthManager.shared.getUserId()
+        let newGlimmer = Glimmer(userId: userId.uuidString, content: text)
         try await Glimmer.create(newGlimmer)
         
         await MainActor.run {
@@ -98,6 +99,7 @@ class MatchingManager {
 
                 let echo = Echo(
                     id: payload.id,
+                    userId: glimmer.userId,
                     content: payload.content,
                     soulerId: payload.soulerId,
                     soulerName: displayName

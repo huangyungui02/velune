@@ -6,8 +6,12 @@ struct ProfileView: View {
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var context
     @State private var authManager = AuthManager.shared
-    @Query(sort: \Glimmer.createdAt, order: .reverse) private var glimmers: [Glimmer]
+    @State private var glimmers: [Glimmer] = []
     @State private var isRefreshing: Bool = false
+
+    private var currentUserId: String {
+        authManager.currentUserId?.uuidString ?? ""
+    }
 
     var body: some View {
         ZStack {
@@ -43,10 +47,9 @@ struct ProfileView: View {
                 }
             }
         }
-        .task {
-            if !authManager.isAnonymous {
-                await refreshGlimmers()
-            }
+        .task(id: authManager.currentUserId) {
+            guard !authManager.isAnonymous else { return }
+            await refreshGlimmers()
         }
     }
 
@@ -167,24 +170,36 @@ struct ProfileView: View {
 
     @MainActor
     func refreshGlimmers() async {
-        if !glimmers.isEmpty { return }
-
         isRefreshing = true
         defer { isRefreshing = false }
 
         do {
-            let glimmersData = try await Glimmer.getAll()
-            for (idx, glimmer) in glimmersData.enumerated() {
+            glimmers = try fetchLocalGlimmers()
+
+            if !glimmers.isEmpty { return }
+
+            let remoteGlimmers = try await Glimmer.getAll()
+            for (idx, glimmer) in remoteGlimmers.enumerated() {
                 context.insert(glimmer)
-                if idx > 0, idx % 200 == 0 {
-                    await Task.yield()
-                }
+                if idx > 0, idx % 200 == 0 { await Task.yield() }
             }
             try context.save()
+
+            glimmers = try fetchLocalGlimmers()
         } catch {
             let errorMessage = error.localizedDescription
             print("error refreshing glimmers: \(errorMessage)")
         }
+    }
+
+    @MainActor
+    private func fetchLocalGlimmers() throws -> [Glimmer] {
+        try context.fetch(
+            FetchDescriptor<Glimmer>(
+                predicate: #Predicate<Glimmer> { $0.userId == currentUserId },
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+        )
     }
 }
 
