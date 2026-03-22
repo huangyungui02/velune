@@ -27,3 +27,39 @@ CREATE POLICY "Deny users to update their own resonances" ON resonances FOR UPDA
 
 -- Handle updated_at column
 CREATE TRIGGER handle_updated_at BEFORE UPDATE ON resonances FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime (updated_at);
+
+-- Create a function to touch a resonance
+CREATE OR REPLACE FUNCTION public.touch_resonance(
+    p_user_id UUID,
+    p_souler_id UUID,
+    p_last_session_id UUID,
+    p_last_session_title TEXT
+)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    INSERT INTO public.resonances (
+        user_id,
+        souler_id,
+        last_session_id,
+        last_session_title,
+        count
+    )
+    VALUES (
+        p_user_id,
+        p_souler_id,
+        p_last_session_id,
+        COALESCE(p_last_session_title, ''),
+        1
+    )
+    ON CONFLICT (user_id, souler_id)
+    DO UPDATE SET
+        last_session_id = EXCLUDED.last_session_id,
+        last_session_title = EXCLUDED.last_session_title,
+        count = public.resonances.count + 1;
+$$;
+
+REVOKE ALL ON FUNCTION public.touch_resonance(UUID, UUID, UUID, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.touch_resonance(UUID, UUID, UUID, TEXT) TO service_role;

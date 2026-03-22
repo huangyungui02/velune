@@ -62,6 +62,10 @@ BEGIN
     FROM auth.users
     WHERE id = p_user_id;
 
+    IF v_created_at IS NULL THEN
+        RETURN;
+    END IF;
+
     INSERT INTO public.user_billing_state (
         user_id,
         plan,
@@ -266,6 +270,46 @@ BEGIN
             v_state.cycle_month_start,
             v_state.entitlement_expires_at
         );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_my_credit_state()
+RETURNS TABLE (
+    plan TEXT,
+    monthly_limit INT,
+    credits_remaining INT,
+    cycle_month_start TIMESTAMPTZ,
+    is_entitlement_active BOOLEAN,
+    entitlement_expires_at TIMESTAMPTZ,
+    rc_last_synced_at TIMESTAMPTZ,
+    next_reset_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_user_id UUID;
+BEGIN
+    v_user_id := (SELECT auth.uid());
+
+    IF v_user_id IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated'
+            USING ERRCODE = '28000';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM auth.users
+        WHERE id = v_user_id
+    ) THEN
+        RAISE EXCEPTION 'Not authenticated'
+            USING ERRCODE = '28000';
+    END IF;
+
+    RETURN QUERY
+    SELECT *
+    FROM public.get_user_credit_state(v_user_id);
 END;
 $$;
 
@@ -478,37 +522,6 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.touch_resonance(
-    p_user_id UUID,
-    p_souler_id UUID,
-    p_last_session_id UUID,
-    p_last_session_title TEXT
-)
-RETURNS void
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-    INSERT INTO public.resonances (
-        user_id,
-        souler_id,
-        last_session_id,
-        last_session_title,
-        count
-    )
-    VALUES (
-        p_user_id,
-        p_souler_id,
-        p_last_session_id,
-        COALESCE(p_last_session_title, ''),
-        1
-    )
-    ON CONFLICT (user_id, souler_id)
-    DO UPDATE SET
-        last_session_id = EXCLUDED.last_session_id,
-        last_session_title = EXCLUDED.last_session_title,
-        count = public.resonances.count + 1;
-$$;
 
 REVOKE ALL ON FUNCTION public.ensure_user_billing_state(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.handle_new_auth_user_billing_state() FROM PUBLIC;
@@ -516,14 +529,15 @@ REVOKE ALL ON FUNCTION public.compute_billing_cycle_start(TIMESTAMPTZ, TIMESTAMP
 REVOKE ALL ON FUNCTION public.compute_billing_next_reset_at(billing_plan, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.refresh_user_billing_state(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.get_user_credit_state(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.get_my_credit_state() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.consume_user_credit(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.consume_user_credit_batch(UUID, INT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.touch_resonance(UUID, UUID, UUID, TEXT) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.get_user_credit_state(UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_my_credit_state() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_my_credit_state() TO service_role;
 GRANT EXECUTE ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.consume_user_credit(UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION public.consume_user_credit_batch(UUID, INT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.compute_billing_next_reset_at(billing_plan, TIMESTAMPTZ, TIMESTAMPTZ) TO service_role;
-GRANT EXECUTE ON FUNCTION public.touch_resonance(UUID, UUID, UUID, TEXT) TO service_role;

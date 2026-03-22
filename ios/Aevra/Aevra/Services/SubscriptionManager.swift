@@ -1,5 +1,6 @@
 import Foundation
 import RevenueCat
+import Supabase
 
 @MainActor
 @Observable
@@ -268,7 +269,7 @@ final class SubscriptionManager {
     private func syncBillingStateQuietly() async {
         let synced = await syncBillingState(maxAttempts: 5, expectPremium: isPremium)
         if !synced {
-            print("billing-sync: backend not yet reflecting premium after retries, webhook will reconcile")
+            print("billing-rpc: backend not yet reflecting premium after retries, webhook will reconcile")
         }
     }
 
@@ -283,7 +284,7 @@ final class SubscriptionManager {
                 }
             } catch {
                 lastErrorMessage = error.localizedDescription
-                print("billing-sync attempt \(attempt) failed: \(error.localizedDescription)")
+                print("billing-rpc attempt \(attempt) failed: \(error.localizedDescription)")
             }
 
             if attempt < maxAttempts {
@@ -295,44 +296,20 @@ final class SubscriptionManager {
     }
 
     private func callBillingSync() async throws -> BillingSyncResponse {
-        guard let accessToken = AuthManager.shared.currentAccessToken else {
-            throw NSError(
-                domain: "BillingSync",
-                code: 401,
-                userInfo: [NSLocalizedDescriptionKey: "Missing Supabase access token"]
-            )
-        }
+        let rows: [BillingSyncResponse] = try await supabase
+            .rpc("get_my_credit_state")
+            .execute()
+            .value
 
-        let endpoint = supabaseURL.appending(path: "functions/v1/billing-sync")
-        var request = URLRequest(url: endpoint)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
+        guard let state = rows.first else {
             throw NSError(
-                domain: "BillingSync",
+                domain: "BillingRPC",
                 code: -1,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "matching.error.unknown")]
+                userInfo: [NSLocalizedDescriptionKey: "Billing state is empty"]
             )
         }
 
-        if !(200 ... 299).contains(http.statusCode) {
-            let backendError = try? JSONDecoder().decode(BillingSyncErrorResponse.self, from: data)
-            let message = backendError?.error ?? HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
-            if let body = String(data: data, encoding: .utf8), !body.isEmpty {
-                print("billing-sync failed (\(http.statusCode)): \(body)")
-            } else {
-                print("billing-sync failed (\(http.statusCode)): \(message)")
-            }
-            throw NSError(
-                domain: "BillingSync",
-                code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: message]
-            )
-        }
-
-        return try JSONDecoder().decode(BillingSyncResponse.self, from: data)
+        return state
     }
 
     private func parseISODate(_ value: String?) -> Date? {
@@ -420,14 +397,10 @@ private struct BillingSyncResponse: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case plan
-        case monthlyLimit
-        case creditsRemaining
-        case entitlementExpiresAt
-        case rcLastSyncedAt
-        case nextResetAt
+        case monthlyLimit = "monthly_limit"
+        case creditsRemaining = "credits_remaining"
+        case entitlementExpiresAt = "entitlement_expires_at"
+        case rcLastSyncedAt = "rc_last_synced_at"
+        case nextResetAt = "next_reset_at"
     }
-}
-
-private struct BillingSyncErrorResponse: Decodable {
-    var error: String
 }
