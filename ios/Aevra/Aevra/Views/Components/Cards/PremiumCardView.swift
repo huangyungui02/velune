@@ -2,16 +2,10 @@ import SwiftUI
 
 struct PremiumCardView<Content: View>: View {
     private let content: Content
-    private let followBottomOnContentGrowth: Bool
 
     @State private var contentHeight: CGFloat = 0
-    private let bottomAnchorId = "premium-card-bottom-anchor"
 
-    init(
-        followBottomOnContentGrowth: Bool = false,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.followBottomOnContentGrowth = followBottomOnContentGrowth
+    init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
 
@@ -42,40 +36,28 @@ struct PremiumCardView<Content: View>: View {
     }
 
     private func scrollableContent(maxCardHeight: CGFloat, isScrollable: Bool) -> some View {
-        return ScrollViewReader { proxy in
-            ScrollView {
-                VStack {
-                    VStack(spacing: 20) {
-                        content
-                            .padding(.horizontal, 24)
-                    }
-                    .padding(.vertical, 28)
-
-                    Color.clear
-                        .frame(height: 1)
-                        .id(bottomAnchorId)
+        return ScrollView {
+            VStack {
+                VStack(spacing: 20) {
+                    content
+                        .padding(.horizontal, 24)
                 }
-                .frame(maxWidth: .infinity)
-                .background(
-                    GeometryReader { proxy in
-                        Color.clear
-                            .preference(key: ContentHeightKey.self, value: proxy.size.height)
-                    }
-                )
+                .padding(.top, 26)
+                .padding(.bottom, 18)
             }
-            .scrollDisabled(!isScrollable)
-            .frame(maxHeight: maxCardHeight, alignment: .top)
-            .onPreferenceChange(ContentHeightKey.self) { newValue in
-                let shouldFollow = followBottomOnContentGrowth && newValue > contentHeight
-                if contentHeight != newValue {
-                    contentHeight = newValue
+            .frame(maxWidth: .infinity)
+            .background(
+                GeometryReader { proxy in
+                    Color.clear
+                        .preference(key: ContentHeightKey.self, value: proxy.size.height)
                 }
-                guard shouldFollow else { return }
-                DispatchQueue.main.async {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        proxy.scrollTo(bottomAnchorId, anchor: .bottom)
-                    }
-                }
+            )
+        }
+        .scrollDisabled(!isScrollable)
+        .frame(maxHeight: maxCardHeight, alignment: .top)
+        .onPreferenceChange(ContentHeightKey.self) { newValue in
+            if contentHeight != newValue {
+                contentHeight = newValue
             }
         }
     }
