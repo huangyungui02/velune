@@ -52,6 +52,7 @@ class MatchingManager {
                 errorMessage = error.localizedDescription
                 billingErrorContext = error.billingErrorContext
                 currentGlimmer?.status = "failed"
+                persistChangesIfNeeded(context: context)
             }
             print("Matching error: \(error)")
         }
@@ -67,7 +68,6 @@ class MatchingManager {
         await MainActor.run {
             context.insert(newGlimmer)
             currentGlimmer = newGlimmer
-            currentGlimmer?.status = "processing"
         }
 
         let glimmer = newGlimmer
@@ -122,7 +122,14 @@ class MatchingManager {
         if !Task.isCancelled && receivedDone {
             await MainActor.run {
                 currentGlimmer?.status = "complete"
+                persistChangesIfNeeded(context: context)
             }
         }
+    }
+
+    @MainActor
+    private func persistChangesIfNeeded(context: ModelContext) {
+        guard context.hasChanges else { return }
+        try? context.save()
     }
 }

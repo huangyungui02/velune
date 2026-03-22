@@ -27,14 +27,6 @@ class Glimmer {
         self.status = status
     }
 
-    func update(from: Glimmer) {
-        self.status = from.status
-        for echo in from.echoes {
-            if !self.echoes.contains(where: { $0.id == echo.id }) {
-                self.echoes.append(echo)
-            }
-        }
-    }
 }
 
 extension Glimmer {
@@ -93,18 +85,20 @@ extension Glimmer {
         }
     }
 
-    static func create(_ glimmer: Glimmer) async throws {
+    static func create(_ glimmer: Glimmer, status: String = "pending") async throws {
         struct Data: Codable {
             var id: UUID
             var userId: UUID
             var content: String
             var createdAt: Date
+            var status: String
 
             enum CodingKeys: String, CodingKey {
                 case id
                 case userId = "user_id"
                 case content
                 case createdAt = "created_at"
+                case status
             }
         }
 
@@ -113,7 +107,8 @@ extension Glimmer {
             id: glimmer.id,
             userId: userId,
             content: glimmer.content,
-            createdAt: glimmer.createdAt
+            createdAt: glimmer.createdAt,
+            status: status
         )
 
         try await supabase

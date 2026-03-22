@@ -25,7 +25,7 @@ struct ProfileView: View {
                 )
             } else {
                 Group {
-                    if isRefreshing {
+                    if isRefreshing && glimmers.isEmpty {
                         ProgressView()
                     } else if glimmers.isEmpty {
                         EmptyView(title: "profile.empty.noGlimmers")
@@ -170,26 +170,17 @@ struct ProfileView: View {
 
     @MainActor
     func refreshGlimmers() async {
-        isRefreshing = true
-        defer { isRefreshing = false }
-
         do {
             glimmers = try fetchLocalGlimmers()
-
-            if !glimmers.isEmpty { return }
-
+            isRefreshing = glimmers.isEmpty
             let remoteGlimmers = try await Glimmer.getAll()
-            for (idx, glimmer) in remoteGlimmers.enumerated() {
-                context.insert(glimmer)
-                if idx > 0, idx % 200 == 0 { await Task.yield() }
-            }
-            try context.save()
-
+            try await reconcileLocalGlimmers(with: remoteGlimmers)
             glimmers = try fetchLocalGlimmers()
         } catch {
             let errorMessage = error.localizedDescription
             print("error refreshing glimmers: \(errorMessage)")
         }
+        isRefreshing = false
     }
 
     @MainActor
@@ -200,6 +191,28 @@ struct ProfileView: View {
                 sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
             )
         )
+    }
+
+    @MainActor
+    private func reconcileLocalGlimmers(with remoteGlimmers: [Glimmer]) async throws {
+        let localGlimmers = try fetchLocalGlimmers()
+        let remoteIds = Set(remoteGlimmers.map(\.id))
+
+        for remote in remoteGlimmers {
+            context.insert(remote)
+        }
+
+        for local in localGlimmers {
+            if !remoteIds.contains(local.id) {
+                do {
+                    try await Glimmer.create(local, status: "failed")
+                } catch {
+                    print("failed to push local glimmer \(local.id) to remote: \(error)")
+                }
+            }
+        }
+
+        try context.save()
     }
 }
 

@@ -105,6 +105,7 @@ struct GlimmerView: View {
         do {
             try await Glimmer.delete(glimmer.id)
             context.delete(glimmer)
+            try context.save()
             return true
         } catch {
             errorMessage = error.localizedDescription
@@ -122,9 +123,15 @@ struct GlimmerView: View {
 
         do {
             let newGlimmer = try await Glimmer.get(glimmer.id)
-            let echoes = try await Echo.getAll(newGlimmer.id)
-            newGlimmer.echoes = echoes
-            glimmer.update(from: newGlimmer)
+            let remoteEchoes = try await Echo.getAll(newGlimmer.id)
+
+            context.insert(newGlimmer)
+            for echo in remoteEchoes {
+                echo.glimmer = newGlimmer
+                context.insert(echo)
+            }
+
+            try? context.save()
         } catch {
             print("Failed to refresh glimmer \(glimmer.id): \(error)")
             return
