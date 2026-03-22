@@ -8,6 +8,11 @@ struct ProfileView: View {
     @State private var authManager = AuthManager.shared
     @State private var glimmers: [Glimmer] = []
     @State private var isRefreshing: Bool = false
+    @State private var isLoadingMore: Bool = false
+    @State private var hasMoreGlimmers: Bool = true
+    @State private var glimmerOffset: Int = 0
+
+    private let glimmerPageSize = 10
 
     private var currentUserId: String {
         authManager.currentUserId?.uuidString ?? ""
@@ -43,10 +48,18 @@ struct ProfileView: View {
             guard !authManager.isAnonymous else {
                 glimmers = []
                 isRefreshing = false
+                isLoadingMore = false
+                hasMoreGlimmers = true
+                glimmerOffset = 0
                 return
             }
             loadLocalGlimmers()
-            await refreshGlimmers()
+            glimmerOffset = glimmers.count
+            hasMoreGlimmers = true
+
+            if glimmers.isEmpty {
+                await refreshLatestGlimmers(showLoadingIndicator: true)
+            }
         }
     }
 
@@ -97,6 +110,25 @@ struct ProfileView: View {
                             .glassEffect(in: .rect(cornerRadius: 18))
                         }
                     }
+
+                    if isLoadingMore {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text("common.loading")
+                                .font(.footnote)
+                                .foregroundStyle(UITheme.secondaryText)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 4)
+                    } else if hasMoreGlimmers {
+                        Color.clear
+                            .frame(height: 1)
+                            .onAppear {
+                                Task {
+                                    await loadMoreGlimmers()
+                                }
+                            }
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -104,7 +136,7 @@ struct ProfileView: View {
             }
         }
         .refreshable {
-            await refreshGlimmers()
+            await refreshLatestGlimmers(showLoadingIndicator: glimmers.isEmpty)
         }
     }
 
@@ -190,19 +222,41 @@ struct ProfileView: View {
     }
 
     @MainActor
-    private func refreshGlimmers() async {
-        isRefreshing = glimmers.isEmpty
+    private func refreshLatestGlimmers(showLoadingIndicator: Bool) async {
+        guard !isRefreshing else { return }
+
+        isRefreshing = showLoadingIndicator
 
         do {
-            let remoteGlimmers = try await Glimmer.getAll()
-            try await reconcileLocalGlimmers(with: remoteGlimmers)
+            let page = try await Glimmer.getPage(limit: glimmerPageSize, offset: 0)
+            try upsertLocalGlimmers(page.items)
             glimmers = try fetchLocalGlimmers()
+            glimmerOffset = glimmers.count
+            hasMoreGlimmers = page.hasMore
         } catch {
             let errorMessage = error.localizedDescription
             print("error refreshing glimmers: \(errorMessage)")
         }
 
         isRefreshing = false
+    }
+
+    @MainActor
+    private func loadMoreGlimmers() async {
+        guard !isLoadingMore, !isRefreshing, hasMoreGlimmers else { return }
+
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+
+        do {
+            let page = try await Glimmer.getPage(limit: glimmerPageSize, offset: glimmerOffset)
+            try upsertLocalGlimmers(page.items)
+            glimmers = try fetchLocalGlimmers()
+            glimmerOffset += page.items.count
+            hasMoreGlimmers = page.hasMore
+        } catch {
+            print("error loading more glimmers: \(error.localizedDescription)")
+        }
     }
 
     @MainActor
@@ -216,21 +270,15 @@ struct ProfileView: View {
     }
 
     @MainActor
-    private func reconcileLocalGlimmers(with remoteGlimmers: [Glimmer]) async throws {
+    private func upsertLocalGlimmers(_ remoteGlimmers: [Glimmer]) throws {
         let localGlimmers = try fetchLocalGlimmers()
-        let remoteIds = Set(remoteGlimmers.map(\.id))
+        let localById = Dictionary(uniqueKeysWithValues: localGlimmers.map { ($0.id, $0) })
 
         for remote in remoteGlimmers {
-            context.insert(remote)
-        }
-
-        for local in localGlimmers {
-            if !remoteIds.contains(local.id) {
-                do {
-                    try await Glimmer.create(local, status: "failed")
-                } catch {
-                    print("failed to push local glimmer \(local.id) to remote: \(error)")
-                }
+            if let local = localById[remote.id] {
+                local.status = remote.status
+            } else {
+                context.insert(remote)
             }
         }
 
@@ -279,7 +327,7 @@ private struct GlimmerListRow: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 15)
             .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(.rect)
+            .contentShape(.rect)
     }
 
     private var content: some View {

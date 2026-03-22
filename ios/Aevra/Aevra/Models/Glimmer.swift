@@ -30,6 +30,11 @@ class Glimmer {
 }
 
 extension Glimmer {
+    nonisolated struct Page {
+        var items: [Glimmer]
+        var hasMore: Bool
+    }
+
     nonisolated struct Response: Identifiable, Codable, Sendable {
         var id: UUID
         var content: String
@@ -61,6 +66,34 @@ extension Glimmer {
             createdAt: response.createdAt,
             status: response.status
         )
+    }
+
+    static func getPage(limit: Int, offset: Int) async throws -> Page {
+        let pageSize = max(limit, 1)
+        let pageOffset = max(offset, 0)
+        let userId = try await AuthManager.shared.getUserId()
+        let upperBound = max(pageOffset + pageSize - 1, pageOffset)
+
+        let response: [Response] = try await supabase
+            .from("glimmers")
+            .select("id, content, created_at, status")
+            .eq("user_id", value: userId.uuidString)
+            .order("created_at", ascending: false)
+            .range(from: pageOffset, to: upperBound)
+            .execute()
+            .value
+
+        let items = response.map { response in
+            Glimmer(
+                id: response.id,
+                userId: userId.uuidString,
+                content: response.content,
+                createdAt: response.createdAt,
+                status: response.status
+            )
+        }
+
+        return Page(items: items, hasMore: response.count == pageSize)
     }
 
     static func getAll() async throws -> [Glimmer] {
