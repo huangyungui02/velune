@@ -415,6 +415,69 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.consume_user_credit_batch(
+    p_user_id UUID,
+    p_count INT
+)
+RETURNS TABLE (
+    ok BOOLEAN,
+    code TEXT,
+    message TEXT,
+    plan TEXT,
+    monthly_limit INT,
+    credits_remaining INT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_state user_billing_state;
+    v_count INT;
+BEGIN
+    v_count := GREATEST(COALESCE(p_count, 0), 0);
+    v_state := public.refresh_user_billing_state(p_user_id);
+
+    IF v_count = 0 THEN
+        RETURN QUERY
+        SELECT
+            true,
+            NULL::TEXT,
+            NULL::TEXT,
+            v_state.plan::TEXT,
+            v_state.monthly_limit,
+            v_state.credits_remaining;
+        RETURN;
+    END IF;
+
+    IF v_state.credits_remaining < v_count THEN
+        RETURN QUERY
+        SELECT
+            false,
+            'INSUFFICIENT_CREDITS',
+            'Not enough credits for this request',
+            v_state.plan::TEXT,
+            v_state.monthly_limit,
+            v_state.credits_remaining;
+        RETURN;
+    END IF;
+
+    UPDATE public.user_billing_state AS ubs
+    SET credits_remaining = ubs.credits_remaining - v_count
+    WHERE ubs.user_id = p_user_id
+    RETURNING ubs.* INTO v_state;
+
+    RETURN QUERY
+    SELECT
+        true,
+        NULL::TEXT,
+        NULL::TEXT,
+        v_state.plan::TEXT,
+        v_state.monthly_limit,
+        v_state.credits_remaining;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.touch_resonance(
     p_user_id UUID,
     p_souler_id UUID,
@@ -455,10 +518,12 @@ REVOKE ALL ON FUNCTION public.refresh_user_billing_state(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.get_user_credit_state(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.consume_user_credit(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.consume_user_credit_batch(UUID, INT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.touch_resonance(UUID, UUID, UUID, TEXT) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.get_user_credit_state(UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.consume_user_credit(UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.consume_user_credit_batch(UUID, INT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.compute_billing_next_reset_at(billing_plan, TIMESTAMPTZ, TIMESTAMPTZ) TO service_role;
 GRANT EXECUTE ON FUNCTION public.touch_resonance(UUID, UUID, UUID, TEXT) TO service_role;

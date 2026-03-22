@@ -310,6 +310,42 @@ def consume_user_credit(user_id: str) -> CreditState:
     )
 
 
+def consume_user_credit_batch(user_id: str, count: int) -> CreditState:
+    if count <= 0:
+        return get_user_credit_state(user_id)
+
+    response = supabase.rpc(
+        "consume_user_credit_batch",
+        {"p_user_id": user_id, "p_count": count},
+    ).execute()
+
+    row = _first_row(response.data)
+    if not row:
+        raise ValueError("Failed to consume credits")
+
+    plan = str(row.get("plan", "free"))
+    monthly_limit = int(row.get("monthly_limit", 50))
+    credits_remaining = int(row.get("credits_remaining", 0))
+    ok = bool(row.get("ok"))
+
+    if not ok:
+        message = str(row.get("message", "Not enough credits for this request"))
+        code = str(row.get("code", "INSUFFICIENT_CREDITS"))
+        raise CreditLimitError(
+            message,
+            code,
+            plan,
+            monthly_limit,
+            credits_remaining,
+        )
+
+    return CreditState(
+        plan=plan,
+        monthly_limit=monthly_limit,
+        credits_remaining=credits_remaining,
+    )
+
+
 def get_user_credit_state(user_id: str) -> CreditState:
     response = supabase.rpc("get_user_credit_state", {"p_user_id": user_id}).execute()
 
@@ -321,23 +357,6 @@ def get_user_credit_state(user_id: str) -> CreditState:
         plan=str(row.get("plan", "free")),
         monthly_limit=int(row.get("monthly_limit", 50)),
         credits_remaining=int(row.get("credits_remaining", 0)),
-    )
-
-
-def ensure_user_credit_capacity(user_id: str, required_credits: int) -> CreditState:
-    if required_credits <= 0:
-        return get_user_credit_state(user_id)
-
-    credit_state = get_user_credit_state(user_id)
-    if credit_state.credits_remaining >= required_credits:
-        return credit_state
-
-    raise CreditLimitError(
-        "Not enough credits for this request",
-        "INSUFFICIENT_CREDITS",
-        credit_state.plan,
-        credit_state.monthly_limit,
-        credit_state.credits_remaining,
     )
 
 

@@ -27,6 +27,7 @@ final class SubscriptionManager {
     private var monthlyPackage: Package?
     private var lastBillingRefreshAt: Date?
     private var currentBillingUserID: UUID?
+    private var pendingForcedRefresh = false
     private static let minimumBillingRefreshInterval: TimeInterval = 30
     private static let iso8601Formatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
@@ -60,19 +61,36 @@ final class SubscriptionManager {
     }
 
     func refreshBillingState(force: Bool = false) async {
-        if isSyncing { return }
-        if !force,
-           let lastBillingRefreshAt,
-           Date().timeIntervalSince(lastBillingRefreshAt) < Self.minimumBillingRefreshInterval
-        {
+        if isSyncing {
+            if force {
+                pendingForcedRefresh = true
+            }
             return
         }
 
-        isSyncing = true
-        defer { isSyncing = false }
-        let synced = await syncBillingState(maxAttempts: 1, expectPremium: false)
-        if synced {
-            lastBillingRefreshAt = Date()
+        var shouldForce = force
+        while true {
+            if !shouldForce,
+               let lastBillingRefreshAt,
+               Date().timeIntervalSince(lastBillingRefreshAt) < Self.minimumBillingRefreshInterval
+            {
+                return
+            }
+
+            isSyncing = true
+            let synced = await syncBillingState(maxAttempts: 1, expectPremium: false)
+            isSyncing = false
+            if synced {
+                lastBillingRefreshAt = Date()
+            }
+
+            if pendingForcedRefresh {
+                pendingForcedRefresh = false
+                shouldForce = true
+                continue
+            }
+
+            return
         }
     }
 
@@ -226,6 +244,7 @@ final class SubscriptionManager {
         lastSyncedAt = nil
         nextResetAt = nil
         lastBillingRefreshAt = nil
+        pendingForcedRefresh = false
         currentBillingUserID = nil
     }
 

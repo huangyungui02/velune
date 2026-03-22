@@ -214,8 +214,10 @@ struct SettingsView: View {
         } message: {
             Text(feedbackMessage ?? "")
         }
-        .task {
-            await subscriptionManager.refreshBillingState()
+        .onAppear {
+            Task {
+                await subscriptionManager.refreshBillingState(force: true)
+            }
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
@@ -315,6 +317,7 @@ struct SettingsView: View {
     private func restorePurchases() async {
         do {
             try await subscriptionManager.restorePurchases()
+            await subscriptionManager.refreshBillingState(force: true)
         } catch {
             feedbackMessage = error.localizedDescription
         }
@@ -428,9 +431,9 @@ struct AccountSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             editingName = authManager.userName ?? String(localized: "settings.account.defaultName", defaultValue: "灵魂旅人")
-        }
-        .task {
-            await subscriptionManager.refreshBillingState()
+            Task {
+                await subscriptionManager.refreshBillingState(force: true)
+            }
         }
         .alert("settings.delete.confirm.title", isPresented: $showDeleteConfirmation) {
             Button("settings.action.deleteAccount", role: .destructive) {

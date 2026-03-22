@@ -13,14 +13,14 @@ from app.echo_nodes import (
     souler_profile,
     souler_prompt,
 )
-from app.errors import CreditLimitError, CreditState
+from app.errors import CreditState
 from app.supabase_repo import (
     add_souler_alias,
-    consume_user_credit,
+    consume_user_credit_batch,
     create_echo,
     create_or_update_resonance,
     create_souler,
-    ensure_user_credit_capacity,
+    get_user_credit_state,
     get_souler_by_alias,
     get_souler_by_name,
     update_souler,
@@ -102,17 +102,22 @@ async def invoke_echo_graph(
     lang: Lang,
     on_echo: Callable[[dict[str, Any]], Awaitable[None] | None] | None = None,
 ) -> GraphResult:
-    ensure_user_credit_capacity(user_id, num)
     souler_names = await match_soulers(glimmer_content, num, lang)
+    if not souler_names:
+        return GraphResult(
+            completed=True,
+            credit_state=get_user_credit_state(user_id),
+        )
 
-    async def process_item(matched_name: str) -> CreditState:
+    credit_state = consume_user_credit_batch(user_id, len(souler_names))
+
+    async def process_item(matched_name: str) -> None:
 
         souler_data = await _resolve_souler(matched_name, lang)
         souler_data = await _ensure_souler_assets(souler_data, lang)
         souler_id = _souler_id(souler_data)
         souler_name = _souler_name(souler_data)
 
-        credit_state = consume_user_credit(user_id)
         answer = await souler_answer(
             glimmer_content,
             str(souler_data["prompt"]),
@@ -137,41 +142,20 @@ async def invoke_echo_graph(
             if asyncio.iscoroutine(maybe_awaitable):
                 await maybe_awaitable
 
-        return credit_state
-
     results = await asyncio.gather(
         *(process_item(name) for name in souler_names),
         return_exceptions=True,
     )
 
     errors: list[str] = []
-    first_credit_limit_error: CreditLimitError | None = None
-    final_credit_state: CreditState | None = None
     completed = True
 
     for result in results:
         if isinstance(result, Exception):
             errors.append(_reason_to_message(result))
-            if not first_credit_limit_error and isinstance(result, CreditLimitError):
-                first_credit_limit_error = result
             continue
 
-        if not final_credit_state:
-            final_credit_state = result
-            continue
-
-        final_credit_state = CreditState(
-            plan=result.plan,
-            monthly_limit=result.monthly_limit,
-            credits_remaining=min(
-                final_credit_state.credits_remaining,
-                result.credits_remaining,
-            ),
-        )
-
-    if len(errors) == num:
-        if first_credit_limit_error:
-            raise first_credit_limit_error
+    if len(errors) == len(souler_names):
         raise RuntimeError(f"Errors when creating echoes: {' | '.join(errors)}")
 
     if errors:
@@ -179,5 +163,5 @@ async def invoke_echo_graph(
 
     return GraphResult(
         completed=completed,
-        credit_state=final_credit_state,
+        credit_state=credit_state,
     )
