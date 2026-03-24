@@ -1,11 +1,15 @@
 import SwiftUI
 
 struct PaywallView: View {
+    private enum FeedbackMessage {
+        case localized(LocalizedStringKey)
+        case text(String)
+    }
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @State private var subscriptionManager = SubscriptionManager.shared
-    @State private var feedbackMessage: String?
-    @State private var isSuccess = false
+    @State private var feedbackMessage: FeedbackMessage?
     
     var body: some View {
         NavigationStack {
@@ -35,14 +39,14 @@ struct PaywallView: View {
                     VStack(spacing: 24) {
                         FeatureRow(
                             icon: "sparkles.rectangle.stack",
-                            title: String(localized: "paywall.feature.moreStardust.title"),
-                            subtitle: String(localized: "paywall.feature.moreStardust.subtitle")
+                            title: "paywall.feature.moreStardust.title",
+                            subtitle: "paywall.feature.moreStardust.subtitle"
                         )
                         
                         FeatureRow(
                             icon: "lock.open",
-                            title: String(localized: "paywall.feature.priorityAccess.title"),
-                            subtitle: String(localized: "paywall.feature.priorityAccess.subtitle")
+                            title: "paywall.feature.priorityAccess.title",
+                            subtitle: "paywall.feature.priorityAccess.subtitle"
                         )
                     }
                     .padding(.horizontal, 32)
@@ -60,11 +64,12 @@ struct PaywallView: View {
                                         .tint(UITheme.primaryActionForeground(for: colorScheme))
                                         .padding(.trailing, 8)
                                 }
-                                Text(String(
-                                    format: NSLocalizedString("paywall.action.subscribe", comment: ""),
-                                    subscriptionManager.monthlyPriceText
-                                ))
-                                .fontWeight(.medium)
+                                Text("paywall.action.subscribe")
+                                    .fontWeight(.medium)
+
+                                Text(subscriptionManager.monthlyPriceText)
+                                    .font(.subheadline)
+                                    .foregroundStyle(UITheme.primaryActionForeground(for: colorScheme).opacity(0.75))
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -122,11 +127,17 @@ struct PaywallView: View {
             )) {
                 Button("common.ok", role: .cancel) {}
             } message: {
-                Text(feedbackMessage ?? "")
+                switch feedbackMessage {
+                case .localized(let key):
+                    Text(key)
+                case .text(let message):
+                    Text(message)
+                case .none:
+                    SwiftUI.EmptyView()
+                }
             }
             .onChange(of: subscriptionManager.isPremium) { _, isPremium in
                 if isPremium {
-                    isSuccess = true
                     // Dismiss after a short delay to show success state if needed, or immediately
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         dismiss()
@@ -140,7 +151,7 @@ struct PaywallView: View {
         do {
             try await subscriptionManager.purchasePremium()
         } catch {
-            feedbackMessage = error.localizedDescription
+            feedbackMessage = .text(error.localizedDescription)
         }
     }
 
@@ -148,18 +159,18 @@ struct PaywallView: View {
         do {
             try await subscriptionManager.restorePurchases()
             if !subscriptionManager.isPremium {
-                feedbackMessage = String(localized: "paywall.restore.notFound")
+                feedbackMessage = .localized("paywall.restore.notFound")
             }
         } catch {
-            feedbackMessage = error.localizedDescription
+            feedbackMessage = .text(error.localizedDescription)
         }
     }
 }
 
 private struct FeatureRow: View {
     let icon: String
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
     
     var body: some View {
         HStack(alignment: .top, spacing: 16) {

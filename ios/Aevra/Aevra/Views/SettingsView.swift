@@ -78,6 +78,17 @@ struct SettingsView: View {
                             .foregroundStyle(UITheme.primaryText)
                     }
 
+                    LabeledContent {
+                        Text(
+                            subscriptionManager.isPremium
+                                ? "settings.billing.plan.premium"
+                                : "settings.billing.plan.free"
+                        )
+                        .foregroundStyle(UITheme.secondaryText)
+                    } label: {
+                        settingsRowLabel("settings.billing.plan", systemImage: "sparkles.rectangle.stack")
+                    }
+
                     if !subscriptionManager.isPremium {
                         Button {
                             showPaywall = true
@@ -237,7 +248,14 @@ struct SettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(authManager.userName ?? String(localized: "settings.account.defaultName", defaultValue: "灵魂旅人"))
+                Text(
+                    authManager.userName
+                        ?? String(
+                            localized: "settings.account.defaultName",
+                            defaultValue: "灵魂旅人",
+                            locale: appLanguage.locale
+                        )
+                )
                     .font(.headline)
                     .foregroundStyle(UITheme.primaryText)
 
@@ -268,7 +286,7 @@ struct SettingsView: View {
 
             Text(
                 String(
-                    format: NSLocalizedString("settings.billing.info.reset", comment: ""),
+                    format: String(localized: "settings.billing.info.reset", locale: appLanguage.locale),
                     locale: appLanguage.locale,
                     resetAtText
                 )
@@ -279,7 +297,7 @@ struct SettingsView: View {
 
             Text(
                 String(
-                    format: NSLocalizedString("settings.billing.info.monthly", comment: ""),
+                    format: String(localized: "settings.billing.info.monthly", locale: appLanguage.locale),
                     locale: appLanguage.locale,
                     subscriptionManager.monthlyLimit
                 )
@@ -332,7 +350,7 @@ struct SettingsView: View {
     private var billingFooterText: String? {
         var lines: [String] = []
         if !subscriptionManager.isRevenueCatAvailable {
-            lines.append(String(localized: "settings.billing.revenuecat.missingKey"))
+            lines.append(String(localized: "settings.billing.revenuecat.missingKey", locale: appLanguage.locale))
         }
         if let billingError = subscriptionManager.lastErrorMessage, !billingError.isEmpty {
             lines.append(billingError)
@@ -353,14 +371,18 @@ private struct SettingsListChrome: ViewModifier {
 
 struct AccountSettingsView: View {
     @State private var authManager = AuthManager.shared
-    @State private var subscriptionManager = SubscriptionManager.shared
     @State private var showDeleteConfirmation = false
     @State private var isDeleting = false
     @State private var isUpdatingName = false
     @State private var feedbackMessage: String?
     @State private var editingName: String = ""
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.systemDefault.rawValue
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .systemDefault
+    }
 
     var body: some View {
         List {
@@ -397,17 +419,6 @@ struct AccountSettingsView: View {
                 } label: {
                     settingsRowLabel("settings.account.email", systemImage: "envelope")
                 }
-
-                LabeledContent {
-                    Text(
-                        subscriptionManager.isPremium
-                            ? String(localized: "settings.billing.plan.premium")
-                            : String(localized: "settings.billing.plan.free")
-                    )
-                    .foregroundStyle(.secondary)
-                } label: {
-                    settingsRowLabel("settings.billing.plan", systemImage: "sparkles.rectangle.stack")
-                }
             }
 
             Section {
@@ -430,10 +441,11 @@ struct AccountSettingsView: View {
         .navigationTitle("settings.account")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            editingName = authManager.userName ?? String(localized: "settings.account.defaultName", defaultValue: "灵魂旅人")
-            Task {
-                await subscriptionManager.refreshBillingState(force: true)
-            }
+            editingName = authManager.userName ?? String(
+                localized: "settings.account.defaultName",
+                defaultValue: "灵魂旅人",
+                locale: appLanguage.locale
+            )
         }
         .alert("settings.delete.confirm.title", isPresented: $showDeleteConfirmation) {
             Button("settings.action.deleteAccount", role: .destructive) {
@@ -463,7 +475,11 @@ struct AccountSettingsView: View {
         } catch {
             feedbackMessage = error.localizedDescription
             // Revert on failure
-            editingName = authManager.userName ?? String(localized: "settings.account.defaultName", defaultValue: "灵魂旅人")
+            editingName = authManager.userName ?? String(
+                localized: "settings.account.defaultName",
+                defaultValue: "灵魂旅人",
+                locale: appLanguage.locale
+            )
         }
     }
 
