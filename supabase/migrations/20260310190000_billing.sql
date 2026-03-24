@@ -214,7 +214,13 @@ BEGIN
             v_monthly_limit
         );
     ELSIF v_monthly_limit < v_state.monthly_limit THEN
-        v_new_remaining := LEAST(v_state.credits_remaining, v_monthly_limit);
+        IF v_state.plan = 'premium'::billing_plan
+            AND v_plan = 'free'::billing_plan
+        THEN
+            v_new_remaining := v_monthly_limit;
+        ELSE
+            v_new_remaining := LEAST(v_state.credits_remaining, v_monthly_limit);
+        END IF;
     END IF;
 
     IF v_state.plan IS DISTINCT FROM v_plan
