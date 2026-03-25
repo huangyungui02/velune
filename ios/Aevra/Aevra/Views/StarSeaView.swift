@@ -349,11 +349,12 @@ private struct VerseView: View {
             Spacer()
 
             Text(textKey)
+                .padding(20)
                 .font(.title2)
                 .fontDesign(.serif)
                 .multilineTextAlignment(.center)
                 .lineSpacing(14)
-                .tracking(2)
+                .tracking(3)
                 .foregroundStyle(UITheme.primaryText.opacity(0.85))
                 .shadow(color: .white.opacity(0.12), radius: 16)
                 .shadow(color: .white.opacity(0.06), radius: 32)

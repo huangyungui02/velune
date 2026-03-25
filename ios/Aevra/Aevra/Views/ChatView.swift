@@ -239,8 +239,8 @@ struct ChatView: View {
             .font(.body)
             .fontDesign(.serif)
             .foregroundStyle(UITheme.primaryText)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
             .background(Color.clear, in: .rect(cornerRadius: 16))
             .glassEffect(in: .rect(cornerRadius: 16))
             .overlay {
@@ -258,7 +258,7 @@ struct ChatView: View {
                 Image(systemName: "arrow.up")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(canSend ? UITheme.primaryText : UITheme.tertiaryText)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 45, height: 45)
                     .background(Color.clear, in: .circle)
                     .glassEffect(in: .circle)
                     .overlay {
@@ -271,11 +271,12 @@ struct ChatView: View {
             .scaleEffect(canSend ? 1 : 0.94)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: canSend)
         }
-        .padding(.horizontal, 8)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
-        .padding(.horizontal, 10)
-        .padding(.bottom, 6)
+        .padding()
+//        .padding(.horizontal, 8)
+//        .padding(.top, 10)
+//        .padding(.bottom, 8)
+//        .padding(.horizontal, 10)
+//        .padding(.bottom, 6)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: isSending)
     }
 
@@ -600,15 +601,15 @@ private struct ResonanceChatBubble: View {
                 }
                 .fontDesign(.serif)
                 .lineSpacing(5)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                isUser
-                    ? .white.opacity(0.16)
-                    : .white.opacity(0.08),
-                in: .rect(cornerRadius: 14)
-            )
-            .frame(maxWidth: 320, alignment: isUser ? .trailing : .leading)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(
+                    isUser
+                        ? .white.opacity(0.16)
+                        : .white.opacity(0.08),
+                    in: .rect(cornerRadius: 14)
+                )
+                .frame(maxWidth: 320, alignment: isUser ? .trailing : .leading)
 
             if !isUser {
                 Spacer(minLength: 32)

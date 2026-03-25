@@ -69,11 +69,11 @@
 "profile.section.pastWeek" = "Past Week";
 "profile.section.pastMonth" = "Past Month";
 
-"starsea.hero.verse" = "A glimmer in the heart,\nand the universe unfolds.";
+"starsea.hero.verse" = "A glimmer in the heart, and the universe unfolds.";
 "starsea.prompt.glimmerWithin" = "What glimmers within you";
 "starsea.action.writeGlimmer" = "Write a glimmer";
 "starsea.empty.resonanceTitle" = "No resonances yet";
-"starsea.empty.resonanceSubtitle" = "Write your first glimmer, and let the sea answer in its own quiet way.";
+"starsea.empty.resonanceSubtitle" = "Write your first glimmer,\nand let the starsea answer in its own quiet way.";
 
 "matching.status.listening" = "Listening for echoes";
 "matching.error.title" = "Error";
