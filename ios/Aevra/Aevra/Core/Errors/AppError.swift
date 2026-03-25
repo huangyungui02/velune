@@ -2,15 +2,13 @@ import Foundation
 
 enum AppErrorUserInfoKey {
     static let billingCode = "billingCode"
-    static let billingPlan = "billingPlan"
 }
 
 struct BillingErrorContext: Equatable {
     let code: String
-    let plan: String?
 
     var shouldOfferUpgrade: Bool {
-        code == "INSUFFICIENT_CREDITS" && plan == "free"
+        code == "INSUFFICIENT_CREDITS"
     }
 }
 
@@ -34,7 +32,6 @@ extension Error {
             return nil
         }
 
-        let plan = nsError.userInfo[AppErrorUserInfoKey.billingPlan] as? String
-        return BillingErrorContext(code: code, plan: plan)
+        return BillingErrorContext(code: code)
     }
 }

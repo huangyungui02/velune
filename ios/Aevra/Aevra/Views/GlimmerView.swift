@@ -64,8 +64,8 @@ struct GlimmerView: View {
         }
         .navigationDestination(item: $chatRoute) { route in
             ChatView(
-                sessionId: nil,
-                echoId: route.draftEchoId,
+                sessionId: route.sessionId,
+                echoId: route.sessionId == nil ? route.echoId : nil,
                 draftPrelude: route.draftPrelude,
                 soulerId: route.soulerId,
                 soulerName: route.soulerName,

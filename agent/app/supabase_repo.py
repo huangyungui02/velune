@@ -6,7 +6,7 @@ from typing import Any, Literal, TypedDict
 from supabase import Client, create_client
 
 from app.config import get_settings
-from app.errors import CreditLimitError, CreditState, UnauthorizedError
+from app.errors import CreditLimitError, UnauthorizedError
 
 settings = get_settings()
 supabase: Client = create_client(
@@ -45,6 +45,7 @@ class MessageRow(TypedDict):
 class EchoContext(TypedDict):
     id: str
     souler_id: str
+    session_id: str | None
     content: str
     glimmer_content: str
 
@@ -201,7 +202,7 @@ def get_souler_by_id(souler_id: str) -> Souler:
 def get_echo_context(user_id: str, echo_id: str) -> EchoContext:
     response = (
         supabase.table("echoes")
-        .select("id, souler_id, content, glimmers!inner(user_id, content)")
+        .select("id, souler_id, session_id, content, glimmers!inner(user_id, content)")
         .eq("id", echo_id)
         .eq("glimmers.user_id", user_id)
         .single()
@@ -219,9 +220,39 @@ def get_echo_context(user_id: str, echo_id: str) -> EchoContext:
     return {
         "id": str(row.get("id", "")),
         "souler_id": str(row.get("souler_id", "")),
+        "session_id": str(row.get("session_id")) if row.get("session_id") else None,
         "content": str(row.get("content", "")),
         "glimmer_content": str(glimmer_row.get("content", "")),
     }
+
+
+def bind_echo_session_if_missing(
+    user_id: str,
+    echo_id: str,
+    session_id: str,
+) -> str:
+    echo_context = get_echo_context(user_id, echo_id)
+    existing_session_id = echo_context.get("session_id")
+    if existing_session_id:
+        return existing_session_id
+
+    response = (
+        supabase.table("echoes")
+        .update({"session_id": session_id}, returning="representation")
+        .eq("id", echo_id)
+        .is_("session_id", "null")
+        .execute()
+    )
+    row = _first_row(response.data)
+    updated_session_id = str(row.get("session_id")) if row and row.get("session_id") else None
+    if updated_session_id:
+        return updated_session_id
+
+    refreshed = get_echo_context(user_id, echo_id)
+    if refreshed.get("session_id"):
+        return str(refreshed["session_id"])
+
+    raise ValueError("Failed to bind echo session")
 
 
 def create_session(user_id: str, souler_id: str, title: str = "") -> str:
@@ -241,6 +272,16 @@ def create_session(user_id: str, souler_id: str, title: str = "") -> str:
     if not row or not row.get("id"):
         raise ValueError("Failed to create session")
     return str(row["id"])
+
+
+def delete_session(user_id: str, session_id: str) -> None:
+    (
+        supabase.table("sessions")
+        .delete()
+        .eq("id", session_id)
+        .eq("user_id", user_id)
+        .execute()
+    )
 
 
 def update_session_title(user_id: str, session_id: str, title: str) -> None:
@@ -311,16 +352,7 @@ def insert_message(
     }
 
 
-def consume_user_credit(user_id: str) -> CreditState:
-    response = supabase.rpc("consume_user_credit", {"p_user_id": user_id}).execute()
-
-    row = _first_row(response.data)
-    if not row:
-        raise ValueError("Failed to consume credit")
-
-    plan = str(row.get("plan", "free"))
-    monthly_limit = int(row.get("monthly_limit", 50))
-    credits_remaining = int(row.get("credits_remaining", 0))
+def _parse_credit_consumption_row(row: dict[str, Any]) -> None:
     ok = bool(row.get("ok"))
 
     if not ok:
@@ -329,65 +361,41 @@ def consume_user_credit(user_id: str) -> CreditState:
         raise CreditLimitError(
             message,
             code,
-            plan,
-            monthly_limit,
-            credits_remaining,
         )
 
-    return CreditState(
-        plan=plan,
-        monthly_limit=monthly_limit,
-        credits_remaining=credits_remaining,
+
+def _consume_credit_rpc(
+    rpc_name: str,
+    payload: dict[str, Any],
+    *,
+    missing_row_error: str,
+) -> None:
+    response = supabase.rpc(rpc_name, payload).execute()
+    row = _first_row(response.data)
+    if not row:
+        raise ValueError(missing_row_error)
+    _parse_credit_consumption_row(row)
+
+
+def consume_echo_credit(user_id: str) -> None:
+    _consume_credit_rpc(
+        "consume_echo_credit",
+        payload={
+            "p_user_id": user_id,
+        },
+        missing_row_error="Failed to consume echo credit",
     )
 
 
-def consume_user_credit_batch(user_id: str, count: int) -> CreditState:
-    if count <= 0:
-        return get_user_credit_state(user_id)
-
-    response = supabase.rpc(
-        "consume_user_credit_batch",
-        {"p_user_id": user_id, "p_count": count},
-    ).execute()
-
-    row = _first_row(response.data)
-    if not row:
-        raise ValueError("Failed to consume credits")
-
-    plan = str(row.get("plan", "free"))
-    monthly_limit = int(row.get("monthly_limit", 50))
-    credits_remaining = int(row.get("credits_remaining", 0))
-    ok = bool(row.get("ok"))
-
-    if not ok:
-        message = str(row.get("message", "Not enough credits for this request"))
-        code = str(row.get("code", "INSUFFICIENT_CREDITS"))
-        raise CreditLimitError(
-            message,
-            code,
-            plan,
-            monthly_limit,
-            credits_remaining,
-        )
-
-    return CreditState(
-        plan=plan,
-        monthly_limit=monthly_limit,
-        credits_remaining=credits_remaining,
-    )
-
-
-def get_user_credit_state(user_id: str) -> CreditState:
-    response = supabase.rpc("get_user_credit_state", {"p_user_id": user_id}).execute()
-
-    row = _first_row(response.data)
-    if not row:
-        raise ValueError("Failed to load credit state")
-
-    return CreditState(
-        plan=str(row.get("plan", "free")),
-        monthly_limit=int(row.get("monthly_limit", 50)),
-        credits_remaining=int(row.get("credits_remaining", 0)),
+def consume_chat_credit(
+    user_id: str,
+) -> None:
+    _consume_credit_rpc(
+        "consume_chat_credit",
+        payload={
+            "p_user_id": user_id,
+        },
+        missing_row_error="Failed to consume chat credit",
     )
 
 

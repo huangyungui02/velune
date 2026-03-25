@@ -4,18 +4,24 @@ import SwiftUI
 struct EchoChatRoute: Identifiable, Hashable {
     let soulerId: UUID
     let soulerName: String
-    let draftEchoId: UUID
-    let draftPrelude: ChatView.DraftPrelude
-    var id: UUID { draftEchoId }
+    let echoId: UUID
+    let sessionId: UUID?
+    let draftPrelude: ChatView.DraftPrelude?
+    var id: UUID { sessionId ?? echoId }
 
     init(echo: Echo, glimmerContent: String? = nil) {
         soulerId = echo.soulerId
         soulerName = echo.soulerName
-        draftEchoId = echo.id
-        draftPrelude = .init(
-            glimmerContent: glimmerContent ?? echo.glimmer?.content ?? "",
-            echoContent: echo.content
-        )
+        echoId = echo.id
+        sessionId = echo.sessionId
+        if sessionId == nil {
+            draftPrelude = .init(
+                glimmerContent: glimmerContent ?? echo.glimmer?.content ?? "",
+                echoContent: echo.content
+            )
+        } else {
+            draftPrelude = nil
+        }
     }
 }
 

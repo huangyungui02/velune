@@ -3,11 +3,7 @@ import Foundation
 enum EchoStreamService {
     private static let domain = "EchoStream"
 
-    struct DonePayload {
-        let plan: String?
-        let monthlyLimit: Int?
-        let creditsRemaining: Int?
-    }
+    struct DonePayload {}
 
     struct EchoPayload {
         let id: UUID
@@ -39,9 +35,6 @@ enum EchoStreamService {
 
         let type: String
         let echo: EchoData?
-        let plan: String?
-        let monthlyLimit: Int?
-        let creditsRemaining: Int?
         let code: String?
         let message: String?
     }
@@ -96,13 +89,7 @@ enum EchoStreamService {
                 )
             )
         case "done":
-            return .done(
-                DonePayload(
-                    plan: payload.plan,
-                    monthlyLimit: payload.monthlyLimit,
-                    creditsRemaining: payload.creditsRemaining
-                )
-            )
+            return .done(DonePayload())
         case "error":
             throw streamError(for: payload)
         default:
@@ -117,18 +104,13 @@ enum EchoStreamService {
         if let code = payload.code, !code.isEmpty {
             userInfo[AppErrorUserInfoKey.billingCode] = code
         }
-        if let plan = payload.plan, !plan.isEmpty {
-            userInfo[AppErrorUserInfoKey.billingPlan] = plan
-        }
 
         return NSError(domain: domain, code: -1, userInfo: userInfo)
     }
 
     private static func errorMessage(for payload: StreamEvent) -> String {
         if payload.code == "INSUFFICIENT_CREDITS" {
-            return payload.plan == "premium"
-                ? NSLocalizedString("billing.error.insufficientStardust.premium", comment: "")
-                : NSLocalizedString("billing.error.insufficientStardust.free", comment: "")
+            return NSLocalizedString("billing.error.insufficientStardust.free", comment: "")
         }
         return payload.message ?? "Unknown error from echo stream"
     }

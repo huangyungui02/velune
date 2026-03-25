@@ -7,6 +7,7 @@ class Echo {
     @Attribute(.unique) var id: UUID
     var userId: String
     var content: String
+    var sessionId: UUID?
     var createdAt: Date
 
     var glimmer: Glimmer?
@@ -17,6 +18,7 @@ class Echo {
         id: UUID = UUID(),
         userId: String = "",
         content: String,
+        sessionId: UUID? = nil,
         createdAt: Date = .now,
         soulerId: UUID,
         soulerName: String
@@ -24,6 +26,7 @@ class Echo {
         self.id = id
         self.userId = userId
         self.content = content
+        self.sessionId = sessionId
         self.createdAt = createdAt
         self.soulerId = soulerId
         self.soulerName = soulerName
@@ -33,6 +36,7 @@ class Echo {
         id: UUID = UUID(),
         userId: String = "",
         content: String,
+        sessionId: UUID? = nil,
         createdAt: Date = .now,
         souler: Souler
     ) {
@@ -40,6 +44,7 @@ class Echo {
             id: id,
             userId: userId,
             content: content,
+            sessionId: sessionId,
             createdAt: createdAt,
             soulerId: souler.id,
             soulerName: souler.name
@@ -52,6 +57,7 @@ extension Echo {
         struct Response: Codable, Identifiable {
             var id: UUID
             var content: String
+            var sessionId: UUID?
             var createdAt: Date
             var soulerId: UUID
             var soulerName: String
@@ -59,6 +65,7 @@ extension Echo {
             enum CodingKeys: String, CodingKey {
                 case id
                 case content
+                case sessionId = "session_id"
                 case createdAt = "created_at"
                 case soulerId = "souler_id"
                 case soulerName = "souler_name"
@@ -78,6 +85,7 @@ extension Echo {
                 id: res.id,
                 userId: userId.uuidString,
                 content: res.content,
+                sessionId: res.sessionId,
                 createdAt: res.createdAt,
                 soulerId: res.soulerId,
                 soulerName: res.soulerName

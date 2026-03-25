@@ -6,9 +6,6 @@ enum ChatStreamService {
     struct DonePayload {
         var sessionId: UUID?
         var title: String?
-        var plan: String?
-        var monthlyLimit: Int?
-        var creditsRemaining: Int?
     }
 
     enum Event {
@@ -29,9 +26,6 @@ enum ChatStreamService {
         let delta: String?
         let sessionId: UUID?
         let title: String?
-        let plan: String?
-        let monthlyLimit: Int?
-        let creditsRemaining: Int?
         let code: String?
         let message: String?
     }
@@ -86,10 +80,7 @@ enum ChatStreamService {
             return .done(
                 DonePayload(
                     sessionId: payload.sessionId,
-                    title: payload.title,
-                    plan: payload.plan,
-                    monthlyLimit: payload.monthlyLimit,
-                    creditsRemaining: payload.creditsRemaining
+                    title: payload.title
                 )
             )
         case "error":
@@ -106,18 +97,13 @@ enum ChatStreamService {
         if let code = payload.code, !code.isEmpty {
             userInfo[AppErrorUserInfoKey.billingCode] = code
         }
-        if let plan = payload.plan, !plan.isEmpty {
-            userInfo[AppErrorUserInfoKey.billingPlan] = plan
-        }
 
         return NSError(domain: domain, code: -1, userInfo: userInfo)
     }
 
     private static func errorMessage(for payload: StreamEvent) -> String {
         if payload.code == "INSUFFICIENT_CREDITS" {
-            return payload.plan == "premium"
-                ? NSLocalizedString("billing.error.insufficientStardust.premium", comment: "")
-                : NSLocalizedString("billing.error.insufficientStardust.free", comment: "")
+            return NSLocalizedString("billing.error.insufficientStardust.free", comment: "")
         }
         return payload.message ?? String(localized: "matching.error.unknown")
     }

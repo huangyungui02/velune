@@ -3,6 +3,7 @@ CREATE TABLE echoes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     glimmer_id UUID NOT NULL REFERENCES glimmers(id) ON DELETE CASCADE,
     souler_id UUID NOT NULL REFERENCES soulers(id),
+    session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -31,6 +32,7 @@ SELECT
     e.id,
     e.glimmer_id,
     e.souler_id,
+    e.session_id,
     s.name AS souler_name,
     e.content,
     e.created_at

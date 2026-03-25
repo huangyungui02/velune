@@ -50,15 +50,15 @@ extension Resonance {
             .value
 
         let fallbackName = String(localized: "resonance.unknownSouler")
-        let fallbackTitle = String(localized: "resonance.chat.newConversation")
         return response.map { res in
             let trimmedTitle = res.lastSessionTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let resolvedTitle = res.lastSessionId == nil ? "" : trimmedTitle
             return Resonance(
                 id: res.id,
                 soulerId: res.soulerId,
                 soulerName: res.souler?.name ?? fallbackName,
                 lastSessionId: res.lastSessionId,
-                lastSessionTitle: trimmedTitle.isEmpty ? fallbackTitle : trimmedTitle,
+                lastSessionTitle: resolvedTitle,
                 count: max(res.count ?? 1, 1),
                 createdAt: res.createdAt,
                 updatedAt: res.updatedAt

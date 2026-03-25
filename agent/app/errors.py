@@ -1,15 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from typing import Any
-
-
-@dataclass
-class CreditState:
-    plan: str
-    monthly_limit: int
-    credits_remaining: int
 
 
 class CreditLimitError(Exception):
@@ -17,15 +9,9 @@ class CreditLimitError(Exception):
         self,
         message: str,
         code: str,
-        plan: str,
-        monthly_limit: int,
-        credits_remaining: int,
     ) -> None:
         super().__init__(message)
         self.code = code
-        self.plan = plan
-        self.monthly_limit = monthly_limit
-        self.credits_remaining = credits_remaining
 
 
 class UnauthorizedError(Exception):
@@ -75,7 +61,4 @@ def credit_error_payload(error: CreditLimitError) -> dict[str, Any]:
         "type": "error",
         "code": error.code,
         "message": str(error),
-        "plan": error.plan,
-        "creditsRemaining": error.credits_remaining,
-        "monthlyLimit": error.monthly_limit,
     }

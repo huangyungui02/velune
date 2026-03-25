@@ -8,8 +8,8 @@ from .shared import Lang
 settings = get_settings()
 
 PROFILE_PROMPT: dict[Lang, str] = {
-    "en": "Write an introduction for the given souler.",
-    "chs": "为给定灵魂写一段人物简介。",
+    "en": "Write an introduction for the given person.",
+    "chs": "为给定人物写一段人物简介。",
 }
 
 

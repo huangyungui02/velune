@@ -7,13 +7,10 @@ import Supabase
 final class SubscriptionManager {
     static let shared = SubscriptionManager()
 
-    var plan = "free"
     var isPremium = false
-    var monthlyLimit = BillingConfig.freeMonthlyCredits
-    var creditsRemaining = BillingConfig.freeMonthlyCredits
+    var credits = BillingConfig.freeMonthlyCredits
     var monthlyPriceText = BillingConfig.premiumMonthlyPriceUSD
-    var lastSyncedAt: Date?
-    var nextResetAt: Date?
+    var entitlementExpiresAt: Date?
 
     var isRevenueCatAvailable = false
     var isSyncing = false
@@ -120,19 +117,6 @@ final class SubscriptionManager {
         await syncBillingStateQuietly()
     }
 
-    func applyServerCreditSnapshot(plan: String?, monthlyLimit: Int?, creditsRemaining: Int?) {
-        if let plan {
-            self.plan = plan
-            isPremium = plan == "premium"
-        }
-        if let monthlyLimit {
-            self.monthlyLimit = monthlyLimit
-        }
-        if let creditsRemaining {
-            self.creditsRemaining = creditsRemaining
-        }
-    }
-
     private func configureRevenueCatIfNeeded() {
         guard !hasConfiguredRevenueCat else { return }
 
@@ -222,30 +206,23 @@ final class SubscriptionManager {
     }
 
     private func resetToFreeDefaults() {
-        plan = "free"
         isPremium = false
-        monthlyLimit = BillingConfig.freeMonthlyCredits
-        creditsRemaining = BillingConfig.freeMonthlyCredits
+        credits = BillingConfig.freeMonthlyCredits
         applyDefaultMonthlyPrice()
-        lastSyncedAt = nil
-        nextResetAt = nil
+        entitlementExpiresAt = nil
         pendingForcedRefresh = false
         currentBillingUserID = nil
     }
 
     private func apply(_ payload: BillingSyncResponse) {
-        plan = payload.plan
-        isPremium = payload.plan == "premium"
-        monthlyLimit = payload.monthlyLimit
-        creditsRemaining = payload.creditsRemaining
-        lastSyncedAt = parseISODate(payload.rcLastSyncedAt) ?? parseISODate(payload.entitlementExpiresAt)
-        nextResetAt = parseISODate(payload.nextResetAt)
+        isPremium = payload.isEntitlementActive
+        credits = payload.credits
+        entitlementExpiresAt = parseISODate(payload.entitlementExpiresAt)
     }
 
     private func applyCustomerInfo(_ info: CustomerInfo) {
         if !info.entitlements.active.isEmpty {
             isPremium = true
-            plan = "premium"
         }
     }
 
@@ -263,7 +240,7 @@ final class SubscriptionManager {
                 let response = try await callBillingSync()
                 apply(response)
                 lastErrorMessage = nil
-                if !expectPremium || response.plan == "premium" {
+                if !expectPremium || response.isEntitlementActive {
                     return true
                 }
             } catch {
@@ -281,7 +258,7 @@ final class SubscriptionManager {
 
     private func callBillingSync() async throws -> BillingSyncResponse {
         let rows: [BillingSyncResponse] = try await supabase
-            .rpc("get_my_credit_state")
+            .rpc("get_user_credit_state")
             .execute()
             .value
 
@@ -372,19 +349,13 @@ final class SubscriptionManager {
 }
 
 private struct BillingSyncResponse: Decodable {
-    var plan: String
-    var monthlyLimit: Int
-    var creditsRemaining: Int
+    var credits: Int
+    var isEntitlementActive: Bool
     var entitlementExpiresAt: String?
-    var rcLastSyncedAt: String?
-    var nextResetAt: String?
 
     enum CodingKeys: String, CodingKey {
-        case plan
-        case monthlyLimit = "monthly_limit"
-        case creditsRemaining = "credits_remaining"
+        case credits
+        case isEntitlementActive = "is_entitlement_active"
         case entitlementExpiresAt = "entitlement_expires_at"
-        case rcLastSyncedAt = "rc_last_synced_at"
-        case nextResetAt = "next_reset_at"
     }
 }

@@ -13,14 +13,12 @@ from app.echo_nodes import (
     souler_profile,
     souler_prompt,
 )
-from app.errors import CreditState
 from app.supabase_repo import (
     add_souler_alias,
-    consume_user_credit_batch,
+    consume_echo_credit,
     create_echo,
     create_or_update_resonance,
     create_souler,
-    get_user_credit_state,
     get_souler_by_alias,
     get_souler_by_name,
     update_souler,
@@ -30,7 +28,6 @@ from app.supabase_repo import (
 @dataclass
 class GraphResult:
     completed: bool
-    credit_state: CreditState | None
 
 
 def _souler_id(souler_data: dict[str, Any]) -> str:
@@ -104,15 +101,11 @@ async def invoke_echo_graph(
 ) -> GraphResult:
     souler_names = await match_soulers(glimmer_content, num, lang)
     if not souler_names:
-        return GraphResult(
-            completed=True,
-            credit_state=get_user_credit_state(user_id),
-        )
+        return GraphResult(completed=True)
 
-    credit_state = consume_user_credit_batch(user_id, len(souler_names))
+    consume_echo_credit(user_id)
 
     async def process_item(matched_name: str) -> None:
-
         souler_data = await _resolve_souler(matched_name, lang)
         souler_data = await _ensure_souler_assets(souler_data, lang)
         souler_id = _souler_id(souler_data)
@@ -147,21 +140,13 @@ async def invoke_echo_graph(
         return_exceptions=True,
     )
 
-    errors: list[str] = []
-    completed = True
-
-    for result in results:
-        if isinstance(result, Exception):
-            errors.append(_reason_to_message(result))
-            continue
+    errors = [
+        _reason_to_message(result)
+        for result in results
+        if isinstance(result, Exception)
+    ]
 
     if len(errors) == len(souler_names):
         raise RuntimeError(f"Errors when creating echoes: {' | '.join(errors)}")
 
-    if errors:
-        completed = False
-
-    return GraphResult(
-        completed=completed,
-        credit_state=credit_state,
-    )
+    return GraphResult(completed=not errors)

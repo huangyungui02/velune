@@ -18,4 +18,9 @@
 - Agent(chat/echo): python3.14, fastapi
 
 # ios app 规范
+
 尽量使用最简洁、最原生、最干净的代码
+
+# 修改策略
+
+产品未上线，可以大胆重构和修改，不要新增migration

@@ -272,11 +272,13 @@ struct SidebarView: View {
                                                 .font(.body.weight(.medium))
                                                 .fontDesign(.serif)
 
-                                            Text(resonance.lastSessionTitle)
-                                                .lineLimit(1)
-                                                .font(.footnote)
-                                                .foregroundStyle(UITheme.secondaryText)
-                                                .fontDesign(.serif)
+                                            if !resonance.lastSessionTitle.isEmpty {
+                                                Text(resonance.lastSessionTitle)
+                                                    .lineLimit(1)
+                                                    .font(.footnote)
+                                                    .foregroundStyle(UITheme.secondaryText)
+                                                    .fontDesign(.serif)
+                                            }
                                         }
                                         .foregroundStyle(UITheme.primaryText)
                                         .padding(.horizontal, 14)

@@ -1,7 +1,8 @@
 import Foundation
 
 enum BillingConfig {
-    static let freeMonthlyCredits = 50
+    static let freeMonthlyCredits = 0
+    static let premiumCredits = 1000
     static let premiumMonthlyPriceUSD = "$9.99 / month"
 
     static var revenueCatPublicSDKKey: String {

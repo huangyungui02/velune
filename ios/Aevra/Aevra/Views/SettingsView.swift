@@ -72,7 +72,7 @@ struct SettingsView: View {
                             }
                         }
                         Spacer(minLength: 0)
-                        Text("\(subscriptionManager.creditsRemaining)")
+                        Text("\(subscriptionManager.credits)")
                             .font(.system(.title3, design: .rounded).monospacedDigit())
                             .fontWeight(.semibold)
                             .foregroundStyle(UITheme.primaryText)
@@ -299,7 +299,9 @@ struct SettingsView: View {
                 String(
                     format: String(localized: "settings.billing.info.monthly", locale: appLanguage.locale),
                     locale: appLanguage.locale,
-                    subscriptionManager.monthlyLimit
+                    subscriptionManager.isPremium
+                        ? BillingConfig.premiumCredits
+                        : BillingConfig.freeMonthlyCredits
                 )
             )
             .font(.subheadline)
@@ -311,7 +313,7 @@ struct SettingsView: View {
     }
 
     private var resetAtText: String {
-        subscriptionManager.nextResetAt?.formatted(
+        subscriptionManager.entitlementExpiresAt?.formatted(
             .dateTime
                 .year(.defaultDigits)
                 .month(.defaultDigits)

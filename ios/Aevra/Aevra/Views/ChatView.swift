@@ -1,4 +1,5 @@
 import MarkdownUI
+import SwiftData
 import SwiftUI
 
 struct ChatView: View {
@@ -33,6 +34,7 @@ struct ChatView: View {
     @State private var billingErrorContext: BillingErrorContext?
     @FocusState private var isComposerFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.modelContext) private var modelContext
 
     init(
         sessionId: UUID?,
@@ -415,12 +417,6 @@ struct ChatView: View {
 
     @MainActor
     private func applyDonePayload(_ payload: ChatStreamService.DonePayload) -> (sessionId: UUID?, title: String?) {
-        SubscriptionManager.shared.applyServerCreditSnapshot(
-            plan: payload.plan,
-            monthlyLimit: payload.monthlyLimit,
-            creditsRemaining: payload.creditsRemaining
-        )
-
         let title = payload.title?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return (
@@ -435,11 +431,20 @@ struct ChatView: View {
         resolvedTitle: String?,
         startedFromDraft: Bool
     ) async throws {
+        let sourceDraftEchoId = draftEchoId
+
         if let resolvedSessionId {
             activeSessionId = resolvedSessionId
             isDraftSession = false
             draftEchoId = nil
             activeDraftPrelude = nil
+
+            if let sourceDraftEchoId {
+                persistEchoSessionIdIfNeeded(
+                    echoId: sourceDraftEchoId,
+                    sessionId: resolvedSessionId
+                )
+            }
         }
 
         let sessionId = resolvedSessionId ?? activeSessionId
@@ -458,6 +463,26 @@ struct ChatView: View {
             updatedAt: .now
         )
         onSelectSession(routeSession)
+    }
+
+    @MainActor
+    private func persistEchoSessionIdIfNeeded(echoId: UUID, sessionId: UUID) {
+        var descriptor = FetchDescriptor<Echo>(
+            predicate: #Predicate { echo in
+                echo.id == echoId
+            }
+        )
+        descriptor.fetchLimit = 1
+
+        guard let echo = try? modelContext.fetch(descriptor).first else { return }
+        guard echo.sessionId != sessionId else { return }
+
+        echo.sessionId = sessionId
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to persist echo sessionId: \(error)")
+        }
     }
 
     private var selectedSessionId: UUID {

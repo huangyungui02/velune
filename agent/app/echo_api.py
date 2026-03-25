@@ -14,7 +14,6 @@ from app.errors import CreditLimitError, credit_error_payload, error_log_payload
 from app.sse import sse_event, sse_response
 from app.supabase_repo import (
     ensure_glimmer,
-    get_user_credit_state,
     get_user_id_from_auth_header,
     list_glimmer_echoes,
     update_glimmer_status,
@@ -57,12 +56,9 @@ def _echo_event_payload(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _done_event_payload(credit_state: Any) -> dict[str, Any]:
+def _done_event_payload() -> dict[str, Any]:
     return {
         "type": "done",
-        "creditsRemaining": credit_state.credits_remaining if credit_state else None,
-        "monthlyLimit": credit_state.monthly_limit if credit_state else None,
-        "plan": credit_state.plan if credit_state else None,
     }
 
 
@@ -90,7 +86,7 @@ async def _compose_worker(
 
         replayed = await _emit_existing_echoes(send, glimmer_id)
         if replayed > 0 or status in {"complete", "incomplete"}:
-            await send(_done_event_payload(get_user_credit_state(user_id)))
+            await send(_done_event_payload())
             return
 
         if status == "processing":
@@ -128,8 +124,7 @@ async def _compose_worker(
             "complete" if result.completed else "incomplete",
         )
 
-        credit_state = result.credit_state
-        await send(_done_event_payload(credit_state))
+        await send(_done_event_payload())
     except (ClientDisconnect, asyncio.CancelledError):
         if processing_started:
             _fail_glimmer_safely(glimmer_id)

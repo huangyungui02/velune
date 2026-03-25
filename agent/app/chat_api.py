@@ -13,7 +13,12 @@ from starlette.requests import ClientDisconnect
 
 from app.config import get_settings
 from app.echo_logic import Lang
-from app.errors import CreditLimitError, CreditState, credit_error_payload, error_log_payload, error_message
+from app.errors import (
+    CreditLimitError,
+    credit_error_payload,
+    error_log_payload,
+    error_message,
+)
 from app.llm import complete_text, stream_text
 from app.sse import emit_once, sse_event, sse_response
 from app.supabase_repo import (
@@ -21,9 +26,11 @@ from app.supabase_repo import (
     MessageRow,
     SessionContext,
     Souler,
+    bind_echo_session_if_missing,
+    consume_chat_credit,
     create_or_update_resonance,
     create_session,
-    consume_user_credit,
+    delete_session,
     get_echo_context,
     get_recent_messages,
     get_session_by_id,
@@ -54,12 +61,11 @@ class PreparedChat:
     lang: Lang
     content: str
     is_new_session: bool
-    credit_state: CreditState
     prompt_messages: list[dict[str, str]]
 
 
 def _sanitize_title(raw: str, lang: Lang) -> str:
-    trimmed = raw.strip().strip('"\'`')
+    trimmed = raw.strip().strip("\"'`")
     if not trimmed:
         return "新对话" if lang == "chs" else "New Chat"
 
@@ -69,8 +75,14 @@ def _sanitize_title(raw: str, lang: Lang) -> str:
     return " ".join(trimmed.split()[:8])
 
 
-def _build_system_prompt(name: str, bio: str | None, prompt: str | None, lang: Lang) -> str:
-    locale_instruction = "保持角色设定，表达简洁。" if lang == "chs" else "Stay in character and be concise."
+def _build_system_prompt(
+    name: str, bio: str | None, prompt: str | None, lang: Lang
+) -> str:
+    locale_instruction = (
+        "与用户进行深入的灵魂对话。"
+        if lang == "chs"
+        else "Have a deep soulful conversation with the user."
+    )
     language_rule = "仅使用中文回复。" if lang == "chs" else "Reply in English only."
 
     if prompt and prompt.strip():
@@ -79,14 +91,24 @@ def _build_system_prompt(name: str, bio: str | None, prompt: str | None, lang: L
     profile_intro = f"你是{name}。" if lang == "chs" else f"You are {name}."
     profile_bio = ""
     if bio and bio.strip():
-        profile_bio = f"背景：\n{bio.strip()}" if lang == "chs" else f"Background:\n{bio.strip()}"
+        profile_bio = (
+            f"背景：\n{bio.strip()}" if lang == "chs" else f"Background:\n{bio.strip()}"
+        )
 
-    return "\n\n".join([part for part in [profile_intro, profile_bio, locale_instruction, language_rule] if part])
+    return "\n\n".join(
+        [
+            part
+            for part in [profile_intro, profile_bio, locale_instruction, language_rule]
+            if part
+        ]
+    )
 
 
-async def _generate_session_title(user_content: str, reply_content: str, lang: Lang) -> str:
+async def _generate_session_title(
+    user_content: str, reply_content: str, lang: Lang
+) -> str:
     system_prompt = (
-        "根据用户消息和助手回复生成简洁聊天标题。限制 8 个字以内，不要标点，不要引号，只返回标题文本。"
+        "根据用户消息和助手回复生成简洁聊天标题。限制 12 个字以内，不要标点，不要引号，只返回标题文本。"
         if lang == "chs"
         else "Create a concise chat title based on the user message and assistant reply. "
         "Keep it under 8 words, no punctuation, no quotes, and return only title text."
@@ -130,7 +152,9 @@ async def _stream_with_timeout(
     try:
         while True:
             try:
-                chunk = await asyncio.wait_for(iterator.__anext__(), timeout=next_timeout)
+                chunk = await asyncio.wait_for(
+                    iterator.__anext__(), timeout=next_timeout
+                )
             except StopAsyncIteration:
                 return
             except asyncio.TimeoutError as error:
@@ -197,9 +221,14 @@ async def _prepare_chat_request(
     if not content:
         raise ValueError("Missing content")
 
-    is_new_session = not session_id
+    is_new_session = False
+    needs_new_session = False
+    should_insert_echo_context = False
+    should_consume_credit = True
     echo_context: EchoContext | None = None
     pending_souler: Souler | None = None
+    session: SessionContext | None = None
+
     if session_id:
         session = await _run_blocking(
             "Load session",
@@ -208,9 +237,6 @@ async def _prepare_chat_request(
             session_id,
         )
     else:
-        if not souler_id:
-            raise ValueError("Missing soulerId for new conversation")
-
         if echo_id:
             echo_context = await _run_blocking(
                 "Load echo context",
@@ -218,23 +244,40 @@ async def _prepare_chat_request(
                 user_id,
                 echo_id,
             )
-            if echo_context["souler_id"] != souler_id:
+            resolved_souler_id = echo_context["souler_id"]
+            if souler_id and resolved_souler_id != souler_id:
                 raise ValueError("Echo souler does not match request soulerId")
+            pending_souler = await _run_blocking(
+                "Load souler",
+                get_souler_by_id,
+                resolved_souler_id,
+            )
 
-        pending_souler = await _run_blocking(
-            "Load souler",
-            get_souler_by_id,
-            souler_id,
-        )
+            existing_echo_session_id = echo_context.get("session_id")
+            if existing_echo_session_id:
+                session = await _run_blocking(
+                    "Load echo session",
+                    get_session_by_id,
+                    user_id,
+                    existing_echo_session_id,
+                )
+            else:
+                needs_new_session = True
+                is_new_session = True
+                should_insert_echo_context = True
+                should_consume_credit = False
+        else:
+            if not souler_id:
+                raise ValueError("Missing soulerId for new conversation")
+            pending_souler = await _run_blocking(
+                "Load souler",
+                get_souler_by_id,
+                souler_id,
+            )
+            needs_new_session = True
+            is_new_session = True
 
-    credit_state = await _run_blocking(
-        "Credit check",
-        consume_user_credit,
-        user_id,
-    )
-    log_stage("credit_checked")
-
-    if is_new_session:
+    if needs_new_session:
         if not pending_souler:
             raise ValueError("Souler not found")
 
@@ -244,32 +287,78 @@ async def _prepare_chat_request(
             user_id,
             str(pending_souler["id"]),
         )
-        session = {
+        created_session = {
             "id": created_session_id,
             "soulerId": str(pending_souler["id"]),
             "title": "",
             "souler": pending_souler,
         }
 
-        if echo_context:
-            await _run_blocking(
-                "Insert glimmer context message",
-                insert_message,
+        if echo_id and should_insert_echo_context:
+            bound_session_id = await _run_blocking(
+                "Bind echo session",
+                bind_echo_session_if_missing,
                 user_id,
-                session["soulerId"],
-                session["id"],
-                "user",
-                echo_context["glimmer_content"],
+                echo_id,
+                created_session_id,
             )
-            await _run_blocking(
-                "Insert echo context message",
-                insert_message,
-                user_id,
-                session["soulerId"],
-                session["id"],
-                "assistant",
-                echo_context["content"],
-            )
+            if bound_session_id != created_session_id:
+                should_insert_echo_context = False
+                should_consume_credit = True
+                is_new_session = False
+                try:
+                    await _run_blocking(
+                        "Delete orphan session",
+                        delete_session,
+                        user_id,
+                        created_session_id,
+                    )
+                except Exception as cleanup_error:  # noqa: BLE001
+                    logger.warning(
+                        "Failed to cleanup orphan session: %s",
+                        error_log_payload(cleanup_error),
+                    )
+                session = await _run_blocking(
+                    "Load bound session",
+                    get_session_by_id,
+                    user_id,
+                    bound_session_id,
+                )
+            else:
+                session = created_session
+        else:
+            session = created_session
+
+    if not session:
+        raise ValueError("Session not found")
+
+    if should_consume_credit:
+        await _run_blocking(
+            "Credit check",
+            consume_chat_credit,
+            user_id,
+        )
+    log_stage("credit_checked")
+
+    if should_insert_echo_context and echo_context:
+        await _run_blocking(
+            "Insert glimmer context message",
+            insert_message,
+            user_id,
+            session["soulerId"],
+            session["id"],
+            "user",
+            echo_context["glimmer_content"],
+        )
+        await _run_blocking(
+            "Insert echo context message",
+            insert_message,
+            user_id,
+            session["soulerId"],
+            session["id"],
+            "assistant",
+            echo_context["content"],
+        )
     log_stage("session_ready")
 
     history = await _run_blocking(
@@ -297,9 +386,9 @@ async def _prepare_chat_request(
         lang=lang,
         content=content,
         is_new_session=is_new_session,
-        credit_state=credit_state,
         prompt_messages=prompt_messages,
     )
+
 
 @router.post("/{lang}/chat")
 async def chat(lang: Lang, request: Request) -> StreamingResponse:
@@ -318,7 +407,9 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
         return JSONResponse({"error": str(error)}, status_code=400)
     except Exception as error:  # noqa: BLE001
         logger.error("Failed before stream start: %s", error_log_payload(error))
-        return sse_response(emit_once({"type": "error", "message": error_message(error)}))
+        return sse_response(
+            emit_once({"type": "error", "message": error_message(error)})
+        )
 
     async def event_stream():
         try:
@@ -358,7 +449,9 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
             generated_title: str | None = None
             if prepared.is_new_session:
                 generated_title = await asyncio.wait_for(
-                    _generate_session_title(prepared.content, final_content, prepared.lang),
+                    _generate_session_title(
+                        prepared.content, final_content, prepared.lang
+                    ),
                     timeout=settings.POST_STREAM_TIMEOUT_SECONDS,
                 )
                 await _run_blocking(
@@ -394,9 +487,6 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
                     "type": "done",
                     "sessionId": prepared.session["id"],
                     "title": generated_title,
-                    "creditsRemaining": prepared.credit_state.credits_remaining,
-                    "monthlyLimit": prepared.credit_state.monthly_limit,
-                    "plan": prepared.credit_state.plan,
                     "assistantMessage": {
                         "id": assistant_message["id"],
                         "createdAt": assistant_message["created_at"],
