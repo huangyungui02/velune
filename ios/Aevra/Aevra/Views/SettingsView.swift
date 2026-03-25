@@ -57,7 +57,7 @@ struct SettingsView: View {
                 Section {
                     HStack(spacing: 10) {
                         HStack(spacing: 8) {
-                            settingsRowLabel("settings.billing.credits.short", systemImage: "sparkle")
+                            settingsRowLabel("settings.billing.credits", systemImage: "sparkle")
                             Button {
                                 showStardustInfo = true
                             } label: {
@@ -256,8 +256,8 @@ struct SettingsView: View {
                             locale: appLanguage.locale
                         )
                 )
-                    .font(.headline)
-                    .foregroundStyle(UITheme.primaryText)
+                .font(.headline)
+                .foregroundStyle(UITheme.primaryText)
 
                 if let email = authManager.userEmail {
                     Text(email)
@@ -278,48 +278,13 @@ struct SettingsView: View {
     }
 
     private var stardustInfoPopover: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("settings.billing.info.consume")
-                .font(.subheadline)
-                .foregroundStyle(UITheme.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(
-                String(
-                    format: String(localized: "settings.billing.info.reset", locale: appLanguage.locale),
-                    locale: appLanguage.locale,
-                    resetAtText
-                )
-            )
+        Text("settings.billing.stardust.description")
             .font(.subheadline)
             .foregroundStyle(UITheme.secondaryText)
-            .fixedSize(horizontal: false, vertical: true)
-
-            Text(
-                String(
-                    format: String(localized: "settings.billing.info.monthly", locale: appLanguage.locale),
-                    locale: appLanguage.locale,
-                    subscriptionManager.isPremium
-                        ? BillingConfig.premiumCredits
-                        : BillingConfig.freeMonthlyCredits
-                )
-            )
-            .font(.subheadline)
-            .foregroundStyle(UITheme.secondaryText)
-        }
-        .padding(16)
-        .frame(maxWidth: 280, alignment: .leading)
-        .presentationCompactAdaptation(.popover)
-    }
-
-    private var resetAtText: String {
-        subscriptionManager.entitlementExpiresAt?.formatted(
-            .dateTime
-                .year(.defaultDigits)
-                .month(.defaultDigits)
-                .day(.defaultDigits)
-                .locale(appLanguage.locale)
-        ) ?? "--"
+            .fixedSize(horizontal: false, vertical: false)
+            .padding()
+            .frame(maxWidth: 280, alignment: .leading)
+            .presentationCompactAdaptation(.popover)
     }
 
     private func signOut() async {
