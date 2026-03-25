@@ -490,19 +490,7 @@ struct ChatView: View {
     }
 
     private var sidebarSessions: [ChatSession] {
-        if !isDraftSession {
-            return sessions
-        }
-
-        let placeholder = ChatSession(
-            id: activeSessionId,
-            soulerId: soulerId,
-            soulerName: soulerName,
-            title: String(localized: "resonance.chat.newConversation"),
-            createdAt: .now,
-            updatedAt: .now
-        )
-        return [placeholder] + sessions.filter { $0.id != activeSessionId }
+        sessions
     }
 
     @MainActor
