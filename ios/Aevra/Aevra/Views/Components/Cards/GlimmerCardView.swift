@@ -24,8 +24,6 @@ struct GlimmerCardView: View {
                 if let createdAt {
                     Divider()
                         .background(.white.opacity(0.01))
-                        .padding(.top, 4)
-                        .padding(.bottom, 4)
 
                     HStack {
                         Spacer()

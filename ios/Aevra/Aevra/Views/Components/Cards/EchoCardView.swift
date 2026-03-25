@@ -7,7 +7,9 @@ struct EchoChatRoute: Identifiable, Hashable {
     let echoId: UUID
     let sessionId: UUID?
     let draftPrelude: ChatView.DraftPrelude?
-    var id: UUID { sessionId ?? echoId }
+    var id: UUID {
+        sessionId ?? echoId
+    }
 
     init(echo: Echo, glimmerContent: String? = nil) {
         soulerId = echo.soulerId
@@ -50,8 +52,6 @@ struct EchoCardView: View {
 
                 Divider()
                     .background(.white.opacity(0.01))
-                    .padding(.top, 4)
-                    .padding(.bottom, 4)
 
                 soulerSignature
             }
@@ -68,7 +68,7 @@ struct EchoCardView: View {
                     .font(.body.weight(.medium))
                     .fontDesign(.serif)
                     .foregroundStyle(UITheme.primaryText.opacity(0.85))
-                
+
                 Image(systemName: "arrow.up.right")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(UITheme.tertiaryText)

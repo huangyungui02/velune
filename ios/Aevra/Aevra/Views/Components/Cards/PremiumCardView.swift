@@ -42,8 +42,7 @@ struct PremiumCardView<Content: View>: View {
                     content
                         .padding(.horizontal, 24)
                 }
-                .padding(.top, 26)
-                .padding(.bottom, 18)
+                .padding(.vertical, 26)
             }
             .frame(maxWidth: .infinity)
             .background(
