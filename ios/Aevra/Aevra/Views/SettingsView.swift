@@ -119,21 +119,6 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Picker(selection: $appLanguageRawValue) {
-                        Text("settings.language.english")
-                            .tag(AppLanguage.english.rawValue)
-                        Text("settings.language.simplifiedChinese")
-                            .tag(AppLanguage.simplifiedChinese.rawValue)
-                    } label: {
-                        settingsRowLabel("settings.language", systemImage: "globe")
-                    }
-                    .pickerStyle(.menu)
-                    .tint(UITheme.primaryText)
-                } header: {
-                    sectionHeader("settings.section.language")
-                }
-
-                Section {
                     Link(destination: AppLinks.contactEmail) {
                         settingsRowLabel("settings.link.contactSupport", systemImage: "envelope")
                     }
@@ -267,13 +252,17 @@ struct SettingsView: View {
     }
 
     private var stardustInfoPopover: some View {
-        Text("settings.billing.stardust.description")
-            .font(.subheadline)
-            .foregroundStyle(UITheme.secondaryText)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding()
-            .frame(maxWidth: 280, alignment: .leading)
-            .presentationCompactAdaptation(.popover)
+        ScrollView {
+            Text("settings.billing.stardust.description")
+                .font(.subheadline)
+                .foregroundStyle(UITheme.secondaryText)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(16)
+        .frame(width: 320, alignment: .topLeading)
+        .frame(maxHeight: 360, alignment: .topLeading)
+        .presentationCompactAdaptation(.popover)
     }
 
     private func signOut() async {
@@ -375,6 +364,25 @@ struct AccountSettingsView: View {
                 } label: {
                     settingsRowLabel("settings.account.email", systemImage: "envelope")
                 }
+            } header: {
+                Text("settings.section.profile")
+                    .textCase(nil)
+            }
+
+            Section {
+                Picker(selection: $appLanguageRawValue) {
+                    Text("settings.language.english")
+                        .tag(AppLanguage.english.rawValue)
+                    Text("settings.language.simplifiedChinese")
+                        .tag(AppLanguage.simplifiedChinese.rawValue)
+                } label: {
+                    settingsRowLabel("settings.language", systemImage: "globe")
+                }
+                .pickerStyle(.menu)
+                .tint(UITheme.primaryText)
+            } header: {
+                Text("settings.section.language")
+                    .textCase(nil)
             }
 
             Section {
