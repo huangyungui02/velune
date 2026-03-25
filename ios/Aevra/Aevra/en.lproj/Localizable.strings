@@ -69,7 +69,7 @@
 "profile.section.pastWeek" = "Past Week";
 "profile.section.pastMonth" = "Past Month";
 
-"starsea.hero.verse" = "When the heart ripples,\nthe universe unfolds.";
+"starsea.hero.verse" = "A glimmer in the heart,\nand the universe unfolds.";
 "starsea.prompt.glimmerWithin" = "What glimmers within you";
 "starsea.action.writeGlimmer" = "Write a glimmer";
 "starsea.empty.resonanceTitle" = "No resonances yet";
@@ -95,7 +95,7 @@
 "resonance.sort.updatedAt" = "Most recent";
 "resonance.sort.count" = "Most resonated";
 "resonance.chat.placeholder" = "Say something…";
-"resonance.chat.empty" = "Start a resonance chat";
+"resonance.chat.empty" = "Start a deeper conversation";
 "resonance.chat.action.newConversation" = "New Conversation";
 "resonance.chat.newConversation" = "New Chat";
 "resonance.unknownSouler" = "Unknown souler";

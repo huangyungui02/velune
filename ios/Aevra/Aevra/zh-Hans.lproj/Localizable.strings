@@ -70,8 +70,8 @@
 "profile.section.pastMonth" = "过去一个月";
 
 "starsea.hero.verse" = "心有微澜\n宇宙自现";
-"starsea.prompt.glimmerWithin" = "你的心里闪烁着什么";
-"starsea.action.writeGlimmer" = "写下心光";
+"starsea.prompt.glimmerWithin" = "此刻，有什么在你心中泛起";
+"starsea.action.writeGlimmer" = "写下心澜";
 "starsea.empty.resonanceTitle" = "还没有共鸣";
 "starsea.empty.resonanceSubtitle" = "先写下一道心光吧，让星海温柔地回应你。";
 
@@ -79,7 +79,7 @@
 "matching.error.title" = "错误";
 "matching.error.unknown" = "未知错误";
 
-"glimmer.title" = "心光";
+"glimmer.title" = "心澜";
 "glimmer.action.delete" = "删除";
 "glimmer.delete.title" = "删除";
 "glimmer.delete.message" = "确定要删除吗？该操作不可撤销。";
@@ -95,7 +95,7 @@
 "resonance.sort.updatedAt" = "最近共鸣";
 "resonance.sort.count" = "最多共鸣";
 "resonance.chat.placeholder" = "对Ta说点什么…";
-"resonance.chat.empty" = "开始一段共鸣对话";
+"resonance.chat.empty" = "开始一段深入对话";
 "resonance.chat.action.newConversation" = "新建对话";
 "resonance.chat.newConversation" = "新对话";
 "resonance.unknownSouler" = "未命名灵魂";
