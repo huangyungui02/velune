@@ -27,10 +27,10 @@ struct PaywallView: View {
                             .fontWeight(.medium)
                         
                         Text("paywall.subtitle")
-                            .font(.body)
+                            .font(.title3)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
-                            .padding()
+                            .padding(.horizontal)
                     }
                     
                     Spacer()

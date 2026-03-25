@@ -78,17 +78,6 @@ struct SettingsView: View {
                             .foregroundStyle(UITheme.primaryText)
                     }
 
-                    LabeledContent {
-                        Text(
-                            subscriptionManager.isPremium
-                                ? "settings.billing.plan.premium"
-                                : "settings.billing.plan.free"
-                        )
-                        .foregroundStyle(UITheme.secondaryText)
-                    } label: {
-                        settingsRowLabel("settings.billing.plan", systemImage: "sparkles.rectangle.stack")
-                    }
-
                     if !subscriptionManager.isPremium {
                         Button {
                             showPaywall = true
@@ -281,7 +270,7 @@ struct SettingsView: View {
         Text("settings.billing.stardust.description")
             .font(.subheadline)
             .foregroundStyle(UITheme.secondaryText)
-            .fixedSize(horizontal: false, vertical: false)
+            .fixedSize(horizontal: false, vertical: true)
             .padding()
             .frame(maxWidth: 280, alignment: .leading)
             .presentationCompactAdaptation(.popover)
