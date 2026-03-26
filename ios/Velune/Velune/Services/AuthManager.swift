@@ -7,7 +7,7 @@ import Supabase
 @Observable
 final class AuthManager {
     static let shared = AuthManager()
-    
+
     var isAuthenticated: Bool = false
     var isAnonymous: Bool = false
     var currentUserId: UUID? { currentUser?.id }
@@ -21,15 +21,16 @@ final class AuthManager {
         }
         return nil
     }
-    
+
     private var currentUser: User?
     private var authStateChangeTask: Task<Void, Never>?
-    
+    private var installationBindingSyncState: InstallationBindingSyncState?
+
     private init() {
         checkInitialAuthState()
         observeAuthStateChanges()
     }
-    
+
     private func checkInitialAuthState() {
         if let session = supabase.auth.currentSession {
             isAuthenticated = true
@@ -41,7 +42,7 @@ final class AuthManager {
             isAnonymous = false
         }
     }
-    
+
     private func observeAuthStateChanges() {
         authStateChangeTask = Task {
             for await (_, session) in supabase.auth.authStateChanges {
@@ -49,28 +50,59 @@ final class AuthManager {
                     self.isAuthenticated = true
                     self.currentUser = session.user
                     self.isAnonymous = session.user.isAnonymous
+                    try? await self.upsertInstallationBinding(
+                        userId: session.user.id,
+                        isAnonymous: session.user.isAnonymous,
+                        refreshToken: session.user.isAnonymous ? session.refreshToken : nil
+                    )
                 } else {
                     self.isAuthenticated = false
                     self.currentUser = nil
                     self.isAnonymous = false
+                    self.installationBindingSyncState = nil
                 }
             }
         }
     }
-    
+
     func getUserId() throws -> UUID {
         guard let userId = currentUser?.id else {
             throw AppError.unauthenticated
         }
         return userId
     }
-    
+
     func signOut() async throws {
-        try await supabase.auth.signOut()
+        if isAnonymous {
+            try await supabase.auth.signOut(scope: .local)
+        } else {
+            try await supabase.auth.signOut()
+        }
+        installationBindingSyncState = nil
     }
 
     func signInAnonymously() async throws {
-        _ = try await supabase.auth.signInAnonymously()
+        let installationId = InstallationIDStore.getOrCreateInstallationID()
+
+        if let restoredSession = await restoreAnonymousSessionIfAvailable(
+            installationId: installationId
+        ) {
+            try await upsertInstallationBinding(
+                userId: restoredSession.user.id,
+                isAnonymous: true,
+                refreshToken: restoredSession.refreshToken,
+                force: true
+            )
+            return
+        }
+
+        let session = try await supabase.auth.signInAnonymously()
+        try await upsertInstallationBinding(
+            userId: session.user.id,
+            isAnonymous: true,
+            refreshToken: session.refreshToken,
+            force: true
+        )
     }
 
     func signInWithAppleCredential(_ credential: ASAuthorizationAppleIDCredential) async throws {
@@ -95,6 +127,15 @@ final class AuthManager {
             _ = try await supabase.auth.signInWithIdToken(credentials: credentials)
         }
 
+        if let session = supabase.auth.currentSession {
+            try await upsertInstallationBinding(
+                userId: session.user.id,
+                isAnonymous: false,
+                refreshToken: nil,
+                force: true
+            )
+        }
+
         try await updateUserMetadataIfAvailable(from: credential)
     }
 
@@ -113,6 +154,7 @@ final class AuthManager {
         isAuthenticated = false
         currentUser = nil
         isAnonymous = false
+        installationBindingSyncState = nil
     }
 
     func updateUserName(_ name: String) async throws {
@@ -124,6 +166,61 @@ final class AuthManager {
             )
         )
         self.currentUser = response
+    }
+
+    private func restoreAnonymousSessionIfAvailable(installationId: String) async -> Session? {
+        let params: [String: AnyJSON] = [
+            "p_installation_id": .string(installationId)
+        ]
+
+        do {
+            let rows: [AnonymousInstallationSession] = try await supabase
+                .rpc("get_installation_anonymous_session", params: params)
+                .execute()
+                .value
+
+            guard let row = rows.first else {
+                return nil
+            }
+
+            let session = try await supabase.auth.refreshSession(refreshToken: row.refreshToken)
+            guard session.user.isAnonymous, session.user.id == row.userId else {
+                return nil
+            }
+
+            return session
+        } catch {
+            return nil
+        }
+    }
+
+    private func upsertInstallationBinding(
+        userId: UUID,
+        isAnonymous: Bool,
+        refreshToken: String?,
+        force: Bool = false
+    ) async throws {
+        let syncState = InstallationBindingSyncState(
+            userId: userId,
+            isAnonymous: isAnonymous,
+            refreshToken: refreshToken
+        )
+
+        if !force, installationBindingSyncState == syncState {
+            return
+        }
+
+        let params: [String: AnyJSON] = [
+            "p_installation_id": .string(InstallationIDStore.getOrCreateInstallationID()),
+            "p_is_anonymous": .bool(syncState.isAnonymous),
+            "p_refresh_token": syncState.refreshToken.map(AnyJSON.string) ?? .null
+        ]
+
+        try await supabase
+            .rpc("upsert_installation_for_current_user", params: params)
+            .execute()
+
+        installationBindingSyncState = syncState
     }
 
     private func updateUserMetadataIfAvailable(from credential: ASAuthorizationAppleIDCredential) async throws {
@@ -152,4 +249,20 @@ final class AuthManager {
             )
         )
     }
+}
+
+private struct AnonymousInstallationSession: Decodable, Sendable {
+    let userId: UUID
+    let refreshToken: String
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case refreshToken = "refresh_token"
+    }
+}
+
+private struct InstallationBindingSyncState: Equatable {
+    let userId: UUID
+    let isAnonymous: Bool
+    let refreshToken: String?
 }
