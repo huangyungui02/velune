@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 
 @main
-struct AevraApp: App {
+struct VeluneApp: App {
     @State private var authManager = AuthManager.shared
     @State private var subscriptionManager = SubscriptionManager.shared
     @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.systemDefault.rawValue

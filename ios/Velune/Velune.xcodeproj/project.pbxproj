@@ -16,27 +16,27 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		321D07BD2EDA8CD8007F4762 /* Aevra.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aevra.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		321D07BD2EDA8CD8007F4762 /* Velune.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Velune.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		323FF3B92F6087A300423EAA /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		323FF3542F6037C300423EAA /* Exceptions for "Aevra" folder in "Aevra" target */ = {
+		323FF3542F6037C300423EAA /* Exceptions for "Velune" folder in "Velune" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 321D07BC2EDA8CD8007F4762 /* Aevra */;
+			target = 321D07BC2EDA8CD8007F4762 /* Velune */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		321D07BF2EDA8CD8007F4762 /* Aevra */ = {
+		321D07BF2EDA8CD8007F4762 /* Velune */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				323FF3542F6037C300423EAA /* Exceptions for "Aevra" folder in "Aevra" target */,
+				323FF3542F6037C300423EAA /* Exceptions for "Velune" folder in "Velune" target */,
 			);
-			path = Aevra;
+			path = Velune;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -61,7 +61,7 @@
 		321D07B42EDA8CD8007F4762 = {
 			isa = PBXGroup;
 			children = (
-				321D07BF2EDA8CD8007F4762 /* Aevra */,
+				321D07BF2EDA8CD8007F4762 /* Velune */,
 				323FF3B82F6087A300423EAA /* Frameworks */,
 				321D07BE2EDA8CD8007F4762 /* Products */,
 			);
@@ -70,7 +70,7 @@
 		321D07BE2EDA8CD8007F4762 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				321D07BD2EDA8CD8007F4762 /* Aevra.app */,
+				321D07BD2EDA8CD8007F4762 /* Velune.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -86,9 +86,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		321D07BC2EDA8CD8007F4762 /* Aevra */ = {
+		321D07BC2EDA8CD8007F4762 /* Velune */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 321D07CA2EDA8CD9007F4762 /* Build configuration list for PBXNativeTarget "Aevra" */;
+			buildConfigurationList = 321D07CA2EDA8CD9007F4762 /* Build configuration list for PBXNativeTarget "Velune" */;
 			buildPhases = (
 				321D07B92EDA8CD8007F4762 /* Sources */,
 				321D07BA2EDA8CD8007F4762 /* Frameworks */,
@@ -99,9 +99,9 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				321D07BF2EDA8CD8007F4762 /* Aevra */,
+				321D07BF2EDA8CD8007F4762 /* Velune */,
 			);
-			name = Aevra;
+			name = Velune;
 			packageProductDependencies = (
 				321220E92EE30B3C00E3705D /* Supabase */,
 				32B3CE302EEBFF130041F499 /* Realtime */,
@@ -109,8 +109,8 @@
 				32F5A0022F70000100423EAA /* RevenueCat */,
 				324208322F659DBC00D1983D /* EventSource */,
 			);
-			productName = Resona;
-			productReference = 321D07BD2EDA8CD8007F4762 /* Aevra.app */;
+			productName = Velune;
+			productReference = 321D07BD2EDA8CD8007F4762 /* Velune.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -128,7 +128,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 321D07B82EDA8CD8007F4762 /* Build configuration list for PBXProject "Aevra" */;
+			buildConfigurationList = 321D07B82EDA8CD8007F4762 /* Build configuration list for PBXProject "Velune" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -149,7 +149,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				321D07BC2EDA8CD8007F4762 /* Aevra */,
+				321D07BC2EDA8CD8007F4762 /* Velune */,
 			);
 		};
 /* End PBXProject section */
@@ -305,14 +305,14 @@
 			buildSettings = {
 				API_BASE_URL = "http://127.0.0.1:8000";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = Aevra/Aevra.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Velune/Velune.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LQK5WB3692;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Aevra/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "";
+				INFOPLIST_FILE = Velune/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "微澜";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -324,7 +324,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = aevra.echoversa.com;
+				PRODUCT_BUNDLE_IDENTIFIER = com.echoversa.velune;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REVENUECAT_PUBLIC_SDK_KEY = appl_jJGpHfwBivSsFhipOMFkdeSljyp;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -348,14 +348,14 @@
 			buildSettings = {
 				API_BASE_URL = "https://api.echoversa.com";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = Aevra/Aevra.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Velune/Velune.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LQK5WB3692;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Aevra/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "";
+				INFOPLIST_FILE = Velune/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "微澜";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -367,7 +367,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = aevra.echoversa.com;
+				PRODUCT_BUNDLE_IDENTIFIER = com.echoversa.velune;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REVENUECAT_PUBLIC_SDK_KEY = appl_jJGpHfwBivSsFhipOMFkdeSljyp;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -389,7 +389,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		321D07B82EDA8CD8007F4762 /* Build configuration list for PBXProject "Aevra" */ = {
+		321D07B82EDA8CD8007F4762 /* Build configuration list for PBXProject "Velune" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				321D07C82EDA8CD9007F4762 /* Debug */,
@@ -398,7 +398,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		321D07CA2EDA8CD9007F4762 /* Build configuration list for PBXNativeTarget "Aevra" */ = {
+		321D07CA2EDA8CD9007F4762 /* Build configuration list for PBXNativeTarget "Velune" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				321D07CB2EDA8CD9007F4762 /* Debug */,

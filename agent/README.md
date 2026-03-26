@@ -1,4 +1,4 @@
-# Aevra Agent (Python)
+# Velune Agent (Python)
 
 使用 Python + FastAPI 迁移 `supabase/functions/chat` 与 `supabase/functions/echo`。
 

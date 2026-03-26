@@ -35,7 +35,7 @@ struct SignView: View {
                     .frame(width: 98, height: 98)
                     .foregroundStyle(UITheme.primaryText.opacity(0.92))
                 
-                Text("Aevra")
+                Text("Velune")
                     .font(.largeTitle.weight(.semibold))
                     .fontDesign(.serif)
                     .foregroundStyle(UITheme.primaryText)

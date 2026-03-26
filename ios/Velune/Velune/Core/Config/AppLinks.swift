@@ -57,11 +57,11 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 enum AppLinks {
-    static let terms = URL(string: "https://aevra.echoversa.com/terms")!
+    static let terms = URL(string: "https://velune.echoversa.com/terms")!
 
-    static let privacy = URL(string: "https://aevra.echoversa.com/privacy")!
+    static let privacy = URL(string: "https://velune.echoversa.com/privacy")!
 
     static var contactEmail: URL {
-        URL(string: "mailto:aevra@echoversa.com")!
+        URL(string: "mailto:velune@echoversa.com")!
     }
 }

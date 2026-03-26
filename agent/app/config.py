@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     )
 
     APP_ENV: str = _current_app_env()
-    APP_NAME: str = "aevra-agent"
+    APP_NAME: str = "velune-agent"
 
     SUPABASE_URL: str
     SUPABASE_SERVICE_ROLE_KEY: str

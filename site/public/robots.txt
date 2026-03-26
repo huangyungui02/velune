@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://aevra.echoversa.com/sitemap-index.xml
+Sitemap: https://velune.echoversa.com/sitemap-index.xml

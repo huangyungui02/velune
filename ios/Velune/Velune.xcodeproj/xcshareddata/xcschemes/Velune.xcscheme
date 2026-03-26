@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "321D07BC2EDA8CD8007F4762"
-               BuildableName = "Aevra.app"
-               BlueprintName = "Aevra"
-               ReferencedContainer = "container:Aevra.xcodeproj">
+               BuildableName = "Velune.app"
+               BlueprintName = "Velune"
+               ReferencedContainer = "container:Velune.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "321D07BC2EDA8CD8007F4762"
-            BuildableName = "Aevra.app"
-            BlueprintName = "Aevra"
-            ReferencedContainer = "container:Aevra.xcodeproj">
+            BuildableName = "Velune.app"
+            BlueprintName = "Velune"
+            ReferencedContainer = "container:Velune.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "321D07BC2EDA8CD8007F4762"
-            BuildableName = "Aevra.app"
-            BlueprintName = "Aevra"
-            ReferencedContainer = "container:Aevra.xcodeproj">
+            BuildableName = "Velune.app"
+            BlueprintName = "Velune"
+            ReferencedContainer = "container:Velune.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

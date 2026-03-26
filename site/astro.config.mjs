@@ -3,7 +3,7 @@ import cloudflare from "@astrojs/cloudflare";
 import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
-  site: "https://aevra.echoversa.com",
+  site: "https://velune.echoversa.com",
   server: { host: true },
   adapter: cloudflare(),
   i18n: {

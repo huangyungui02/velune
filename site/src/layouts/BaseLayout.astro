@@ -10,8 +10,8 @@ interface Props {
 
 const {
   lang = "en",
-  title = "Aevra — Digital Serenity",
-  description = "Explore inward, reach the depths of the cosmos. Aevra captures fleeting moments of insight through Glimmer, Resonance, and Echo.",
+  title = "Velune — Digital Serenity",
+  description = "Explore inward, reach the depths of the cosmos. Velune captures fleeting moments of insight through Glimmer, Resonance, and Echo.",
   ogImage = "/og.png",
 } = Astro.props;
 
@@ -26,7 +26,7 @@ const zhURL = new URL(`/zh${basePath === "/" ? "/" : basePath}`, Astro.site);
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: "Aevra",
+  name: "Velune",
   alternateName: "微澜",
   url: Astro.site?.toString(),
   description,
@@ -61,7 +61,7 @@ const jsonLd = {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={new URL(ogImage, Astro.site).href} />
-    <meta property="og:site_name" content="Aevra" />
+    <meta property="og:site_name" content="Velune" />
     <meta property="og:locale" content={isZh ? "zh_CN" : "en_US"} />
     <meta property="og:locale:alternate" content={isZh ? "en_US" : "zh_CN"} />
 
