@@ -270,7 +270,9 @@ struct SettingsView: View {
         defer { isSigningOut = false }
 
         do {
+            let userId = AuthManager.shared.currentUserId?.uuidString
             try await AuthManager.shared.signOut()
+            PaginationStateStore.clearGlimmerBottom(userId: userId)
             dismiss()
         } catch {
             feedbackMessage = error.localizedDescription
@@ -452,7 +454,9 @@ struct AccountSettingsView: View {
         defer { isDeleting = false }
 
         do {
+            let userId = AuthManager.shared.currentUserId?.uuidString
             try await AuthManager.shared.deleteAccount()
+            PaginationStateStore.clearGlimmerBottom(userId: userId)
             try modelContext.delete(model: Glimmer.self)
             try modelContext.delete(model: Echo.self)
             dismiss()

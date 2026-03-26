@@ -9,7 +9,7 @@ struct ProfileView: View {
     @State private var glimmers: [Glimmer] = []
     @State private var isRefreshing: Bool = false
     @State private var isLoadingMore: Bool = false
-    @State private var hasMoreGlimmers: Bool = true
+    @State private var hasMoreGlimmers: Bool = false
     @State private var glimmerOffset: Int = 0
 
     private let glimmerPageSize = 10
@@ -28,8 +28,10 @@ struct ProfileView: View {
                     title: "anonymous.restricted.profile.title",
                     description: "anonymous.restricted.profile.description"
                 )
-            } else {
+            } else if !glimmers.isEmpty {
                 glimmerListView
+            } else {
+                EmptyView(title: "profile.empty.noGlimmers")
             }
         }
         .navigationTitle("profile.title.glimmers")
@@ -49,16 +51,16 @@ struct ProfileView: View {
                 glimmers = []
                 isRefreshing = false
                 isLoadingMore = false
-                hasMoreGlimmers = true
+                hasMoreGlimmers = false
                 glimmerOffset = 0
                 return
             }
             loadLocalGlimmers()
             glimmerOffset = glimmers.count
-            hasMoreGlimmers = true
+            hasMoreGlimmers = !PaginationStateStore.hasReachedGlimmerBottom(userId: currentUserId)
 
-            if glimmers.isEmpty {
-                await refreshLatestGlimmers(showLoadingIndicator: true)
+            if hasMoreGlimmers && glimmers.isEmpty {
+                await loadMoreGlimmers()
             }
         }
     }
@@ -67,11 +69,6 @@ struct ProfileView: View {
         ScrollView {
             if isRefreshing && glimmers.isEmpty {
                 ProgressView()
-                    .frame(maxWidth: .infinity, minHeight: 320)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 24)
-            } else if glimmers.isEmpty {
-                EmptyView(title: "profile.empty.noGlimmers")
                     .frame(maxWidth: .infinity, minHeight: 320)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 24)
@@ -243,7 +240,7 @@ struct ProfileView: View {
 
     @MainActor
     private func loadMoreGlimmers() async {
-        guard !isLoadingMore, !isRefreshing, hasMoreGlimmers else { return }
+        guard !isLoadingMore, !isRefreshing else { return }
 
         isLoadingMore = true
         defer { isLoadingMore = false }
@@ -254,6 +251,9 @@ struct ProfileView: View {
             glimmers = try fetchLocalGlimmers()
             glimmerOffset += page.items.count
             hasMoreGlimmers = page.hasMore
+            if !page.hasMore {
+                PaginationStateStore.markGlimmerBottomReached(userId: currentUserId)
+            }
         } catch {
             print("error loading more glimmers: \(error.localizedDescription)")
         }
