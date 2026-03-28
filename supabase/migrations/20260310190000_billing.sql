@@ -121,7 +121,8 @@ BEGIN
 
     v_credits := CASE
         WHEN v_is_active THEN GREATEST(v_state.credits, 0)
-        ELSE 0
+        WHEN COALESCE(v_state.is_entitlement_active, false) AND NOT v_is_active THEN 0
+        ELSE GREATEST(v_state.credits, 0)
     END;
 
     IF v_state.is_entitlement_active IS DISTINCT FROM v_is_active

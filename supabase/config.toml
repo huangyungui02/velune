@@ -381,29 +381,6 @@ s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
 
-[functions.echo]
-enabled = true
-verify_jwt = false
-import_map = "./functions/echo/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/echo/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/echo/*.html" ]
-
-[functions.chat]
-enabled = true
-verify_jwt = false
-import_map = "./functions/chat/deno.json"
-entrypoint = "./functions/chat/index.ts"
-
-[functions.billing-sync]
-enabled = true
-verify_jwt = false
-import_map = "./functions/billing-sync/deno.json"
-entrypoint = "./functions/billing-sync/index.ts"
-
 [functions.revenuecat-webhook]
 enabled = true
 verify_jwt = false
