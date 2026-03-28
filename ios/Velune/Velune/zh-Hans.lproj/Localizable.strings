@@ -2,7 +2,6 @@
 "settings.section.account" = "账号";
 "settings.section.legal" = "法律";
 "settings.section.support" = "支持";
-"settings.section.language" = "语言";
 "settings.section.billing" = "订阅";
 "settings.section.about" = "关于";
 "settings.account" = "账号";
@@ -12,9 +11,6 @@
 "settings.account.defaultName" = "灵魂旅人";
 "settings.section.profile" = "个人资料";
 "settings.delete.warning" = "删除账号将永久清除你的所有数据。";
-"settings.language" = "应用语言";
-"settings.language.english" = "English";
-"settings.language.simplifiedChinese" = "简体中文";
 "settings.rateApp" = "应用评分";
 "settings.action.signOut" = "退出登录";
 "settings.action.deleteAccount" = "删除账号";
@@ -47,11 +43,11 @@
 "sign.privacy.label" = "《隐私政策》";
 
 "anonymous.restricted.profile.title" = "登录后开启心舍";
-"anonymous.restricted.profile.description" = "使用 Apple 登录后，可查看、保存并回望你的心光。";
+"anonymous.restricted.profile.description" = "登录后，可查看、保存并回望你的心澜。";
 "anonymous.restricted.sidebar.title" = "登录后开启共鸣";
-"anonymous.restricted.sidebar.description" = "使用 Apple 登录后，可浏览共鸣并回到每段会话。";
+"anonymous.restricted.sidebar.description" = "登录后，可浏览共鸣并回到每段会话。";
 
-"profile.empty.noGlimmers" = "暂无心光";
+"profile.empty.noGlimmers" = "暂无心澜";
 "profile.title.glimmers" = "心舍";
 "profile.section.today" = "今天";
 "profile.section.yesterday" = "昨天";
@@ -62,7 +58,7 @@
 "starsea.prompt.glimmerWithin" = "此刻，有什么在你心中泛起";
 "starsea.action.writeGlimmer" = "写下心澜";
 "starsea.empty.resonanceTitle" = "还没有共鸣";
-"starsea.empty.resonanceSubtitle" = "先写下一道心光吧，让星海温柔地回应你。";
+"starsea.empty.resonanceSubtitle" = "先写下一道心澜吧，让星海温柔地回应你。";
 
 "matching.status.listening" = "正在聆听回响";
 "matching.error.title" = "错误";
@@ -95,7 +91,7 @@
 "billing.error.insufficientStardust.free" = "你的星尘不足，升级到付费版可获取更多星尘。";
 "billing.error.insufficientStardust.premium" = "你的星尘已用尽。";
 "billing.error.missingRevenueCatKey" = "未配置 RevenueCat 公钥。";
-"billing.error.signInRequiredForPurchase" = "请先使用 Apple 登录后再订阅。";
+"billing.error.signInRequiredForPurchase" = "请先登录后再订阅。";
 "billing.error.offeringUnavailable" = "当前暂无可购买套餐，请稍后重试。";
 "paywall.restore.notFound" = "未找到有效订阅。如果刚刚完成购买，请稍后再试。";
 
@@ -107,4 +103,4 @@
 "paywall.feature.priorityAccess.subtitle" = "新能力与功能，将优先向你开放。";
 "paywall.action.subscribe" = "进入深处";
 "paywall.signInRequired.title" = "需要先登录";
-"paywall.signInRequired.description" = "匿名账号暂不支持订阅。请先使用 Apple 登录。";
+"paywall.signInRequired.description" = "匿名账号暂不支持订阅。请先登录。";

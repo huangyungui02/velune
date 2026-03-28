@@ -1,45 +1,13 @@
 import Foundation
 
-enum AppLanguage: String, CaseIterable, Identifiable {
-    case english = "en"
-    case simplifiedChinese = "zh"
+enum AppLanguage {
+    case english
+    case simplifiedChinese
 
-    static let storageKey = "app.language"
-
-    var id: String { rawValue }
-
-    var locale: Locale {
-        switch self {
-        case .english:
-            Locale(identifier: "en")
-        case .simplifiedChinese:
-            Locale(identifier: "zh-Hans")
-        }
-    }
-
-    static var systemDefault: AppLanguage {
+    static var current: AppLanguage {
         Locale.preferredLanguages.first?.hasPrefix("zh") == true
             ? .simplifiedChinese
             : .english
-    }
-
-    static var current: AppLanguage {
-        guard
-            let rawValue = UserDefaults.standard.string(forKey: storageKey),
-            let language = AppLanguage(rawValue: rawValue)
-        else {
-            return systemDefault
-        }
-        return language
-    }
-
-    var appleLanguageIdentifier: String {
-        switch self {
-        case .english:
-            "en"
-        case .simplifiedChinese:
-            "zh-Hans"
-        }
     }
 
     var apiLanguageCode: String {
@@ -49,10 +17,6 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         case .simplifiedChinese:
             "chs"
         }
-    }
-
-    func applyAsPreferredLanguage() {
-        UserDefaults.standard.set([appleLanguageIdentifier], forKey: "AppleLanguages")
     }
 }
 

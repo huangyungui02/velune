@@ -2,7 +2,6 @@
 "settings.section.account" = "Account";
 "settings.section.legal" = "Legal";
 "settings.section.support" = "Support";
-"settings.section.language" = "Language";
 "settings.section.billing" = "Subscription";
 "settings.section.about" = "About";
 "settings.account" = "Account";
@@ -12,9 +11,6 @@
 "settings.account.defaultName" = "Soul Traveler";
 "settings.section.profile" = "Profile";
 "settings.delete.warning" = "Deleting your account will permanently remove all your data.";
-"settings.language" = "App Language";
-"settings.language.english" = "English";
-"settings.language.simplifiedChinese" = "简体中文";
 "settings.rateApp" = "Rate App";
 "settings.action.signOut" = "Sign Out";
 "settings.action.deleteAccount" = "Delete Account";
@@ -47,9 +43,9 @@
 "sign.privacy.label" = "Privacy Policy";
 
 "anonymous.restricted.profile.title" = "Unlock Hearthaven";
-"anonymous.restricted.profile.description" = "Sign in with Apple to view, keep, and revisit your glimmers.";
+"anonymous.restricted.profile.description" = "Sign in to view, keep, and revisit your glimmers.";
 "anonymous.restricted.sidebar.title" = "Open Resonance Threads";
-"anonymous.restricted.sidebar.description" = "Sign in with Apple to browse resonances and return to each conversation.";
+"anonymous.restricted.sidebar.description" = "Sign in to browse resonances and return to each conversation.";
 
 "profile.empty.noGlimmers" = "No glimmers yet";
 "profile.title.glimmers" = "Hearthaven";
@@ -95,7 +91,7 @@
 "billing.error.insufficientStardust.free" = "Your stardust is low. Upgrade to Premium to get more.";
 "billing.error.insufficientStardust.premium" = "Your stardust is exhausted.";
 "billing.error.missingRevenueCatKey" = "RevenueCat public key is missing.";
-"billing.error.signInRequiredForPurchase" = "Please sign in with Apple before subscribing.";
+"billing.error.signInRequiredForPurchase" = "Please sign in before subscribing.";
 "billing.error.offeringUnavailable" = "No purchasable package is available right now. Please try again later.";
 "paywall.restore.notFound" = "No active subscription found. If you recently purchased, please try again in a moment.";
 
@@ -108,4 +104,4 @@
 "paywall.feature.priorityAccess.subtitle" = "Be the first to experience new features and capabilities.";
 "paywall.action.subscribe" = "Enter";
 "paywall.signInRequired.title" = "Sign In Required";
-"paywall.signInRequired.description" = "Anonymous accounts can’t subscribe. Sign in with Apple to continue.";
+"paywall.signInRequired.description" = "Anonymous accounts can’t subscribe. Sign in to continue.";

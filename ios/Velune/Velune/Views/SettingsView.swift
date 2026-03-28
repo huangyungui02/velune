@@ -12,13 +12,8 @@ struct SettingsView: View {
     @State private var showPaywall = false
     @State private var showStardustInfo = false
     @State private var feedbackMessage: String?
-    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.systemDefault.rawValue
     @Environment(\.dismiss) private var dismiss
     @Environment(\.requestReview) private var requestReview
-
-    private var appLanguage: AppLanguage {
-        AppLanguage(rawValue: appLanguageRawValue) ?? .systemDefault
-    }
 
     var body: some View {
         ZStack {
@@ -226,8 +221,7 @@ struct SettingsView: View {
                     authManager.userName
                         ?? String(
                             localized: "settings.account.defaultName",
-                            defaultValue: "灵魂旅人",
-                            locale: appLanguage.locale
+                            defaultValue: "灵魂旅人"
                         )
                 )
                 .font(.headline)
@@ -297,7 +291,7 @@ struct SettingsView: View {
     private var billingFooterText: String? {
         var lines: [String] = []
         if !subscriptionManager.isRevenueCatAvailable {
-            lines.append(String(localized: "settings.billing.revenuecat.missingKey", locale: appLanguage.locale))
+            lines.append(String(localized: "settings.billing.revenuecat.missingKey"))
         }
         if let billingError = subscriptionManager.lastErrorMessage, !billingError.isEmpty {
             lines.append(billingError)
@@ -323,13 +317,8 @@ struct AccountSettingsView: View {
     @State private var isUpdatingName = false
     @State private var feedbackMessage: String?
     @State private var editingName: String = ""
-    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.systemDefault.rawValue
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-
-    private var appLanguage: AppLanguage {
-        AppLanguage(rawValue: appLanguageRawValue) ?? .systemDefault
-    }
 
     var body: some View {
         List {
@@ -372,22 +361,6 @@ struct AccountSettingsView: View {
             }
 
             Section {
-                Picker(selection: $appLanguageRawValue) {
-                    Text("settings.language.english")
-                        .tag(AppLanguage.english.rawValue)
-                    Text("settings.language.simplifiedChinese")
-                        .tag(AppLanguage.simplifiedChinese.rawValue)
-                } label: {
-                    settingsRowLabel("settings.language", systemImage: "globe")
-                }
-                .pickerStyle(.menu)
-                .tint(UITheme.primaryText)
-            } header: {
-                Text("settings.section.language")
-                    .textCase(nil)
-            }
-
-            Section {
                 Button {
                     showDeleteConfirmation = true
                 } label: {
@@ -409,8 +382,7 @@ struct AccountSettingsView: View {
         .onAppear {
             editingName = authManager.userName ?? String(
                 localized: "settings.account.defaultName",
-                defaultValue: "灵魂旅人",
-                locale: appLanguage.locale
+                defaultValue: "灵魂旅人"
             )
         }
         .alert("settings.delete.confirm.title", isPresented: $showDeleteConfirmation) {
@@ -443,8 +415,7 @@ struct AccountSettingsView: View {
             // Revert on failure
             editingName = authManager.userName ?? String(
                 localized: "settings.account.defaultName",
-                defaultValue: "灵魂旅人",
-                locale: appLanguage.locale
+                defaultValue: "灵魂旅人"
             )
         }
     }
