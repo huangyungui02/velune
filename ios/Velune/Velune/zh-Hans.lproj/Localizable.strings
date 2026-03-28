@@ -95,6 +95,7 @@
 "billing.error.insufficientStardust.free" = "你的星尘不足，升级到付费版可获取更多星尘。";
 "billing.error.insufficientStardust.premium" = "你的星尘已用尽。";
 "billing.error.missingRevenueCatKey" = "未配置 RevenueCat 公钥。";
+"billing.error.signInRequiredForPurchase" = "请先使用 Apple 登录后再订阅。";
 "billing.error.offeringUnavailable" = "当前暂无可购买套餐，请稍后重试。";
 "paywall.restore.notFound" = "未找到有效订阅。如果刚刚完成购买，请稍后再试。";
 
@@ -105,3 +106,5 @@
 "paywall.feature.priorityAccess.title" = "优先体验";
 "paywall.feature.priorityAccess.subtitle" = "新能力与功能，将优先向你开放。";
 "paywall.action.subscribe" = "进入深处";
+"paywall.signInRequired.title" = "需要先登录";
+"paywall.signInRequired.description" = "匿名账号暂不支持订阅。请先使用 Apple 登录。";

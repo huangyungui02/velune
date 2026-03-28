@@ -30,6 +30,7 @@ final class SubscriptionManager {
         formatter.formatOptions = [.withInternetDateTime]
         return formatter
     }()
+    
     private static let iso8601FractionalFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -78,6 +79,16 @@ final class SubscriptionManager {
     }
 
     func purchasePremium() async throws {
+        guard !AuthManager.shared.isAnonymous else {
+            throw NSError(
+                domain: "Billing",
+                code: -4,
+                userInfo: [
+                    NSLocalizedDescriptionKey: String(localized: "billing.error.signInRequiredForPurchase")
+                ]
+            )
+        }
+
         let currentUserId = try requireAuthenticatedRevenueCatUserId()
         try await ensureRevenueCatIdentityMatches(userId: currentUserId)
 
@@ -301,7 +312,7 @@ final class SubscriptionManager {
         }
 
         let fractionStart = value.index(after: dotIndex)
-        let fraction = value[fractionStart..<zoneIndex]
+        let fraction = value[fractionStart ..< zoneIndex]
         if fraction.count <= 3 { return value }
 
         let prefix = value[..<fractionStart]

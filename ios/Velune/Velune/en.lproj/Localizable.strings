@@ -95,6 +95,7 @@
 "billing.error.insufficientStardust.free" = "Your stardust is low. Upgrade to Premium to get more.";
 "billing.error.insufficientStardust.premium" = "Your stardust is exhausted.";
 "billing.error.missingRevenueCatKey" = "RevenueCat public key is missing.";
+"billing.error.signInRequiredForPurchase" = "Please sign in with Apple before subscribing.";
 "billing.error.offeringUnavailable" = "No purchasable package is available right now. Please try again later.";
 "paywall.restore.notFound" = "No active subscription found. If you recently purchased, please try again in a moment.";
 
@@ -106,3 +107,5 @@
 "paywall.feature.priorityAccess.title" = "Priority Access";
 "paywall.feature.priorityAccess.subtitle" = "Be the first to experience new features and capabilities.";
 "paywall.action.subscribe" = "Enter";
+"paywall.signInRequired.title" = "Sign In Required";
+"paywall.signInRequired.description" = "Anonymous accounts can’t subscribe. Sign in with Apple to continue.";

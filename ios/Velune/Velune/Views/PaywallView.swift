@@ -8,8 +8,10 @@ struct PaywallView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @State private var authManager = AuthManager.shared
     @State private var subscriptionManager = SubscriptionManager.shared
     @State private var feedbackMessage: FeedbackMessage?
+    @State private var showSignInSheet = false
     
     var body: some View {
         NavigationStack {
@@ -56,7 +58,7 @@ struct PaywallView: View {
                     // Action Area
                     VStack(spacing: 16) {
                         Button {
-                            Task { await purchase() }
+                            handleSubscribeTap()
                         } label: {
                             HStack {
                                 if subscriptionManager.isPurchasing {
@@ -144,7 +146,19 @@ struct PaywallView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showSignInSheet) {
+                SignInRequiredForPaywallSheet()
+            }
         }
+    }
+
+    private func handleSubscribeTap() {
+        guard !authManager.isAnonymous else {
+            showSignInSheet = true
+            return
+        }
+
+        Task { await purchase() }
     }
     
     private func purchase() async {
@@ -164,6 +178,53 @@ struct PaywallView: View {
         } catch {
             feedbackMessage = .text(error.localizedDescription)
         }
+    }
+}
+
+private struct SignInRequiredForPaywallSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 22) {
+                VStack(spacing: 12) {
+                    Image(systemName: "person.crop.circle.badge.exclamationmark")
+                        .font(.system(size: 34, weight: .light))
+                        .foregroundStyle(.primary)
+
+                    Text("paywall.signInRequired.title")
+                        .font(.title3.weight(.semibold))
+                        .fontDesign(.serif)
+                        .multilineTextAlignment(.center)
+
+                    Text("paywall.signInRequired.description")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                AppleSignInActionButton(
+                    visualStyle: .capsule,
+                    height: 46,
+                    showInlineError: true,
+                    onSuccess: { dismiss() }
+                )
+                .frame(maxWidth: 320)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 28)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("common.cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.height(320)])
+        .presentationDragIndicator(.visible)
     }
 }
 
