@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import RevenueCat
 import Supabase
 
@@ -6,6 +7,7 @@ import Supabase
 @Observable
 final class SubscriptionManager {
     static let shared = SubscriptionManager()
+    private let logger = AppLogger.billing
 
     var isPremium = false
     var credits = BillingConfig.freeMonthlyCredits
@@ -30,7 +32,7 @@ final class SubscriptionManager {
         formatter.formatOptions = [.withInternetDateTime]
         return formatter
     }()
-    
+
     private static let iso8601FractionalFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -40,9 +42,7 @@ final class SubscriptionManager {
     private init() {}
 
     func bootstrap(userId: UUID?) async {
-        if currentBillingUserID != userId {
-            currentBillingUserID = userId
-        }
+        currentBillingUserID = userId
 
         configureRevenueCatIfNeeded()
 
@@ -109,9 +109,7 @@ final class SubscriptionManager {
         defer { isPurchasing = false }
 
         let result = try await Purchases.shared.purchase(package: package)
-        print(
-            "rc purchase appUserID=\(Purchases.shared.appUserID) activeEntitlements=\(Array(result.customerInfo.entitlements.active.keys)) activeSubscriptions=\(Array(result.customerInfo.activeSubscriptions))"
-        )
+        logger.notice("purchase completed for appUserID=\(Purchases.shared.appUserID, privacy: .public)")
         applyCustomerInfo(result.customerInfo)
         Task { await syncBillingStateQuietly() }
     }
@@ -137,6 +135,7 @@ final class SubscriptionManager {
         let apiKey = BillingConfig.revenueCatPublicSDKKey
         guard !apiKey.isEmpty else {
             isRevenueCatAvailable = false
+            logger.notice("RevenueCat disabled: missing public SDK key")
             return
         }
 
@@ -162,7 +161,7 @@ final class SubscriptionManager {
         let currentRCUserId = Purchases.shared.appUserID
         if currentRCUserId != userId {
             let message = "RevenueCat appUserID mismatch. expected=\(userId), current=\(currentRCUserId)"
-            print(message)
+            logger.error("\(message, privacy: .public)")
             throw NSError(
                 domain: "RevenueCat",
                 code: -3,
@@ -178,7 +177,7 @@ final class SubscriptionManager {
         do {
             _ = try await Purchases.shared.logOut()
         } catch {
-            // Ignore logout failures during session teardown.
+            logger.notice("RevenueCat logout ignored: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -200,22 +199,18 @@ final class SubscriptionManager {
             if let package {
                 monthlyPriceText = package.storeProduct.localizedPriceString + " " + String(localized: "billing.price.perMonthSuffix")
                 lastErrorMessage = nil
-                print(
-                    "rc offering resolved: id=\(package.identifier) product=\(package.storeProduct.productIdentifier) offering=\(package.offeringIdentifier)"
-                )
+                logger.notice("offering resolved: \(package.storeProduct.productIdentifier, privacy: .public)")
             } else {
                 applyDefaultMonthlyPrice()
                 lastErrorMessage =
                     "RevenueCat offerings are empty. current=\(offerings.current?.identifier ?? "nil"), all=\(Array(offerings.all.keys))"
-                print(
-                    "rc offering unavailable: current=\(offerings.current?.identifier ?? "nil") all=\(Array(offerings.all.keys))"
-                )
+                logger.error("offering unavailable: \(self.lastErrorMessage ?? "", privacy: .public)")
             }
         } catch {
             monthlyPackage = nil
             applyDefaultMonthlyPrice()
             lastErrorMessage = "RevenueCat offerings fetch failed: \(error.localizedDescription)"
-            print("rc offerings fetch failed: \(error.localizedDescription)")
+            logger.error("offerings fetch failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -240,11 +235,10 @@ final class SubscriptionManager {
         }
     }
 
-    /// Background sync that never surfaces errors to the user.
     private func syncBillingStateQuietly() async {
         let synced = await syncBillingState(maxAttempts: 5, expectPremium: isPremium)
         if !synced {
-            print("billing-rpc: backend not yet reflecting premium after retries, webhook will reconcile")
+            logger.notice("billing state not yet reconciled after retries")
         }
     }
 
@@ -259,7 +253,7 @@ final class SubscriptionManager {
                 }
             } catch {
                 lastErrorMessage = error.localizedDescription
-                print("billing-rpc attempt \(attempt) failed: \(error.localizedDescription)")
+                logger.error("billing sync attempt \(attempt, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
             }
 
             if attempt < maxAttempts {
@@ -271,6 +265,7 @@ final class SubscriptionManager {
     }
 
     private func callBillingSync() async throws -> BillingSyncResponse {
+        let supabase = try Backend.requireSupabase()
         let rows: [BillingSyncResponse] = try await supabase
             .rpc("get_user_credit_state")
             .execute()
@@ -330,7 +325,7 @@ final class SubscriptionManager {
         }
 
         guard originalUserId == expectedUserId else {
-            print("rc restore blocked: expectedAppUserID=\(expectedUserId), originalAppUserID=\(originalUserId)")
+            logger.error("restore blocked: expectedAppUserID=\(expectedUserId, privacy: .public) originalAppUserID=\(originalUserId, privacy: .public)")
             throw NSError(
                 domain: "Billing",
                 code: -5,

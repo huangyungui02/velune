@@ -1,17 +1,19 @@
 import Combine
 import Foundation
 import AuthenticationServices
+import OSLog
 import Supabase
 
 @MainActor
 @Observable
 final class AuthManager {
     static let shared = AuthManager()
+    private let logger = AppLogger.auth
 
     var isAuthenticated: Bool = false
     var isAnonymous: Bool = false
     var currentUserId: UUID? { currentUser?.id }
-    var currentAccessToken: String? { supabase.auth.currentSession?.accessToken }
+    var currentAccessToken: String? { Backend.supabaseIfAvailable?.auth.currentSession?.accessToken }
     var userEmail: String? { currentUser?.email }
     var userName: String? {
         if let metadata = currentUser?.userMetadata,
@@ -32,33 +34,35 @@ final class AuthManager {
     }
 
     private func checkInitialAuthState() {
+        guard let supabase = Backend.supabaseIfAvailable else {
+            resetAuthState()
+            return
+        }
+
         if let session = supabase.auth.currentSession {
-            isAuthenticated = true
-            currentUser = session.user
-            isAnonymous = session.user.isAnonymous
+            applyAuthenticatedSession(session)
         } else {
-            isAuthenticated = false
-            currentUser = nil
-            isAnonymous = false
+            resetAuthState()
         }
     }
 
     private func observeAuthStateChanges() {
+        guard let supabase = Backend.supabaseIfAvailable else {
+            logger.error("auth observation unavailable: backend is not configured")
+            return
+        }
+
         authStateChangeTask = Task {
             for await (_, session) in supabase.auth.authStateChanges {
                 if let session = session, !session.isExpired {
-                    self.isAuthenticated = true
-                    self.currentUser = session.user
-                    self.isAnonymous = session.user.isAnonymous
+                    self.applyAuthenticatedSession(session)
                     try? await self.upsertInstallationBinding(
                         userId: session.user.id,
                         isAnonymous: session.user.isAnonymous,
                         refreshToken: session.user.isAnonymous ? session.refreshToken : nil
                     )
                 } else {
-                    self.isAuthenticated = false
-                    self.currentUser = nil
-                    self.isAnonymous = false
+                    self.resetAuthState()
                     self.installationBindingSyncState = nil
                 }
             }
@@ -73,6 +77,8 @@ final class AuthManager {
     }
 
     func signOut() async throws {
+        let supabase = try Backend.requireSupabase()
+
         if isAnonymous {
             try await supabase.auth.signOut(scope: .local)
         } else {
@@ -82,6 +88,7 @@ final class AuthManager {
     }
 
     func signInAnonymously() async throws {
+        let supabase = try Backend.requireSupabase()
         let installationId = InstallationIDStore.getOrCreateInstallationID()
 
         if let restoredSession = await restoreAnonymousSessionIfAvailable(
@@ -106,6 +113,8 @@ final class AuthManager {
     }
 
     func signInWithAppleCredential(_ credential: ASAuthorizationAppleIDCredential) async throws {
+        let supabase = try Backend.requireSupabase()
+
         guard let idToken = credential.identityToken
             .flatMap({ String(data: $0, encoding: .utf8) })
         else {
@@ -123,6 +132,8 @@ final class AuthManager {
     }
 
     func deleteAccount() async throws {
+        let supabase = try Backend.requireSupabase()
+
         try await supabase
             .rpc("delete_own_account")
             .execute()
@@ -141,6 +152,7 @@ final class AuthManager {
     }
 
     func updateUserName(_ name: String) async throws {
+        let supabase = try Backend.requireSupabase()
         let response = try await supabase.auth.update(
             user: UserAttributes(
                 data: [
@@ -152,6 +164,11 @@ final class AuthManager {
     }
 
     private func restoreAnonymousSessionIfAvailable(installationId: String) async -> Session? {
+        guard let supabase = Backend.supabaseIfAvailable else {
+            logger.error("anonymous session restore unavailable: backend is not configured")
+            return nil
+        }
+
         let params: [String: AnyJSON] = [
             "p_installation_id": .string(installationId)
         ]
@@ -173,6 +190,7 @@ final class AuthManager {
 
             return session
         } catch {
+            logger.notice("anonymous session restore skipped: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }
@@ -199,6 +217,7 @@ final class AuthManager {
             "p_refresh_token": syncState.refreshToken.map(AnyJSON.string) ?? .null
         ]
 
+        let supabase = try Backend.requireSupabase()
         try await supabase
             .rpc("upsert_installation_for_current_user", params: params)
             .execute()
@@ -207,6 +226,7 @@ final class AuthManager {
     }
 
     private func updateUserMetadataIfAvailable(from credential: ASAuthorizationAppleIDCredential) async throws {
+        let supabase = try Backend.requireSupabase()
         guard let fullName = credential.fullName else { return }
 
         var nameParts: [String] = []
@@ -231,6 +251,18 @@ final class AuthManager {
                 ]
             )
         )
+    }
+
+    private func applyAuthenticatedSession(_ session: Session) {
+        isAuthenticated = true
+        currentUser = session.user
+        isAnonymous = session.user.isAnonymous
+    }
+
+    private func resetAuthState() {
+        isAuthenticated = false
+        currentUser = nil
+        isAnonymous = false
     }
 }
 

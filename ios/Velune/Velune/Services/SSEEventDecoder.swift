@@ -1,7 +1,9 @@
 import Foundation
 import EventSource
+import OSLog
 
-enum APISSEClient {
+nonisolated enum APISSEClient {
+    private static let logger = AppLogger.network
     private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -63,6 +65,7 @@ enum APISSEClient {
     nonisolated private static func makeRequest(path: String, body: Data) async throws -> URLRequest {
         let accessToken = await MainActor.run { AuthManager.shared.currentAccessToken }
         guard let accessToken else {
+            logger.error("stream request blocked: missing Supabase access token")
             throw NSError(
                 domain: "APISSEClient",
                 code: 401,
@@ -70,7 +73,7 @@ enum APISSEClient {
             )
         }
 
-        let endpoint = await MainActor.run { apiBaseURL.appending(path: path) }
+        let endpoint = try Backend.requireAPIBaseURL().appending(path: path)
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.httpBody = body
@@ -87,6 +90,7 @@ enum APISSEClient {
 
         let message = parseAPIErrorMessage(from: response)
             ?? HTTPURLResponse.localizedString(forStatusCode: statusCode)
+        logger.error("stream request failed: status=\(statusCode, privacy: .public) message=\(message, privacy: .public)")
         return NSError(
             domain: "APISSEClient",
             code: statusCode,

@@ -61,6 +61,7 @@ extension ChatSession {
         offset: Int
     ) async throws -> [ChatSession] {
         let upperBound = max(offset + limit - 1, offset)
+        let supabase = try Backend.requireSupabase()
         let response: [Response]
         if let soulerId {
             response = try await supabase
@@ -90,6 +91,7 @@ extension ChatSession {
     }
 
     static func get(id: UUID) async throws -> ChatSession? {
+        let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("sessions")
             .select("id, souler_id, title, created_at, updated_at, soulers(name)")

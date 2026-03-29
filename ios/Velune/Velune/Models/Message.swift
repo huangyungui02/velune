@@ -35,6 +35,7 @@ extension Message {
     }
 
     static func getHistory(sessionId: UUID) async throws -> [Message] {
+        let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("messages")
             .select("id, souler_id, session_id, role, content, created_at")

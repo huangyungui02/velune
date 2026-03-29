@@ -21,6 +21,7 @@ extension Souler {
             var bio: String?
         }
 
+        let supabase = try Backend.requireSupabase()
         let res: Response = try await supabase
             .from("soulers")
             .select("id, name, bio")

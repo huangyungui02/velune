@@ -22,10 +22,12 @@
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		323FF3542F6037C300423EAA /* Exceptions for "Velune" folder in "Velune" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
+				isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+				membershipExceptions = (
+					DebugInfo.plist,
+					Info.plist,
+					ReleaseInfo.plist,
+				);
 			target = 321D07BC2EDA8CD8007F4762 /* Velune */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -311,7 +313,7 @@
 				DEVELOPMENT_TEAM = LQK5WB3692;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Velune/Info.plist;
+				INFOPLIST_FILE = Velune/DebugInfo.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Velune;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -354,7 +356,7 @@
 				DEVELOPMENT_TEAM = LQK5WB3692;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Velune/Info.plist;
+				INFOPLIST_FILE = Velune/ReleaseInfo.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Velune;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

@@ -41,6 +41,7 @@ extension Resonance {
 
     static func getPage(limit: Int, offset: Int) async throws -> [Resonance] {
         let upperBound = max(offset + limit - 1, offset)
+        let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("resonances")
             .select("id, souler_id, last_session_id, last_session_title, count, created_at, updated_at, soulers(name)")

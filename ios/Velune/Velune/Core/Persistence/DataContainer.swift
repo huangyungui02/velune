@@ -9,7 +9,7 @@ class DataContainer {
         modelContainer.mainContext
     }
 
-    init(inMemoryOnly: Bool = false) {
+    init(inMemoryOnly: Bool = false) throws {
         let schema = Schema([
             Glimmer.self,
             Echo.self,
@@ -20,11 +20,7 @@ class DataContainer {
             isStoredInMemoryOnly: inMemoryOnly
         )
 
-        do {
-            modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
-            try context.save()
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
+        modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
+        try context.save()
     }
 }

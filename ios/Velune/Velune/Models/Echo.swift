@@ -73,6 +73,7 @@ extension Echo {
         }
 
         let userId = try await AuthManager.shared.getUserId()
+        let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("echoes_with_souler")
             .select()

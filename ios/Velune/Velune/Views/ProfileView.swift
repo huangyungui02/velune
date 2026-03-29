@@ -1,3 +1,4 @@
+import OSLog
 import SwiftData
 import SwiftUI
 
@@ -11,9 +12,11 @@ struct ProfileView: View {
     @State private var isLoadingMore: Bool = false
     @State private var hasMoreGlimmers: Bool = false
     @State private var glimmerOffset: Int = 0
+    @State private var feedbackMessage: String?
     let onOpenGlimmerComposer: () -> Void
 
     private let glimmerPageSize = 10
+    private let logger = AppLogger.profile
 
     init(onOpenGlimmerComposer: @escaping () -> Void = {}) {
         self.onOpenGlimmerComposer = onOpenGlimmerComposer
@@ -67,6 +70,11 @@ struct ProfileView: View {
             if hasMoreGlimmers && glimmers.isEmpty {
                 await loadMoreGlimmers()
             }
+        }
+        .alert("settings.error.title", isPresented: feedbackAlertBinding) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text(feedbackMessage ?? "")
         }
     }
 
@@ -152,6 +160,13 @@ struct ProfileView: View {
         }
     }
 
+    private var feedbackAlertBinding: Binding<Bool> {
+        Binding(
+            get: { feedbackMessage != nil },
+            set: { if !$0 { feedbackMessage = nil } }
+        )
+    }
+
     private var timelineSections: [TimelineSection] {
         var sections: [TimelineSection] = []
         var sectionIndices: [TimelineBucket: Int] = [:]
@@ -229,7 +244,9 @@ struct ProfileView: View {
         do {
             glimmers = try fetchLocalGlimmers()
         } catch {
-            print("error loading local glimmers: \(error.localizedDescription)")
+            let message = error.localizedDescription
+            logger.error("local glimmer load failed: \(message, privacy: .public)")
+            feedbackMessage = message
         }
     }
 
@@ -247,7 +264,8 @@ struct ProfileView: View {
             hasMoreGlimmers = page.hasMore
         } catch {
             let errorMessage = error.localizedDescription
-            print("error refreshing glimmers: \(errorMessage)")
+            logger.error("glimmer refresh failed: \(errorMessage, privacy: .public)")
+            feedbackMessage = errorMessage
         }
 
         isRefreshing = false
@@ -270,7 +288,9 @@ struct ProfileView: View {
                 PaginationStateStore.markGlimmerBottomReached(userId: currentUserId)
             }
         } catch {
-            print("error loading more glimmers: \(error.localizedDescription)")
+            let message = error.localizedDescription
+            logger.error("loading more glimmers failed: \(message, privacy: .public)")
+            feedbackMessage = message
         }
     }
 

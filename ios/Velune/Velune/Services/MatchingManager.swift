@@ -1,3 +1,4 @@
+import OSLog
 import Supabase
 import SwiftData
 import SwiftUI
@@ -5,6 +6,7 @@ import SwiftUI
 @Observable
 class MatchingManager {
     static let shared = MatchingManager()
+    private let logger = AppLogger.matching
     
     var text = ""
     var isMatching = false
@@ -54,7 +56,7 @@ class MatchingManager {
                 currentGlimmer?.status = "failed"
                 persistChangesIfNeeded(context: context)
             }
-            print("Matching error: \(error)")
+            logger.error("matching failed: \(error.localizedDescription, privacy: .public)")
         }
         
         await MainActor.run {

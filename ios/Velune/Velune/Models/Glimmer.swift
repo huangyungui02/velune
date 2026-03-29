@@ -50,6 +50,7 @@ extension Glimmer {
     }
 
     static func get(_ glimmerId: UUID) async throws -> Glimmer {
+        let supabase = try Backend.requireSupabase()
         let response: Response = try await supabase
             .from("glimmers")
             .select("id, content, created_at, status")
@@ -74,6 +75,7 @@ extension Glimmer {
         let userId = try await AuthManager.shared.getUserId()
         let upperBound = max(pageOffset + pageSize - 1, pageOffset)
 
+        let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("glimmers")
             .select("id, content, created_at, status")
@@ -99,6 +101,7 @@ extension Glimmer {
     static func getAll() async throws -> [Glimmer] {
         let userId = try await AuthManager.shared.getUserId()
 
+        let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("glimmers")
             .select("id, content, created_at, status")
@@ -144,6 +147,7 @@ extension Glimmer {
             status: status
         )
 
+        let supabase = try Backend.requireSupabase()
         try await supabase
             .from("glimmers")
             .insert(data)
@@ -151,6 +155,7 @@ extension Glimmer {
     }
 
     static func delete(_ glimmerId: UUID) async throws {
+        let supabase = try Backend.requireSupabase()
         try await supabase
             .from("glimmers")
             .delete()

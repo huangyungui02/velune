@@ -1,8 +1,11 @@
 import MarkdownUI
+import OSLog
 import SwiftData
 import SwiftUI
 
 struct ChatView: View {
+    private let logger = AppLogger.chat
+
     struct DraftPrelude: Hashable {
         let glimmerContent: String
         let echoContent: String
@@ -482,7 +485,7 @@ struct ChatView: View {
         do {
             try modelContext.save()
         } catch {
-            print("Failed to persist echo sessionId: \(error)")
+            logger.error("persisting echo sessionId failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 

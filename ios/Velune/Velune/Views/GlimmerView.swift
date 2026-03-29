@@ -1,3 +1,4 @@
+import OSLog
 import SwiftData
 import SwiftUI
 
@@ -11,6 +12,7 @@ struct GlimmerView: View {
     @State private var glimmer: Glimmer
     @State private var currentPage: CardID? = .glimmer
     @State private var chatRoute: EchoChatRoute?
+    private let logger = AppLogger.storage
 
     init(glimmer: Glimmer) {
         self.glimmer = glimmer
@@ -85,6 +87,11 @@ struct GlimmerView: View {
         } message: {
             Text("glimmer.delete.message")
         }
+        .alert("settings.error.title", isPresented: errorAlertBinding) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text(errorMessage ?? "")
+        }
         .overlay {
             if isDeleting {
                 ProgressView("glimmer.delete.progress")
@@ -133,7 +140,7 @@ struct GlimmerView: View {
 
             try? context.save()
         } catch {
-            print("Failed to refresh glimmer \(glimmer.id): \(error)")
+            logger.error("refreshing glimmer failed: glimmerId=\(glimmer.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
             return
         }
     }
@@ -185,5 +192,12 @@ struct GlimmerView: View {
     private func openChat() {
         guard let route = activeEchoChatRoute else { return }
         chatRoute = route
+    }
+
+    private var errorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )
     }
 }
