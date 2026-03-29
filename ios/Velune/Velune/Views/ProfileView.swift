@@ -11,8 +11,13 @@ struct ProfileView: View {
     @State private var isLoadingMore: Bool = false
     @State private var hasMoreGlimmers: Bool = false
     @State private var glimmerOffset: Int = 0
+    let onOpenGlimmerComposer: () -> Void
 
     private let glimmerPageSize = 10
+
+    init(onOpenGlimmerComposer: @escaping () -> Void = {}) {
+        self.onOpenGlimmerComposer = onOpenGlimmerComposer
+    }
 
     private var currentUserId: String {
         authManager.currentUserId?.uuidString ?? ""
@@ -31,7 +36,7 @@ struct ProfileView: View {
             } else if !glimmers.isEmpty {
                 glimmerListView
             } else {
-                EmptyView(title: "profile.empty.noGlimmers")
+                profileEmptyStateView
             }
         }
         .navigationTitle("profile.title.glimmers")
@@ -63,6 +68,16 @@ struct ProfileView: View {
                 await loadMoreGlimmers()
             }
         }
+    }
+
+    private var profileEmptyStateView: some View {
+        SereneContentUnavailableView(
+            title: "profile.empty.noGlimmers",
+            symbol: "sparkles",
+            subtitle: "profile.empty.noGlimmers.subtitle",
+            actionTitle: "starsea.action.writeGlimmer",
+            action: onOpenGlimmerComposer
+        )
     }
 
     private var glimmerListView: some View {

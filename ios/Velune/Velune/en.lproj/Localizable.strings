@@ -50,6 +50,7 @@
 "anonymous.restricted.sidebar.description" = "Sign in to browse resonances and return to each conversation.";
 
 "profile.empty.noGlimmers" = "No glimmers yet";
+"profile.empty.noGlimmers.subtitle" = "Write your first glimmer, and let the starsea answer softly.";
 "profile.title.glimmers" = "Hearthaven";
 "profile.section.today" = "Today";
 "profile.section.yesterday" = "Yesterday";

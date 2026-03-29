@@ -354,31 +354,13 @@ struct SidebarView: View {
     }
 
     private var resonanceEmptyStateView: some View {
-        ContentUnavailableView {
-            Text("starsea.empty.resonanceTitle")
-                .fontDesign(.serif)
-                .padding(.bottom, 6)
-        } description: {
-            Text("starsea.empty.resonanceSubtitle")
-                .fontDesign(.serif)
-                .foregroundStyle(UITheme.secondaryText)
-                .multilineTextAlignment(.center)
-                .lineSpacing(4)
-                .padding(.top, 4)
-        } actions: {
-            Button(action: onOpenGlimmerComposer) {
-                Label("starsea.action.writeGlimmer", systemImage: "pencil.and.scribble")
-                    .font(.footnote.weight(.semibold))
-                    .fontDesign(.serif)
-                    .foregroundStyle(UITheme.primaryText)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-            }
-            .buttonStyle(.plain)
-            .background(Color.clear, in: .capsule)
-            .glassEffect(in: .capsule)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        SereneContentUnavailableView(
+            title: "starsea.empty.resonanceTitle",
+            symbol: "bubble.left.and.bubble.right",
+            subtitle: "starsea.empty.resonanceSubtitle",
+            actionTitle: "starsea.action.writeGlimmer",
+            action: onOpenGlimmerComposer
+        )
     }
 
     private var sidebarTopToolbar: some View {

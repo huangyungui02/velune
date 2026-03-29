@@ -114,8 +114,8 @@ struct GlimmerView: View {
     }
 
     func refreshGlimmer() async {
-        if glimmer.status != "pending" && glimmer.status != "processing" {
-            if !glimmer.echoes.isEmpty { return }
+        if glimmer.status != "pending", glimmer.status != "processing" {
+            if !glimmer.echoes.isEmpty || glimmer.status == "failed" { return }
         }
 
         isLoading = true

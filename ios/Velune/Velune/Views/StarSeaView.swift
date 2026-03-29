@@ -44,7 +44,7 @@ struct StarSeaView: View {
                     }
                     .navigationBarTitleDisplayMode(.inline)
                     .navigationDestination(isPresented: $isShowingProfile) {
-                        ProfileView()
+                        ProfileView(onOpenGlimmerComposer: openGlimmerComposerFromProfile)
                     }
                     .navigationDestination(item: $sidebarNavigation.activeSession) { session in
                         ChatView(
@@ -285,6 +285,13 @@ struct StarSeaView: View {
 
     private func openGlimmerComposerFromSidebar() {
         isPresented = true
+    }
+
+    private func openGlimmerComposerFromProfile() {
+        isShowingProfile = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+            isPresented = true
+        }
     }
 
     private func resetToVerse() {
