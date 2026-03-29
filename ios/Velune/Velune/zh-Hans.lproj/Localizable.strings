@@ -20,6 +20,7 @@
 "settings.link.contactSupport" = "联系开发者";
 "settings.version" = "版本";
 "settings.billing.credits" = "星尘";
+"settings.billing.action.getStardust" = "获取星尘";
 "settings.billing.action.upgrade" = "升级";
 "settings.billing.action.restore" = "恢复购买";
 "settings.billing.price" = "订阅价格";

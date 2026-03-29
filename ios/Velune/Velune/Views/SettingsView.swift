@@ -62,13 +62,10 @@ struct SettingsView: View {
                             }
                         }
                         Spacer(minLength: 0)
-                        Text("\(subscriptionManager.credits)")
-                            .font(.system(.title3, design: .rounded).monospacedDigit())
-                            .fontWeight(.semibold)
-                            .foregroundStyle(UITheme.primaryText)
+                        stardustAccessView
                     }
 
-                    if !subscriptionManager.isPremium {
+                    if shouldShowUpgradeRow {
                         Button {
                             showPaywall = true
                         } label: {
@@ -292,6 +289,40 @@ struct SettingsView: View {
             lines.append(billingError)
         }
         return lines.isEmpty ? nil : lines.joined(separator: "\n")
+    }
+
+    private var shouldShowGetStardustButton: Bool {
+        !subscriptionManager.isPremium && subscriptionManager.credits <= 0
+    }
+
+    private var shouldShowUpgradeRow: Bool {
+        !subscriptionManager.isPremium && !shouldShowGetStardustButton
+    }
+
+    @ViewBuilder
+    private var stardustAccessView: some View {
+        if shouldShowGetStardustButton {
+            Button {
+                showPaywall = true
+            } label: {
+                Text("settings.billing.action.getStardust")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(UITheme.primaryText)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.white.opacity(0.08), in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .strokeBorder(.white.opacity(0.08), lineWidth: 0.8)
+                    }
+            }
+            .buttonStyle(.plain)
+        } else {
+            Text("\(subscriptionManager.credits)")
+                .font(.system(.title3, design: .rounded).monospacedDigit())
+                .fontWeight(.semibold)
+                .foregroundStyle(UITheme.primaryText)
+        }
     }
 }
 

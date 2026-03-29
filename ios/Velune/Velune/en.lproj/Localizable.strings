@@ -20,6 +20,7 @@
 "settings.link.contactSupport" = "Contact Developer";
 "settings.version" = "Version";
 "settings.billing.credits" = "Stardust";
+"settings.billing.action.getStardust" = "Get Stardust";
 "settings.billing.action.upgrade" = "Upgrade";
 "settings.billing.action.restore" = "Restore Purchases";
 "settings.billing.price" = "Subscription Price";
