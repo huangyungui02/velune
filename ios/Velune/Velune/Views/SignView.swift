@@ -7,57 +7,62 @@ struct SignView: View {
     @State private var isSigningInAnonymously = false
 
     var body: some View {
-        ZStack {
-            StarryBackgroundView()
+        GeometryReader { proxy in
+            let metrics = SignLayoutMetrics(size: proxy.size)
 
-            VStack(spacing: 0) {
-                Spacer(minLength: 22)
+            ZStack {
+                StarryBackgroundView()
 
-                brandBlock
+                VStack(spacing: 0) {
+                    Spacer(minLength: metrics.topSpacer)
 
-                Spacer(minLength: 18)
+                    brandBlock(metrics: metrics)
 
-                actionBlock
+                    Spacer(minLength: metrics.middleSpacer)
 
-                Spacer(minLength: 14)
+                    actionBlock(metrics: metrics)
 
-                termsBlock
+                    Spacer(minLength: metrics.bottomSpacer)
+
+                    termsBlock
+                }
+                .padding(.horizontal, metrics.horizontalPadding)
+                .padding(.vertical, metrics.verticalPadding)
             }
-            .padding(.horizontal, 26)
-            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
     }
 
-    private var brandBlock: some View {
-        VStack(spacing: 40) {
-            VStack(spacing: 10) {
+    private func brandBlock(metrics: SignLayoutMetrics) -> some View {
+        VStack(spacing: metrics.brandSpacing) {
+            VStack(spacing: 12) {
                 AppMarkView()
-                    .frame(width: 98, height: 98)
+                    .frame(width: metrics.logoSize, height: metrics.logoSize)
                     .foregroundStyle(UITheme.primaryText.opacity(0.92))
                 
                 Text("Velune")
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(.system(size: metrics.brandTitleSize, weight: .medium, design: .serif))
+                    .tracking(0.4)
+                    .minimumScaleFactor(0.9)
                     .foregroundStyle(UITheme.primaryText)
             }
 
             Text("sign.slogan")
-                .font(.title3.weight(.semibold))
-                .fontDesign(.serif)
+                .font(.system(size: metrics.sloganSize, weight: .regular, design: .serif))
                 .multilineTextAlignment(.center)
-                .lineSpacing(7)
-                .tracking(0.9)
+                .lineSpacing(6)
+                .tracking(0.55)
                 .foregroundStyle(UITheme.secondaryText)
-                .frame(maxWidth: 320)
+                .frame(maxWidth: metrics.sloganWidth)
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 8)
     }
 
-    private var actionBlock: some View {
-        VStack(spacing: 8) {
+    private func actionBlock(metrics: SignLayoutMetrics) -> some View {
+        VStack(spacing: 12) {
             AppleSignInActionButton(
                 visualStyle: .capsule,
-                height: 46
+                height: 48
             )
 
             Button {
@@ -76,12 +81,13 @@ struct SignView: View {
                 if isSigningInAnonymously {
                     ProgressView()
                         .frame(maxWidth: .infinity)
-                        .frame(height: 40)
+                        .frame(height: 44)
                 } else {
                     Text("sign.action.skip")
-                        .font(.footnote.weight(.semibold))
+                        .font(.subheadline.weight(.medium))
+                        .tracking(0.2)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 40)
+                        .frame(height: 44)
                 }
             }
             .buttonStyle(.plain)
@@ -91,23 +97,25 @@ struct SignView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.footnote)
+                    .lineSpacing(2)
                     .foregroundStyle(UITheme.secondaryText)
                     .multilineTextAlignment(.center)
             }
         }
-        .padding(.horizontal, 8)
-        .frame(maxWidth: 420)
+        .padding(.horizontal, 6)
+        .frame(maxWidth: metrics.actionWidth)
     }
 
     private var termsBlock: some View {
         VStack(spacing: 12) {
             Text(termsAttributedText)
                 .multilineTextAlignment(.center)
-                .font(.footnote.weight(.medium))
+                .font(.footnote)
+                .lineSpacing(3)
                 .foregroundStyle(UITheme.tertiaryText)
         }
         .padding(.horizontal, 18)
-        .padding(.bottom, 8)
+        .padding(.bottom, 10)
     }
 
     private var termsAttributedText: AttributedString {
@@ -130,6 +138,27 @@ struct SignView: View {
         return text
     }
 
+}
+
+private struct SignLayoutMetrics {
+    let size: CGSize
+
+    private var isCompactHeight: Bool { size.height < 760 }
+    private var isNarrowWidth: Bool { size.width < 375 }
+
+    var horizontalPadding: CGFloat { isNarrowWidth ? 22 : 28 }
+    var verticalPadding: CGFloat { isCompactHeight ? 10 : 16 }
+
+    var topSpacer: CGFloat { isCompactHeight ? 16 : 28 }
+    var middleSpacer: CGFloat { isCompactHeight ? 20 : 32 }
+    var bottomSpacer: CGFloat { isCompactHeight ? 10 : 18 }
+
+    var brandSpacing: CGFloat { isCompactHeight ? 30 : 42 }
+    var logoSize: CGFloat { isCompactHeight ? 84 : 98 }
+    var brandTitleSize: CGFloat { isCompactHeight ? 40 : 44 }
+    var sloganSize: CGFloat { isCompactHeight ? 22 : 24 }
+    var sloganWidth: CGFloat { isNarrowWidth ? 286 : 320 }
+    var actionWidth: CGFloat { min(356, size.width - horizontalPadding * 2) }
 }
 
 private struct AppMarkView: View {
