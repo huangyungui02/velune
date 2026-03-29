@@ -23,14 +23,9 @@ struct SettingsView: View {
                 Section {
                     if authManager.isAnonymous {
                         VStack(alignment: .leading, spacing: 14) {
-                            Text("settings.account.defaultName")
-                                .font(.headline)
+                            Text("settings.account.anonymous.title")
+                                .font(.body.weight(.medium))
                                 .foregroundStyle(UITheme.primaryText)
-
-                            Text("anonymous.restricted.profile.description")
-                                .font(.footnote)
-                                .foregroundStyle(UITheme.secondaryText)
-                                .fixedSize(horizontal: false, vertical: true)
 
                             AppleSignInSettingsRow { error in
                                 feedbackMessage = error

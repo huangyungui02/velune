@@ -9,6 +9,7 @@
 "settings.account.email" = "邮箱";
 "settings.account.name" = "昵称";
 "settings.account.defaultName" = "灵魂旅人";
+"settings.account.anonymous.title" = "登录后解锁完整功能";
 "settings.section.profile" = "个人资料";
 "settings.delete.warning" = "删除账号将永久清除你的所有数据。";
 "settings.rateApp" = "应用评分";

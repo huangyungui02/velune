@@ -9,6 +9,7 @@
 "settings.account.email" = "Email";
 "settings.account.name" = "Name";
 "settings.account.defaultName" = "Soul Traveler";
+"settings.account.anonymous.title" = "Unlock full features by signing in";
 "settings.section.profile" = "Profile";
 "settings.delete.warning" = "Deleting your account will permanently remove all your data.";
 "settings.rateApp" = "Rate App";
