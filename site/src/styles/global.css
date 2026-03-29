@@ -1,12 +1,12 @@
 :root {
-  --bg-0: #000000;
-  --bg-1: #030303;
-  --bg-2: #080808;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.18);
-  --text-main: rgba(255, 255, 255, 0.92);
-  --text-sub: rgba(255, 255, 255, 0.65);
-  --text-soft: rgba(255, 255, 255, 0.4);
+  --bg-0: #07080b;
+  --bg-1: #0b0d12;
+  --bg-2: #10141b;
+  --line: rgba(227, 235, 255, 0.09);
+  --line-strong: rgba(227, 235, 255, 0.2);
+  --text-main: rgba(237, 242, 255, 0.93);
+  --text-sub: rgba(207, 216, 236, 0.7);
+  --text-soft: rgba(184, 193, 214, 0.45);
 }
 
 *,
@@ -28,7 +28,8 @@ body {
   color: var(--text-main);
   background-color: var(--bg-0);
   background:
-    radial-gradient(120% 100% at 50% -20%, rgba(255, 255, 255, 0.03), transparent 50%),
+    radial-gradient(120% 95% at 50% -26%, rgba(223, 231, 255, 0.07), transparent 56%),
+    radial-gradient(100% 80% at 90% 10%, rgba(180, 196, 255, 0.03), transparent 58%),
     linear-gradient(180deg, var(--bg-0), var(--bg-1) 60%, var(--bg-2));
   font-family: "IBM Plex Sans", "Source Han Sans SC", "PingFang SC", "Noto Sans CJK SC",
     "Hiragino Sans GB", sans-serif;
@@ -39,13 +40,13 @@ body {
   border-radius: 999px;
   pointer-events: none;
   z-index: -3;
-  opacity: 0.09;
+  opacity: 0.07;
 }
 
 .bg-orb-a {
   width: 56rem;
   height: 56rem;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0));
+  background: radial-gradient(circle, rgba(224, 235, 255, 0.12), rgba(224, 235, 255, 0));
   top: -28rem;
   left: -20rem;
   animation: driftA 60s ease-in-out infinite alternate;
@@ -54,7 +55,7 @@ body {
 .bg-orb-b {
   width: 42rem;
   height: 42rem;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+  background: radial-gradient(circle, rgba(189, 205, 255, 0.08), rgba(189, 205, 255, 0));
   bottom: -18rem;
   right: -12rem;
   animation: driftB 72s ease-in-out infinite alternate;
@@ -65,11 +66,11 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: -2;
-  opacity: 0.13;
+  opacity: 0.08;
   background-image:
-    radial-gradient(rgba(255, 255, 255, 0.08) 0.5px, transparent 0.5px),
-    radial-gradient(rgba(255, 255, 255, 0.03) 0.4px, transparent 0.4px),
-    linear-gradient(rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01));
+    radial-gradient(rgba(223, 231, 255, 0.08) 0.5px, transparent 0.5px),
+    radial-gradient(rgba(223, 231, 255, 0.03) 0.4px, transparent 0.4px),
+    linear-gradient(rgba(223, 231, 255, 0.02), rgba(223, 231, 255, 0.008));
   background-size:
     3px 3px,
     7px 7px;
@@ -89,20 +90,20 @@ main {
 
 .hero {
   text-align: center;
-  min-height: 86vh;
+  min-height: clamp(560px, 78vh, 820px);
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: 1.3rem;
-  padding: 6.5rem 1rem 3rem;
+  gap: 1.15rem;
+  padding: 6rem 1rem 2.1rem;
 }
 
 .hero-mark {
-  width: clamp(124px, 11vw, 164px);
-  height: clamp(124px, 11vw, 164px);
-  margin-bottom: 1.25rem;
+  width: clamp(126px, 11.4vw, 168px);
+  height: clamp(126px, 11.4vw, 168px);
+  margin-bottom: 1.05rem;
   position: relative;
-  filter: drop-shadow(0 14px 32px rgba(0, 0, 0, 0.28));
+  filter: drop-shadow(0 18px 34px rgba(4, 8, 20, 0.36));
   transition: transform 220ms ease, filter 220ms ease;
 }
 
@@ -119,13 +120,13 @@ main {
 .hero-mark::before {
   width: 72%;
   height: 72%;
-  border: 1.8px solid rgba(255, 255, 255, 0.52);
+  border: 1.7px solid rgba(227, 235, 255, 0.52);
 }
 
 .hero-mark::after {
   width: 46%;
   height: 46%;
-  border: 2.2px solid rgba(255, 255, 255, 0.82);
+  border: 2.1px solid rgba(237, 242, 255, 0.8);
 }
 
 .eyebrow {
@@ -155,11 +156,11 @@ h1 {
 
 .hero-title {
   margin-top: 0;
-  font-size: clamp(2.8rem, 7vw, 5.6rem);
-  letter-spacing: 0.06em;
-  font-weight: 500;
+  font-size: clamp(2.56rem, 6.5vw, 5rem);
+  letter-spacing: 0.065em;
+  font-weight: 480;
   line-height: 1.02;
-  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.42);
+  text-shadow: 0 10px 28px rgba(4, 8, 18, 0.42);
 }
 
 .hero-copy {
@@ -381,7 +382,7 @@ blockquote {
   font-size: clamp(1.28rem, 3.5vw, 2.2rem);
   line-height: 1.45;
   font-family: "Cormorant Garamond", "Bodoni Moda", "Songti SC", "STKaiti", serif;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(237, 242, 255, 0.9);
 }
 
 .footer {
@@ -408,7 +409,7 @@ blockquote {
 }
 
 .legal-links {
-  margin-top: 0.65rem;
+  margin-top: 0.7rem;
   display: inline-flex;
   gap: 0.5rem;
   align-items: center;
@@ -423,6 +424,27 @@ blockquote {
 
 .legal-links a:hover {
   color: var(--text-main);
+}
+
+.footer-minimal {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.legal-links-soft {
+  margin-top: 1.45rem;
+}
+
+.legal-links-soft a,
+.legal-links-soft span {
+  color: rgba(184, 193, 214, 0.62);
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+}
+
+.legal-links-soft a:hover {
+  color: rgba(237, 242, 255, 0.88);
 }
 
 .legal-page {
@@ -555,7 +577,10 @@ blockquote {
 }
 
 .tilt-card:hover {
-  border-color: rgba(255, 255, 255, 0.24);
+  border-color: rgba(227, 235, 255, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(237, 242, 255, 0.1),
+    0 22px 42px rgba(3, 6, 14, 0.4);
 }
 
 @media (max-width: 920px) {
@@ -576,19 +601,23 @@ blockquote {
 
   .hero {
     min-height: auto;
-    padding-top: 3.7rem;
+    padding-top: 3.3rem;
     padding-bottom: 2.2rem;
   }
 
   .hero-mark {
-    width: clamp(106px, 30vw, 126px);
-    height: clamp(106px, 30vw, 126px);
-    margin-bottom: 0.9rem;
+    width: clamp(104px, 30vw, 124px);
+    height: clamp(104px, 30vw, 124px);
+    margin-bottom: 0.8rem;
   }
 
   .hero-title {
-    font-size: clamp(2.3rem, 11vw, 3.6rem);
+    font-size: clamp(2.15rem, 10.8vw, 3.3rem);
     letter-spacing: 0.05em;
+  }
+
+  .zen-center {
+    padding-top: 3.2rem;
   }
 
   .eyebrow {
@@ -609,7 +638,7 @@ blockquote {
   }
 
   .bg-orb {
-    opacity: 0.06;
+    opacity: 0.05;
   }
 }
 
@@ -654,107 +683,139 @@ blockquote {
 /* Zen Mode Additions */
 .zen-center {
   text-align: center;
-  padding: clamp(4rem, 10vw, 8rem) 1rem;
-  max-width: 720px;
+  padding: clamp(2.4rem, 5.8vw, 4.4rem) 1rem clamp(4.6rem, 10vw, 8.4rem);
+  max-width: 740px;
   margin: 0 auto;
 }
 
-.zen-center h2 {
-  font-size: clamp(2rem, 5vw, 3.2rem);
+.zen-center-title {
+  font-size: clamp(2rem, 5vw, 3.05rem);
   font-weight: 400;
-  margin-bottom: 1.5rem;
-  color: var(--text-main);
+  margin-bottom: 2rem;
+  color: rgba(237, 242, 255, 0.94);
+  letter-spacing: 0.02em;
   font-family: "Cormorant Garamond", "Bodoni Moda", "Songti SC", "STKaiti", serif;
 }
 
 .zen-center p {
-  font-size: clamp(1.1rem, 2vw, 1.3rem);
+  font-size: clamp(1.05rem, 1.85vw, 1.26rem);
   color: var(--text-sub);
-  line-height: 1.8;
-  font-weight: 300;
+  line-height: 1.92;
+  font-weight: 320;
+}
+
+.zen-flow {
+  margin-top: clamp(2.8rem, 6vw, 4.8rem);
 }
 
 .zen-features {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-  margin-top: 4rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 2.2vw, 1.6rem);
   text-align: center;
-  padding: 0 1rem;
+  padding: 0 0.5rem;
 }
 
 .zen-feature-item {
   position: relative;
   overflow: hidden;
   transform-style: preserve-3d;
-  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease;
+}
+
+.zen-feature-surface {
+  min-height: 218px;
+  padding: 2.2rem 1.8rem 2rem;
+  border-radius: 28px;
+  border: 1px solid rgba(227, 235, 255, 0.15);
+  background:
+    linear-gradient(165deg, rgba(32, 40, 62, 0.18), rgba(11, 14, 21, 0.58)),
+    linear-gradient(180deg, rgba(9, 11, 16, 0.66), rgba(7, 9, 13, 0.72));
+  box-shadow:
+    inset 0 1px 0 rgba(237, 242, 255, 0.08),
+    0 18px 34px rgba(3, 6, 14, 0.32);
+}
+
+.zen-feature-surface::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 15%;
+  width: 70%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(237, 242, 255, 0.34), transparent);
 }
 
 .zen-feature-item h3 {
-  font-size: 1.4rem;
-  margin-bottom: 0.8rem;
-  color: var(--text-main);
+  font-size: clamp(1.32rem, 2vw, 1.52rem);
+  margin-bottom: 0.86rem;
+  color: rgba(237, 242, 255, 0.95);
+  font-weight: 500;
   font-family: "Cormorant Garamond", "Bodoni Moda", "Songti SC", "STKaiti", serif;
 }
 
 .zen-feature-item p {
   font-size: 0.95rem;
-  color: var(--text-soft);
-  line-height: 1.6;
+  color: rgba(184, 193, 214, 0.8);
+  line-height: 1.72;
 }
 
 @media (max-width: 768px) {
   .zen-features {
     grid-template-columns: 1fr;
-    gap: 3rem;
+    gap: 1rem;
+    padding: 0;
+  }
+
+  .zen-feature-surface {
+    min-height: 0;
+    padding: 1.7rem 1.3rem 1.5rem;
   }
 }
 
-/* New Footer Quote Style */
 .zen-quote-footer {
-  margin-top: 10rem;
-  margin-bottom: 8rem;
+  margin-top: clamp(7rem, 12vw, 9.4rem);
+  margin-bottom: clamp(5rem, 9vw, 7.2rem);
   text-align: center;
   position: relative;
-  padding: 6rem 1rem;
+  padding: clamp(3.2rem, 7vw, 5.2rem) 1rem 0;
 }
 
 .zen-quote-footer::before {
   content: "";
   position: absolute;
-  top: 50%;
+  top: 42%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 60vw;
-  max-width: 600px;
-  height: 300px;
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
-  filter: blur(80px);
+  width: min(78vw, 720px);
+  height: 220px;
+  background: radial-gradient(ellipse at center, rgba(223, 231, 255, 0.09) 0%, transparent 74%);
+  filter: blur(70px);
   z-index: -1;
   pointer-events: none;
   border-radius: 50%;
 }
 
 .zen-quote-footer blockquote {
-  font-size: clamp(1.4rem, 3vw, 2rem);
-  font-weight: 200;
-  letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(1.28rem, 2.6vw, 1.9rem);
+  font-weight: 360;
+  letter-spacing: 0.08em;
+  color: rgba(228, 236, 255, 0.9);
   font-family: "Cormorant Garamond", "Bodoni Moda", "Songti SC", "STKaiti", serif;
   position: relative;
   display: inline-block;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  text-shadow: 0 8px 18px rgba(4, 8, 20, 0.3);
 }
 
 .zen-quote-footer blockquote::before {
   content: "";
   position: absolute;
-  bottom: -2rem;
+  bottom: -1.6rem;
   left: 50%;
   transform: translateX(-50%);
-  width: 60px;
+  width: 52px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  background: linear-gradient(90deg, transparent, rgba(184, 193, 214, 0.62), transparent);
 }
 
 .zen-quote-footer blockquote::after {
