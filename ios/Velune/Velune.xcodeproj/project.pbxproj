@@ -22,12 +22,11 @@
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		323FF3542F6037C300423EAA /* Exceptions for "Velune" folder in "Velune" target */ = {
-				isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-				membershipExceptions = (
-					DebugInfo.plist,
-					Info.plist,
-					ReleaseInfo.plist,
-				);
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				DebugInfo.plist,
+				ReleaseInfo.plist,
+			);
 			target = 321D07BC2EDA8CD8007F4762 /* Velune */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */

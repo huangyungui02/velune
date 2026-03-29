@@ -17,7 +17,7 @@ final class AuthManager {
     var userEmail: String? { currentUser?.email }
     var userName: String? {
         if let metadata = currentUser?.userMetadata,
-           case let .string(name) = metadata["full_name"],
+           case let .string(name) = metadata["nickname"],
            !name.isEmpty {
             return name
         }
@@ -127,8 +127,6 @@ final class AuthManager {
         )
 
         _ = try await supabase.auth.signInWithIdToken(credentials: credentials)
-
-        try await updateUserMetadataIfAvailable(from: credential)
     }
 
     func deleteAccount() async throws {
@@ -153,10 +151,14 @@ final class AuthManager {
 
     func updateUserName(_ name: String) async throws {
         let supabase = try Backend.requireSupabase()
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let response = try await supabase.auth.update(
             user: UserAttributes(
                 data: [
-                    "full_name": .string(name)
+                    "nickname": .string(trimmedName),
+                    "full_name": .null,
+                    "given_name": .null,
+                    "family_name": .null
                 ]
             )
         )
@@ -223,34 +225,6 @@ final class AuthManager {
             .execute()
 
         installationBindingSyncState = syncState
-    }
-
-    private func updateUserMetadataIfAvailable(from credential: ASAuthorizationAppleIDCredential) async throws {
-        let supabase = try Backend.requireSupabase()
-        guard let fullName = credential.fullName else { return }
-
-        var nameParts: [String] = []
-        if let givenName = fullName.givenName {
-            nameParts.append(givenName)
-        }
-        if let middleName = fullName.middleName {
-            nameParts.append(middleName)
-        }
-        if let familyName = fullName.familyName {
-            nameParts.append(familyName)
-        }
-
-        let fullNameString = nameParts.joined(separator: " ")
-
-        try await supabase.auth.update(
-            user: UserAttributes(
-                data: [
-                    "full_name": .string(fullNameString),
-                    "given_name": .string(fullName.givenName ?? ""),
-                    "family_name": .string(fullName.familyName ?? "")
-                ]
-            )
-        )
     }
 
     private func applyAuthenticatedSession(_ session: Session) {

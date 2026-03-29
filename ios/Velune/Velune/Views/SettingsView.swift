@@ -25,7 +25,7 @@ struct SettingsView: View {
                     if authManager.isAnonymous {
                         VStack(alignment: .leading, spacing: 14) {
                             Text("settings.account.anonymous.title")
-                                .font(.body.weight(.medium))
+                                .font(.body)
                                 .foregroundStyle(UITheme.primaryText)
 
                             AppleSignInSettingsRow { error in
@@ -231,7 +231,7 @@ struct SettingsView: View {
                     authManager.userName
                         ?? String(
                             localized: "settings.account.defaultName",
-                            defaultValue: "灵魂旅人"
+                            defaultValue: "Soul Traveler"
                         )
                 )
                 .font(.headline)
@@ -451,7 +451,7 @@ struct AccountSettingsView: View {
         .onAppear {
             editingName = authManager.userName ?? String(
                 localized: "settings.account.defaultName",
-                defaultValue: "灵魂旅人"
+                defaultValue: "Soul Traveler"
             )
         }
         .alert("settings.delete.confirm.title", isPresented: $showDeleteConfirmation) {
@@ -484,7 +484,7 @@ struct AccountSettingsView: View {
             // Revert on failure
             editingName = authManager.userName ?? String(
                 localized: "settings.account.defaultName",
-                defaultValue: "灵魂旅人"
+                defaultValue: "Soul Traveler"
             )
         }
     }
