@@ -119,11 +119,14 @@ final class SubscriptionManager {
     func restorePurchases() async throws {
         let currentUserId = try requireAuthenticatedRevenueCatUserId()
         try await ensureRevenueCatIdentityMatches(userId: currentUserId)
+        let infoBeforeRestore = try await Purchases.shared.customerInfo()
+        try ensureRestoreAccountMatches(infoBeforeRestore, expectedUserId: currentUserId)
 
         isRestoring = true
         defer { isRestoring = false }
 
         let customerInfo = try await Purchases.shared.restorePurchases()
+        try ensureRestoreAccountMatches(customerInfo, expectedUserId: currentUserId)
         applyCustomerInfo(customerInfo)
         await syncBillingStateQuietly()
     }
@@ -319,6 +322,31 @@ final class SubscriptionManager {
         let shortenedFraction = fraction.prefix(3)
         let suffix = value[zoneIndex...]
         return String(prefix) + shortenedFraction + suffix
+    }
+
+    private func ensureRestoreAccountMatches(_ customerInfo: CustomerInfo, expectedUserId: String) throws {
+        guard let originalUserId = normalizeUUID(customerInfo.originalAppUserId) else {
+            return
+        }
+
+        guard originalUserId == expectedUserId else {
+            print("rc restore blocked: expectedAppUserID=\(expectedUserId), originalAppUserID=\(originalUserId)")
+            throw NSError(
+                domain: "Billing",
+                code: -5,
+                userInfo: [
+                    NSLocalizedDescriptionKey: String(localized: "billing.error.restoreAccountMismatch")
+                ]
+            )
+        }
+    }
+
+    private func normalizeUUID(_ value: String) -> String? {
+        let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard UUID(uuidString: normalized) != nil else {
+            return nil
+        }
+        return normalized.lowercased()
     }
 
     private func applyDefaultMonthlyPrice() {

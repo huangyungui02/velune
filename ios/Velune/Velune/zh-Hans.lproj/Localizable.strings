@@ -94,6 +94,7 @@
 "billing.error.insufficientStardust.premium" = "你的星尘已用尽。";
 "billing.error.missingRevenueCatKey" = "未配置 RevenueCat 公钥。";
 "billing.error.signInRequiredForPurchase" = "请先登录后再订阅。";
+"billing.error.restoreAccountMismatch" = "当前登录账号与购买绑定账号不一致，无法恢复购买。请登录购买时使用的账号。";
 "billing.error.offeringUnavailable" = "当前暂无可购买套餐，请稍后重试。";
 "paywall.restore.notFound" = "未找到有效订阅。如果刚刚完成购买，请稍后再试。";
 
@@ -106,3 +107,4 @@
 "paywall.action.subscribe" = "进入深处";
 "paywall.signInRequired.title" = "需要先登录";
 "paywall.signInRequired.description" = "匿名账号暂不支持订阅。请先登录。";
+"paywall.restore.signInRequired.description" = "匿名账号暂不支持恢复购买。请先登录。";

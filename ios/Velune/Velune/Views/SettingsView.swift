@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var isSigningOut = false
     @State private var showPaywall = false
     @State private var showStardustInfo = false
+    @State private var showSignInSheet = false
     @State private var feedbackMessage: String?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.requestReview) private var requestReview
@@ -82,7 +83,7 @@ struct SettingsView: View {
                     }
 
                     Button {
-                        Task { await restorePurchases() }
+                        handleRestoreTap()
                     } label: {
                         HStack(spacing: 10) {
                             settingsRowLabel("settings.billing.action.restore", systemImage: "arrow.clockwise")
@@ -194,6 +195,9 @@ struct SettingsView: View {
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
+        .sheet(isPresented: $showSignInSheet) {
+            SignInRequiredSheet(descriptionKey: "paywall.restore.signInRequired.description")
+        }
     }
 
     private var accountRow: some View {
@@ -272,6 +276,15 @@ struct SettingsView: View {
         } catch {
             feedbackMessage = error.localizedDescription
         }
+    }
+
+    private func handleRestoreTap() {
+        guard !authManager.isAnonymous else {
+            showSignInSheet = true
+            return
+        }
+
+        Task { await restorePurchases() }
     }
 
     private var appVersion: String {

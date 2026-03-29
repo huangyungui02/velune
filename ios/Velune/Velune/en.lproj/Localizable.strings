@@ -94,6 +94,7 @@
 "billing.error.insufficientStardust.premium" = "Your stardust is exhausted.";
 "billing.error.missingRevenueCatKey" = "RevenueCat public key is missing.";
 "billing.error.signInRequiredForPurchase" = "Please sign in before subscribing.";
+"billing.error.restoreAccountMismatch" = "This signed-in account does not match the account that owns the purchase. Sign in with the original account to restore.";
 "billing.error.offeringUnavailable" = "No purchasable package is available right now. Please try again later.";
 "paywall.restore.notFound" = "No active subscription found. If you recently purchased, please try again in a moment.";
 
@@ -106,3 +107,4 @@
 "paywall.action.subscribe" = "Enter";
 "paywall.signInRequired.title" = "Sign In Required";
 "paywall.signInRequired.description" = "Anonymous accounts can’t subscribe. Sign in to continue.";
+"paywall.restore.signInRequired.description" = "Anonymous accounts can’t restore purchases. Sign in to continue.";
