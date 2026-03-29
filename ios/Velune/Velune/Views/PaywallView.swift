@@ -113,6 +113,13 @@ struct PaywallView: View {
                         }
                         .disabled(subscriptionManager.isRestoring || !subscriptionManager.isRevenueCatAvailable)
                     }
+
+                    Text("paywall.subscription.stardust.note")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 32)
                     
                     // Legal
                     HStack(spacing: 16) {

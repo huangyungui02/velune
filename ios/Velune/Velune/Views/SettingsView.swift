@@ -66,6 +66,16 @@ struct SettingsView: View {
                         stardustAccessView
                     }
 
+                    if let renewalTimeText {
+                        LabeledContent {
+                            Text(renewalTimeText)
+                                .font(.system(.body, design: .rounded).monospacedDigit())
+                                .foregroundStyle(UITheme.secondaryText)
+                        } label: {
+                            settingsRowLabel("settings.billing.renewalTime", systemImage: "clock")
+                        }
+                    }
+
                     if shouldShowUpgradeRow {
                         Button {
                             showPaywall = true
@@ -243,7 +253,7 @@ struct SettingsView: View {
 
     private var stardustInfoPopover: some View {
         ScrollView {
-            Text("settings.billing.stardust.description")
+            Text(stardustInfoDescriptionKey)
                 .font(.subheadline)
                 .foregroundStyle(UITheme.secondaryText)
                 .multilineTextAlignment(.leading)
@@ -310,6 +320,22 @@ struct SettingsView: View {
 
     private var shouldShowUpgradeRow: Bool {
         !subscriptionManager.isPremium && !shouldShowGetStardustButton
+    }
+
+    private var renewalTimeText: String? {
+        guard subscriptionManager.isPremium,
+              let renewalDate = subscriptionManager.entitlementExpiresAt
+        else {
+            return nil
+        }
+
+        return DateFormatter.localizedString(from: renewalDate, dateStyle: .medium, timeStyle: .none)
+    }
+
+    private var stardustInfoDescriptionKey: LocalizedStringKey {
+        subscriptionManager.isPremium
+            ? "settings.billing.stardust.description.premium"
+            : "settings.billing.stardust.description"
     }
 
     @ViewBuilder

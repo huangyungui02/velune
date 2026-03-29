@@ -23,8 +23,10 @@
 "settings.billing.action.getStardust" = "获取星尘";
 "settings.billing.action.upgrade" = "升级";
 "settings.billing.action.restore" = "恢复购买";
+"settings.billing.renewalTime" = "续订时间";
 "settings.billing.price" = "订阅价格";
 "settings.billing.stardust.description" = "每日首次回响以及首次延续对话免费。\n\n每次额外回响消耗 5 星尘，每次额外对话消耗 1 星尘。";
+"settings.billing.stardust.description.premium" = "你的订阅在每个计费周期包含 1000 星尘，并会在每次续订时刷新。\n\n未使用的星尘不会结转到下一个计费周期。\n\n每日首次回响以及首次延续对话免费。\n\n每次额外回响消耗 5 星尘，每次额外对话消耗 1 星尘。";
 "settings.billing.revenuecat.missingKey" = "未配置 RevenueCat 公钥，暂不可购买。";
 "settings.error.title" = "操作失败";
 "settings.signOut.confirm.title" = "确认退出登录？";
@@ -90,8 +92,8 @@
 
 "app.error.unauthenticated" = "用户尚未登录";
 "billing.price.perMonthSuffix" = "/月";
-"billing.action.openPaywall" = "前往升级";
-"billing.error.insufficientStardust.free" = "你的星尘不足，升级到付费版可获取更多星尘。";
+"billing.action.openPaywall" = "查看订阅";
+"billing.error.insufficientStardust.free" = "你的星尘不足，订阅后可获得更多星尘。";
 "billing.error.insufficientStardust.premium" = "你的星尘已用尽。";
 "billing.error.missingRevenueCatKey" = "未配置 RevenueCat 公钥。";
 "billing.error.signInRequiredForPurchase" = "请先登录后再订阅。";
@@ -105,6 +107,7 @@
 "paywall.feature.moreStardust.subtitle" = "每月 1000 星尘，用于继续对话与回响。";
 "paywall.feature.priorityAccess.title" = "优先体验";
 "paywall.feature.priorityAccess.subtitle" = "新能力与功能，将优先向你开放。";
+"paywall.subscription.stardust.note" = "你的订阅在每个计费周期包含 1000 星尘，并会在每次续订时刷新。未使用的星尘不会结转。";
 "paywall.action.subscribe" = "进入深处";
 "paywall.signInRequired.title" = "需要先登录";
 "paywall.signInRequired.description" = "匿名账号暂不支持订阅。请先登录。";

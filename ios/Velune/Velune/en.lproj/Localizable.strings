@@ -23,8 +23,10 @@
 "settings.billing.action.getStardust" = "Get Stardust";
 "settings.billing.action.upgrade" = "Upgrade";
 "settings.billing.action.restore" = "Restore Purchases";
+"settings.billing.renewalTime" = "Renewal Time";
 "settings.billing.price" = "Subscription Price";
-"settings.billing.stardust.description" = "Your first Echo and first conversation continuation each day are free.\n\nEach extra Echo costs 5 stardust, and each extra chat message costs 1 stardust.";
+"settings.billing.stardust.description" = "Your first echo and first conversation continuation each day are free.\n\nEach extra echo costs 5 stardust, and each extra chat message costs 1 stardust.";
+"settings.billing.stardust.description.premium" = "Your subscription includes 1000 stardust per billing period. Stardust refreshes with each renewal.\n\nUnused stardust does not carry over after the billing period.\n\nYour first echo and first conversation continuation each day are free.\n\nEach extra echo costs 5 stardust, and each extra chat message costs 1 stardust.";
 "settings.billing.revenuecat.missingKey" = "RevenueCat public key is missing. Purchases are disabled.";
 "settings.error.title" = "Action Failed";
 "settings.signOut.confirm.title" = "Are you sure you want to sign out?";
@@ -90,8 +92,8 @@
 
 "app.error.unauthenticated" = "User is not authenticated";
 "billing.price.perMonthSuffix" = "/month";
-"billing.action.openPaywall" = "See Premium";
-"billing.error.insufficientStardust.free" = "Your stardust is low. Upgrade to Premium to get more.";
+"billing.action.openPaywall" = "View subscription";
+"billing.error.insufficientStardust.free" = "Your stardust is low. Subscribe for more stardust.";
 "billing.error.insufficientStardust.premium" = "Your stardust is exhausted.";
 "billing.error.missingRevenueCatKey" = "RevenueCat public key is missing.";
 "billing.error.signInRequiredForPurchase" = "Please sign in before subscribing.";
@@ -105,6 +107,7 @@
 "paywall.feature.moreStardust.subtitle" = "1000 stardust each month for continued conversations and echoes.";
 "paywall.feature.priorityAccess.title" = "Priority Access";
 "paywall.feature.priorityAccess.subtitle" = "Be the first to experience new features and capabilities.";
+"paywall.subscription.stardust.note" = "Your subscription includes 1000 stardust per billing period. Stardust refreshes with each renewal. Unused stardust does not carry over.";
 "paywall.action.subscribe" = "Enter";
 "paywall.signInRequired.title" = "Sign In Required";
 "paywall.signInRequired.description" = "Anonymous accounts can’t subscribe. Sign in to continue.";
