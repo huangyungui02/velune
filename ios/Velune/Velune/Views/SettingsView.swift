@@ -128,7 +128,11 @@ struct SettingsView: View {
                         settingsRowLabel("settings.rateApp", systemImage: "star")
                     }
                     .foregroundStyle(UITheme.primaryText)
+                } header: {
+                    sectionHeader("settings.section.support")
+                }
 
+                Section {
                     Link(destination: AppLinks.terms) {
                         settingsRowLabel("settings.link.terms", systemImage: "doc.text")
                     }
@@ -139,7 +143,7 @@ struct SettingsView: View {
                     }
                     .foregroundStyle(UITheme.primaryText)
                 } header: {
-                    sectionHeader("settings.section.support")
+                    sectionHeader("settings.section.legal")
                 }
 
                 Section {
