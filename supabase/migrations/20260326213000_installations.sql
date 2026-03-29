@@ -121,11 +121,14 @@ BEGIN
     )
     ON CONFLICT (installation_id, user_id)
     DO UPDATE SET
-        is_anonymous = public.installations.is_anonymous AND EXCLUDED.is_anonymous,
+        -- Keep historical identity type immutable for an existing binding.
+        -- This removes link-style anonymous -> formal upgrades at this layer.
+        is_anonymous = public.installations.is_anonymous,
         refresh_token = CASE
-            WHEN public.installations.is_anonymous AND EXCLUDED.is_anonymous THEN
+            WHEN public.installations.is_anonymous THEN
                 CASE
-                    WHEN EXCLUDED.refresh_token IS NOT NULL
+                    WHEN EXCLUDED.is_anonymous
+                         AND EXCLUDED.refresh_token IS NOT NULL
                          AND char_length(trim(EXCLUDED.refresh_token)) > 0 THEN EXCLUDED.refresh_token
                     ELSE public.installations.refresh_token
                 END

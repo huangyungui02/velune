@@ -117,24 +117,7 @@ final class AuthManager {
             idToken: idToken
         )
 
-        if isAnonymous {
-            do {
-                _ = try await supabase.auth.linkIdentityWithIdToken(credentials: credentials)
-            } catch {
-                _ = try await supabase.auth.signInWithIdToken(credentials: credentials)
-            }
-        } else {
-            _ = try await supabase.auth.signInWithIdToken(credentials: credentials)
-        }
-
-        if let session = supabase.auth.currentSession {
-            try await upsertInstallationBinding(
-                userId: session.user.id,
-                isAnonymous: false,
-                refreshToken: nil,
-                force: true
-            )
-        }
+        _ = try await supabase.auth.signInWithIdToken(credentials: credentials)
 
         try await updateUserMetadataIfAvailable(from: credential)
     }
