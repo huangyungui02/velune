@@ -95,8 +95,7 @@
 "billing.error.offeringUnavailable" = "No purchasable package is available right now. Please try again later.";
 "paywall.restore.notFound" = "No active subscription found. If you recently purchased, please try again in a moment.";
 
-"paywall.title" = "
-";
+"paywall.title" = "Velune · Depth";
 "paywall.subtitle" = "A glimmer in the heart, and the echo goes on.";
 "paywall.feature.moreStardust.title" = "More Stardust";
 "paywall.feature.moreStardust.subtitle" = "1000 stardust each month for continued conversations and echoes.";
