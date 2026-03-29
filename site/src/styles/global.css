@@ -89,20 +89,21 @@ main {
 
 .hero {
   text-align: center;
-  min-height: 88vh;
+  min-height: 86vh;
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: 0.95rem;
-  padding: 7rem 1rem 3rem;
+  gap: 1.3rem;
+  padding: 6.5rem 1rem 3rem;
 }
 
 .hero-mark {
-  width: 110px;
-  height: 110px;
-  margin-bottom: 1.8rem;
+  width: clamp(124px, 11vw, 164px);
+  height: clamp(124px, 11vw, 164px);
+  margin-bottom: 1.25rem;
   position: relative;
-  transition: transform 220ms ease;
+  filter: drop-shadow(0 14px 32px rgba(0, 0, 0, 0.28));
+  transition: transform 220ms ease, filter 220ms ease;
 }
 
 .hero-mark::before,
@@ -116,15 +117,15 @@ main {
 }
 
 .hero-mark::before {
-  width: 77.344px;
-  height: 77.344px;
-  border: 1.719px solid rgba(255, 255, 255, 0.5);
+  width: 72%;
+  height: 72%;
+  border: 1.8px solid rgba(255, 255, 255, 0.52);
 }
 
 .hero-mark::after {
-  width: 51.563px;
-  height: 51.563px;
-  border: 2.148px solid rgba(255, 255, 255, 0.8);
+  width: 46%;
+  height: 46%;
+  border: 2.2px solid rgba(255, 255, 255, 0.82);
 }
 
 .eyebrow {
@@ -150,6 +151,15 @@ h1 {
   line-height: 0.98;
   font-family: "Cormorant Garamond", "Bodoni Moda", "Songti SC", "STKaiti", serif;
   text-shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
+}
+
+.hero-title {
+  margin-top: 0;
+  font-size: clamp(2.8rem, 7vw, 5.6rem);
+  letter-spacing: 0.06em;
+  font-weight: 500;
+  line-height: 1.02;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.42);
 }
 
 .hero-copy {
@@ -566,8 +576,19 @@ blockquote {
 
   .hero {
     min-height: auto;
-    padding-top: 4.2rem;
+    padding-top: 3.7rem;
     padding-bottom: 2.2rem;
+  }
+
+  .hero-mark {
+    width: clamp(106px, 30vw, 126px);
+    height: clamp(106px, 30vw, 126px);
+    margin-bottom: 0.9rem;
+  }
+
+  .hero-title {
+    font-size: clamp(2.3rem, 11vw, 3.6rem);
+    letter-spacing: 0.05em;
   }
 
   .eyebrow {
