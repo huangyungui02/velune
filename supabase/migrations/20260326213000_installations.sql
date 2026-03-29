@@ -11,9 +11,14 @@ CREATE TABLE public.installations (
         CHECK (char_length(trim(installation_id)) > 0)
 );
 
--- One installation id maps to one current user identity.
-CREATE UNIQUE INDEX idx_installations_installation_id_unique
-    ON public.installations (installation_id);
+-- One installation id can bind multiple user identities.
+CREATE UNIQUE INDEX idx_installations_installation_id_user_id_unique
+    ON public.installations (installation_id, user_id);
+
+-- One installation id can only keep one anonymous identity.
+CREATE UNIQUE INDEX idx_installations_installation_id_anonymous_unique
+    ON public.installations (installation_id)
+    WHERE is_anonymous = true;
 
 CREATE INDEX idx_installations_user_id
     ON public.installations (user_id);
@@ -58,6 +63,7 @@ BEGIN
       AND i.is_anonymous = true
       AND i.refresh_token IS NOT NULL
       AND char_length(trim(i.refresh_token)) > 0
+    ORDER BY i.updated_at DESC
     LIMIT 1;
 END;
 $$;
@@ -76,6 +82,7 @@ DECLARE
     v_installation_id TEXT := trim(coalesce(p_installation_id, ''));
     v_refresh_token TEXT := trim(coalesce(p_refresh_token, ''));
     v_user_id UUID := auth.uid();
+    v_requested_is_anonymous BOOLEAN := coalesce(p_is_anonymous, false);
 BEGIN
     IF v_user_id IS NULL THEN
         RAISE EXCEPTION 'User is not authenticated';
@@ -83,6 +90,18 @@ BEGIN
 
     IF char_length(v_installation_id) = 0 THEN
         RAISE EXCEPTION 'installation_id is required';
+    END IF;
+
+    -- Keep only one anonymous row per installation before upserting
+    -- the current binding.
+    IF v_requested_is_anonymous THEN
+        UPDATE public.installations
+        SET
+            is_anonymous = false,
+            refresh_token = NULL
+        WHERE installation_id = v_installation_id
+          AND is_anonymous = true
+          AND user_id <> v_user_id;
     END IF;
 
     INSERT INTO public.installations (
@@ -94,17 +113,24 @@ BEGIN
     VALUES (
         v_installation_id,
         v_user_id,
-        p_is_anonymous,
+        v_requested_is_anonymous,
         CASE
-            WHEN p_is_anonymous AND char_length(v_refresh_token) > 0 THEN v_refresh_token
+            WHEN v_requested_is_anonymous AND char_length(v_refresh_token) > 0 THEN v_refresh_token
             ELSE NULL
         END
     )
-    ON CONFLICT (installation_id)
+    ON CONFLICT (installation_id, user_id)
     DO UPDATE SET
-        user_id = EXCLUDED.user_id,
-        is_anonymous = EXCLUDED.is_anonymous,
-        refresh_token = EXCLUDED.refresh_token;
+        is_anonymous = public.installations.is_anonymous AND EXCLUDED.is_anonymous,
+        refresh_token = CASE
+            WHEN public.installations.is_anonymous AND EXCLUDED.is_anonymous THEN
+                CASE
+                    WHEN EXCLUDED.refresh_token IS NOT NULL
+                         AND char_length(trim(EXCLUDED.refresh_token)) > 0 THEN EXCLUDED.refresh_token
+                    ELSE public.installations.refresh_token
+                END
+            ELSE NULL
+        END;
 END;
 $$;
 
