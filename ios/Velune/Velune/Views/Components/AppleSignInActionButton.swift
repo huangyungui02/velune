@@ -67,13 +67,6 @@ private struct AppleSignInButtonChrome: ViewModifier {
         case .capsule:
             content
                 .clipShape(.capsule)
-                .padding(2)
-                .background(.ultraThinMaterial, in: .capsule)
-                .overlay {
-                    Capsule()
-                        .strokeBorder(.white.opacity(0.18), lineWidth: 0.6)
-                }
-                .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
         }
     }
 }
