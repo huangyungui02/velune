@@ -63,6 +63,43 @@ const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
     headers: { "Content-Type": "application/json" },
   });
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const serializeErrorDetail = (error: unknown): Record<string, unknown> => {
+  if (error instanceof Error) {
+    const detail: Record<string, unknown> = {
+      name: error.name,
+      message: error.message,
+    };
+
+    if (error.stack) {
+      detail.stack = error.stack;
+    }
+
+    return detail;
+  }
+
+  if (isRecord(error)) {
+    const detail = Object.fromEntries(
+      Object.entries(error).map(([key, value]) => [
+        key,
+        value instanceof Error ? serializeErrorDetail(value) : value,
+      ]),
+    );
+
+    if (!("message" in detail)) {
+      detail.message = JSON.stringify(error);
+    }
+
+    return detail;
+  }
+
+  return {
+    message: typeof error === "string" ? error : String(error),
+  };
+};
+
 const parseISODate = (value?: string | null): Date | null => {
   if (!value) return null;
   const parsed = new Date(value);
@@ -471,15 +508,13 @@ Deno.serve(async (req) => {
 
   const projectId = Deno.env.get("REVENUECAT_PROJECT_ID")?.trim();
   const apiKey = Deno.env.get("REVENUECAT_V2_API_KEY")?.trim();
-  if (!projectId || !apiKey) {
+  const entitlementId = Deno.env.get("REVENUECAT_ENTITLEMENT_ID")?.trim();
+  if (!projectId || !apiKey || !entitlementId) {
     return jsonResponse(
-      { error: "Missing RevenueCat v2 credentials in environment" },
+      { error: "Missing RevenueCat credentials in environment" },
       500,
     );
   }
-
-  const entitlementId =
-    Deno.env.get("REVENUECAT_ENTITLEMENT_ID")?.trim() || "premium";
 
   try {
     const payload = await req.json();
@@ -510,6 +545,7 @@ Deno.serve(async (req) => {
     }
 
     const processed: Array<Record<string, unknown>> = [];
+    let hasSyncFailure = false;
 
     for (const userId of userIds) {
       try {
@@ -531,7 +567,8 @@ Deno.serve(async (req) => {
           usedWebhookFallback: state.usedWebhookFallback,
         });
       } catch (error) {
-        const detail = error instanceof Error ? error.message : String(error);
+        hasSyncFailure = true;
+        const detail = serializeErrorDetail(error);
         console.error(
           JSON.stringify({
             source: "revenuecat-webhook",
@@ -558,18 +595,27 @@ Deno.serve(async (req) => {
       }),
     );
 
+    if (hasSyncFailure) {
+      return jsonResponse(
+        { error: "Failed to sync one or more billing states", eventId, eventType, processed },
+        500,
+      );
+    }
+
     return jsonResponse({ ok: true, eventId, eventType, processed });
   } catch (error) {
+    const detail = serializeErrorDetail(error);
     console.error(
       JSON.stringify({
         source: "revenuecat-webhook",
         level: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: "Unhandled webhook error",
+        detail,
       }),
     );
 
     return jsonResponse(
-      { error: error instanceof Error ? error.message : String(error) },
+      { error: "Unhandled webhook error", detail },
       500,
     );
   }

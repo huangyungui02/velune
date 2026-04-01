@@ -222,19 +222,19 @@ BEGIN
         v_reference
     );
 
-    UPDATE public.user_billing_state
+    UPDATE public.user_billing_state AS ubs
     SET
         entitlement_id = NULLIF(trim(COALESCE(p_entitlement_id, '')), ''),
         product_id = NULLIF(trim(COALESCE(p_product_id, '')), ''),
         is_entitlement_active = v_incoming_active,
         entitlement_expires_at = p_entitlement_expires_at,
         credits_refreshed_on = CASE
-            WHEN is_entitlement_active IS DISTINCT FROM v_incoming_active THEN NULL
-            ELSE credits_refreshed_on
+            WHEN ubs.is_entitlement_active IS DISTINCT FROM v_incoming_active THEN NULL
+            ELSE ubs.credits_refreshed_on
         END,
         rc_environment = NULLIF(trim(COALESCE(p_rc_environment, '')), ''),
         rc_last_synced_at = NOW()
-    WHERE user_id = p_user_id;
+    WHERE ubs.user_id = p_user_id;
 
     v_state := public.refresh_user_billing_state(p_user_id);
 
