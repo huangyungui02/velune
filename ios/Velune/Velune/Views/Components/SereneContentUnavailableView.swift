@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SereneContentUnavailableView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let title: LocalizedStringKey
     let symbol: String
     let subtitle: LocalizedStringKey?
@@ -22,47 +23,66 @@ struct SereneContentUnavailableView: View {
     }
 
     var body: some View {
-        ContentUnavailableView {
-            VStack(spacing: 12) {
-                Image(systemName: symbol)
-                    .symbolRenderingMode(.hierarchical)
-                    .font(.system(size: 19, weight: .medium))
-                    .foregroundStyle(UITheme.secondaryText)
-                    .padding(10)
-                    .background(.white.opacity(0.04), in: Circle())
+        VStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(.ultraThinMaterial)
+                    .frame(width: 54, height: 54)
+                    .overlay {
+                        Circle()
+                            .strokeBorder(.white.opacity(0.18), lineWidth: 0.8)
+                    }
 
-                Text(title)
+                Image(systemName: symbol)
                     .font(.title3.weight(.semibold))
-                    .fontDesign(.serif)
-                    .multilineTextAlignment(.center)
                     .foregroundStyle(UITheme.primaryText)
             }
-        } description: {
+
+            Text(title)
+                .font(.title3.weight(.semibold))
+                .fontDesign(.serif)
+                .foregroundStyle(UITheme.primaryText)
+                .multilineTextAlignment(.center)
+
             if let subtitle {
                 Text(subtitle)
-                    .font(.footnote)
-                    .fontDesign(.serif)
+                    .font(.subheadline)
                     .foregroundStyle(UITheme.secondaryText)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
-                    .padding(.top)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-        } actions: {
+
             if let actionTitle, let action {
                 Button(action: action) {
-                    Text(actionTitle)
-                        .font(.footnote.weight(.semibold))
-                        .fontDesign(.serif)
-                        .foregroundStyle(UITheme.primaryText)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
+                    Label {
+                        Text(actionTitle)
+                            .fontDesign(.serif)
+                    } icon: {
+                        Image(systemName: "pencil")
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(UITheme.primaryActionForeground(for: colorScheme))
+                    .labelStyle(.titleAndIcon)
+                    .imageScale(.small)
+                    .padding(.horizontal, 18)
+                    .frame(height: 46)
                 }
                 .buttonStyle(.plain)
-                .background(Color.clear, in: .capsule)
-                .glassEffect(in: .capsule)
-                .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+                .fixedSize()
+                .background(UITheme.accent, in: .capsule)
+                .overlay {
+                    Capsule()
+                        .strokeBorder(.black.opacity(0.08), lineWidth: 0.6)
+                }
+                .shadow(color: .black.opacity(0.16), radius: 10, y: 5)
             }
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 22)
+        .frame(maxWidth: 360)
+        .background(Color.clear, in: .rect(cornerRadius: 24))
+        .glassEffect(in: .rect(cornerRadius: 24))
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
