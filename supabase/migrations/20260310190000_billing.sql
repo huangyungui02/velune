@@ -9,7 +9,7 @@ CREATE TABLE user_billing_state (
     rc_environment TEXT,
     rc_last_synced_at TIMESTAMPTZ,
     credits INT NOT NULL DEFAULT 0,
-    daily_free_echo_used_on DATE,
+    credits_refreshed_on DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT user_billing_state_credits_check CHECK (credits >= 0)
@@ -98,7 +98,11 @@ AS $$
 DECLARE
     v_state user_billing_state;
     v_reference TIMESTAMPTZ := NOW();
+    v_today DATE := timezone('utc', v_reference)::DATE;
     v_is_active BOOLEAN;
+    v_daily_credits INT;
+    v_should_refresh BOOLEAN;
+    v_status_changed BOOLEAN;
     v_credits INT;
 BEGIN
     PERFORM public.ensure_user_billing_state(p_user_id);
@@ -119,18 +123,26 @@ BEGIN
         v_reference
     );
 
+    v_daily_credits := CASE
+        WHEN v_is_active THEN 100
+        ELSE 10
+    END;
+    v_status_changed := v_state.is_entitlement_active IS DISTINCT FROM v_is_active;
+    v_should_refresh := v_state.credits_refreshed_on IS DISTINCT FROM v_today;
+
     v_credits := CASE
-        WHEN v_is_active THEN GREATEST(v_state.credits, 0)
-        WHEN COALESCE(v_state.is_entitlement_active, false) AND NOT v_is_active THEN 0
-        ELSE GREATEST(v_state.credits, 0)
+        WHEN v_should_refresh OR v_status_changed THEN v_daily_credits
+        ELSE LEAST(GREATEST(v_state.credits, 0), v_daily_credits)
     END;
 
     IF v_state.is_entitlement_active IS DISTINCT FROM v_is_active
+        OR v_state.credits_refreshed_on IS DISTINCT FROM v_today
         OR v_state.credits IS DISTINCT FROM v_credits
     THEN
         UPDATE public.user_billing_state
         SET
             is_entitlement_active = v_is_active,
+            credits_refreshed_on = v_today,
             credits = v_credits
         WHERE user_id = p_user_id
         RETURNING * INTO v_state;
@@ -216,9 +228,12 @@ BEGIN
         product_id = NULLIF(trim(COALESCE(p_product_id, '')), ''),
         is_entitlement_active = v_incoming_active,
         entitlement_expires_at = p_entitlement_expires_at,
+        credits_refreshed_on = CASE
+            WHEN is_entitlement_active IS DISTINCT FROM v_incoming_active THEN NULL
+            ELSE credits_refreshed_on
+        END,
         rc_environment = NULLIF(trim(COALESCE(p_rc_environment, '')), ''),
-        rc_last_synced_at = NOW(),
-        credits = CASE WHEN v_incoming_active THEN 1000 ELSE 0 END
+        rc_last_synced_at = NOW()
     WHERE user_id = p_user_id;
 
     v_state := public.refresh_user_billing_state(p_user_id);
@@ -304,35 +319,12 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE
-    v_state user_billing_state;
-    v_today DATE := timezone('utc', NOW())::DATE;
 BEGIN
-    v_state := public.refresh_user_billing_state(p_user_id);
-
-    IF NOT v_state.is_entitlement_active
-        AND v_state.daily_free_echo_used_on IS DISTINCT FROM v_today
-    THEN
-        UPDATE public.user_billing_state
-        SET daily_free_echo_used_on = v_today
-        WHERE user_id = p_user_id
-        RETURNING * INTO v_state;
-
-        RETURN QUERY
-        SELECT
-            true,
-            NULL::TEXT,
-            NULL::TEXT,
-            v_state.credits,
-            v_state.is_entitlement_active;
-        RETURN;
-    END IF;
-
     RETURN QUERY
     SELECT *
     FROM public.consume_stardust(
         p_user_id,
-        5
+        1
     );
 END;
 $$;
@@ -361,6 +353,60 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.refund_stardust(
+    p_user_id UUID,
+    p_amount INT
+)
+RETURNS TABLE (
+    ok BOOLEAN,
+    code TEXT,
+    message TEXT,
+    credits INT,
+    is_entitlement_active BOOLEAN
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_state user_billing_state;
+    v_amount INT;
+    v_daily_credits INT;
+BEGIN
+    v_amount := GREATEST(COALESCE(p_amount, 0), 0);
+    v_state := public.refresh_user_billing_state(p_user_id);
+
+    IF v_amount = 0 THEN
+        RETURN QUERY
+        SELECT
+            true,
+            NULL::TEXT,
+            NULL::TEXT,
+            v_state.credits,
+            v_state.is_entitlement_active;
+        RETURN;
+    END IF;
+
+    v_daily_credits := CASE
+        WHEN v_state.is_entitlement_active THEN 100
+        ELSE 10
+    END;
+
+    UPDATE public.user_billing_state AS ubs
+    SET credits = LEAST(ubs.credits + v_amount, v_daily_credits)
+    WHERE ubs.user_id = p_user_id
+    RETURNING ubs.* INTO v_state;
+
+    RETURN QUERY
+    SELECT
+        true,
+        NULL::TEXT,
+        NULL::TEXT,
+        v_state.credits,
+        v_state.is_entitlement_active;
+END;
+$$;
+
 REVOKE ALL ON FUNCTION public.ensure_user_billing_state(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.billing_effective_is_active(BOOLEAN, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.handle_new_auth_user_billing_state() FROM PUBLIC;
@@ -370,9 +416,11 @@ REVOKE ALL ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEA
 REVOKE ALL ON FUNCTION public.consume_stardust(UUID, INT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.consume_echo_credit(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.consume_chat_credit(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.refund_stardust(UUID, INT) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.get_user_credit_state() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_user_credit_state() TO service_role;
 GRANT EXECUTE ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.consume_echo_credit(UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION public.consume_chat_credit(UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.refund_stardust(UUID, INT) TO service_role;

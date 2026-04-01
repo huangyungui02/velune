@@ -10,7 +10,7 @@ final class SubscriptionManager {
     private let logger = AppLogger.billing
 
     var isPremium = false
-    var credits = BillingConfig.freeMonthlyCredits
+    var credits = BillingConfig.freeDailyCredits
     var monthlyPriceText = BillingConfig.premiumMonthlyPriceUSD
     var entitlementExpiresAt: Date?
 
@@ -216,7 +216,7 @@ final class SubscriptionManager {
 
     private func resetToFreeDefaults() {
         isPremium = false
-        credits = BillingConfig.freeMonthlyCredits
+        credits = BillingConfig.freeDailyCredits
         applyDefaultMonthlyPrice()
         entitlementExpiresAt = nil
         pendingForcedRefresh = false

@@ -37,6 +37,7 @@ from app.supabase_repo import (
     get_souler_by_id,
     get_user_id_from_auth_header,
     insert_message,
+    refund_stardust,
     touch_session,
     update_session_title,
 )
@@ -45,6 +46,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 settings = get_settings()
 T = TypeVar("T")
+CHAT_CREDIT_COST = 1
 
 
 def _normalize_uuid(value: str) -> str:
@@ -168,6 +170,32 @@ async def _stream_with_timeout(
             await aclose()
 
 
+async def _refund_stardust_safely(
+    user_id: str,
+    amount: int,
+    *,
+    reason: str,
+) -> None:
+    if amount <= 0:
+        return
+
+    try:
+        await _run_blocking(
+            "Refund stardust",
+            refund_stardust,
+            user_id,
+            amount,
+        )
+    except Exception as refund_error:  # noqa: BLE001
+        logger.error(
+            "Failed to refund stardust: reason=%s user_id=%s amount=%s error=%s",
+            reason,
+            user_id,
+            amount,
+            error_log_payload(refund_error),
+        )
+
+
 def _build_prompt_messages(
     session: SessionContext,
     history: list[MessageRow],
@@ -221,173 +249,177 @@ async def _prepare_chat_request(
     if not content:
         raise ValueError("Missing content")
 
-    is_new_session = False
-    needs_new_session = False
-    should_insert_echo_context = False
-    should_consume_credit = True
-    echo_context: EchoContext | None = None
-    pending_souler: Souler | None = None
-    session: SessionContext | None = None
-
-    if session_id:
-        session = await _run_blocking(
-            "Load session",
-            get_session_by_id,
-            user_id,
-            session_id,
-        )
-    else:
-        if echo_id:
-            echo_context = await _run_blocking(
-                "Load echo context",
-                get_echo_context,
-                user_id,
-                echo_id,
-            )
-            resolved_souler_id = echo_context["souler_id"]
-            if souler_id and resolved_souler_id != souler_id:
-                raise ValueError("Echo souler does not match request soulerId")
-            pending_souler = await _run_blocking(
-                "Load souler",
-                get_souler_by_id,
-                resolved_souler_id,
-            )
-
-            existing_echo_session_id = echo_context.get("session_id")
-            if existing_echo_session_id:
-                session = await _run_blocking(
-                    "Load echo session",
-                    get_session_by_id,
-                    user_id,
-                    existing_echo_session_id,
-                )
-            else:
-                needs_new_session = True
-                is_new_session = True
-                should_insert_echo_context = True
-                should_consume_credit = False
-        else:
-            if not souler_id:
-                raise ValueError("Missing soulerId for new conversation")
-            pending_souler = await _run_blocking(
-                "Load souler",
-                get_souler_by_id,
-                souler_id,
-            )
-            needs_new_session = True
-            is_new_session = True
-
-    if needs_new_session:
-        if not pending_souler:
-            raise ValueError("Souler not found")
-
-        created_session_id = await _run_blocking(
-            "Create session",
-            create_session,
-            user_id,
-            str(pending_souler["id"]),
-        )
-        created_session = {
-            "id": created_session_id,
-            "soulerId": str(pending_souler["id"]),
-            "title": "",
-            "souler": pending_souler,
-        }
-
-        if echo_id and should_insert_echo_context:
-            bound_session_id = await _run_blocking(
-                "Bind echo session",
-                bind_echo_session_if_missing,
-                user_id,
-                echo_id,
-                created_session_id,
-            )
-            if bound_session_id != created_session_id:
-                should_insert_echo_context = False
-                should_consume_credit = True
-                is_new_session = False
-                try:
-                    await _run_blocking(
-                        "Delete orphan session",
-                        delete_session,
-                        user_id,
-                        created_session_id,
-                    )
-                except Exception as cleanup_error:  # noqa: BLE001
-                    logger.warning(
-                        "Failed to cleanup orphan session: %s",
-                        error_log_payload(cleanup_error),
-                    )
-                session = await _run_blocking(
-                    "Load bound session",
-                    get_session_by_id,
-                    user_id,
-                    bound_session_id,
-                )
-            else:
-                session = created_session
-        else:
-            session = created_session
-
-    if not session:
-        raise ValueError("Session not found")
-
-    if should_consume_credit:
-        await _run_blocking(
-            "Credit check",
-            consume_chat_credit,
-            user_id,
-        )
+    await _run_blocking(
+        "Credit check",
+        consume_chat_credit,
+        user_id,
+    )
     log_stage("credit_checked")
 
-    if should_insert_echo_context and echo_context:
+    try:
+        is_new_session = False
+        needs_new_session = False
+        should_insert_echo_context = False
+        echo_context: EchoContext | None = None
+        pending_souler: Souler | None = None
+        session: SessionContext | None = None
+
+        if session_id:
+            session = await _run_blocking(
+                "Load session",
+                get_session_by_id,
+                user_id,
+                session_id,
+            )
+        else:
+            if echo_id:
+                echo_context = await _run_blocking(
+                    "Load echo context",
+                    get_echo_context,
+                    user_id,
+                    echo_id,
+                )
+                resolved_souler_id = echo_context["souler_id"]
+                if souler_id and resolved_souler_id != souler_id:
+                    raise ValueError("Echo souler does not match request soulerId")
+                pending_souler = await _run_blocking(
+                    "Load souler",
+                    get_souler_by_id,
+                    resolved_souler_id,
+                )
+
+                existing_echo_session_id = echo_context.get("session_id")
+                if existing_echo_session_id:
+                    session = await _run_blocking(
+                        "Load echo session",
+                        get_session_by_id,
+                        user_id,
+                        existing_echo_session_id,
+                    )
+                else:
+                    needs_new_session = True
+                    is_new_session = True
+                    should_insert_echo_context = True
+            else:
+                if not souler_id:
+                    raise ValueError("Missing soulerId for new conversation")
+                pending_souler = await _run_blocking(
+                    "Load souler",
+                    get_souler_by_id,
+                    souler_id,
+                )
+                needs_new_session = True
+                is_new_session = True
+
+        if needs_new_session:
+            if not pending_souler:
+                raise ValueError("Souler not found")
+
+            created_session_id = await _run_blocking(
+                "Create session",
+                create_session,
+                user_id,
+                str(pending_souler["id"]),
+            )
+            created_session = {
+                "id": created_session_id,
+                "soulerId": str(pending_souler["id"]),
+                "title": "",
+                "souler": pending_souler,
+            }
+
+            if echo_id and should_insert_echo_context:
+                bound_session_id = await _run_blocking(
+                    "Bind echo session",
+                    bind_echo_session_if_missing,
+                    user_id,
+                    echo_id,
+                    created_session_id,
+                )
+                if bound_session_id != created_session_id:
+                    should_insert_echo_context = False
+                    is_new_session = False
+                    try:
+                        await _run_blocking(
+                            "Delete orphan session",
+                            delete_session,
+                            user_id,
+                            created_session_id,
+                        )
+                    except Exception as cleanup_error:  # noqa: BLE001
+                        logger.warning(
+                            "Failed to cleanup orphan session: %s",
+                            error_log_payload(cleanup_error),
+                        )
+                    session = await _run_blocking(
+                        "Load bound session",
+                        get_session_by_id,
+                        user_id,
+                        bound_session_id,
+                    )
+                else:
+                    session = created_session
+            else:
+                session = created_session
+
+        if not session:
+            raise ValueError("Session not found")
+
+        if should_insert_echo_context and echo_context:
+            await _run_blocking(
+                "Insert glimmer context message",
+                insert_message,
+                user_id,
+                session["soulerId"],
+                session["id"],
+                "user",
+                echo_context["glimmer_content"],
+            )
+            await _run_blocking(
+                "Insert echo context message",
+                insert_message,
+                user_id,
+                session["soulerId"],
+                session["id"],
+                "assistant",
+                echo_context["content"],
+            )
+        log_stage("session_ready")
+
+        history = await _run_blocking(
+            "Load message history",
+            get_recent_messages,
+            user_id,
+            session["id"],
+        )
         await _run_blocking(
-            "Insert glimmer context message",
+            "Insert user message",
             insert_message,
             user_id,
             session["soulerId"],
             session["id"],
             "user",
-            echo_context["glimmer_content"],
+            content,
         )
-        await _run_blocking(
-            "Insert echo context message",
-            insert_message,
+        log_stage("user_message_inserted")
+
+        prompt_messages = _build_prompt_messages(session, history, content, lang)
+        log_stage("prompt_ready")
+        return PreparedChat(
+            user_id=user_id,
+            session=session,
+            lang=lang,
+            content=content,
+            is_new_session=is_new_session,
+            prompt_messages=prompt_messages,
+        )
+    except Exception:
+        await _refund_stardust_safely(
             user_id,
-            session["soulerId"],
-            session["id"],
-            "assistant",
-            echo_context["content"],
+            CHAT_CREDIT_COST,
+            reason="chat_prepare_failed",
         )
-    log_stage("session_ready")
-
-    history = await _run_blocking(
-        "Load message history",
-        get_recent_messages,
-        user_id,
-        session["id"],
-    )
-    await _run_blocking(
-        "Insert user message",
-        insert_message,
-        user_id,
-        session["soulerId"],
-        session["id"],
-        "user",
-        content,
-    )
-    log_stage("user_message_inserted")
-
-    prompt_messages = _build_prompt_messages(session, history, content, lang)
-    log_stage("prompt_ready")
-    return PreparedChat(
-        user_id=user_id,
-        session=session,
-        lang=lang,
-        content=content,
-        is_new_session=is_new_session,
-        prompt_messages=prompt_messages,
-    )
+        raise
 
 
 @router.post("/{lang}/chat")
@@ -412,6 +444,7 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
         )
 
     async def event_stream():
+        should_refund_on_failure = True
         try:
             yield sse_event({"type": "ready", "sessionId": prepared.session["id"]})
             log_stage("stream_opened")
@@ -493,12 +526,25 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
                     },
                 }
             )
+            should_refund_on_failure = False
         except CreditLimitError as error:
+            if should_refund_on_failure:
+                await _refund_stardust_safely(
+                    prepared.user_id,
+                    CHAT_CREDIT_COST,
+                    reason="chat_stream_credit_error",
+                )
             yield sse_event(credit_error_payload(error))
         except (ClientDisconnect, asyncio.CancelledError):
             logger.info("Chat stream closed by client.")
             return
         except Exception as error:  # noqa: BLE001
+            if should_refund_on_failure:
+                await _refund_stardust_safely(
+                    prepared.user_id,
+                    CHAT_CREDIT_COST,
+                    reason="chat_stream_failed",
+                )
             logger.error("Failed to process chat request: %s", error_log_payload(error))
             yield sse_event({"type": "error", "message": error_message(error)})
 

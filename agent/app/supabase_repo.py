@@ -399,6 +399,20 @@ def consume_chat_credit(
     )
 
 
+def refund_stardust(
+    user_id: str,
+    amount: int,
+) -> None:
+    _consume_credit_rpc(
+        "refund_stardust",
+        payload={
+            "p_user_id": user_id,
+            "p_amount": amount,
+        },
+        missing_row_error="Failed to refund stardust",
+    )
+
+
 def create_or_update_resonance(
     user_id: str,
     souler_id: str,

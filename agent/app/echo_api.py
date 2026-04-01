@@ -9,13 +9,14 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from starlette.requests import ClientDisconnect
 
-from app.echo_logic import Lang, invoke_echo_graph
+from app.echo_logic import EchoGraphFailedError, Lang, invoke_echo_graph
 from app.errors import CreditLimitError, credit_error_payload, error_log_payload, error_message
 from app.sse import sse_event, sse_response
 from app.supabase_repo import (
     ensure_glimmer,
     get_user_id_from_auth_header,
     list_glimmer_echoes,
+    refund_stardust,
     update_glimmer_status,
 )
 
@@ -71,6 +72,8 @@ async def _compose_worker(
     send: Send,
 ) -> None:
     processing_started = False
+    user_id: str | None = None
+    consumed_credits = 0
     try:
         user_id = get_user_id_from_auth_header(request.headers.get("Authorization"))
         glimmer = ensure_glimmer(user_id, glimmer_id, content)
@@ -118,6 +121,7 @@ async def _compose_worker(
             lang=lang,  # type: ignore[arg-type]
             on_echo=lambda echo_row: send(_echo_event_payload(echo_row)),
         )
+        consumed_credits = result.consumed_credits
 
         update_glimmer_status(
             glimmer_id,
@@ -132,6 +136,20 @@ async def _compose_worker(
     except Exception as error:  # noqa: BLE001
         if processing_started:
             _fail_glimmer_safely(glimmer_id)
+
+        refund_amount = consumed_credits
+        if isinstance(error, EchoGraphFailedError):
+            refund_amount = max(refund_amount, error.consumed_credits)
+
+        if user_id and refund_amount > 0:
+            try:
+                refund_stardust(user_id, refund_amount)
+            except Exception as refund_error:  # noqa: BLE001
+                logger.error(
+                    "Failed to refund stardust for glimmer %s: %s",
+                    glimmer_id,
+                    error_log_payload(refund_error),
+                )
 
         if isinstance(error, CreditLimitError):
             await send(credit_error_payload(error))
