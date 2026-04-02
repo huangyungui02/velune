@@ -233,7 +233,7 @@ struct SidebarView: View {
                             }
                             .buttonStyle(.plain)
                         }
-                    } else if isSyncingResonances, resonances.isEmpty {
+                    } else if isSyncingResonances, resonances.isEmpty, hasMoreResonances {
                         centeredSidebarStatus {
                             VStack(spacing: 10) {
                                 ProgressView()
@@ -457,9 +457,20 @@ struct SidebarView: View {
                 resonances = try Resonance.fetchCached(userId: userId, context: context)
             }
 
+            let resolvedLastSyncedAt: Date?
+            if let payloadLastSyncedAt = syncPayload.lastSyncedAt {
+                resolvedLastSyncedAt = payloadLastSyncedAt
+            } else if let currentLastSyncedAt = currentState.resonances.lastSyncedAt {
+                resolvedLastSyncedAt = currentLastSyncedAt
+            } else if syncPayload.items.isEmpty {
+                resolvedLastSyncedAt = Date()
+            } else {
+                resolvedLastSyncedAt = nil
+            }
+
             let nextState = SyncStateStore.SyncState(
                 resonances: SyncStateStore.ResonancesSyncState(
-                    lastSyncedAt: syncPayload.lastSyncedAt ?? currentState.resonances.lastSyncedAt,
+                    lastSyncedAt: resolvedLastSyncedAt,
                     hasMore: syncPayload.hasMore ?? currentState.resonances.hasMore
                 ),
                 glimmers: currentState.glimmers
