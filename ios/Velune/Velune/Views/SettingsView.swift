@@ -476,7 +476,7 @@ struct AccountSettingsView: View {
             PaginationStateStore.clearGlimmerBottom(userId: userId)
             SidebarSyncStateStore.clear(userId: userId)
             if let userId {
-                try SidebarResonanceStore.clear(userId: userId, context: modelContext)
+                try Resonance.clearCached(userId: userId, context: modelContext)
             }
             try modelContext.delete(model: Glimmer.self)
             try modelContext.delete(model: Echo.self)

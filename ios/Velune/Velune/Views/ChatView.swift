@@ -462,9 +462,7 @@ struct ChatView: View {
             id: resolvedSessionId,
             soulerId: soulerId,
             soulerName: soulerName,
-            title: fallbackTitle,
-            createdAt: .now,
-            updatedAt: .now
+            title: fallbackTitle
         )
         onSelectSession(routeSession)
     }

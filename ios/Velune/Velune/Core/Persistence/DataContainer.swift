@@ -13,7 +13,7 @@ class DataContainer {
         let schema = Schema([
             Glimmer.self,
             Echo.self,
-            SidebarResonanceCache.self,
+            Resonance.self,
         ])
 
         let modelConfiguration = ModelConfiguration(

@@ -6,8 +6,6 @@ struct ChatSession: Identifiable, Equatable, Hashable {
     var soulerId: UUID
     var soulerName: String
     var title: String
-    var createdAt: Date
-    var updatedAt: Date
 
     var hasTitle: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -19,16 +17,12 @@ extension ChatSession {
         var id: UUID
         var soulerId: UUID
         var title: String
-        var createdAt: Date
-        var updatedAt: Date
         var souler: SoulerName?
 
         enum CodingKeys: String, CodingKey {
             case id
             case soulerId = "souler_id"
             case title
-            case createdAt = "created_at"
-            case updatedAt = "updated_at"
             case souler = "soulers"
         }
     }
@@ -44,9 +38,7 @@ extension ChatSession {
                 id: item.id,
                 soulerId: item.soulerId,
                 soulerName: item.souler?.name ?? fallbackName,
-                title: item.title,
-                createdAt: item.createdAt,
-                updatedAt: item.updatedAt
+                title: item.title
             )
         }
     }
@@ -66,7 +58,7 @@ extension ChatSession {
         if let soulerId {
             response = try await supabase
                 .from("sessions")
-                .select("id, souler_id, title, created_at, updated_at, soulers(name)")
+                .select("id, souler_id, title, soulers(name)")
                 .eq("souler_id", value: soulerId.uuidString)
                 .order("updated_at", ascending: false)
                 .range(from: offset, to: upperBound)
@@ -75,7 +67,7 @@ extension ChatSession {
         } else {
             response = try await supabase
                 .from("sessions")
-                .select("id, souler_id, title, created_at, updated_at, soulers(name)")
+                .select("id, souler_id, title, soulers(name)")
                 .order("updated_at", ascending: false)
                 .range(from: offset, to: upperBound)
                 .execute()
@@ -94,7 +86,7 @@ extension ChatSession {
         let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("sessions")
-            .select("id, souler_id, title, created_at, updated_at, soulers(name)")
+            .select("id, souler_id, title, soulers(name)")
             .eq("id", value: id.uuidString)
             .limit(1)
             .execute()

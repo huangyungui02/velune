@@ -426,7 +426,7 @@ struct SidebarView: View {
     @discardableResult
     private func loadLocalResonances(userId: String) -> Bool {
         do {
-            resonances = try SidebarResonanceStore.fetch(userId: userId, context: context)
+            resonances = try Resonance.fetchCached(userId: userId, context: context)
             let state = SidebarSyncStateStore.state(userId: userId)
             hasMoreResonances = state.hasMore
             if !resonances.isEmpty {
@@ -451,10 +451,10 @@ struct SidebarView: View {
         do {
             let currentState = SidebarSyncStateStore.state(userId: userId)
             let syncPayload = try await fetchSyncPayload(lastSyncedAt: currentState.lastSyncedAt)
-            let hasChanges = try SidebarResonanceStore.merge(syncPayload.items, userId: userId, context: context)
+            let hasChanges = try Resonance.mergeCached(syncPayload.items, userId: userId, context: context)
 
             if hasChanges {
-                resonances = try SidebarResonanceStore.fetch(userId: userId, context: context)
+                resonances = try Resonance.fetchCached(userId: userId, context: context)
             }
 
             let nextState = SidebarSyncState(
@@ -501,9 +501,9 @@ struct SidebarView: View {
 
         do {
             let page = try await Resonance.getPage(limit: resonancePageSize, offset: resonances.count)
-            let hasChanges = try SidebarResonanceStore.merge(page, userId: userId, context: context)
+            let hasChanges = try Resonance.mergeCached(page, userId: userId, context: context)
             if hasChanges {
-                resonances = try SidebarResonanceStore.fetch(userId: userId, context: context)
+                resonances = try Resonance.fetchCached(userId: userId, context: context)
             }
 
             hasMoreResonances = page.count == resonancePageSize
@@ -536,9 +536,7 @@ struct SidebarView: View {
                 id: sessionId,
                 soulerId: resonance.soulerId,
                 soulerName: resonance.soulerName,
-                title: resonance.lastSessionTitle,
-                createdAt: resonance.createdAt,
-                updatedAt: resonance.updatedAt
+                title: resonance.lastSessionTitle
             ))
         } else {
             onOpenDraftChat(draftTarget(for: resonance))
