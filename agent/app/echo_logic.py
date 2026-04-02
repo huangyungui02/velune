@@ -16,13 +16,11 @@ from app.echo_nodes import (
 from app.errors import CreditLimitError
 from app.supabase_repo import (
     add_souler_alias,
-    consume_echo_credit,
     create_echo,
     create_or_update_resonance,
     create_souler,
     get_souler_by_alias,
     get_souler_by_name,
-    refund_stardust,
     update_souler,
 )
 
@@ -30,13 +28,13 @@ from app.supabase_repo import (
 @dataclass
 class GraphResult:
     completed: bool
-    consumed_credits: int
+    refund_credits: int
 
 
 class EchoGraphFailedError(RuntimeError):
-    def __init__(self, message: str, consumed_credits: int) -> None:
+    def __init__(self, message: str, refund_credits: int) -> None:
         super().__init__(message)
-        self.consumed_credits = max(consumed_credits, 0)
+        self.refund_credits = max(refund_credits, 0)
 
 
 def _souler_id(souler_data: dict[str, Any]) -> str:
@@ -109,20 +107,13 @@ async def invoke_echo_graph(
     on_echo: Callable[[dict[str, Any]], Awaitable[None] | None] | None = None,
 ) -> GraphResult:
     souler_names = await match_soulers(glimmer_content, num, lang)
+    souler_names = souler_names[:num]
+    missing_credits = max(num - len(souler_names), 0)
+
     if not souler_names:
-        return GraphResult(completed=True, consumed_credits=0)
-
-    counter_lock = asyncio.Lock()
-    consumed_credits = 0
-
-    async def _mark_credit_consumed() -> None:
-        nonlocal consumed_credits
-        async with counter_lock:
-            consumed_credits += 1
+        raise EchoGraphFailedError("Failed to match echoes", num)
 
     async def process_item(matched_name: str) -> None:
-        nonlocal consumed_credits
-        credit_consumed = False
         souler_data = await _resolve_souler(matched_name, lang)
         souler_data = await _ensure_souler_assets(souler_data, lang)
         souler_id = _souler_id(souler_data)
@@ -133,37 +124,23 @@ async def invoke_echo_graph(
             str(souler_data["prompt"]),
             lang,
         )
-        consume_echo_credit(user_id)
-        credit_consumed = True
-        await _mark_credit_consumed()
+        echo = create_echo(
+            glimmer_id,
+            souler_id,
+            answer,
+        )
+        echo["souler_name"] = souler_name
+        create_or_update_resonance(
+            user_id,
+            souler_id,
+            None,
+            "",
+        )
 
-        try:
-            echo = create_echo(
-                glimmer_id,
-                souler_id,
-                answer,
-            )
-            echo["souler_name"] = souler_name
-            create_or_update_resonance(
-                user_id,
-                souler_id,
-                None,
-                "",
-            )
-
-            if on_echo:
-                maybe_awaitable = on_echo(echo)
-                if asyncio.iscoroutine(maybe_awaitable):
-                    await maybe_awaitable
-        except Exception:
-            if credit_consumed:
-                try:
-                    refund_stardust(user_id, 1)
-                    async with counter_lock:
-                        consumed_credits = max(consumed_credits - 1, 0)
-                except Exception:
-                    pass
-            raise
+        if on_echo:
+            maybe_awaitable = on_echo(echo)
+            if asyncio.iscoroutine(maybe_awaitable):
+                await maybe_awaitable
 
     results = await asyncio.gather(
         *(process_item(name) for name in souler_names),
@@ -178,16 +155,17 @@ async def invoke_echo_graph(
     credit_errors = [
         result for result in results if isinstance(result, CreditLimitError)
     ]
+    refund_credits = missing_credits + len(errors)
 
-    if len(errors) == len(souler_names):
+    if refund_credits == num:
         if credit_errors:
-            raise EchoGraphFailedError(str(credit_errors[0]), consumed_credits)
+            raise EchoGraphFailedError(str(credit_errors[0]), refund_credits)
         raise EchoGraphFailedError(
             f"Errors when creating echoes: {' | '.join(errors)}",
-            consumed_credits,
+            refund_credits,
         )
 
     return GraphResult(
-        completed=not errors,
-        consumed_credits=consumed_credits,
+        completed=refund_credits == 0,
+        refund_credits=refund_credits,
     )

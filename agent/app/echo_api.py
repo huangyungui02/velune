@@ -13,6 +13,7 @@ from app.echo_logic import EchoGraphFailedError, Lang, invoke_echo_graph
 from app.errors import CreditLimitError, credit_error_payload, error_log_payload, error_message
 from app.sse import sse_event, sse_response
 from app.supabase_repo import (
+    consume_echo_credit,
     ensure_glimmer,
     get_user_id_from_auth_header,
     list_glimmer_echoes,
@@ -22,6 +23,7 @@ from app.supabase_repo import (
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+ECHO_STARDUST_COST = 5
 
 type Send = Callable[[dict[str, Any]], Awaitable[None]]
 
@@ -63,6 +65,27 @@ def _done_event_payload() -> dict[str, Any]:
     }
 
 
+async def _refund_stardust_safely(
+    user_id: str,
+    amount: int,
+    *,
+    reason: str,
+) -> None:
+    if amount <= 0:
+        return
+
+    try:
+        refund_stardust(user_id, amount)
+    except Exception as refund_error:  # noqa: BLE001
+        logger.error(
+            "Failed to refund stardust: reason=%s user_id=%s amount=%s error=%s",
+            reason,
+            user_id,
+            amount,
+            error_log_payload(refund_error),
+        )
+
+
 async def _compose_worker(
     *,
     request: Request,
@@ -72,8 +95,9 @@ async def _compose_worker(
     send: Send,
 ) -> None:
     processing_started = False
+    generation_finished = False
     user_id: str | None = None
-    consumed_credits = 0
+    charged_credits = 0
     try:
         user_id = get_user_id_from_auth_header(request.headers.get("Authorization"))
         glimmer = ensure_glimmer(user_id, glimmer_id, content)
@@ -112,16 +136,24 @@ async def _compose_worker(
 
         update_glimmer_status(glimmer_id, "processing")
         processing_started = True
+        consume_echo_credit(user_id, amount=ECHO_STARDUST_COST)
+        charged_credits = ECHO_STARDUST_COST
 
         result = await invoke_echo_graph(
             user_id=user_id,
             glimmer_id=glimmer_id,
             glimmer_content=str(glimmer.get("content", content)),
-            num=5,
+            num=ECHO_STARDUST_COST,
             lang=lang,  # type: ignore[arg-type]
             on_echo=lambda echo_row: send(_echo_event_payload(echo_row)),
         )
-        consumed_credits = result.consumed_credits
+        generation_finished = True
+
+        await _refund_stardust_safely(
+            user_id,
+            result.refund_credits,
+            reason=f"partial echo failure for glimmer {glimmer_id}",
+        )
 
         update_glimmer_status(
             glimmer_id,
@@ -130,26 +162,25 @@ async def _compose_worker(
 
         await send(_done_event_payload())
     except (ClientDisconnect, asyncio.CancelledError):
-        if processing_started:
+        if processing_started and not generation_finished:
             _fail_glimmer_safely(glimmer_id)
         return
     except Exception as error:  # noqa: BLE001
-        if processing_started:
+        if processing_started and not generation_finished:
             _fail_glimmer_safely(glimmer_id)
 
-        refund_amount = consumed_credits
+        refund_amount = 0
+        if not generation_finished:
+            refund_amount = charged_credits
         if isinstance(error, EchoGraphFailedError):
-            refund_amount = max(refund_amount, error.consumed_credits)
+            refund_amount = max(refund_amount, error.refund_credits)
 
         if user_id and refund_amount > 0:
-            try:
-                refund_stardust(user_id, refund_amount)
-            except Exception as refund_error:  # noqa: BLE001
-                logger.error(
-                    "Failed to refund stardust for glimmer %s: %s",
-                    glimmer_id,
-                    error_log_payload(refund_error),
-                )
+            await _refund_stardust_safely(
+                user_id,
+                refund_amount,
+                reason=f"failed echo compose for glimmer {glimmer_id}",
+            )
 
         if isinstance(error, CreditLimitError):
             await send(credit_error_payload(error))

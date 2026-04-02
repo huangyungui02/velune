@@ -25,8 +25,8 @@
 "settings.billing.action.restore" = "恢复购买";
 "settings.billing.renewalTime" = "续订时间";
 "settings.billing.price" = "订阅价格";
-"settings.billing.stardust.description" = "免费用户每日获得 10 星尘。\n\n每次回响消耗 1 星尘，每次对话消耗 1 星尘。";
-"settings.billing.stardust.description.premium" = "你的订阅每日包含 100 星尘。\n\n每次回响消耗 1 星尘，每次对话消耗 1 星尘。";
+"settings.billing.stardust.description" = "免费用户每日获得 10 星尘。\n\n每次回响消耗 5 星尘，每次对话消耗 1 星尘。";
+"settings.billing.stardust.description.premium" = "你的订阅每日包含 100 星尘。\n\n每次回响消耗 5 星尘，每次对话消耗 1 星尘。";
 "settings.billing.revenuecat.missingKey" = "未配置 RevenueCat 公钥，暂不可购买。";
 "settings.error.title" = "操作失败";
 "settings.signOut.confirm.title" = "确认退出登录？";

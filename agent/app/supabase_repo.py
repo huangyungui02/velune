@@ -377,11 +377,29 @@ def _consume_credit_rpc(
     _parse_credit_consumption_row(row)
 
 
-def consume_echo_credit(user_id: str) -> None:
+def consume_stardust(
+    user_id: str,
+    amount: int,
+) -> None:
     _consume_credit_rpc(
-        "consume_echo_credit",
+        "consume_stardust",
         payload={
             "p_user_id": user_id,
+            "p_cost": amount,
+        },
+        missing_row_error="Failed to consume stardust",
+    )
+
+
+def consume_echo_credit(
+    user_id: str,
+    amount: int = 5,
+) -> None:
+    _consume_credit_rpc(
+        "consume_stardust",
+        payload={
+            "p_user_id": user_id,
+            "p_cost": amount,
         },
         missing_row_error="Failed to consume echo credit",
     )
