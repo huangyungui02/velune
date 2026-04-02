@@ -86,6 +86,7 @@
 "resonance.sort.count" = "Most resonated";
 "resonance.chat.placeholder" = "Say something…";
 "resonance.chat.empty" = "Start a deeper conversation";
+"resonance.chat.sessions.empty" = "No conversations yet";
 "resonance.chat.action.newConversation" = "New Conversation";
 "resonance.chat.newConversation" = "New Chat";
 "resonance.unknownSouler" = "Unknown souler";

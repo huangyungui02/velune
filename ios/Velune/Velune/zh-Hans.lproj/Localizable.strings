@@ -86,6 +86,7 @@
 "resonance.sort.count" = "最多共鸣";
 "resonance.chat.placeholder" = "对Ta说点什么…";
 "resonance.chat.empty" = "开始一段深入对话";
+"resonance.chat.sessions.empty" = "暂无对话";
 "resonance.chat.action.newConversation" = "新建对话";
 "resonance.chat.newConversation" = "新对话";
 "resonance.unknownSouler" = "未命名灵魂";

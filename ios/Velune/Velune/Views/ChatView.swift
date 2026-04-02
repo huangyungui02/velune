@@ -110,20 +110,20 @@ struct ChatView: View {
                         Section {
                             Text(sessionMenuError)
                             Button("common.retry") {
-                                Task { await loadSessionsForSidebar() }
+                                Task { await loadConversationSessions() }
                             }
                         }
-                    } else if isLoadingSessions, sidebarSessions.isEmpty {
+                    } else if isLoadingSessions, conversationSessions.isEmpty {
                         Section {
                             Label("common.loading", systemImage: "hourglass")
                         }
-                    } else if sidebarSessions.isEmpty {
+                    } else if conversationSessions.isEmpty {
                         Section {
-                            Text("resonance.empty")
+                            Text("resonance.chat.sessions.empty")
                         }
                     } else {
                         Section {
-                            ForEach(sidebarSessions) { session in
+                            ForEach(conversationSessions) { session in
                                 Button {
                                     openSession(session)
                                 } label: {
@@ -175,7 +175,7 @@ struct ChatView: View {
             guard !hasPerformedInitialLoad else { return }
             hasPerformedInitialLoad = true
             await prepareConversation()
-            await loadSessionsForSidebar()
+            await loadConversationSessions()
         }
         .onAppear {
             if focusComposerOnAppear {
@@ -453,7 +453,7 @@ struct ChatView: View {
 
         let sessionId = resolvedSessionId ?? activeSessionId
         messages = try await Message.getHistory(sessionId: sessionId)
-        await loadSessionsForSidebar()
+        await loadConversationSessions()
 
         guard startedFromDraft, let resolvedSessionId, let onSelectSession else { return }
 
@@ -491,12 +491,12 @@ struct ChatView: View {
         activeSessionId
     }
 
-    private var sidebarSessions: [ChatSession] {
+    private var conversationSessions: [ChatSession] {
         sessions
     }
 
     @MainActor
-    private func loadSessionsForSidebar() async {
+    private func loadConversationSessions() async {
         if isLoadingSessions { return }
         isLoadingSessions = true
         defer { isLoadingSessions = false }
@@ -579,7 +579,7 @@ struct ChatView: View {
         draftEchoId = nil
         activeDraftPrelude = nil
         await prepareConversation()
-        await loadSessionsForSidebar()
+        await loadConversationSessions()
     }
 }
 
