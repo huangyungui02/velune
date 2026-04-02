@@ -535,6 +535,27 @@ blockquote {
   font-family: "Cormorant Garamond", "Bodoni Moda", "Songti SC", "STKaiti", serif;
 }
 
+.legal-subsection {
+  margin-top: 1rem;
+  padding: 0;
+}
+
+.legal-subsection + .legal-subsection {
+  margin-top: 1.2rem;
+}
+
+.legal-subsection h3 {
+  margin: 0 0 0.22rem;
+  font-size: 0.98rem;
+  letter-spacing: 0.02em;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.legal-subsection p {
+  margin: 0.56rem 0 0;
+}
+
 .legal-page p,
 .legal-page li {
   color: var(--text-sub);

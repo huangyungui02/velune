@@ -1,34 +1,28 @@
 ### 1. Information We Collect
 
-We collect the following types of information:
+We collect information that is reasonably necessary to operate, provide, protect, and improve the Service.
 
 **Account Data**
- Such as Apple sign-in identifier, email address, and profile name (if provided).
+This may include your Apple Sign-In identifier, email address, and profile name, if provided.
 
 **Content Data**
- Text you submit and related interaction records (for example, Glimmer and Echo).
+This includes text, media, and other content you submit, as well as related interaction records associated with your use of the Service.
+We do not use your content to train models unless explicitly disclosed or with your consent.
 
 **Device and Log Data**
- Including device model, operating system, crash logs, IP address, and timestamps.
+This may include device model, operating system, crash information, IP address, and timestamps.
 
 **Transaction Information**
- Subscription status and purchase confirmations provided by Apple.
- We do not collect or store your full payment details.
+Purchases are processed by Apple. We may receive subscription status, purchase confirmations, and limited transaction metadata. We do not collect or store your full payment card details.
 
 **Support Communications**
- Messages or inquiries you send to us.
+We collect the information you provide when you contact support.
 
 ------
 
 ### 2. How We Use Information
 
-We use your information to:
-
-- provide, maintain, and improve the Service
-- generate AI-based responses based on your input
-- ensure security and prevent abuse
-- process account, subscription, and support requests
-- comply with legal obligations
+We use the information we collect to provide, operate, maintain, secure, and improve the Service. This includes delivering AI-powered features, responding to support requests, managing accounts and subscriptions, preventing abuse, and complying with legal obligations.
 
 ------
 
@@ -36,88 +30,63 @@ We use your information to:
 
 We do not sell your personal information.
 
-We may share information with:
+We may share information in the following circumstances:
 
-- **Service providers** that process data on our behalf (such as hosting, storage, analytics, and support tools)
-- **Legal authorities** when required by applicable law or valid legal process
-- **Business transfers**, such as a merger or acquisition, subject to confidentiality protections
+- with service providers that process information on our behalf, such as hosting, infrastructure, storage, analytics, and customer support
+- where required by applicable law, regulation, or legal process
+- in connection with a merger, acquisition, or similar corporate transaction, subject to appropriate safeguards
 
 ------
 
 ### 4. Data Retention
 
-We retain personal information only for as long as necessary to:
+We retain personal information only for as long as reasonably necessary to provide the Service, comply with legal obligations, resolve disputes, and enforce our agreements.
 
-- provide the Service
-- fulfill legal and contractual obligations
-- resolve disputes and enforce agreements
-
-Content you submit may be retained as part of the Service experience unless you request deletion.
+Content you submit may remain associated with your account unless deleted by you, deleted by us, or removed in response to a valid request.
 
 ------
 
 ### 5. Your Rights
 
-Depending on your location, you may have the right to:
+Depending on your location, you may have the right to access, correct, delete, or obtain a copy of your personal information, and in some cases to object to or restrict certain processing activities.
 
-- access your personal data
-- correct inaccurate data
-- request deletion of your data
-- receive a copy of your data
-- object to or restrict certain processing
+If you are a California resident, you may have rights under the CCPA/CPRA, including the right not to receive discriminatory treatment for exercising your rights.
 
-To exercise your rights, contact us at the email below.
-
-For California residents, your rights may include those under the CCPA/CPRA, including the right to non-discrimination.
+To exercise your rights, please contact us using the email below. We may need to verify your identity before fulfilling your request.
 
 ------
 
 ### 6. Children’s Privacy
 
-The Service is not intended for children under 13.
-
-If we become aware that we have collected personal information from a child under 13 without appropriate consent, we will delete such information.
+The Service is not intended for children under 13, or any higher minimum age required by applicable law. If we become aware that personal information has been collected in violation of applicable law, we will take reasonable steps to delete it.
 
 ------
 
-### 7. Tracking and App Tracking Transparency (ATT)
+### 7. Tracking and App Tracking Transparency
 
-We do not engage in cross-app or cross-site tracking without permission.
-
-If tracking is introduced in the future:
-
-- we will request your consent through Apple’s App Tracking Transparency framework where required
+We do not engage in cross-app or cross-site tracking for advertising purposes without the consent required by applicable law. If such tracking is introduced in the future, we will request consent in accordance with applicable requirements.
 
 ------
 
 ### 8. Security
 
-We implement reasonable technical and organizational measures to protect your data, including:
-
-- encryption in transit
-- access controls
-- system monitoring
-
-However, no system can be guaranteed to be completely secure.
+We implement reasonable technical and organizational measures to protect personal information, including encryption in transit, access controls, and system monitoring. However, no method of transmission or storage is completely secure.
 
 ------
 
 ### 9. International Data Transfers
 
-Your information may be processed and stored in countries outside your residence, including the United States.
-
-We take appropriate safeguards to ensure your data is handled in accordance with this policy.
+Your information may be processed and stored in different countries or regions where we or our service providers operate. Where required, we take reasonable steps to ensure appropriate safeguards are in place.
 
 ------
 
 ### 10. Policy Changes
 
-We may update this Privacy Policy from time to time.
-
-If changes are material, we will provide notice through the app or other reasonable means.
+We may update this Privacy Policy from time to time. If we make material changes, we will provide notice through the Service or by other appropriate means.
 
 ------
 
 ### 11. Contact
 
-Email: velune@echoversa.com
+If you have questions, please contact us at:
+[velune@echoversa.com](mailto:velune@echoversa.com)
