@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.requests import ClientDisconnect
 
 from app.config import get_settings
+from app.echo_nodes import SUPPORTED_LANGS
 from app.echo_logic import Lang
 from app.errors import (
     CreditLimitError,
@@ -424,6 +425,10 @@ async def _prepare_chat_request(
 
 @router.post("/{lang}/chat")
 async def chat(lang: Lang, request: Request) -> StreamingResponse:
+    lang = str(lang).strip().lower()
+    if lang not in SUPPORTED_LANGS:
+        return JSONResponse({"error": "Invalid lang, must be one of: en, chs"}, status_code=400)
+
     started_at = asyncio.get_running_loop().time()
 
     def log_stage(stage: str) -> None:

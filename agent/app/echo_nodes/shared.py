@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any
 
-Lang = Literal["chs", "en"]
+Lang = str
+SUPPORTED_LANGS: frozenset[Lang] = frozenset({"en", "chs"})
 
 RESOLVED_NAME_SCHEMA: dict[str, Any] = {
     "type": "object",

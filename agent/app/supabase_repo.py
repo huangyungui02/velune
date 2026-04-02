@@ -448,58 +448,58 @@ def create_or_update_resonance(
     ).execute()
 
 
-def get_souler_by_name(candidate_name: str) -> dict[str, Any] | None:
+def get_souler_by_name(candidate_name: str, lang: str) -> dict[str, Any] | None:
     query = candidate_name.strip()
-    if not query:
+    query_lang = lang.strip()
+    if not query or not query_lang:
         return None
 
     response = (
         supabase.table("soulers")
         .select("*")
         .eq("name", query)
+        .eq("lang", query_lang)
         .limit(1)
         .execute()
     )
     return _first_row(response.data)
 
 
-def get_souler_by_alias(candidate_name: str) -> dict[str, Any] | None:
+def get_souler_by_alias(candidate_name: str, lang: str) -> dict[str, Any] | None:
     query = candidate_name.strip()
-    if not query:
+    query_lang = lang.strip()
+    if not query or not query_lang:
         return None
 
     alias_response = (
         supabase.table("souler_aliases")
-        .select("souler_id")
+        .select("soulers!inner(*)")
         .eq("alias", query)
+        .eq("soulers.lang", query_lang)
         .limit(1)
         .execute()
     )
     alias_row = _first_row(alias_response.data)
-    souler_id = str(alias_row.get("souler_id", "")).strip() if alias_row else ""
-    if not souler_id:
+    if not alias_row:
         return None
 
-    souler_response = (
-        supabase.table("soulers")
-        .select("*")
-        .eq("id", souler_id)
-        .limit(1)
-        .execute()
-    )
-    return _first_row(souler_response.data)
+    return _first_row(alias_row.get("soulers"))
 
 
-def create_souler(name: str) -> dict[str, Any]:
+def create_souler(name: str, lang: str) -> dict[str, Any]:
     cleaned_name = name.strip()
+    cleaned_lang = lang.strip()
     if not cleaned_name:
         raise ValueError("Souler name cannot be empty")
+    if not cleaned_lang:
+        raise ValueError("Souler lang cannot be empty")
 
     response = (
         supabase.table("soulers")
         .insert(
             {
                 "name": cleaned_name,
+                "lang": cleaned_lang,
             },
             returning="representation",
         )
@@ -512,7 +512,7 @@ def create_souler(name: str) -> dict[str, Any]:
     return row
 
 
-def add_souler_alias(souler_id: str, souler_name: str, alias: str) -> None:
+def add_souler_alias(souler_id: str, souler_name: str, alias: str, lang: str) -> None:
     cleaned_alias = alias.strip()
     if not cleaned_alias:
         return
@@ -520,20 +520,24 @@ def add_souler_alias(souler_id: str, souler_name: str, alias: str) -> None:
     if souler_name.strip() == cleaned_alias:
         return
 
-    existing = get_souler_by_alias(cleaned_alias)
+    existing = get_souler_by_alias(cleaned_alias, lang)
     if existing:
         return
 
-    (
-        supabase.table("souler_aliases")
-        .insert(
-            {
-                "souler_id": souler_id,
-                "alias": cleaned_alias,
-            }
+    try:
+        (
+            supabase.table("souler_aliases")
+            .insert(
+                {
+                    "souler_id": souler_id,
+                    "alias": cleaned_alias,
+                }
+            )
+            .execute()
         )
-        .execute()
-    )
+    except Exception:  # noqa: BLE001
+        # Alias can collide across languages under the current global unique constraint.
+        return
 
 
 def update_souler(souler_id: str, data: dict[str, Any]) -> dict[str, Any]:

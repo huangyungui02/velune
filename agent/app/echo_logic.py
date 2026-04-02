@@ -59,20 +59,25 @@ def _reason_to_message(reason: Any) -> str:
 
 
 async def _resolve_souler(matched_name: str, lang: Lang) -> dict[str, Any]:
-    souler_data = get_souler_by_alias(matched_name)
+    souler_data = get_souler_by_alias(matched_name, lang)
     if souler_data:
         return souler_data
 
-    souler_data = get_souler_by_name(matched_name)
+    souler_data = get_souler_by_name(matched_name, lang)
     if souler_data:
         return souler_data
 
     resolved_name = await resolve_souler_name(matched_name, lang)
-    souler_data = get_souler_by_name(resolved_name)
+    souler_data = get_souler_by_name(resolved_name, lang)
     if not souler_data:
-        souler_data = create_souler(resolved_name)
+        souler_data = create_souler(resolved_name, lang)
 
-    add_souler_alias(_souler_id(souler_data), _souler_name(souler_data), matched_name)
+    add_souler_alias(
+        _souler_id(souler_data),
+        _souler_name(souler_data),
+        matched_name,
+        lang,
+    )
     return souler_data
 
 

@@ -2,6 +2,7 @@
 CREATE TABLE soulers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(64) NOT NULL,
+    lang VARCHAR(16) NOT NULL,
     bio TEXT,
     prompt TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -9,6 +10,7 @@ CREATE TABLE soulers (
 );
 
 CREATE INDEX IF NOT EXISTS idx_soulers_name ON soulers (name);
+CREATE INDEX IF NOT EXISTS idx_soulers_lang ON soulers (lang);
 
 CREATE TABLE souler_aliases (
     souler_id UUID NOT NULL REFERENCES soulers(id) ON DELETE CASCADE,
