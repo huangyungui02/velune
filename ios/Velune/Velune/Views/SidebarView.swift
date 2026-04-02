@@ -427,8 +427,8 @@ struct SidebarView: View {
     private func loadLocalResonances(userId: String) -> Bool {
         do {
             resonances = try Resonance.fetchCached(userId: userId, context: context)
-            let state = SidebarSyncStateStore.state(userId: userId)
-            hasMoreResonances = state.hasMore
+            let state = SyncStateStore.state(userId: userId)
+            hasMoreResonances = state.resonances.hasMore
             if !resonances.isEmpty {
                 resonanceMenuError = nil
             }
@@ -449,20 +449,23 @@ struct SidebarView: View {
         defer { isSyncingResonances = false }
 
         do {
-            let currentState = SidebarSyncStateStore.state(userId: userId)
-            let syncPayload = try await fetchSyncPayload(lastSyncedAt: currentState.lastSyncedAt)
+            let currentState = SyncStateStore.state(userId: userId)
+            let syncPayload = try await fetchSyncPayload(lastSyncedAt: currentState.resonances.lastSyncedAt)
             let hasChanges = try Resonance.mergeCached(syncPayload.items, userId: userId, context: context)
 
             if hasChanges {
                 resonances = try Resonance.fetchCached(userId: userId, context: context)
             }
 
-            let nextState = SidebarSyncState(
-                lastSyncedAt: syncPayload.lastSyncedAt ?? currentState.lastSyncedAt,
-                hasMore: syncPayload.hasMore ?? currentState.hasMore
+            let nextState = SyncStateStore.SyncState(
+                resonances: SyncStateStore.ResonancesSyncState(
+                    lastSyncedAt: syncPayload.lastSyncedAt ?? currentState.resonances.lastSyncedAt,
+                    hasMore: syncPayload.hasMore ?? currentState.resonances.hasMore
+                ),
+                glimmers: currentState.glimmers
             )
-            SidebarSyncStateStore.set(nextState, userId: userId)
-            hasMoreResonances = nextState.hasMore
+            SyncStateStore.set(nextState, userId: userId)
+            hasMoreResonances = nextState.resonances.hasMore
             resonanceMenuError = nil
         } catch {
             if !hasLocalCache && resonances.isEmpty {
@@ -507,21 +510,27 @@ struct SidebarView: View {
             }
 
             hasMoreResonances = page.count == resonancePageSize
-            let currentState = SidebarSyncStateStore.state(userId: userId)
+            let currentState = SyncStateStore.state(userId: userId)
             let pageMaxUpdatedAt = page.map(\.updatedAt).max()
             let nextSyncedAt: Date?
             if let pageMaxUpdatedAt {
-                if let currentLastSyncedAt = currentState.lastSyncedAt {
+                if let currentLastSyncedAt = currentState.resonances.lastSyncedAt {
                     nextSyncedAt = max(pageMaxUpdatedAt, currentLastSyncedAt)
                 } else {
                     nextSyncedAt = pageMaxUpdatedAt
                 }
             } else {
-                nextSyncedAt = currentState.lastSyncedAt
+                nextSyncedAt = currentState.resonances.lastSyncedAt
             }
 
-            SidebarSyncStateStore.set(
-                SidebarSyncState(lastSyncedAt: nextSyncedAt, hasMore: hasMoreResonances),
+            SyncStateStore.set(
+                SyncStateStore.SyncState(
+                    resonances: SyncStateStore.ResonancesSyncState(
+                        lastSyncedAt: nextSyncedAt,
+                        hasMore: hasMoreResonances
+                    ),
+                    glimmers: currentState.glimmers
+                ),
                 userId: userId
             )
             resonanceMenuError = nil

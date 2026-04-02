@@ -276,7 +276,7 @@ struct SettingsView: View {
         do {
             let userId = AuthManager.shared.currentUserId?.uuidString
             try await AuthManager.shared.signOut()
-            PaginationStateStore.clearGlimmerBottom(userId: userId)
+            SyncStateStore.clear(userId: userId)
             dismiss()
         } catch {
             feedbackMessage = error.localizedDescription
@@ -473,8 +473,7 @@ struct AccountSettingsView: View {
         do {
             let userId = AuthManager.shared.currentUserId?.uuidString
             try await AuthManager.shared.deleteAccount()
-            PaginationStateStore.clearGlimmerBottom(userId: userId)
-            SidebarSyncStateStore.clear(userId: userId)
+            SyncStateStore.clear(userId: userId)
             if let userId {
                 try Resonance.clearCached(userId: userId, context: modelContext)
             }

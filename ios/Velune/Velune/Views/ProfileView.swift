@@ -65,7 +65,7 @@ struct ProfileView: View {
             }
             loadLocalGlimmers()
             glimmerOffset = glimmers.count
-            hasMoreGlimmers = !PaginationStateStore.hasReachedGlimmerBottom(userId: currentUserId)
+            hasMoreGlimmers = SyncStateStore.state(userId: currentUserId).glimmers.hasMore
 
             if hasMoreGlimmers && glimmers.isEmpty {
                 await loadMoreGlimmers()
@@ -262,6 +262,7 @@ struct ProfileView: View {
             glimmers = try fetchLocalGlimmers()
             glimmerOffset = glimmers.count
             hasMoreGlimmers = page.hasMore
+            updateHasMoreGlimmersState(page.hasMore)
         } catch {
             let errorMessage = error.localizedDescription
             logger.error("glimmer refresh failed: \(errorMessage, privacy: .public)")
@@ -284,14 +285,18 @@ struct ProfileView: View {
             glimmers = try fetchLocalGlimmers()
             glimmerOffset += page.items.count
             hasMoreGlimmers = page.hasMore
-            if !page.hasMore {
-                PaginationStateStore.markGlimmerBottomReached(userId: currentUserId)
-            }
+            updateHasMoreGlimmersState(page.hasMore)
         } catch {
             let message = error.localizedDescription
             logger.error("loading more glimmers failed: \(message, privacy: .public)")
             feedbackMessage = message
         }
+    }
+
+    private func updateHasMoreGlimmersState(_ hasMore: Bool) {
+        var syncState = SyncStateStore.state(userId: currentUserId)
+        syncState.glimmers.hasMore = hasMore
+        SyncStateStore.set(syncState, userId: currentUserId)
     }
 
     @MainActor
