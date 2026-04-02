@@ -52,7 +52,7 @@
 "anonymous.restricted.sidebar.description" = "Sign in to browse resonances and return to each conversation.";
 
 "profile.empty.noGlimmers" = "No glimmers yet";
-"profile.empty.noGlimmers.subtitle" = "Write your first glimmer, and let the starsea answer softly.";
+"profile.empty.noGlimmers.subtitle" = "Write your first glimmer, and listen for the first echo.";
 "profile.title.glimmers" = "Hearthaven";
 "profile.section.today" = "Today";
 "profile.section.yesterday" = "Yesterday";
@@ -63,7 +63,7 @@
 "starsea.prompt.glimmerWithin" = "What glimmers within you";
 "starsea.action.writeGlimmer" = "Write a glimmer";
 "starsea.empty.resonanceTitle" = "No resonances yet";
-"starsea.empty.resonanceSubtitle" = "Write your first glimmer,\nand let the starsea answer in its own quiet way.";
+"starsea.empty.resonanceSubtitle" = "Write your first glimmer, and listen for the first echo.";
 
 "matching.status.listening" = "Listening for echoes";
 "matching.error.title" = "Error";

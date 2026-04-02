@@ -27,7 +27,7 @@ struct SereneContentUnavailableView: View {
             ZStack {
                 Circle()
                     .fill(.ultraThinMaterial)
-                    .frame(width: 54, height: 54)
+                    .frame(width: 48, height: 48)
                     .overlay {
                         Circle()
                             .strokeBorder(.white.opacity(0.18), lineWidth: 0.8)

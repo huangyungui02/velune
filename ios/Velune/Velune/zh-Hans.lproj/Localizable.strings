@@ -52,7 +52,7 @@
 "anonymous.restricted.sidebar.description" = "登录后，可浏览共鸣并回到每段会话。";
 
 "profile.empty.noGlimmers" = "暂无心澜";
-"profile.empty.noGlimmers.subtitle" = "写下一道心澜，让星海轻轻回应你。";
+"profile.empty.noGlimmers.subtitle" = "写下第一道心澜，静候第一声回响。";
 "profile.title.glimmers" = "心舍";
 "profile.section.today" = "今天";
 "profile.section.yesterday" = "昨天";
@@ -63,7 +63,7 @@
 "starsea.prompt.glimmerWithin" = "此刻，有什么在你心中泛起";
 "starsea.action.writeGlimmer" = "写下心澜";
 "starsea.empty.resonanceTitle" = "还没有共鸣";
-"starsea.empty.resonanceSubtitle" = "先写下一道心澜吧，让星海温柔地回应你。";
+"starsea.empty.resonanceSubtitle" = "写下第一道心澜，静候第一声回响。";
 
 "matching.status.listening" = "正在聆听回响";
 "matching.error.title" = "错误";
