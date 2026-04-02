@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 struct SidebarDraftChatTarget: Identifiable, Hashable {
@@ -169,6 +170,7 @@ struct SidebarContainer<Content: View>: View {
 }
 
 struct SidebarView: View {
+    @Environment(\.modelContext) private var context
     @State private var authManager = AuthManager.shared
     let isPresented: Bool
     let selectedSoulerId: UUID?
@@ -178,13 +180,18 @@ struct SidebarView: View {
     let onOpenDraftChat: (SidebarDraftChatTarget) -> Void
     let onOpenGlimmerComposer: () -> Void
     @State private var resonances: [Resonance] = []
-    @State private var isLoadingResonances = false
+    @State private var isSyncingResonances = false
+    @State private var isLoadingMoreResonances = false
     @State private var hasMoreResonances = true
-    @State private var resonanceOffset = 0
     @State private var resonanceMenuError: String?
     @State private var resonanceSearchText = ""
 
     private let resonancePageSize = 20
+    private let incrementalOverlapSeconds: TimeInterval = 1
+
+    private var currentUserId: String? {
+        authManager.currentUserId?.uuidString
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -226,7 +233,7 @@ struct SidebarView: View {
                             }
                             .buttonStyle(.plain)
                         }
-                    } else if isLoadingResonances, resonances.isEmpty {
+                    } else if isSyncingResonances, resonances.isEmpty {
                         centeredSidebarStatus {
                             VStack(spacing: 10) {
                                 ProgressView()
@@ -293,7 +300,7 @@ struct SidebarView: View {
                                     .buttonStyle(.plain)
                                 }
 
-                                if isLoadingResonances {
+                                if isLoadingMoreResonances {
                                     HStack(spacing: 8) {
                                         ProgressView()
                                         Text("common.loading")
@@ -327,8 +334,8 @@ struct SidebarView: View {
         .frame(width: sidebarWidth, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(.ultraThinMaterial)
-        .task(id: authManager.isAnonymous) {
-            if authManager.isAnonymous {
+        .task(id: authManager.currentUserId) {
+            if authManager.isAnonymous || authManager.currentUserId == nil {
                 resetResonanceState()
             } else {
                 await loadResonances()
@@ -397,46 +404,126 @@ struct SidebarView: View {
     @MainActor
     private func resetResonanceState() {
         resonances = []
-        isLoadingResonances = false
+        isSyncingResonances = false
+        isLoadingMoreResonances = false
         hasMoreResonances = true
-        resonanceOffset = 0
         resonanceMenuError = nil
         resonanceSearchText = ""
     }
 
     @MainActor
     private func loadResonances() async {
-        if isLoadingResonances { return }
+        guard let userId = currentUserId else {
+            resetResonanceState()
+            return
+        }
 
-        isLoadingResonances = true
-        defer { isLoadingResonances = false }
+        let hasLocalCache = loadLocalResonances(userId: userId)
+        await syncResonances(userId: userId, hasLocalCache: hasLocalCache)
+    }
+
+    @MainActor
+    @discardableResult
+    private func loadLocalResonances(userId: String) -> Bool {
+        do {
+            resonances = try SidebarResonanceStore.fetch(userId: userId, context: context)
+            let state = SidebarSyncStateStore.state(userId: userId)
+            hasMoreResonances = state.hasMore
+            if !resonances.isEmpty {
+                resonanceMenuError = nil
+            }
+            return !resonances.isEmpty
+        } catch {
+            resonances = []
+            hasMoreResonances = true
+            return false
+        }
+    }
+
+    @MainActor
+    private func syncResonances(userId: String, hasLocalCache: Bool) async {
+        if isSyncingResonances { return }
+
+        isSyncingResonances = true
+
+        defer { isSyncingResonances = false }
 
         do {
-            let page = try await Resonance.getPage(limit: resonancePageSize, offset: 0)
-            resonances = page
-            resonanceOffset = page.count
-            hasMoreResonances = page.count == resonancePageSize
+            let currentState = SidebarSyncStateStore.state(userId: userId)
+            let syncPayload = try await fetchSyncPayload(lastSyncedAt: currentState.lastSyncedAt)
+            let hasChanges = try SidebarResonanceStore.merge(syncPayload.items, userId: userId, context: context)
+
+            if hasChanges {
+                resonances = try SidebarResonanceStore.fetch(userId: userId, context: context)
+            }
+
+            let nextState = SidebarSyncState(
+                lastSyncedAt: syncPayload.lastSyncedAt ?? currentState.lastSyncedAt,
+                hasMore: syncPayload.hasMore ?? currentState.hasMore
+            )
+            SidebarSyncStateStore.set(nextState, userId: userId)
+            hasMoreResonances = nextState.hasMore
             resonanceMenuError = nil
         } catch {
-            resonanceMenuError = error.localizedDescription
-            resonances = []
-            resonanceOffset = 0
-            hasMoreResonances = true
+            if !hasLocalCache && resonances.isEmpty {
+                resonanceMenuError = error.localizedDescription
+            }
+        }
+    }
+
+    private func fetchSyncPayload(lastSyncedAt: Date?) async throws -> (items: [Resonance], lastSyncedAt: Date?, hasMore: Bool?) {
+        if let lastSyncedAt {
+            let updates = try await Resonance.getUpdatedSince(
+                lastSyncedAt,
+                pageSize: resonancePageSize,
+                overlapSeconds: incrementalOverlapSeconds
+            )
+            let maxUpdatedAt = updates.map(\.updatedAt).max()
+            let nextSyncedAt = maxUpdatedAt.map { max($0, lastSyncedAt) } ?? lastSyncedAt
+            return (items: updates, lastSyncedAt: nextSyncedAt, hasMore: nil)
+        } else {
+            let page = try await Resonance.getPage(limit: resonancePageSize, offset: 0)
+            return (
+                items: page,
+                lastSyncedAt: page.map(\.updatedAt).max(),
+                hasMore: page.count == resonancePageSize
+            )
         }
     }
 
     @MainActor
     private func loadMoreResonances() async {
-        guard !isLoadingResonances, hasMoreResonances else { return }
+        guard let userId = currentUserId else { return }
+        guard !isSyncingResonances, !isLoadingMoreResonances, hasMoreResonances else { return }
 
-        isLoadingResonances = true
-        defer { isLoadingResonances = false }
+        isLoadingMoreResonances = true
+        defer { isLoadingMoreResonances = false }
 
         do {
-            let page = try await Resonance.getPage(limit: resonancePageSize, offset: resonanceOffset)
-            resonances.append(contentsOf: page)
-            resonanceOffset += page.count
+            let page = try await Resonance.getPage(limit: resonancePageSize, offset: resonances.count)
+            let hasChanges = try SidebarResonanceStore.merge(page, userId: userId, context: context)
+            if hasChanges {
+                resonances = try SidebarResonanceStore.fetch(userId: userId, context: context)
+            }
+
             hasMoreResonances = page.count == resonancePageSize
+            let currentState = SidebarSyncStateStore.state(userId: userId)
+            let pageMaxUpdatedAt = page.map(\.updatedAt).max()
+            let nextSyncedAt: Date?
+            if let pageMaxUpdatedAt {
+                if let currentLastSyncedAt = currentState.lastSyncedAt {
+                    nextSyncedAt = max(pageMaxUpdatedAt, currentLastSyncedAt)
+                } else {
+                    nextSyncedAt = pageMaxUpdatedAt
+                }
+            } else {
+                nextSyncedAt = currentState.lastSyncedAt
+            }
+
+            SidebarSyncStateStore.set(
+                SidebarSyncState(lastSyncedAt: nextSyncedAt, hasMore: hasMoreResonances),
+                userId: userId
+            )
             resonanceMenuError = nil
         } catch {
             resonanceMenuError = error.localizedDescription

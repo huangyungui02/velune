@@ -474,6 +474,10 @@ struct AccountSettingsView: View {
             let userId = AuthManager.shared.currentUserId?.uuidString
             try await AuthManager.shared.deleteAccount()
             PaginationStateStore.clearGlimmerBottom(userId: userId)
+            SidebarSyncStateStore.clear(userId: userId)
+            if let userId {
+                try SidebarResonanceStore.clear(userId: userId, context: modelContext)
+            }
             try modelContext.delete(model: Glimmer.self)
             try modelContext.delete(model: Echo.self)
             dismiss()
