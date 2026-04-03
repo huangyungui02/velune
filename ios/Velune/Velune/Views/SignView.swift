@@ -40,7 +40,7 @@ struct SignView: View {
                     .frame(width: metrics.logoSize, height: metrics.logoSize)
                     .foregroundStyle(UITheme.primaryText.opacity(0.92))
                 
-                Text("Velune")
+                Text("sign.appName")
                     .font(.system(size: metrics.brandTitleSize, weight: .medium, design: .serif))
                     .tracking(0.4)
                     .minimumScaleFactor(0.9)
@@ -154,7 +154,7 @@ private struct SignLayoutMetrics {
     var bottomSpacer: CGFloat { isCompactHeight ? 10 : 18 }
 
     var brandSpacing: CGFloat { isCompactHeight ? 30 : 42 }
-    var logoSize: CGFloat { isCompactHeight ? 84 : 98 }
+    var logoSize: CGFloat { isCompactHeight ? 96 : 112 }
     var brandTitleSize: CGFloat { isCompactHeight ? 40 : 44 }
     var sloganSize: CGFloat { isCompactHeight ? 22 : 24 }
     var sloganWidth: CGFloat { isNarrowWidth ? 286 : 320 }

@@ -40,6 +40,7 @@
 "common.loading" = "Loading…";
 "common.search" = "Search";
 
+"sign.appName" = "Velune";
 "sign.slogan" = "Explore inward,\nreach the depths of the cosmos.";
 "sign.action.skip" = "Skip for now";
 "sign.terms.full" = "By signing in, you agree to our Terms of Service and Privacy Policy.";
