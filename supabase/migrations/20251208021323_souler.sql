@@ -4,7 +4,6 @@ CREATE TABLE soulers (
     name VARCHAR(64) NOT NULL,
     lang VARCHAR(16) NOT NULL,
     bio TEXT,
-    prompt TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

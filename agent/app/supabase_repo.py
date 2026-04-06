@@ -22,7 +22,6 @@ class Souler(TypedDict):
     id: str
     name: str
     bio: str | None
-    prompt: str | None
 
 
 class SessionContext(TypedDict):
@@ -90,13 +89,10 @@ def _to_souler(raw: Any) -> Souler:
         raise ValueError("Souler not found")
 
     bio = souler.get("bio")
-    prompt = souler.get("prompt")
-
     return {
         "id": souler_id,
         "name": name,
         "bio": str(bio) if isinstance(bio, str) else None,
-        "prompt": str(prompt) if isinstance(prompt, str) else None,
     }
 
 
@@ -166,7 +162,7 @@ def list_glimmer_echoes(glimmer_id: str) -> list[dict[str, Any]]:
 def get_session_by_id(user_id: str, session_id: str) -> SessionContext:
     response = (
         supabase.table("sessions")
-        .select("id, user_id, souler_id, title, soulers(id, name, bio, prompt)")
+        .select("id, user_id, souler_id, title, soulers(id, name, bio)")
         .eq("id", session_id)
         .eq("user_id", user_id)
         .single()
@@ -188,7 +184,7 @@ def get_session_by_id(user_id: str, session_id: str) -> SessionContext:
 def get_souler_by_id(souler_id: str) -> Souler:
     response = (
         supabase.table("soulers")
-        .select("id, name, bio, prompt")
+        .select("id, name, bio")
         .eq("id", souler_id)
         .single()
         .execute()

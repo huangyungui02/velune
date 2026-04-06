@@ -11,7 +11,6 @@ from app.echo_nodes import (
     resolve_souler_name,
     souler_answer,
     souler_profile,
-    souler_prompt,
 )
 from app.errors import CreditLimitError
 from app.supabase_repo import (
@@ -93,12 +92,6 @@ async def _ensure_souler_assets(
         souler_data["bio"] = generated_bio
         update_souler(souler_id, {"bio": generated_bio})
 
-    prompt = souler_data.get("prompt")
-    if not isinstance(prompt, str) or not prompt.strip():
-        generated_prompt = await souler_prompt(souler_name, lang)
-        souler_data["prompt"] = generated_prompt
-        update_souler(souler_id, {"prompt": generated_prompt})
-
     return souler_data
 
 
@@ -126,7 +119,7 @@ async def invoke_echo_graph(
 
         answer = await souler_answer(
             glimmer_content,
-            str(souler_data["prompt"]),
+            souler_name,
             lang,
         )
         echo = create_echo(

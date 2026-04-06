@@ -78,33 +78,12 @@ def _sanitize_title(raw: str, lang: Lang) -> str:
     return " ".join(trimmed.split()[:8])
 
 
-def _build_system_prompt(
-    name: str, bio: str | None, prompt: str | None, lang: Lang
-) -> str:
-    locale_instruction = (
-        "与用户进行深入的灵魂对话。"
-        if lang == "chs"
-        else "Have a deep soulful conversation with the user."
-    )
-    language_rule = "仅使用中文回复。" if lang == "chs" else "Reply in English only."
-
-    if prompt and prompt.strip():
-        return "\n\n".join([prompt.strip(), locale_instruction, language_rule])
-
-    profile_intro = f"你是{name}。" if lang == "chs" else f"You are {name}."
-    profile_bio = ""
-    if bio and bio.strip():
-        profile_bio = (
-            f"背景：\n{bio.strip()}" if lang == "chs" else f"Background:\n{bio.strip()}"
-        )
-
-    return "\n\n".join(
-        [
-            part
-            for part in [profile_intro, profile_bio, locale_instruction, language_rule]
-            if part
-        ]
-    )
+def _build_system_prompt(name: str, lang: Lang) -> str:
+    template: dict[Lang, str] = {
+        "chs": "请以{name}的风格和用户进行深度对话",
+        "en": "Please have a deep conversation with the user in the style of {name}.",
+    }
+    return template[lang].format(name=name)
 
 
 async def _generate_session_title(
@@ -208,8 +187,6 @@ def _build_prompt_messages(
             "role": "system",
             "content": _build_system_prompt(
                 session["souler"]["name"],
-                session["souler"].get("bio"),
-                session["souler"].get("prompt"),
                 lang,
             ),
         }
@@ -427,7 +404,9 @@ async def _prepare_chat_request(
 async def chat(lang: Lang, request: Request) -> StreamingResponse:
     lang = str(lang).strip().lower()
     if lang not in SUPPORTED_LANGS:
-        return JSONResponse({"error": "Invalid lang, must be one of: en, chs"}, status_code=400)
+        return JSONResponse(
+            {"error": "Invalid lang, must be one of: en, chs"}, status_code=400
+        )
 
     started_at = asyncio.get_running_loop().time()
 
