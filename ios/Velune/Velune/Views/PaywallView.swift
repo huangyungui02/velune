@@ -117,11 +117,12 @@ struct PaywallView: View {
                     // Legal
                     HStack(spacing: 16) {
                         Link("settings.link.terms", destination: AppLinks.terms)
+                            .foregroundStyle(.secondary)
                         Text("•").foregroundStyle(.tertiary)
                         Link("settings.link.privacy", destination: AppLinks.privacy)
+                            .foregroundStyle(.secondary)
                     }
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
                     .padding(.bottom, 32)
                 }
             }
