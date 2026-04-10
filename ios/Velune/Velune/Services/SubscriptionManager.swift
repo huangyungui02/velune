@@ -11,7 +11,8 @@ final class SubscriptionManager {
 
     var isPremium = false
     var credits = BillingConfig.freeDailyCredits
-    var monthlyPriceText = BillingConfig.premiumMonthlyPriceUSD
+    
+    private(set) var availablePackages: [Package] = []
     var entitlementExpiresAt: Date?
 
     var isRevenueCatAvailable = false
@@ -24,7 +25,6 @@ final class SubscriptionManager {
 
     private var hasConfiguredRevenueCat = false
     private var activeAppUserID: String?
-    private var monthlyPackage: Package?
     private var currentBillingUserID: UUID?
     private var pendingForcedRefresh = false
     private static let iso8601Formatter: ISO8601DateFormatter = {
@@ -78,7 +78,7 @@ final class SubscriptionManager {
         }
     }
 
-    func purchasePremium() async throws {
+    func purchasePremium(package: Package) async throws {
         guard !AuthManager.shared.isAnonymous else {
             throw NSError(
                 domain: "Billing",
@@ -92,17 +92,8 @@ final class SubscriptionManager {
         let currentUserId = try requireAuthenticatedRevenueCatUserId()
         try await ensureRevenueCatIdentityMatches(userId: currentUserId)
 
-        if monthlyPackage == nil {
+        if availablePackages.isEmpty {
             await refreshOfferings()
-        }
-
-        guard let package = monthlyPackage else {
-            let message = lastErrorMessage ?? String(localized: "billing.error.offeringUnavailable")
-            throw NSError(
-                domain: "RevenueCat",
-                code: -2,
-                userInfo: [NSLocalizedDescriptionKey: message]
-            )
         }
 
         isPurchasing = true
@@ -183,8 +174,7 @@ final class SubscriptionManager {
 
     private func refreshOfferings() async {
         guard isRevenueCatAvailable else {
-            monthlyPackage = nil
-            applyDefaultMonthlyPrice()
+            availablePackages = []
             return
         }
         if isLoadingOfferings { return }
@@ -194,21 +184,18 @@ final class SubscriptionManager {
 
         do {
             let offerings = try await Purchases.shared.offerings()
-            let package = selectPackage(from: offerings)
-            monthlyPackage = package
-            if let package {
-                monthlyPriceText = package.storeProduct.localizedPriceString + " " + String(localized: "billing.price.perMonthSuffix")
+            if let packages = offerings.current?.availablePackages, !packages.isEmpty {
+                availablePackages = packages
                 lastErrorMessage = nil
-                logger.notice("offering resolved: \(package.storeProduct.productIdentifier, privacy: .public)")
+                logger.notice("offerings resolved: \(packages.count, privacy: .public) packages")
             } else {
-                applyDefaultMonthlyPrice()
+                availablePackages = []
                 lastErrorMessage =
                     "RevenueCat offerings are empty. current=\(offerings.current?.identifier ?? "nil"), all=\(Array(offerings.all.keys))"
                 logger.error("offering unavailable: \(self.lastErrorMessage ?? "", privacy: .public)")
             }
         } catch {
-            monthlyPackage = nil
-            applyDefaultMonthlyPrice()
+            availablePackages = []
             lastErrorMessage = "RevenueCat offerings fetch failed: \(error.localizedDescription)"
             logger.error("offerings fetch failed: \(error.localizedDescription, privacy: .public)")
         }
@@ -217,7 +204,7 @@ final class SubscriptionManager {
     private func resetToFreeDefaults() {
         isPremium = false
         credits = BillingConfig.freeDailyCredits
-        applyDefaultMonthlyPrice()
+        availablePackages = []
         entitlementExpiresAt = nil
         pendingForcedRefresh = false
         currentBillingUserID = nil
@@ -344,10 +331,6 @@ final class SubscriptionManager {
         return normalized.lowercased()
     }
 
-    private func applyDefaultMonthlyPrice() {
-        monthlyPriceText = BillingConfig.premiumMonthlyPriceUSD
-    }
-
     private func requireAuthenticatedRevenueCatUserId() throws -> String {
         guard isRevenueCatAvailable else {
             throw NSError(
@@ -364,21 +347,6 @@ final class SubscriptionManager {
         }
 
         return currentUserId.lowercased()
-    }
-
-    private func selectPackage(from offerings: Offerings) -> Package? {
-        if let monthly = offerings.current?.monthly {
-            return monthly
-        }
-        if let firstCurrent = offerings.current?.availablePackages.first {
-            return firstCurrent
-        }
-
-        let allPackages = offerings.all.values.flatMap { $0.availablePackages }
-        if let monthly = allPackages.first(where: { $0.packageType == .monthly }) {
-            return monthly
-        }
-        return allPackages.first
     }
 }
 

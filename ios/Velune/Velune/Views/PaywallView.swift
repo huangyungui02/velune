@@ -1,4 +1,5 @@
 import SwiftUI
+import RevenueCat
 
 struct PaywallView: View {
     private enum FeedbackMessage {
@@ -27,17 +28,18 @@ struct PaywallView: View {
     @State private var feedbackMessage: FeedbackMessage?
     @State private var showSignInSheet = false
     @State private var signInPromptReason: SignInPromptReason = .subscribe
+    @State private var selectedPackage: RevenueCat.Package?
     
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 40) {
+                VStack(spacing: 24) {
                     // Header
-                    VStack(spacing: 16) {
+                    VStack(spacing: 12) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 48, weight: .light))
+                            .font(.system(size: 40, weight: .light))
                             .foregroundStyle(.primary)
-                            .padding(.top, 40)
+                            .padding(.top, 24)
                         
                         Text("paywall.title")
                             .font(.system(.largeTitle, design: .serif))
@@ -53,7 +55,7 @@ struct PaywallView: View {
                     Spacer()
                     
                     // Features
-                    VStack(spacing: 24) {
+                    VStack(spacing: 16) {
                         FeatureRow(
                             icon: "sparkles.rectangle.stack",
                             title: "paywall.feature.moreStardust.title",
@@ -71,7 +73,24 @@ struct PaywallView: View {
                     Spacer()
                     
                     // Action Area
-                    VStack(spacing: 16) {
+                    VStack(spacing: 12) {
+                        if !subscriptionManager.availablePackages.isEmpty {
+                            VStack(spacing: 8) {
+                                ForEach(subscriptionManager.availablePackages, id: \.identifier) { package in
+                                    PackageRow(
+                                        package: package,
+                                        isSelected: selectedPackage?.identifier == package.identifier,
+                                        onSelect: { selectedPackage = package }
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 32)
+                            .padding(.bottom, 8)
+                        } else {
+                            ProgressView()
+                                .padding()
+                        }
+                        
                         Button {
                             handleSubscribeTap()
                         } label: {
@@ -83,18 +102,15 @@ struct PaywallView: View {
                                 }
                                 Text("paywall.action.subscribe")
                                     .fontWeight(.medium)
-
-                                Text(subscriptionManager.monthlyPriceText)
-                                    .font(.subheadline)
-                                    .foregroundStyle(UITheme.primaryActionForeground(for: colorScheme).opacity(0.75))
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
+                            .padding(.vertical, 14)
                             .background(UITheme.primaryActionBackground(for: colorScheme))
                             .foregroundStyle(UITheme.primaryActionForeground(for: colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
-                        .disabled(subscriptionManager.isPurchasing || !subscriptionManager.isRevenueCatAvailable)
+                        .disabled(subscriptionManager.isPurchasing || !subscriptionManager.isRevenueCatAvailable || selectedPackage == nil)
+                        .opacity(selectedPackage == nil ? 0.5 : 1.0)
                         .padding(.horizontal, 32)
                         
                         Button {
@@ -123,7 +139,7 @@ struct PaywallView: View {
                             .foregroundStyle(.secondary)
                     }
                     .font(.caption2)
-                    .padding(.bottom, 32)
+                    .padding(.bottom, 16)
                 }
             }
             .scrollIndicators(.hidden)
@@ -162,6 +178,16 @@ struct PaywallView: View {
                     }
                 }
             }
+            .onChange(of: subscriptionManager.availablePackages) { _, newPackages in
+                if selectedPackage == nil, let first = newPackages.first {
+                    selectedPackage = first
+                }
+            }
+            .onAppear {
+                if selectedPackage == nil, let first = subscriptionManager.availablePackages.first {
+                    selectedPackage = first
+                }
+            }
             .sheet(isPresented: $showSignInSheet) {
                 SignInRequiredSheet(descriptionKey: signInPromptReason.descriptionKey)
             }
@@ -169,13 +195,14 @@ struct PaywallView: View {
     }
 
     private func handleSubscribeTap() {
+        guard let package = selectedPackage else { return }
         guard !authManager.isAnonymous else {
             signInPromptReason = .subscribe
             showSignInSheet = true
             return
         }
 
-        Task { await purchase() }
+        Task { await purchase(package: package) }
     }
 
     private func handleRestoreTap() {
@@ -188,9 +215,9 @@ struct PaywallView: View {
         Task { await restore() }
     }
     
-    private func purchase() async {
+    private func purchase(package: RevenueCat.Package) async {
         do {
-            try await subscriptionManager.purchasePremium()
+            try await subscriptionManager.purchasePremium(package: package)
         } catch {
             feedbackMessage = .text(error.localizedDescription)
         }
@@ -222,16 +249,55 @@ private struct FeatureRow: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.headline)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
                 
                 Text(subtitle)
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             
             Spacer(minLength: 0)
         }
+    }
+}
+
+private struct PackageRow: View {
+    let package: RevenueCat.Package
+    let isSelected: Bool
+    let onSelect: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+    
+    private var isAwaken: Bool {
+        package.identifier.lowercased().contains("awaken")
+    }
+    
+    var body: some View {
+        Button(action: onSelect) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(isAwaken ? "paywall.tier.awaken.title" : "paywall.tier.deep.title")
+                        .font(.headline)
+                        .foregroundStyle(isSelected ? UITheme.primaryActionBackground(for: colorScheme) : .primary)
+                    Text(isAwaken ? "paywall.tier.awaken.subtitle" : "paywall.tier.deep.subtitle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(package.storeProduct.localizedPriceString + " " + String(localized: "billing.price.perMonthSuffix"))
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+            }
+            .padding()
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? UITheme.primaryActionBackground(for: colorScheme) : Color.secondary.opacity(0.3), lineWidth: isSelected ? 2 : 1)
+            )
+            .background(isSelected ? UITheme.primaryActionBackground(for: colorScheme).opacity(0.05) : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
     }
 }
 

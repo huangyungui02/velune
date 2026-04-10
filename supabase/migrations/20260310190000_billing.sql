@@ -68,6 +68,24 @@ AS $$
         );
 $$;
 
+CREATE OR REPLACE FUNCTION public.billing_daily_credits(
+    p_is_entitlement_active BOOLEAN,
+    p_entitlement_id TEXT,
+    p_product_id TEXT
+)
+RETURNS INT
+LANGUAGE sql
+STABLE
+SET search_path = public
+AS $$
+    SELECT CASE
+        WHEN NOT COALESCE(p_is_entitlement_active, false) THEN 10
+        WHEN lower(COALESCE(p_product_id, '')) = 'prod2a5ae70e22' THEN 50
+        WHEN lower(COALESCE(p_product_id, '')) = 'prod2454840db9' THEN 100
+        ELSE 100
+    END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user_billing_state()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -124,10 +142,11 @@ BEGIN
         v_reference
     );
 
-    v_daily_credits := CASE
-        WHEN v_is_active THEN 100
-        ELSE 10
-    END;
+    v_daily_credits := public.billing_daily_credits(
+        v_is_active,
+        v_state.entitlement_id,
+        v_state.product_id
+    );
     v_should_refresh := v_state.credits_refreshed_on IS DISTINCT FROM v_today;
     v_credits_before_refresh := GREATEST(COALESCE(v_state.credits, 0), 0);
 
@@ -391,10 +410,11 @@ BEGIN
         RETURN;
     END IF;
 
-    v_daily_credits := CASE
-        WHEN v_state.is_entitlement_active THEN 100
-        ELSE 10
-    END;
+    v_daily_credits := public.billing_daily_credits(
+        v_state.is_entitlement_active,
+        v_state.entitlement_id,
+        v_state.product_id
+    );
 
     UPDATE public.user_billing_state AS ubs
     SET credits = LEAST(ubs.credits + v_amount, v_daily_credits)
@@ -413,6 +433,7 @@ $$;
 
 REVOKE ALL ON FUNCTION public.ensure_user_billing_state(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.billing_effective_is_active(BOOLEAN, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.billing_daily_credits(BOOLEAN, TEXT, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.handle_new_auth_user_billing_state() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.refresh_user_billing_state(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.get_user_credit_state() FROM PUBLIC;

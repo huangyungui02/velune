@@ -26,7 +26,7 @@
 "settings.billing.renewalTime" = "Renewal Time";
 "settings.billing.price" = "Subscription Price";
 "settings.billing.stardust.description" = "Free users get 10 stardust each day.\n\nEach echo costs 5 stardust, and each chat message costs 1 stardust.";
-"settings.billing.stardust.description.premium" = "Your subscription includes 100 stardust each day.\n\nEach echo costs 5 stardust, and each chat message costs 1 stardust.";
+"settings.billing.stardust.description.premium" = "Your subscription includes corresponding stardust each day.\n\nEach echo costs 5 stardust, and each chat message costs 1 stardust.";
 "settings.billing.revenuecat.missingKey" = "RevenueCat public key is missing. Purchases are disabled.";
 "settings.error.title" = "Action Failed";
 "settings.signOut.confirm.title" = "Are you sure you want to sign out?";
@@ -103,14 +103,18 @@
 "billing.error.offeringUnavailable" = "No purchasable package is available right now. Please try again later.";
 "paywall.restore.notFound" = "No active subscription found. If you recently purchased, please try again in a moment.";
 
-"paywall.title" = "Velune · Depth";
+"paywall.title" = "Velune";
 "paywall.subtitle" = "A glimmer in the heart, and the echo goes on.";
+"paywall.tier.awaken.title" = "Velune · Awaken";
+"paywall.tier.awaken.subtitle" = "50 stardust daily";
+"paywall.tier.deep.title" = "Velune · Depth";
+"paywall.tier.deep.subtitle" = "100 stardust daily";
 "paywall.feature.moreStardust.title" = "More Stardust";
-"paywall.feature.moreStardust.subtitle" = "100 stardust each day for continued conversations and echoes.";
+"paywall.feature.moreStardust.subtitle" = "Get more daily stardust for continued conversations and echoes.";
 "paywall.feature.priorityAccess.title" = "Priority Access";
 "paywall.feature.priorityAccess.subtitle" = "Be the first to experience new features and capabilities.";
-"paywall.subscription.stardust.note" = "Your subscription includes 100 stardust each day. Stardust refreshes daily.";
-"paywall.action.subscribe" = "Enter";
+"paywall.subscription.stardust.note" = "Stardust refreshes daily.";
+"paywall.action.subscribe" = "Subscribe";
 "paywall.signInRequired.title" = "Sign In Required";
 "paywall.signInRequired.description" = "Anonymous accounts can’t subscribe. Sign in to continue.";
 "paywall.restore.signInRequired.description" = "Anonymous accounts can’t restore purchases. Sign in to continue.";
