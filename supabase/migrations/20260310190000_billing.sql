@@ -102,8 +102,9 @@ DECLARE
     v_is_active BOOLEAN;
     v_daily_credits INT;
     v_should_refresh BOOLEAN;
-    v_status_changed BOOLEAN;
+    v_credits_before_refresh INT;
     v_credits INT;
+    v_refreshed_on DATE;
 BEGIN
     PERFORM public.ensure_user_billing_state(p_user_id);
 
@@ -127,22 +128,25 @@ BEGIN
         WHEN v_is_active THEN 100
         ELSE 10
     END;
-    v_status_changed := v_state.is_entitlement_active IS DISTINCT FROM v_is_active;
     v_should_refresh := v_state.credits_refreshed_on IS DISTINCT FROM v_today;
+    v_credits_before_refresh := GREATEST(COALESCE(v_state.credits, 0), 0);
 
-    v_credits := CASE
-        WHEN v_should_refresh OR v_status_changed THEN v_daily_credits
-        ELSE LEAST(GREATEST(v_state.credits, 0), v_daily_credits)
-    END;
+    IF v_should_refresh AND v_credits_before_refresh < v_daily_credits THEN
+        v_credits := v_daily_credits;
+        v_refreshed_on := v_today;
+    ELSE
+        v_credits := v_credits_before_refresh;
+        v_refreshed_on := v_state.credits_refreshed_on;
+    END IF;
 
     IF v_state.is_entitlement_active IS DISTINCT FROM v_is_active
-        OR v_state.credits_refreshed_on IS DISTINCT FROM v_today
+        OR v_state.credits_refreshed_on IS DISTINCT FROM v_refreshed_on
         OR v_state.credits IS DISTINCT FROM v_credits
     THEN
         UPDATE public.user_billing_state
         SET
             is_entitlement_active = v_is_active,
-            credits_refreshed_on = v_today,
+            credits_refreshed_on = v_refreshed_on,
             credits = v_credits
         WHERE user_id = p_user_id
         RETURNING * INTO v_state;
