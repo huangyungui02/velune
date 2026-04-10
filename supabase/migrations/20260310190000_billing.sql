@@ -80,8 +80,8 @@ SET search_path = public
 AS $$
     SELECT CASE
         WHEN NOT COALESCE(p_is_entitlement_active, false) THEN 10
-        WHEN lower(COALESCE(p_product_id, '')) = 'prod2a5ae70e22' THEN 50
-        WHEN lower(COALESCE(p_product_id, '')) = 'prod2454840db9' THEN 100
+        WHEN lower(COALESCE(p_product_id, '')) LIKE '%awaken%' THEN 50
+        WHEN lower(COALESCE(p_product_id, '')) LIKE '%depth%' THEN 100
         ELSE 100
     END;
 $$;

@@ -33,16 +33,6 @@ enum BillingConfig {
     static let awakenDailyCredits = 50
     static let depthDailyCredits = 100
 
-    // RevenueCat product IDs plus semantic fallbacks from subscription.md.
-    private static let awakenProductTokens: Set<String> = [
-        "prod2a5ae70e22",
-        "awaken",
-    ]
-    private static let depthProductTokens: Set<String> = [
-        "prod2454840db9",
-        "depth",
-    ]
-
     static var revenueCatPublicSDKKey: String {
         (Bundle.main.object(forInfoDictionaryKey: "REVENUECAT_PUBLIC_SDK_KEY") as? String ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -80,25 +70,13 @@ enum BillingConfig {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
             .filter { !$0.isEmpty }
 
-        if normalized.contains(where: matchesDepthProduct) {
+        if normalized.contains(where: { $0.contains("depth") }) {
             return .depth
         }
-        if normalized.contains(where: matchesAwakenProduct) {
+        if normalized.contains(where: { $0.contains("awaken") }) {
             return .awaken
         }
 
         return nil
-    }
-
-    private static func matchesAwakenProduct(_ productId: String) -> Bool {
-        awakenProductTokens.contains(where: { token in
-            productId == token || productId.contains(token)
-        })
-    }
-
-    private static func matchesDepthProduct(_ productId: String) -> Bool {
-        depthProductTokens.contains(where: { token in
-            productId == token || productId.contains(token)
-        })
     }
 }

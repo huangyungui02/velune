@@ -147,6 +147,62 @@ const asStringArray = (value: unknown) => {
   return value.filter((item): item is string => typeof item === "string");
 };
 
+const RC_RESOURCE_ID_REGEX =
+  /^(?:app|entl|offrng|pkg|prod|proj)[a-z0-9]+$/i;
+
+const normalizeProductIdentifier = (value: unknown): string | null => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  // Ignore RevenueCat resource ids such as app6a1dad49c1 / prod2a5ae70e22.
+  if (RC_RESOURCE_ID_REGEX.test(normalized)) {
+    return null;
+  }
+
+  return normalized;
+};
+
+const extractSubscriptionProductId = (value: Record<string, unknown>): string | null => {
+  const directCandidates = [
+    value.store_product_id,
+    value.store_identifier,
+    value.product_identifier,
+    value.product_id,
+    value.store_id,
+  ];
+
+  for (const candidate of directCandidates) {
+    const normalized = normalizeProductIdentifier(candidate);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  const product = value.product;
+  if (isRecord(product)) {
+    const nestedCandidates = [
+      product.store_identifier,
+      product.product_identifier,
+      product.product_id,
+      product.id,
+    ];
+    for (const candidate of nestedCandidates) {
+      const normalized = normalizeProductIdentifier(candidate);
+      if (normalized) {
+        return normalized;
+      }
+    }
+  }
+
+  return null;
+};
+
 const toUUID = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
   const normalized = value.trim();
@@ -243,11 +299,7 @@ const parseRevenueCatSubscriptions = (
         : null;
       const entitlements = parseRevenueCatEntitlements(value.entitlements);
 
-      const productId = typeof value.product_id === "string"
-        ? value.product_id
-        : typeof value.store_id === "string"
-        ? value.store_id
-        : null;
+      const productId = extractSubscriptionProductId(value);
       const expiresAt = parseDate(value.ends_at) ??
         parseDate(value.current_period_ends_at) ??
         parseDate(value.expires_at) ??
@@ -368,6 +420,7 @@ const parseWebhookFallbackState = (
   event: RevenueCatWebhookEvent,
   entitlementId: string,
 ): ParsedState | null => {
+  const webhookProductId = normalizeProductIdentifier(event.product_id);
   const entitlementIds = collectUniqueStrings(asStringArray(event.entitlement_ids));
   if (entitlementIds.length === 0) {
     return null;
@@ -398,16 +451,16 @@ const parseWebhookFallbackState = (
     configuredEntitlementId: entitlementId,
     availableEntitlementIds: entitlementIds,
     availableSubscriptionProductIds: collectUniqueStrings([
-      typeof event.product_id === "string" ? event.product_id : null,
+      webhookProductId,
     ]),
     activeSubscriptionProductIds: active
       ? collectUniqueStrings([
-        typeof event.product_id === "string" ? event.product_id : null,
+        webhookProductId,
       ])
       : [],
     usedSubscriptionFallback: false,
     usedWebhookFallback: true,
-    productId: typeof event.product_id === "string" ? event.product_id : null,
+    productId: webhookProductId,
     expiresDate: normalizeISODate(expiration),
     environment: environment === "sandbox" || environment === "production"
       ? environment
@@ -526,6 +579,7 @@ Deno.serve(async (req) => {
 
     const eventId = typeof event.id === "string" ? event.id : null;
     const eventType = typeof event.type === "string" ? event.type : "unknown";
+    const eventProductId = normalizeProductIdentifier(event.product_id);
     const userIds = extractUserIds(event);
 
     if (userIds.length === 0) {
@@ -554,7 +608,23 @@ Deno.serve(async (req) => {
         const fallbackState = subscriptions.length === 0
           ? parseWebhookFallbackState(event, entitlementId)
           : null;
-        const state = fallbackState ?? baseState;
+        const sourceState = fallbackState ?? baseState;
+        const state = eventProductId
+          ? {
+            ...sourceState,
+            productId: eventProductId,
+            availableSubscriptionProductIds: collectUniqueStrings([
+              eventProductId,
+              ...sourceState.availableSubscriptionProductIds,
+            ]),
+            activeSubscriptionProductIds: sourceState.active
+              ? collectUniqueStrings([
+                eventProductId,
+                ...sourceState.activeSubscriptionProductIds,
+              ])
+              : sourceState.activeSubscriptionProductIds,
+          }
+          : sourceState;
 
         await syncBillingSubscription(userId, state);
 
