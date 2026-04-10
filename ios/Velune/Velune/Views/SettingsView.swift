@@ -46,6 +46,13 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    LabeledContent {
+                        Text(subscriptionPlanName)
+                            .foregroundStyle(UITheme.secondaryText)
+                    } label: {
+                        settingsRowLabel("settings.billing.plan", systemImage: "crown")
+                    }
+
                     HStack(spacing: 10) {
                         HStack(spacing: 8) {
                             settingsRowLabel("settings.billing.credits", systemImage: "sparkle")
@@ -257,7 +264,7 @@ struct SettingsView: View {
 
     private var stardustInfoPopover: some View {
         ScrollView {
-            Text(stardustInfoDescriptionKey)
+            Text(stardustInfoDescriptionText)
                 .font(.subheadline)
                 .foregroundStyle(UITheme.secondaryText)
                 .multilineTextAlignment(.leading)
@@ -332,10 +339,17 @@ struct SettingsView: View {
         return DateFormatter.localizedString(from: renewalDate, dateStyle: .medium, timeStyle: .none)
     }
 
-    private var stardustInfoDescriptionKey: LocalizedStringKey {
-        subscriptionManager.isPremium
-            ? "settings.billing.stardust.description.premium"
-            : "settings.billing.stardust.description"
+    private var subscriptionPlanName: String {
+        NSLocalizedString(subscriptionManager.currentPlan.localizedNameKey, comment: "")
+    }
+
+    private var stardustInfoDescriptionText: String {
+        guard subscriptionManager.currentPlan != .free else {
+            return String(localized: "settings.billing.stardust.description")
+        }
+
+        let format = String(localized: "settings.billing.stardust.description.premium.format")
+        return String(format: format, locale: Locale.current, subscriptionManager.dailyCreditsAllowance)
     }
 
     private var stardustAccessView: some View {

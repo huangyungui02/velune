@@ -10,7 +10,9 @@ final class SubscriptionManager {
     private let logger = AppLogger.billing
 
     var isPremium = false
+    var currentPlan: BillingPlan = .free
     var credits = BillingConfig.freeDailyCredits
+    var dailyCreditsAllowance: Int { currentPlan.dailyCredits }
     
     private(set) var availablePackages: [Package] = []
     var entitlementExpiresAt: Date?
@@ -203,6 +205,7 @@ final class SubscriptionManager {
 
     private func resetToFreeDefaults() {
         isPremium = false
+        currentPlan = .free
         credits = BillingConfig.freeDailyCredits
         availablePackages = []
         entitlementExpiresAt = nil
@@ -212,13 +215,47 @@ final class SubscriptionManager {
 
     private func apply(_ payload: BillingSyncResponse) {
         isPremium = payload.isEntitlementActive
+        currentPlan = BillingConfig.resolvePlan(
+            isEntitlementActive: payload.isEntitlementActive,
+            productId: payload.productId,
+            dailyCredits: payload.dailyCredits
+        )
         credits = payload.credits
         entitlementExpiresAt = parseISODate(payload.entitlementExpiresAt)
+
+        if payload.isEntitlementActive, payload.productId == nil, payload.dailyCredits == nil {
+            Task { await refreshPlanFromRevenueCatIfNeeded() }
+        }
     }
 
     private func applyCustomerInfo(_ info: CustomerInfo) {
-        if !info.entitlements.active.isEmpty {
-            isPremium = true
+        guard !info.entitlements.active.isEmpty else {
+            isPremium = false
+            currentPlan = .free
+            return
+        }
+
+        isPremium = true
+        if let resolved = BillingConfig.resolvePlan(productIdentifiers: Array(info.activeSubscriptions)) {
+            currentPlan = resolved
+        } else if currentPlan == .free {
+            currentPlan = .depth
+        }
+    }
+
+    private func refreshPlanFromRevenueCatIfNeeded() async {
+        guard isRevenueCatAvailable else { return }
+
+        do {
+            let customerInfo = try await Purchases.shared.customerInfo()
+            guard !customerInfo.entitlements.active.isEmpty else {
+                return
+            }
+            if let resolved = BillingConfig.resolvePlan(productIdentifiers: Array(customerInfo.activeSubscriptions)) {
+                currentPlan = resolved
+            }
+        } catch {
+            logger.notice("RevenueCat customer info fetch skipped while resolving plan: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -354,10 +391,16 @@ private struct BillingSyncResponse: Decodable {
     var credits: Int
     var isEntitlementActive: Bool
     var entitlementExpiresAt: String?
+    var entitlementId: String?
+    var productId: String?
+    var dailyCredits: Int?
 
     enum CodingKeys: String, CodingKey {
         case credits
         case isEntitlementActive = "is_entitlement_active"
         case entitlementExpiresAt = "entitlement_expires_at"
+        case entitlementId = "entitlement_id"
+        case productId = "product_id"
+        case dailyCredits = "daily_credits"
     }
 }

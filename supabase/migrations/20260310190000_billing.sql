@@ -179,7 +179,10 @@ CREATE OR REPLACE FUNCTION public.get_user_credit_state()
 RETURNS TABLE (
     credits INT,
     is_entitlement_active BOOLEAN,
-    entitlement_expires_at TIMESTAMPTZ
+    entitlement_expires_at TIMESTAMPTZ,
+    entitlement_id TEXT,
+    product_id TEXT,
+    daily_credits INT
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -211,7 +214,14 @@ BEGIN
     SELECT
         v_state.credits,
         v_state.is_entitlement_active,
-        v_state.entitlement_expires_at;
+        v_state.entitlement_expires_at,
+        v_state.entitlement_id,
+        v_state.product_id,
+        public.billing_daily_credits(
+            v_state.is_entitlement_active,
+            v_state.entitlement_id,
+            v_state.product_id
+        );
 END;
 $$;
 

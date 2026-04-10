@@ -24,9 +24,13 @@
 "settings.billing.action.upgrade" = "Upgrade";
 "settings.billing.action.restore" = "Restore Purchases";
 "settings.billing.renewalTime" = "Renewal Time";
+"settings.billing.plan" = "Current Plan";
+"settings.billing.plan.free" = "Free";
+"settings.billing.plan.awaken" = "Awaken";
+"settings.billing.plan.depth" = "Depth";
 "settings.billing.price" = "Subscription Price";
 "settings.billing.stardust.description" = "Free users get 10 stardust each day.\n\nEach echo costs 5 stardust, and each chat message costs 1 stardust.";
-"settings.billing.stardust.description.premium" = "Your subscription includes corresponding stardust each day.\n\nEach echo costs 5 stardust, and each chat message costs 1 stardust.";
+"settings.billing.stardust.description.premium.format" = "Your subscription includes %d stardust each day.\n\nEach echo costs 5 stardust, and each chat message costs 1 stardust.";
 "settings.billing.revenuecat.missingKey" = "RevenueCat public key is missing. Purchases are disabled.";
 "settings.error.title" = "Action Failed";
 "settings.signOut.confirm.title" = "Are you sure you want to sign out?";
