@@ -46,23 +46,18 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    LabeledContent {
-                        Text(subscriptionPlanName)
-                            .foregroundStyle(UITheme.secondaryText)
-                    } label: {
-                        settingsRowLabel("settings.billing.plan", systemImage: "crown")
-                    }
-
                     HStack(spacing: 10) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             settingsRowLabel("settings.billing.credits", systemImage: "sparkle")
                             Button {
                                 showStardustInfo = true
                             } label: {
                                 Image(systemName: "info.circle")
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(.system(size: 14, weight: .regular))
                                     .foregroundStyle(UITheme.tertiaryText)
-                                    .padding(4)
+                                    .padding(.vertical, 4)
+                                    .padding(.horizontal, 4)
+                                    .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .popover(isPresented: $showStardustInfo, arrowEdge: .top) {
@@ -71,6 +66,13 @@ struct SettingsView: View {
                         }
                         Spacer(minLength: 0)
                         stardustAccessView
+                    }
+
+                    LabeledContent {
+                        Text(subscriptionPlanName)
+                            .foregroundStyle(UITheme.secondaryText)
+                    } label: {
+                        settingsRowLabel("settings.billing.plan", systemImage: "crown")
                     }
 
                     if let renewalTimeText {
@@ -88,10 +90,10 @@ struct SettingsView: View {
                             showPaywall = true
                         } label: {
                             HStack(spacing: 10) {
-                                settingsRowLabel("settings.billing.action.upgrade", systemImage: "crown")
+                                settingsRowLabel("settings.billing.action.upgrade", systemImage: "arrow.up.circle")
                                 Spacer(minLength: 0)
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(.system(size: 13, weight: .medium))
                                     .foregroundStyle(UITheme.tertiaryText)
                             }
                             .contentShape(Rectangle())
@@ -103,13 +105,14 @@ struct SettingsView: View {
                         handleRestoreTap()
                     } label: {
                         HStack(spacing: 10) {
-                            settingsRowLabel("settings.billing.action.restore", systemImage: "arrow.clockwise")
+                            settingsRowLabel("settings.billing.action.restore", systemImage: "arrow.triangle.2.circlepath")
                             Spacer(minLength: 0)
                             if subscriptionManager.isRestoring {
                                 ProgressView()
                                     .controlSize(.small)
                             }
                         }
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .disabled(subscriptionManager.isRestoring || !subscriptionManager.isRevenueCatAvailable)
@@ -354,8 +357,8 @@ struct SettingsView: View {
 
     private var stardustAccessView: some View {
         Text("\(subscriptionManager.credits)")
-            .font(.system(.title3, design: .rounded).monospacedDigit())
-            .fontWeight(.semibold)
+            .font(.system(.body, design: .rounded).monospacedDigit())
+            .fontWeight(.medium)
             .foregroundStyle(UITheme.primaryText)
     }
 }
