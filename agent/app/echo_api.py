@@ -25,6 +25,7 @@ from app.supabase_repo import (
 router = APIRouter()
 logger = logging.getLogger(__name__)
 ECHO_STARDUST_COST = 5
+ECHO_MODEL = "qwen-plus"
 
 type Send = Callable[[dict[str, Any]], Awaitable[None]]
 
@@ -146,6 +147,7 @@ async def _compose_worker(
             glimmer_content=str(glimmer.get("content", content)),
             num=ECHO_STARDUST_COST,
             lang=lang,  # type: ignore[arg-type]
+            model=ECHO_MODEL,
             on_echo=lambda echo_row: send(_echo_event_payload(echo_row)),
         )
         generation_finished = True

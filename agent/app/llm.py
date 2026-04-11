@@ -36,10 +36,11 @@ def _normalize_content(content: Any) -> str:
 async def complete_text(
     messages: list[dict[str, str]],
     *,
+    model: str,
     temperature: float,
 ) -> str:
     completion = await _client.chat.completions.create(
-        model=settings.LLM_MODEL,
+        model=model,
         messages=messages,
         temperature=temperature,
     )
@@ -50,12 +51,13 @@ async def complete_text(
 async def complete_json(
     messages: list[dict[str, str]],
     *,
+    model: str,
     schema_name: str,
     schema: dict[str, Any],
     temperature: float,
 ) -> Any:
     completion = await _client.chat.completions.create(
-        model=settings.LLM_MODEL,
+        model=model,
         messages=messages,
         temperature=temperature,
         response_format={
@@ -76,10 +78,11 @@ async def complete_json(
 async def stream_text(
     messages: list[dict[str, str]],
     *,
+    model: str,
     temperature: float,
 ):
     stream = await _client.chat.completions.create(
-        model=settings.LLM_MODEL,
+        model=model,
         messages=messages,
         temperature=temperature,
         stream=True,

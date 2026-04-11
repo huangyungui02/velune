@@ -13,11 +13,12 @@ PROFILE_PROMPT: dict[Lang, str] = {
 }
 
 
-async def souler_profile(souler: str, lang: Lang) -> str:
+async def souler_profile(souler: str, lang: Lang, *, model: str) -> str:
     return await complete_text(
         [
             {"role": "system", "content": PROFILE_PROMPT[lang]},
             {"role": "user", "content": souler},
         ],
+        model=model,
         temperature=settings.MODEL_S_TEMPERATURE,
     )

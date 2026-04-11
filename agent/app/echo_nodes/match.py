@@ -27,13 +27,20 @@ MATCH_PROMPT: dict[Lang, Callable[[int], str]] = {
 }
 
 
-async def match_soulers(content: str, num: int, lang: Lang) -> list[str]:
+async def match_soulers(
+    content: str,
+    num: int,
+    lang: Lang,
+    *,
+    model: str,
+) -> list[str]:
     """Return *num* unique souler names that resonate with *content*."""
     payload = await complete_json(
         [
             {"role": "system", "content": MATCH_PROMPT[lang](num)},
             {"role": "user", "content": content},
         ],
+        model=model,
         schema_name="matched_soulers",
         schema=build_match_schema(num),
         temperature=settings.MODEL_M_TEMPERATURE,

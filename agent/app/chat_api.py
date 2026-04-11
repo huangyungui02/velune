@@ -48,6 +48,7 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 T = TypeVar("T")
 CHAT_CREDIT_COST = 1
+CHAT_MODEL = "qwen-plus"
 
 
 def _normalize_uuid(value: str) -> str:
@@ -87,7 +88,11 @@ def _build_system_prompt(name: str, lang: Lang) -> str:
 
 
 async def _generate_session_title(
-    user_content: str, reply_content: str, lang: Lang
+    user_content: str,
+    reply_content: str,
+    lang: Lang,
+    *,
+    model: str,
 ) -> str:
     system_prompt = (
         "根据用户消息和助手回复生成简洁聊天标题。限制 12 个字以内，不要标点，不要引号，只返回标题文本。"
@@ -103,6 +108,7 @@ async def _generate_session_title(
                 "content": f"User:\n{user_content}\n\nAssistant:\n{reply_content}",
             },
         ],
+        model=model,
         temperature=settings.MODEL_S_TEMPERATURE,
     )
     return _sanitize_title(raw, lang)
@@ -437,6 +443,7 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
             async for delta in _stream_with_timeout(
                 stream_text(
                     prepared.prompt_messages,
+                    model=CHAT_MODEL,
                     temperature=settings.CHAT_TEMPERATURE,
                 ),
                 first_chunk_timeout=settings.LLM_FIRST_TOKEN_TIMEOUT_SECONDS,
@@ -467,7 +474,10 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
             if prepared.is_new_session:
                 generated_title = await asyncio.wait_for(
                     _generate_session_title(
-                        prepared.content, final_content, prepared.lang
+                        prepared.content,
+                        final_content,
+                        prepared.lang,
+                        model=CHAT_MODEL,
                     ),
                     timeout=settings.POST_STREAM_TIMEOUT_SECONDS,
                 )

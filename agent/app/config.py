@@ -30,7 +30,6 @@ class Settings(BaseSettings):
 
     DASHSCOPE_API_KEY: str
     DASHSCOPE_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    LLM_MODEL: str = "qwen-plus"
 
     CHAT_TEMPERATURE: float = 0.5
     MODEL_XS_TEMPERATURE: float = 0.1

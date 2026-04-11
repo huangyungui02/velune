@@ -57,7 +57,12 @@ def _reason_to_message(reason: Any) -> str:
     return "Unknown failure"
 
 
-async def _resolve_souler(matched_name: str, lang: Lang) -> dict[str, Any]:
+async def _resolve_souler(
+    matched_name: str,
+    lang: Lang,
+    *,
+    model: str,
+) -> dict[str, Any]:
     souler_data = get_souler_by_alias(matched_name, lang)
     if souler_data:
         return souler_data
@@ -66,7 +71,7 @@ async def _resolve_souler(matched_name: str, lang: Lang) -> dict[str, Any]:
     if souler_data:
         return souler_data
 
-    resolved_name = await resolve_souler_name(matched_name, lang)
+    resolved_name = await resolve_souler_name(matched_name, lang, model=model)
     souler_data = get_souler_by_name(resolved_name, lang)
     if not souler_data:
         souler_data = create_souler(resolved_name, lang)
@@ -81,14 +86,17 @@ async def _resolve_souler(matched_name: str, lang: Lang) -> dict[str, Any]:
 
 
 async def _ensure_souler_assets(
-    souler_data: dict[str, Any], lang: Lang
+    souler_data: dict[str, Any],
+    lang: Lang,
+    *,
+    model: str,
 ) -> dict[str, Any]:
     souler_id = _souler_id(souler_data)
     souler_name = _souler_name(souler_data)
 
     bio = souler_data.get("bio")
     if not isinstance(bio, str) or not bio.strip():
-        generated_bio = await souler_profile(souler_name, lang)
+        generated_bio = await souler_profile(souler_name, lang, model=model)
         souler_data["bio"] = generated_bio
         update_souler(souler_id, {"bio": generated_bio})
 
@@ -102,9 +110,15 @@ async def invoke_echo_graph(
     glimmer_content: str,
     num: int,
     lang: Lang,
+    model: str,
     on_echo: Callable[[dict[str, Any]], Awaitable[None] | None] | None = None,
 ) -> GraphResult:
-    souler_names = await match_soulers(glimmer_content, num, lang)
+    souler_names = await match_soulers(
+        glimmer_content,
+        num,
+        lang,
+        model=model,
+    )
     souler_names = souler_names[:num]
     missing_credits = max(num - len(souler_names), 0)
 
@@ -112,8 +126,8 @@ async def invoke_echo_graph(
         raise EchoGraphFailedError("Failed to match echoes", num)
 
     async def process_item(matched_name: str) -> None:
-        souler_data = await _resolve_souler(matched_name, lang)
-        souler_data = await _ensure_souler_assets(souler_data, lang)
+        souler_data = await _resolve_souler(matched_name, lang, model=model)
+        souler_data = await _ensure_souler_assets(souler_data, lang, model=model)
         souler_id = _souler_id(souler_data)
         souler_name = _souler_name(souler_data)
 
@@ -121,6 +135,7 @@ async def invoke_echo_graph(
             glimmer_content,
             souler_name,
             lang,
+            model=model,
         )
         echo = create_echo(
             glimmer_id,

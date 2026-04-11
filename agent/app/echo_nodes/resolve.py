@@ -33,7 +33,7 @@ RESOLVE_PROMPT: dict[Lang, str] = {
 }
 
 
-async def resolve_souler_name(name: str, lang: Lang) -> str:
+async def resolve_souler_name(name: str, lang: Lang, *, model: str) -> str:
     cleaned_name = name.strip()
     if not cleaned_name:
         return cleaned_name
@@ -43,6 +43,7 @@ async def resolve_souler_name(name: str, lang: Lang) -> str:
             {"role": "system", "content": RESOLVE_PROMPT[lang]},
             {"role": "user", "content": cleaned_name},
         ],
+        model=model,
         schema_name="resolved_souler_name",
         schema=RESOLVED_NAME_SCHEMA,
         temperature=settings.MODEL_XS_TEMPERATURE,

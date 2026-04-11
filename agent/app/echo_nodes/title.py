@@ -13,12 +13,13 @@ SESSION_TITLE_PROMPT: dict[Lang, str] = {
 }
 
 
-async def session_title(glimmer: str, echo: str, lang: Lang) -> str:
+async def session_title(glimmer: str, echo: str, lang: Lang, *, model: str) -> str:
     raw = await complete_text(
         [
             {"role": "system", "content": SESSION_TITLE_PROMPT[lang]},
             {"role": "user", "content": f"Glimmer:\n{glimmer}\n\nEcho:\n{echo}"},
         ],
+        model=model,
         temperature=settings.MODEL_S_TEMPERATURE,
     )
     return sanitize_title(raw, lang)

@@ -8,12 +8,18 @@ from .shared import Lang
 settings = get_settings()
 
 ANSWER_PROMPT_TEMPLATE: dict[Lang, str] = {
-    "chs": "请以{souler_name}的风格，根据用户写下的想法，写下一段具有深度的文字，请不要直接回复用户。",
-    "en": "Please write a profound passage in the style of {souler_name} based on the user's thoughts. Do not reply to the user directly.",
+    "chs": "请以{souler_name}的风格，根据用户写下的想法，写下一段具有深度的文字。",
+    "en": "Please write a profound passage in the style of {souler_name} based on the user's thoughts.",
 }
 
 
-async def souler_answer(content: str, souler_name: str, lang: Lang) -> str:
+async def souler_answer(
+    content: str,
+    souler_name: str,
+    lang: Lang,
+    *,
+    model: str,
+) -> str:
     return await complete_text(
         [
             {
@@ -24,5 +30,6 @@ async def souler_answer(content: str, souler_name: str, lang: Lang) -> str:
             },
             {"role": "user", "content": content},
         ],
+        model=model,
         temperature=settings.MODEL_S_TEMPERATURE,
     )
