@@ -289,6 +289,7 @@ private struct PackageRow: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
@@ -296,6 +297,7 @@ private struct PackageRow: View {
             )
             .background(isSelected ? UITheme.primaryActionBackground(for: colorScheme).opacity(0.05) : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: 12))
+            .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
     }
