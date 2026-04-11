@@ -372,8 +372,8 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REVENUECAT_PUBLIC_SDK_KEY = appl_XTJyDZSPpyOQLOFfAoPASReDoIF;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPABASE_PUBLISHABLE_KEY = "sb_publishable_FmmDe_Ttr-9Dcr_tV2vNmw_2CbyJz6p";
-				SUPABASE_URL = "https://vskjfzcykzqieztpputw.supabase.co";
+				SUPABASE_PUBLISHABLE_KEY = sb_publishable_bRLZcy7zN1fCxqwVG89KQg_aPg4p6R0;
+				SUPABASE_URL = "https://ubicouaowedvtppklgnl.supabase.co";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
