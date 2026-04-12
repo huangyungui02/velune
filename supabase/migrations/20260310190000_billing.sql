@@ -1,6 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS moddatetime SCHEMA extensions;
 
-CREATE TABLE user_billing_state (
+CREATE TABLE billings (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     is_entitlement_active BOOLEAN NOT NULL DEFAULT false,
     entitlement_expires_at TIMESTAMPTZ,
@@ -12,21 +12,21 @@ CREATE TABLE user_billing_state (
     credits_refreshed_on DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT user_billing_state_credits_check CHECK (credits >= 0)
+    CONSTRAINT billings_credits_check CHECK (credits >= 0)
 );
 
-ALTER TABLE user_billing_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE billings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow users to view their own billing state"
-    ON user_billing_state FOR SELECT
+    ON billings FOR SELECT
     USING (user_id = (SELECT auth.uid()));
 
-CREATE TRIGGER handle_user_billing_state_updated_at
-    BEFORE UPDATE ON user_billing_state
+CREATE TRIGGER handle_billing_updated_at
+    BEFORE UPDATE ON billings
     FOR EACH ROW
     EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
-CREATE OR REPLACE FUNCTION public.ensure_user_billing_state(p_user_id UUID)
+CREATE OR REPLACE FUNCTION public.ensure_billing(p_user_id UUID)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -45,7 +45,7 @@ BEGIN
         RETURN;
     END IF;
 
-    INSERT INTO public.user_billing_state (user_id)
+    INSERT INTO public.billings (user_id)
     VALUES (p_user_id)
     ON CONFLICT (user_id) DO NOTHING;
 END;
@@ -86,35 +86,35 @@ AS $$
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.handle_new_auth_user_billing_state()
+CREATE OR REPLACE FUNCTION public.handle_new_auth_billing()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-    PERFORM public.ensure_user_billing_state(NEW.id);
+    PERFORM public.ensure_billing(NEW.id);
     RETURN NEW;
 END;
 $$;
 
-CREATE TRIGGER on_auth_user_created_billing_state
+CREATE TRIGGER on_auth_user_created_billing
     AFTER INSERT ON auth.users
     FOR EACH ROW
-    EXECUTE FUNCTION public.handle_new_auth_user_billing_state();
+    EXECUTE FUNCTION public.handle_new_auth_billing();
 
-INSERT INTO public.user_billing_state (user_id)
+INSERT INTO public.billings (user_id)
 SELECT id FROM auth.users
 ON CONFLICT (user_id) DO NOTHING;
 
-CREATE OR REPLACE FUNCTION public.refresh_user_billing_state(p_user_id UUID)
-RETURNS user_billing_state
+CREATE OR REPLACE FUNCTION public.refresh_billing(p_user_id UUID)
+RETURNS billings
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-    v_state user_billing_state;
+    v_state billings;
     v_reference TIMESTAMPTZ := NOW();
     v_today DATE := timezone('utc', v_reference)::DATE;
     v_is_active BOOLEAN;
@@ -124,11 +124,11 @@ DECLARE
     v_credits INT;
     v_refreshed_on DATE;
 BEGIN
-    PERFORM public.ensure_user_billing_state(p_user_id);
+    PERFORM public.ensure_billing(p_user_id);
 
     SELECT *
     INTO v_state
-    FROM public.user_billing_state
+    FROM public.billings
     WHERE user_id = p_user_id
     FOR UPDATE;
 
@@ -162,7 +162,7 @@ BEGIN
         OR v_state.credits_refreshed_on IS DISTINCT FROM v_refreshed_on
         OR v_state.credits IS DISTINCT FROM v_credits
     THEN
-        UPDATE public.user_billing_state
+        UPDATE public.billings
         SET
             is_entitlement_active = v_is_active,
             credits_refreshed_on = v_refreshed_on,
@@ -190,7 +190,7 @@ SET search_path = public
 AS $$
 DECLARE
     v_user_id UUID;
-    v_state user_billing_state;
+    v_state billings;
 BEGIN
     v_user_id := (SELECT auth.uid());
 
@@ -208,7 +208,7 @@ BEGIN
             USING ERRCODE = '28000';
     END IF;
 
-    v_state := public.refresh_user_billing_state(v_user_id);
+    v_state := public.refresh_billing(v_user_id);
 
     RETURN QUERY
     SELECT
@@ -245,9 +245,9 @@ AS $$
 DECLARE
     v_reference TIMESTAMPTZ := NOW();
     v_incoming_active BOOLEAN;
-    v_state user_billing_state;
+    v_state billings;
 BEGIN
-    PERFORM public.ensure_user_billing_state(p_user_id);
+    PERFORM public.ensure_billing(p_user_id);
 
     v_incoming_active := public.billing_effective_is_active(
         COALESCE(p_is_entitlement_active, false),
@@ -255,7 +255,7 @@ BEGIN
         v_reference
     );
 
-    UPDATE public.user_billing_state AS ubs
+    UPDATE public.billings AS ubs
     SET
         entitlement_id = NULLIF(trim(COALESCE(p_entitlement_id, '')), ''),
         product_id = NULLIF(trim(COALESCE(p_product_id, '')), ''),
@@ -269,7 +269,7 @@ BEGIN
         rc_last_synced_at = NOW()
     WHERE ubs.user_id = p_user_id;
 
-    v_state := public.refresh_user_billing_state(p_user_id);
+    v_state := public.refresh_billing(p_user_id);
 
     RETURN QUERY
     SELECT
@@ -295,11 +295,11 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-    v_state user_billing_state;
+    v_state billings;
     v_cost INT;
 BEGIN
     v_cost := GREATEST(COALESCE(p_cost, 0), 0);
-    v_state := public.refresh_user_billing_state(p_user_id);
+    v_state := public.refresh_billing(p_user_id);
 
     IF v_cost = 0 THEN
         RETURN QUERY
@@ -323,7 +323,7 @@ BEGIN
         RETURN;
     END IF;
 
-    UPDATE public.user_billing_state AS ubs
+    UPDATE public.billings AS ubs
     SET credits = ubs.credits - v_cost
     WHERE ubs.user_id = p_user_id
     RETURNING ubs.* INTO v_state;
@@ -354,12 +354,12 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-    v_state user_billing_state;
+    v_state billings;
     v_amount INT;
     v_daily_credits INT;
 BEGIN
     v_amount := GREATEST(COALESCE(p_amount, 0), 0);
-    v_state := public.refresh_user_billing_state(p_user_id);
+    v_state := public.refresh_billing(p_user_id);
 
     IF v_amount = 0 THEN
         RETURN QUERY
@@ -378,7 +378,7 @@ BEGIN
         v_state.product_id
     );
 
-    UPDATE public.user_billing_state AS ubs
+    UPDATE public.billings AS ubs
     SET credits = LEAST(ubs.credits + v_amount, v_daily_credits)
     WHERE ubs.user_id = p_user_id
     RETURNING ubs.* INTO v_state;
@@ -393,11 +393,11 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.ensure_user_billing_state(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.ensure_billing(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.billing_effective_is_active(BOOLEAN, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.billing_daily_credits(BOOLEAN, TEXT, TEXT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.handle_new_auth_user_billing_state() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.refresh_user_billing_state(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.handle_new_auth_billing() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.refresh_billing(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.get_user_credit_state() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.consume_stardust(UUID, INT) FROM PUBLIC;
