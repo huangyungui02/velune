@@ -8,8 +8,8 @@ from .shared import Lang
 settings = get_settings()
 
 ANSWER_PROMPT_TEMPLATE: dict[Lang, str] = {
-    "chs": "请以{souler_name}的风格，根据用户写下的想法，写下一段具有深度的文字。",
-    "en": "Please write a profound passage in the style of {souler_name} based on the user's thoughts.",
+    "chs": "请以{souler_name}的思想和风格，根据用户写下的想法，写下一段具有深度共鸣的回响。",
+    "en": "Please write a profound passage in the thought and style of {souler_name} based on the user's thoughts.",
 }
 
 

@@ -555,6 +555,7 @@ struct SidebarView: View {
             onOpenSession(ChatSession(
                 id: sessionId,
                 soulerId: resonance.soulerId,
+                chapterId: nil,
                 soulerName: resonance.soulerName,
                 title: resonance.lastSessionTitle
             ))

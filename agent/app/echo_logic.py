@@ -23,6 +23,8 @@ from app.supabase_repo import (
     update_souler,
 )
 
+ECHO_PROFILE_MODEL = "qwen3.5-plus"
+
 
 @dataclass
 class GraphResult:
@@ -88,15 +90,17 @@ async def _resolve_souler(
 async def _ensure_souler_assets(
     souler_data: dict[str, Any],
     lang: Lang,
-    *,
-    model: str,
 ) -> dict[str, Any]:
     souler_id = _souler_id(souler_data)
     souler_name = _souler_name(souler_data)
 
     bio = souler_data.get("bio")
     if not isinstance(bio, str) or not bio.strip():
-        generated_bio = await souler_profile(souler_name, lang, model=model)
+        generated_bio = await souler_profile(
+            souler_name,
+            lang,
+            model=ECHO_PROFILE_MODEL,
+        )
         souler_data["bio"] = generated_bio
         update_souler(souler_id, {"bio": generated_bio})
 
@@ -127,7 +131,7 @@ async def invoke_echo_graph(
 
     async def process_item(matched_name: str) -> None:
         souler_data = await _resolve_souler(matched_name, lang, model=model)
-        souler_data = await _ensure_souler_assets(souler_data, lang, model=model)
+        souler_data = await _ensure_souler_assets(souler_data, lang)
         souler_id = _souler_id(souler_data)
         souler_name = _souler_name(souler_data)
 

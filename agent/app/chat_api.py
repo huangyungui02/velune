@@ -12,6 +12,11 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.requests import ClientDisconnect
 
 from app.config import get_settings
+from app.chapter_reply import (
+    CHAPTER_JSON_OPEN_MARKER,
+    build_chapter_system_prompt,
+    parse_chapter_combined_response,
+)
 from app.echo_nodes import SUPPORTED_LANGS
 from app.echo_logic import Lang
 from app.errors import (
@@ -23,6 +28,7 @@ from app.errors import (
 from app.llm import complete_text, stream_text
 from app.sse import emit_once, sse_event, sse_response
 from app.supabase_repo import (
+    ChapterContext,
     EchoContext,
     MessageRow,
     SessionContext,
@@ -32,6 +38,7 @@ from app.supabase_repo import (
     create_or_update_resonance,
     create_session,
     delete_session,
+    get_chapter_by_id,
     get_echo_context,
     get_recent_messages,
     get_session_by_id,
@@ -48,7 +55,7 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 T = TypeVar("T")
 CHAT_CREDIT_COST = 1
-CHAT_MODEL = "qwen-plus"
+CHAT_MODEL = "qwen3.5-flash"
 
 
 def _normalize_uuid(value: str) -> str:
@@ -65,7 +72,16 @@ class PreparedChat:
     lang: Lang
     content: str
     is_new_session: bool
+    should_generate_title: bool
     prompt_messages: list[dict[str, str]]
+
+
+@dataclass
+class ChapterStreamState:
+    raw_chunks: list[str]
+    output_chunks: list[str]
+    pending: str
+    phase: str
 
 
 def _sanitize_title(raw: str, lang: Lang) -> str:
@@ -79,12 +95,61 @@ def _sanitize_title(raw: str, lang: Lang) -> str:
     return " ".join(trimmed.split()[:8])
 
 
-def _build_system_prompt(name: str, lang: Lang) -> str:
+def _build_system_prompt(
+    name: str,
+    lang: Lang,
+    chapter: ChapterContext | None = None,
+) -> str:
+    if chapter:
+        return build_chapter_system_prompt(name, chapter, lang)
+
     template: dict[Lang, str] = {
-        "chs": "请以{name}的风格和用户进行深度对话",
-        "en": "Please have a deep conversation with the user in the style of {name}.",
+        "chs": "请以{name}的思想和风格与用户进行深度对话",
+        "en": "Please have a deep conversation with the user in the thought and style of {name}.",
     }
     return template[lang].format(name=name)
+
+
+def _consume_chapter_stream_delta(
+    state: ChapterStreamState,
+    delta: str,
+) -> str:
+    state.raw_chunks.append(delta)
+    state.pending += delta
+    visible_parts: list[str] = []
+
+    while state.pending:
+        pending_lower = state.pending.lower()
+
+        if state.phase == "done":
+            break
+
+        if state.phase == "streaming_content":
+            marker_lower = CHAPTER_JSON_OPEN_MARKER.lower()
+            options_open_index = pending_lower.find(marker_lower)
+            if options_open_index >= 0:
+                visible = state.pending[:options_open_index]
+                if visible:
+                    state.output_chunks.append(visible)
+                    visible_parts.append(visible)
+                state.pending = state.pending[options_open_index:]
+                state.phase = "done"
+                break
+
+            hold = len(marker_lower) - 1
+            if len(state.pending) <= hold:
+                break
+
+            visible = state.pending[:-hold]
+            state.pending = state.pending[-hold:]
+            if visible:
+                state.output_chunks.append(visible)
+                visible_parts.append(visible)
+            break
+
+        raise ValueError(f"Unknown chapter stream phase: {state.phase}")
+
+    return "".join(visible_parts)
 
 
 async def _generate_session_title(
@@ -194,6 +259,7 @@ def _build_prompt_messages(
             "content": _build_system_prompt(
                 session["souler"]["name"],
                 lang,
+                session.get("chapter"),
             ),
         }
     ]
@@ -227,6 +293,7 @@ async def _prepare_chat_request(
         session_id = _normalize_uuid(str(body.get("sessionId", "")))
         souler_id = _normalize_uuid(str(body.get("soulerId", "")))
         echo_id = _normalize_uuid(str(body.get("echoId", "")))
+        chapter_id = _normalize_uuid(str(body.get("chapterId", "")))
     except ValueError as error:
         raise ValueError("Invalid UUID in request body") from error
     content = str(body.get("content", "")).strip()
@@ -244,8 +311,10 @@ async def _prepare_chat_request(
         is_new_session = False
         needs_new_session = False
         should_insert_echo_context = False
+        should_generate_title = False
         echo_context: EchoContext | None = None
         pending_souler: Souler | None = None
+        pending_chapter: ChapterContext | None = None
         session: SessionContext | None = None
 
         if session_id:
@@ -284,6 +353,7 @@ async def _prepare_chat_request(
                     needs_new_session = True
                     is_new_session = True
                     should_insert_echo_context = True
+                    should_generate_title = True
             else:
                 if not souler_id:
                     raise ValueError("Missing soulerId for new conversation")
@@ -292,24 +362,38 @@ async def _prepare_chat_request(
                     get_souler_by_id,
                     souler_id,
                 )
+                if chapter_id:
+                    pending_chapter = await _run_blocking(
+                        "Load chapter",
+                        get_chapter_by_id,
+                        chapter_id,
+                    )
+                    if pending_chapter["souler_id"] != str(pending_souler["id"]):
+                        raise ValueError("Chapter does not belong to souler")
                 needs_new_session = True
                 is_new_session = True
+                should_generate_title = pending_chapter is None
 
         if needs_new_session:
             if not pending_souler:
                 raise ValueError("Souler not found")
 
+            initial_title = pending_chapter["title"] if pending_chapter else ""
+            initial_chapter_id = pending_chapter["id"] if pending_chapter else None
             created_session_id = await _run_blocking(
                 "Create session",
                 create_session,
                 user_id,
                 str(pending_souler["id"]),
+                initial_title,
+                initial_chapter_id,
             )
             created_session = {
                 "id": created_session_id,
                 "soulerId": str(pending_souler["id"]),
-                "title": "",
+                "title": initial_title,
                 "souler": pending_souler,
+                "chapter": pending_chapter,
             }
 
             if echo_id and should_insert_echo_context:
@@ -323,6 +407,7 @@ async def _prepare_chat_request(
                 if bound_session_id != created_session_id:
                     should_insert_echo_context = False
                     is_new_session = False
+                    should_generate_title = False
                     try:
                         await _run_blocking(
                             "Delete orphan session",
@@ -395,6 +480,7 @@ async def _prepare_chat_request(
             lang=lang,
             content=content,
             is_new_session=is_new_session,
+            should_generate_title=should_generate_title,
             prompt_messages=prompt_messages,
         )
     except Exception:
@@ -439,7 +525,18 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
             yield sse_event({"type": "ready", "sessionId": prepared.session["id"]})
             log_stage("stream_opened")
 
+            chapter_stream_state: ChapterStreamState | None = None
             assistant_chunks: list[str] = []
+            assistant_storage_content: str | None = None
+            options: list[str] = []
+            if prepared.session.get("chapter"):
+                chapter_stream_state = ChapterStreamState(
+                    raw_chunks=[],
+                    output_chunks=[],
+                    pending="",
+                    phase="streaming_content",
+                )
+
             async for delta in _stream_with_timeout(
                 stream_text(
                     prepared.prompt_messages,
@@ -451,12 +548,40 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
             ):
                 if not delta:
                     continue
-                assistant_chunks.append(delta)
-                yield sse_event({"type": "delta", "delta": delta})
 
-            final_content = "".join(assistant_chunks).strip()
+                if chapter_stream_state is None:
+                    assistant_chunks.append(delta)
+                    yield sse_event({"type": "delta", "delta": delta})
+                    continue
+
+                output_delta = _consume_chapter_stream_delta(chapter_stream_state, delta)
+                if output_delta:
+                    assistant_chunks.append(output_delta)
+                    yield sse_event({"type": "delta", "delta": output_delta})
+
+            if chapter_stream_state is None:
+                final_content = "".join(assistant_chunks).strip()
+                assistant_storage_content = final_content
+            else:
+                combined_content = "".join(chapter_stream_state.raw_chunks).strip()
+                final_content, options = parse_chapter_combined_response(combined_content)
+                assistant_storage_content = combined_content
+
+                streamed_output = "".join(chapter_stream_state.output_chunks)
+                if final_content.startswith(streamed_output):
+                    tail = final_content[len(streamed_output) :]
+                    if tail:
+                        assistant_chunks.append(tail)
+                        yield sse_event({"type": "delta", "delta": tail})
+                else:
+                    logger.warning(
+                        "Chapter stream output mismatch: session_id=%s",
+                        prepared.session["id"],
+                    )
             if not final_content:
                 raise ValueError("Empty assistant response")
+            if not assistant_storage_content:
+                raise ValueError("Empty assistant storage content")
             log_stage("model_completed")
 
             assistant_message = await _run_blocking(
@@ -466,12 +591,12 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
                 prepared.session["soulerId"],
                 prepared.session["id"],
                 "assistant",
-                final_content,
+                assistant_storage_content,
             )
             log_stage("assistant_message_inserted")
 
             generated_title: str | None = None
-            if prepared.is_new_session:
+            if prepared.is_new_session and prepared.should_generate_title:
                 generated_title = await asyncio.wait_for(
                     _generate_session_title(
                         prepared.content,
@@ -490,6 +615,14 @@ async def chat(lang: Lang, request: Request) -> StreamingResponse:
                     timeout=settings.POST_STREAM_TIMEOUT_SECONDS,
                 )
                 log_stage("title_updated")
+
+            if options:
+                yield sse_event(
+                    {
+                        "type": "options",
+                        "options": options,
+                    }
+                )
 
             await _run_blocking(
                 "Touch session",

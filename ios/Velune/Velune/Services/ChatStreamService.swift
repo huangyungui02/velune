@@ -10,6 +10,7 @@ enum ChatStreamService {
 
     enum Event {
         case delta(String)
+        case options([String])
         case done(DonePayload)
     }
 
@@ -26,6 +27,7 @@ enum ChatStreamService {
         let delta: String?
         let sessionId: UUID?
         let title: String?
+        let options: [String]?
         let code: String?
         let message: String?
     }
@@ -76,6 +78,11 @@ enum ChatStreamService {
         case "delta":
             guard let delta = payload.delta, !delta.isEmpty else { return nil }
             return .delta(delta)
+        case "options":
+            guard let options = payload.options else { return nil }
+            let normalized = normalizeOptions(options)
+            guard !normalized.isEmpty else { return nil }
+            return .options(normalized)
         case "done":
             return .done(
                 DonePayload(
@@ -88,6 +95,12 @@ enum ChatStreamService {
         default:
             return nil
         }
+    }
+
+    private static func normalizeOptions(_ options: [String]) -> [String] {
+        options
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
     }
 
     private static func streamError(for payload: StreamEvent) -> NSError {

@@ -24,11 +24,22 @@ class Souler(TypedDict):
     bio: str | None
 
 
+class ChapterContext(TypedDict):
+    id: str
+    souler_id: str
+    seq: int
+    title: str
+    subtitle: str
+    role: str
+    task: str
+
+
 class SessionContext(TypedDict):
     id: str
     soulerId: str
     title: str
     souler: Souler
+    chapter: ChapterContext | None
 
 
 class MessageRow(TypedDict):
@@ -93,6 +104,31 @@ def _to_souler(raw: Any) -> Souler:
         "id": souler_id,
         "name": name,
         "bio": str(bio) if isinstance(bio, str) else None,
+    }
+
+
+def _to_chapter(raw: Any) -> ChapterContext:
+    chapter = raw[0] if isinstance(raw, list) and raw else raw
+    if not isinstance(chapter, dict):
+        raise ValueError("Chapter not found")
+
+    chapter_id = str(chapter.get("id", "")).strip()
+    souler_id = str(chapter.get("souler_id", "")).strip()
+    if not chapter_id or not souler_id:
+        raise ValueError("Chapter not found")
+
+    seq_value = chapter.get("seq")
+    if not isinstance(seq_value, int) or seq_value <= 0:
+        raise ValueError("Chapter not found")
+
+    return {
+        "id": chapter_id,
+        "souler_id": souler_id,
+        "seq": seq_value,
+        "title": str(chapter.get("title", "")).strip(),
+        "subtitle": str(chapter.get("subtitle", "")).strip(),
+        "role": str(chapter.get("role", "")).strip(),
+        "task": str(chapter.get("task", "")).strip(),
     }
 
 
@@ -162,7 +198,11 @@ def list_glimmer_echoes(glimmer_id: str) -> list[dict[str, Any]]:
 def get_session_by_id(user_id: str, session_id: str) -> SessionContext:
     response = (
         supabase.table("sessions")
-        .select("id, user_id, souler_id, title, soulers(id, name, bio)")
+        .select(
+            "id, user_id, souler_id, title, chapter_id, "
+            "soulers(id, name, bio), "
+            "chapters(id, souler_id, seq, title, subtitle, role, task)"
+        )
         .eq("id", session_id)
         .eq("user_id", user_id)
         .single()
@@ -173,11 +213,17 @@ def get_session_by_id(user_id: str, session_id: str) -> SessionContext:
     if not row:
         raise ValueError("Session not found")
 
+    chapter = row.get("chapters")
+    parsed_chapter: ChapterContext | None = None
+    if chapter:
+        parsed_chapter = _to_chapter(chapter)
+
     return {
         "id": str(row.get("id")),
         "soulerId": str(row.get("souler_id")),
         "title": str(row.get("title", "")),
         "souler": _to_souler(row.get("soulers")),
+        "chapter": parsed_chapter,
     }
 
 
@@ -193,6 +239,20 @@ def get_souler_by_id(souler_id: str) -> Souler:
     if not row:
         raise ValueError("Souler not found")
     return _to_souler(row)
+
+
+def get_chapter_by_id(chapter_id: str) -> ChapterContext:
+    response = (
+        supabase.table("chapters")
+        .select("id, souler_id, seq, title, subtitle, role, task")
+        .eq("id", chapter_id)
+        .single()
+        .execute()
+    )
+    row = _first_row(response.data)
+    if not row:
+        raise ValueError("Chapter not found")
+    return _to_chapter(row)
 
 
 def get_echo_context(user_id: str, echo_id: str) -> EchoContext:
@@ -251,7 +311,12 @@ def bind_echo_session_if_missing(
     raise ValueError("Failed to bind echo session")
 
 
-def create_session(user_id: str, souler_id: str, title: str = "") -> str:
+def create_session(
+    user_id: str,
+    souler_id: str,
+    title: str = "",
+    chapter_id: str | None = None,
+) -> str:
     response = (
         supabase.table("sessions")
         .insert(
@@ -259,6 +324,7 @@ def create_session(user_id: str, souler_id: str, title: str = "") -> str:
                 "user_id": user_id,
                 "souler_id": souler_id,
                 "title": title,
+                "chapter_id": chapter_id,
             },
             returning="representation",
         )
@@ -268,6 +334,45 @@ def create_session(user_id: str, souler_id: str, title: str = "") -> str:
     if not row or not row.get("id"):
         raise ValueError("Failed to create session")
     return str(row["id"])
+
+
+def start_souler_chapters_generation(souler_id: str) -> dict[str, Any]:
+    response = (
+        supabase.rpc(
+            "start_souler_chapters_generation",
+            {
+                "p_souler_id": souler_id,
+            },
+        )
+        .execute()
+    )
+    row = _first_row(response.data)
+    if not row:
+        raise ValueError("Failed to start chapter generation")
+    return row
+
+
+def complete_souler_chapters_generation(
+    souler_id: str,
+    chapters: list[dict[str, str]],
+) -> None:
+    supabase.rpc(
+        "complete_souler_chapters_generation",
+        {
+            "p_souler_id": souler_id,
+            "p_chapters": chapters,
+        },
+    ).execute()
+
+
+def fail_souler_chapters_generation(souler_id: str, error_message: str) -> None:
+    supabase.rpc(
+        "fail_souler_chapters_generation",
+        {
+            "p_souler_id": souler_id,
+            "p_error": error_message,
+        },
+    ).execute()
 
 
 def delete_session(user_id: str, session_id: str) -> None:

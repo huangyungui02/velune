@@ -14,6 +14,32 @@ _client = AsyncOpenAI(
 )
 
 
+def _build_model_extra_body(model: str) -> dict[str, Any]:
+    if model.strip().lower().startswith("qwen"):
+        # DashScope OpenAI-compatible API uses this non-standard flag.
+        return {"enable_thinking": False}
+    return {}
+
+
+def _build_chat_request(
+    messages: list[dict[str, str]],
+    *,
+    model: str,
+    temperature: float,
+    **extra: Any,
+) -> dict[str, Any]:
+    request: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        **extra,
+    }
+    extra_body = _build_model_extra_body(model)
+    if extra_body:
+        request["extra_body"] = extra_body
+    return request
+
+
 def _normalize_content(content: Any) -> str:
     if isinstance(content, str):
         return content
@@ -39,11 +65,12 @@ async def complete_text(
     model: str,
     temperature: float,
 ) -> str:
-    completion = await _client.chat.completions.create(
+    request = _build_chat_request(
+        messages,
         model=model,
-        messages=messages,
         temperature=temperature,
     )
+    completion = await _client.chat.completions.create(**request)
     content = completion.choices[0].message.content
     return _normalize_content(content).strip()
 
@@ -56,9 +83,9 @@ async def complete_json(
     schema: dict[str, Any],
     temperature: float,
 ) -> Any:
-    completion = await _client.chat.completions.create(
+    request = _build_chat_request(
+        messages,
         model=model,
-        messages=messages,
         temperature=temperature,
         response_format={
             "type": "json_schema",
@@ -69,6 +96,8 @@ async def complete_json(
             },
         },
     )
+
+    completion = await _client.chat.completions.create(**request)
     content = _normalize_content(completion.choices[0].message.content).strip()
     if not content:
         raise ValueError("Model returned empty JSON content")
@@ -81,13 +110,13 @@ async def stream_text(
     model: str,
     temperature: float,
 ):
-    stream = await _client.chat.completions.create(
+    request = _build_chat_request(
+        messages,
         model=model,
-        messages=messages,
         temperature=temperature,
         stream=True,
     )
-
+    stream = await _client.chat.completions.create(**request)
     async for chunk in stream:
         if not chunk.choices:
             continue

@@ -25,7 +25,7 @@ from app.supabase_repo import (
 router = APIRouter()
 logger = logging.getLogger(__name__)
 ECHO_STARDUST_COST = 5
-ECHO_MODEL = "qwen-plus"
+ECHO_MODEL = "qwen3.5-flash"
 
 type Send = Callable[[dict[str, Any]], Awaitable[None]]
 
