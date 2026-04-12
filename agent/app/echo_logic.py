@@ -25,6 +25,7 @@ from app.supabase_repo import (
 )
 
 ECHO_PROFILE_MODEL = "qwen3.5-plus"
+ECHO_MATCH_MODEL = "qwen3.5-plus"
 
 
 @dataclass
@@ -129,7 +130,7 @@ async def invoke_echo_graph(
         glimmer_content,
         num,
         lang,
-        model=model,
+        model=ECHO_MATCH_MODEL,
     )
     souler_names = souler_names[:num]
     missing_credits = max(num - len(souler_names), 0)
