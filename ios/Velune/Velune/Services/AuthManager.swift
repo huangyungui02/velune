@@ -57,9 +57,7 @@ final class AuthManager {
                 if let session = session, !session.isExpired {
                     self.applyAuthenticatedSession(session)
                     try? await self.upsertInstallationBinding(
-                        userId: session.user.id,
-                        isAnonymous: session.user.isAnonymous,
-                        refreshToken: session.user.isAnonymous ? session.refreshToken : nil
+                        userId: session.user.id
                     )
                 } else {
                     self.resetAuthState()
@@ -89,25 +87,19 @@ final class AuthManager {
 
     func signInAnonymously() async throws {
         let supabase = try Backend.requireSupabase()
-        let installationId = InstallationIDStore.getOrCreateInstallationID()
 
-        if let restoredSession = await restoreAnonymousSessionIfAvailable(
-            installationId: installationId
-        ) {
+        if let restoredSession = await restoreAnonymousSessionIfAvailable() {
             try await upsertInstallationBinding(
                 userId: restoredSession.user.id,
-                isAnonymous: true,
-                refreshToken: restoredSession.refreshToken,
                 force: true
             )
             return
         }
 
         let session = try await supabase.auth.signInAnonymously()
+        cacheAnonymousRefreshToken(from: session)
         try await upsertInstallationBinding(
             userId: session.user.id,
-            isAnonymous: true,
-            refreshToken: session.refreshToken,
             force: true
         )
     }
@@ -146,6 +138,7 @@ final class AuthManager {
         isAuthenticated = false
         currentUser = nil
         isAnonymous = false
+        AnonymousRefreshTokenStore.clear()
         installationBindingSyncState = nil
     }
 
@@ -165,33 +158,29 @@ final class AuthManager {
         self.currentUser = response
     }
 
-    private func restoreAnonymousSessionIfAvailable(installationId: String) async -> Session? {
+    private func restoreAnonymousSessionIfAvailable() async -> Session? {
         guard let supabase = Backend.supabaseIfAvailable else {
             logger.error("anonymous session restore unavailable: backend is not configured")
             return nil
         }
 
-        let params: [String: AnyJSON] = [
-            "p_installation_id": .string(installationId)
-        ]
+        guard let refreshToken = AnonymousRefreshTokenStore.read(),
+              !refreshToken.isEmpty
+        else {
+            return nil
+        }
 
         do {
-            let rows: [AnonymousInstallationSession] = try await supabase
-                .rpc("get_installation_anonymous_session", params: params)
-                .execute()
-                .value
-
-            guard let row = rows.first else {
+            let session = try await supabase.auth.refreshSession(refreshToken: refreshToken)
+            guard session.user.isAnonymous else {
+                AnonymousRefreshTokenStore.clear()
                 return nil
             }
 
-            let session = try await supabase.auth.refreshSession(refreshToken: row.refreshToken)
-            guard session.user.isAnonymous, session.user.id == row.userId else {
-                return nil
-            }
-
+            cacheAnonymousRefreshToken(from: session)
             return session
         } catch {
+            AnonymousRefreshTokenStore.clear()
             logger.notice("anonymous session restore skipped: \(error.localizedDescription, privacy: .public)")
             return nil
         }
@@ -199,14 +188,10 @@ final class AuthManager {
 
     private func upsertInstallationBinding(
         userId: UUID,
-        isAnonymous: Bool,
-        refreshToken: String?,
         force: Bool = false
     ) async throws {
         let syncState = InstallationBindingSyncState(
-            userId: userId,
-            isAnonymous: isAnonymous,
-            refreshToken: refreshToken
+            userId: userId
         )
 
         if !force, installationBindingSyncState == syncState {
@@ -214,9 +199,7 @@ final class AuthManager {
         }
 
         let params: [String: AnyJSON] = [
-            "p_installation_id": .string(InstallationIDStore.getOrCreateInstallationID()),
-            "p_is_anonymous": .bool(syncState.isAnonymous),
-            "p_refresh_token": syncState.refreshToken.map(AnyJSON.string) ?? .null
+            "p_installation_id": .string(InstallationIDStore.getOrCreateInstallationID())
         ]
 
         let supabase = try Backend.requireSupabase()
@@ -231,6 +214,9 @@ final class AuthManager {
         isAuthenticated = true
         currentUser = session.user
         isAnonymous = session.user.isAnonymous
+        if session.user.isAnonymous {
+            cacheAnonymousRefreshToken(from: session)
+        }
     }
 
     private func resetAuthState() {
@@ -238,20 +224,21 @@ final class AuthManager {
         currentUser = nil
         isAnonymous = false
     }
-}
 
-private struct AnonymousInstallationSession: Decodable, Sendable {
-    let userId: UUID
-    let refreshToken: String
+    private func cacheAnonymousRefreshToken(from session: Session) {
+        guard session.user.isAnonymous else {
+            return
+        }
 
-    enum CodingKeys: String, CodingKey {
-        case userId = "user_id"
-        case refreshToken = "refresh_token"
+        let token = session.refreshToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !token.isEmpty else {
+            return
+        }
+
+        _ = AnonymousRefreshTokenStore.save(token)
     }
 }
 
 private struct InstallationBindingSyncState: Equatable {
     let userId: UUID
-    let isAnonymous: Bool
-    let refreshToken: String?
 }
