@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
-from typing import TypeVar
+from typing import Awaitable, TypeVar, cast
 
 from app.chapter_reply import (
     CHAPTER_JSON_OPEN_MARKER,
@@ -172,7 +172,7 @@ async def stream_with_timeout(
     finally:
         aclose = getattr(iterator, "aclose", None)
         if callable(aclose):
-            await aclose()
+            await cast(Callable[[], Awaitable[None]], aclose)()
 
 
 def build_prompt_messages(

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from postgrest.types import ReturnMethod
 
 from datetime import datetime, timezone
 
@@ -51,7 +52,7 @@ def create_session(
                 "title": title,
                 "chapter_id": chapter_id,
             },
-            returning="representation",
+            returning=ReturnMethod.representation,
         )
         .execute()
     )

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from postgrest.types import ReturnMethod
 
 from typing import Any
 
@@ -81,7 +82,7 @@ def create_souler(name: str, lang: str, wiki_id: str | None = None) -> dict[str,
 
     response = (
         supabase.table("soulers")
-        .insert(payload, returning="representation")
+        .insert(payload, returning=ReturnMethod.representation)
         .execute()
     )
 
@@ -122,7 +123,7 @@ def add_souler_alias(souler_id: str, souler_name: str, alias: str, lang: str) ->
 def update_souler(souler_id: str, data: dict[str, Any]) -> dict[str, Any]:
     response = (
         supabase.table("soulers")
-        .update(data, returning="representation")
+        .update(data, returning=ReturnMethod.representation)
         .eq("id", souler_id)
         .execute()
     )

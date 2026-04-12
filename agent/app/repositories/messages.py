@@ -1,4 +1,5 @@
 from __future__ import annotations
+from postgrest.types import ReturnMethod
 
 from ._client import first_row, supabase
 from .types import MessageRow, Role
@@ -37,7 +38,7 @@ def insert_message(
                 "role": role,
                 "content": content,
             },
-            returning="representation",
+            returning=ReturnMethod.representation,
         )
         .execute()
     )

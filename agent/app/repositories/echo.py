@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+from postgrest.types import ReturnMethod
 
 from ._client import first_row, supabase
 from .types import EchoContext
@@ -45,7 +46,7 @@ def bind_echo_session_if_missing(
 
     response = (
         supabase.table("echoes")
-        .update({"session_id": session_id}, returning="representation")
+        .update({"session_id": session_id}, returning=ReturnMethod.representation)
         .eq("id", echo_id)
         .is_("session_id", "null")
         .execute()
@@ -75,7 +76,7 @@ def create_echo(
                 "souler_id": souler_id,
                 "content": content,
             },
-            returning="representation",
+            returning=ReturnMethod.representation,
         )
         .execute()
     )

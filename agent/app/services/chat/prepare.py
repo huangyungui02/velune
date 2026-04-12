@@ -151,7 +151,7 @@ async def prepare_chat_request(
                 initial_title,
                 initial_chapter_id,
             )
-            created_session = {
+            created_session: SessionContext = {
                 "id": created_session_id,
                 "soulerId": str(pending_souler["id"]),
                 "title": initial_title,

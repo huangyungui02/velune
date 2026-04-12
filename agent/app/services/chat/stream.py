@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
-async def handle_chat(lang: Lang, request: Request) -> StreamingResponse:
+async def handle_chat(lang: Lang, request: Request) -> StreamingResponse | JSONResponse:
     try:
         normalized_lang = normalize_lang(lang)
     except ValueError as error:
