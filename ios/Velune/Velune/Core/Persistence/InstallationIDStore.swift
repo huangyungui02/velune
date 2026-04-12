@@ -1,5 +1,6 @@
 import Foundation
 import Security
+import UIKit
 
 enum InstallationIDStore {
     private static let account = "velune.installation_id"
@@ -162,5 +163,95 @@ enum AnonymousRefreshTokenStore {
         ]
 
         SecItemDelete(query as CFDictionary)
+    }
+}
+
+struct InstallationClientMetadata {
+    let appVersion: String
+    let osVersion: String
+    let deviceModel: String
+
+    static func current() -> Self {
+        Self(
+            appVersion: resolvedAppVersion(),
+            osVersion: resolvedOSVersion(),
+            deviceModel: resolvedDeviceModel()
+        )
+    }
+
+    private static func resolvedAppVersion() -> String {
+        let shortVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let buildNumber = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        if !shortVersion.isEmpty, !buildNumber.isEmpty {
+            return "\(shortVersion)+\(buildNumber)"
+        }
+        if !shortVersion.isEmpty {
+            return shortVersion
+        }
+        if !buildNumber.isEmpty {
+            return buildNumber
+        }
+        return "unknown"
+    }
+
+    private static func resolvedOSVersion() -> String {
+        let version = UIDevice.current.systemVersion.trimmingCharacters(in: .whitespacesAndNewlines)
+        return version.isEmpty ? "unknown" : version
+    }
+
+    private static func resolvedDeviceModel() -> String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+
+        let identifier = withUnsafeBytes(of: &systemInfo.machine) { rawBuffer -> String in
+            let bytes = rawBuffer.prefix { $0 != 0 }
+            return String(decoding: bytes, as: UTF8.self)
+        }
+
+        return identifier.isEmpty ? "unknown" : identifier
+    }
+}
+
+enum InstallationVersionSyncStore {
+    private static var userIDKey: String {
+        "\(keyPrefix).last_synced_user_id"
+    }
+    private static var appVersionKey: String {
+        "\(keyPrefix).last_synced_app_version"
+    }
+    private static var osVersionKey: String {
+        "\(keyPrefix).last_synced_os_version"
+    }
+
+    private static var keyPrefix: String {
+        if let bundleIdentifier = Bundle.main.bundleIdentifier,
+           !bundleIdentifier.isEmpty {
+            return "\(bundleIdentifier).installation"
+        }
+        return "velune.installation"
+    }
+
+    static func hasSyncChanged(userId: UUID, appVersion: String, osVersion: String) -> Bool {
+        let defaults = UserDefaults.standard
+        let userID = userId.uuidString.lowercased()
+
+        guard let lastUserID = defaults.string(forKey: userIDKey),
+              let lastAppVersion = defaults.string(forKey: appVersionKey),
+              let lastOSVersion = defaults.string(forKey: osVersionKey)
+        else {
+            return true
+        }
+
+        return lastUserID != userID || lastAppVersion != appVersion || lastOSVersion != osVersion
+    }
+
+    static func markSynced(userId: UUID, appVersion: String, osVersion: String) {
+        let defaults = UserDefaults.standard
+        defaults.set(userId.uuidString.lowercased(), forKey: userIDKey)
+        defaults.set(appVersion, forKey: appVersionKey)
+        defaults.set(osVersion, forKey: osVersionKey)
     }
 }

@@ -4,6 +4,7 @@ import SwiftUI
 
 @main
 struct VeluneApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var authManager = AuthManager.shared
     @State private var subscriptionManager = SubscriptionManager.shared
     private let launchFailure: AppLaunchFailure?
@@ -36,6 +37,15 @@ struct VeluneApp: App {
             }
             .task(id: authManager.currentUserId) {
                 await subscriptionManager.bootstrap(userId: authManager.currentUserId)
+            }
+            .task {
+                await authManager.syncInstallationMetadataIfNeeded()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                guard newPhase == .active else {
+                    return
+                }
+                Task { await authManager.syncInstallationMetadataIfNeeded() }
             }
             .animation(.easeInOut, value: authManager.isAuthenticated)
             .animation(.easeInOut, value: authManager.isAnonymous)

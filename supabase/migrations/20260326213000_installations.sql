@@ -3,6 +3,9 @@ CREATE TABLE public.installations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     installation_id TEXT NOT NULL,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    app_version TEXT,
+    os_version TEXT,
+    device_model TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT installations_installation_id_not_blank
@@ -34,7 +37,10 @@ CREATE TRIGGER trg_installations_set_updated_at
     EXECUTE FUNCTION public.set_installations_updated_at();
 
 CREATE FUNCTION public.upsert_installation_for_current_user(
-    p_installation_id TEXT
+    p_installation_id TEXT,
+    p_app_version TEXT DEFAULT NULL,
+    p_os_version TEXT DEFAULT NULL,
+    p_device_model TEXT DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -43,6 +49,9 @@ SET search_path = public
 AS $$
 DECLARE
     v_installation_id TEXT := trim(coalesce(p_installation_id, ''));
+    v_app_version TEXT := nullif(trim(coalesce(p_app_version, '')), '');
+    v_os_version TEXT := nullif(trim(coalesce(p_os_version, '')), '');
+    v_device_model TEXT := nullif(trim(coalesce(p_device_model, '')), '');
     v_user_id UUID := auth.uid();
     v_is_anonymous BOOLEAN := false;
 BEGIN
@@ -73,18 +82,28 @@ BEGIN
 
     INSERT INTO public.installations (
         installation_id,
-        user_id
+        user_id,
+        app_version,
+        os_version,
+        device_model
     )
     VALUES (
         v_installation_id,
-        v_user_id
+        v_user_id,
+        v_app_version,
+        v_os_version,
+        v_device_model
     )
     ON CONFLICT (installation_id, user_id)
     DO UPDATE SET
+        app_version = coalesce(v_app_version, public.installations.app_version),
+        os_version = coalesce(v_os_version, public.installations.os_version),
+        -- Keep the first non-empty device model as stable hardware fingerprint for this binding.
+        device_model = coalesce(public.installations.device_model, v_device_model),
         updated_at = NOW();
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.upsert_installation_for_current_user(TEXT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.upsert_installation_for_current_user(TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.upsert_installation_for_current_user(TEXT) TO service_role;
+REVOKE ALL ON FUNCTION public.upsert_installation_for_current_user(TEXT, TEXT, TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.upsert_installation_for_current_user(TEXT, TEXT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.upsert_installation_for_current_user(TEXT, TEXT, TEXT, TEXT) TO service_role;

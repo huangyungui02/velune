@@ -41,6 +41,7 @@ final class AuthManager {
 
         if let session = supabase.auth.currentSession {
             applyAuthenticatedSession(session)
+            Task { await syncInstallationMetadataIfNeeded() }
         } else {
             resetAuthState()
         }
@@ -56,9 +57,7 @@ final class AuthManager {
             for await (_, session) in supabase.auth.authStateChanges {
                 if let session = session, !session.isExpired {
                     self.applyAuthenticatedSession(session)
-                    try? await self.upsertInstallationBinding(
-                        userId: session.user.id
-                    )
+                    await self.syncInstallationMetadataIfNeeded()
                 } else {
                     self.resetAuthState()
                     self.installationBindingSyncState = nil
@@ -158,6 +157,27 @@ final class AuthManager {
         self.currentUser = response
     }
 
+    func syncInstallationMetadataIfNeeded() async {
+        guard let userId = currentUser?.id else {
+            return
+        }
+
+        let metadata = InstallationClientMetadata.current()
+        guard InstallationVersionSyncStore.hasSyncChanged(
+            userId: userId,
+            appVersion: metadata.appVersion,
+            osVersion: metadata.osVersion
+        ) else {
+            return
+        }
+
+        do {
+            try await upsertInstallationBinding(userId: userId, force: true)
+        } catch {
+            logger.notice("installation metadata sync skipped: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     private func restoreAnonymousSessionIfAvailable() async -> Session? {
         guard let supabase = Backend.supabaseIfAvailable else {
             logger.error("anonymous session restore unavailable: backend is not configured")
@@ -193,13 +213,22 @@ final class AuthManager {
         let syncState = InstallationBindingSyncState(
             userId: userId
         )
+        let metadata = InstallationClientMetadata.current()
+        let syncChanged = InstallationVersionSyncStore.hasSyncChanged(
+            userId: userId,
+            appVersion: metadata.appVersion,
+            osVersion: metadata.osVersion
+        )
 
-        if !force, installationBindingSyncState == syncState {
+        if !force, !syncChanged, installationBindingSyncState == syncState {
             return
         }
 
         let params: [String: AnyJSON] = [
-            "p_installation_id": .string(InstallationIDStore.getOrCreateInstallationID())
+            "p_installation_id": .string(InstallationIDStore.getOrCreateInstallationID()),
+            "p_app_version": .string(metadata.appVersion),
+            "p_os_version": .string(metadata.osVersion),
+            "p_device_model": .string(metadata.deviceModel)
         ]
 
         let supabase = try Backend.requireSupabase()
@@ -208,6 +237,11 @@ final class AuthManager {
             .execute()
 
         installationBindingSyncState = syncState
+        InstallationVersionSyncStore.markSynced(
+            userId: userId,
+            appVersion: metadata.appVersion,
+            osVersion: metadata.osVersion
+        )
     }
 
     private func applyAuthenticatedSession(_ session: Session) {
