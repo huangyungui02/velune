@@ -5,15 +5,9 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
-from app.echo_nodes import (
-    Lang,
-    match_soulers,
-    souler_answer,
-    souler_profile,
-)
+from app.echo.nodes import match_soulers, souler_answer, souler_profile
 from app.errors import CreditLimitError
-from app.services.wikidata import search_wikidata_qid
-from app.supabase_repo import (
+from app.repositories import (
     add_souler_alias,
     create_echo,
     create_or_update_resonance,
@@ -23,6 +17,8 @@ from app.supabase_repo import (
     get_souler_by_wiki_id,
     update_souler,
 )
+from app.shared import Lang
+from app.wikidata import search_wikidata_qid
 
 ECHO_PROFILE_MODEL = "qwen3.5-plus"
 ECHO_MATCH_MODEL = "qwen3.5-plus"
@@ -38,6 +34,11 @@ class EchoGraphFailedError(RuntimeError):
     def __init__(self, message: str, refund_credits: int) -> None:
         super().__init__(message)
         self.refund_credits = max(refund_credits, 0)
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
 
 
 def _reason_to_message(reason: Any) -> str:
@@ -116,6 +117,11 @@ async def _ensure_souler_assets(
     return souler_data
 
 
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
+
+
 async def invoke_echo_graph(
     *,
     user_id: str,
@@ -150,17 +156,9 @@ async def invoke_echo_graph(
             lang,
             model=model,
         )
-        echo = create_echo(
-            glimmer_id,
-            souler_id,
-            answer,
-        )
+        echo = create_echo(glimmer_id, souler_id, answer)
         echo["souler_name"] = souler_name
-        create_or_update_resonance(
-            user_id,
-            souler_id,
-            None,
-        )
+        create_or_update_resonance(user_id, souler_id, None)
 
         if on_echo:
             maybe_awaitable = on_echo(echo)

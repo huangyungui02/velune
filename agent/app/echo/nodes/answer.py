@@ -3,7 +3,7 @@ from __future__ import annotations
 from app.config import get_settings
 from app.llm import complete_text
 
-from .shared import Lang
+from app.shared import Lang
 
 settings = get_settings()
 

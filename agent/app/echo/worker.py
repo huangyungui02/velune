@@ -5,27 +5,22 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
 from starlette.requests import ClientDisconnect
 
-from app.echo_nodes import normalize_lang
-from app.echo_logic import EchoGraphFailedError, Lang, invoke_echo_graph
+from app.billing import ECHO_STARDUST_COST, refund_stardust_safely
+from app.echo.graph import EchoGraphFailedError, invoke_echo_graph
 from app.errors import CreditLimitError, credit_error_payload, error_log_payload, error_message
-from app.services.billing import ECHO_STARDUST_COST, refund_stardust_safely
-from app.sse import sse_event, sse_response
-from app.supabase_repo import (
+from app.repositories import (
     consume_stardust,
     ensure_glimmer,
-    get_user_id_from_auth_header,
     list_glimmer_echoes,
     update_glimmer_status,
 )
+from app.shared import Lang
 
-router = APIRouter()
 logger = logging.getLogger(__name__)
-ECHO_MODEL = "qwen3.5-flash"
 
+ECHO_MODEL = "qwen3.5-flash"
 type Send = Callable[[dict[str, Any]], Awaitable[None]]
 
 
@@ -49,9 +44,9 @@ def _echo_event_payload(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-async def _compose_worker(
+async def compose_worker(
     *,
-    request: Request,
+    user_id: str,
     lang: Lang,
     glimmer_id: str,
     content: str,
@@ -59,10 +54,8 @@ async def _compose_worker(
 ) -> None:
     processing_started = False
     generation_finished = False
-    user_id: str | None = None
     charged_credits = 0
     try:
-        user_id = get_user_id_from_auth_header(request.headers.get("Authorization"))
         glimmer = ensure_glimmer(user_id, glimmer_id, content)
         status = str(glimmer.get("status", "pending"))
 
@@ -163,61 +156,3 @@ async def _compose_worker(
                     "message": error_message(error),
                 }
             )
-
-
-@router.post("/{lang}/glimmers/compose")
-async def compose_glimmer(lang: Lang, request: Request):
-    try:
-        lang = normalize_lang(lang)
-    except ValueError as error:
-        return JSONResponse({"error": str(error)}, status_code=400)
-
-    try:
-        body = await request.json()
-    except Exception:  # noqa: BLE001
-        return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
-
-    glimmer_id = str(body.get("glimmerId", "")).strip()
-    content = str(body.get("content", "")).strip()
-
-    if not glimmer_id:
-        return JSONResponse({"error": "Missing glimmerId"}, status_code=400)
-    if not content:
-        return JSONResponse({"error": "Missing content"}, status_code=400)
-
-    async def event_stream():
-        queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
-        stream_closed = asyncio.Event()
-
-        async def send(payload: dict[str, Any]) -> None:
-            if stream_closed.is_set():
-                return
-            await queue.put(payload)
-
-        async def worker() -> None:
-            try:
-                await _compose_worker(
-                    request=request,
-                    lang=lang,
-                    glimmer_id=glimmer_id,
-                    content=content,
-                    send=send,
-                )
-            finally:
-                if not stream_closed.is_set():
-                    await queue.put(None)
-
-        worker_task = asyncio.create_task(worker())
-        try:
-            while True:
-                payload = await queue.get()
-                if payload is None:
-                    break
-                yield sse_event(payload)
-        except (ClientDisconnect, asyncio.CancelledError):
-            stream_closed.set()
-            return
-
-        await worker_task
-
-    return sse_response(event_stream())

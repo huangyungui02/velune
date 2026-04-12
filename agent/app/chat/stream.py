@@ -7,10 +7,10 @@ from fastapi import Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.requests import ClientDisconnect
 
-from app.chapter_reply import parse_chapter_combined_response
+from app.chat.chapters.reply import parse_chapter_combined_response
 from app.config import get_settings
-from app.echo_nodes import normalize_lang
-from app.echo_logic import Lang
+from app.shared import normalize_lang
+from app.shared import Lang
 from app.errors import (
     CreditLimitError,
     credit_error_payload,
@@ -18,9 +18,9 @@ from app.errors import (
     error_message,
 )
 from app.llm import stream_text
-from app.services.billing import CHAT_STARDUST_COST, refund_stardust_safely
+from app.billing import CHAT_STARDUST_COST, refund_stardust_safely
 from app.sse import emit_once, sse_event, sse_response
-from app.supabase_repo import (
+from app.repositories import (
     create_or_update_resonance,
     insert_message,
     touch_session,

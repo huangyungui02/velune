@@ -5,7 +5,7 @@ import logging
 from typing import Any, Awaitable, Callable
 
 from app.errors import error_log_payload
-from app.supabase_repo import refund_stardust
+from app.repositories import refund_stardust
 
 logger = logging.getLogger(__name__)
 

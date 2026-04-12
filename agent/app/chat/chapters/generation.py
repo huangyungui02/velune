@@ -5,10 +5,10 @@ import logging
 from typing import Any
 
 from app.config import get_settings
-from app.echo_logic import Lang
+from app.shared import Lang
 from app.errors import error_log_payload
 from app.llm import complete_json
-from app.supabase_repo import (
+from app.repositories import (
     complete_souler_chapters_generation,
     get_souler_by_id,
     mark_chapters_generation_failed,

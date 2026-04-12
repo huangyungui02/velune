@@ -5,7 +5,7 @@ from collections.abc import Callable
 from app.config import get_settings
 from app.llm import complete_json
 
-from .shared import Lang, build_match_schema
+from app.shared import Lang, build_match_schema
 
 settings = get_settings()
 

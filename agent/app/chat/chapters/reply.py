@@ -4,7 +4,7 @@ import json
 import re
 from collections.abc import Mapping
 
-from app.echo_logic import Lang
+from app.shared import Lang
 
 CHAPTER_JSON_OPEN_MARKER = "---JSON---"
 CHAPTER_JSON_CLOSE_MARKER = "---END_JSON---"

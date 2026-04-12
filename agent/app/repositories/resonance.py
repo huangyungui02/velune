@@ -8,15 +8,14 @@ def create_or_update_resonance(
     souler_id: str,
     last_session_id: str | None,
 ) -> None:
-    (
-        supabase.table("resonances")
-        .upsert(
-            {
-                "user_id": user_id,
-                "souler_id": souler_id,
-                "last_session_id": last_session_id,
-            },
-            on_conflict="user_id,souler_id",
-        )
-        .execute()
-    )
+    row: dict[str, str] = {
+        "user_id": user_id,
+        "souler_id": souler_id,
+    }
+    if last_session_id is not None:
+        row["last_session_id"] = last_session_id
+
+    supabase.table("resonances").upsert(
+        row,
+        on_conflict="user_id,souler_id",
+    ).execute()

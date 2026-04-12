@@ -7,15 +7,18 @@ from uuid import UUID
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from app.echo_nodes import normalize_lang
-from app.echo_logic import Lang
+from app.shared import Lang, normalize_lang
 from app.errors import CreditLimitError, UnauthorizedError, error_log_payload, error_message
-from app.services.chapters import start_chapter_session, start_generation
-from app.supabase_repo import get_user_id_from_auth_header
+from app.chat import handle_chat
+from app.chat.chapters import start_chapter_session, start_generation
+from app.repositories import get_user_id_from_auth_header
 
-router = APIRouter()
 logger = logging.getLogger(__name__)
+router = APIRouter()
 
+@router.post("/{lang}/chat")
+async def chat(lang: Lang, request: Request):
+    return await handle_chat(lang, request)
 
 @router.post("/{lang}/soulers/{souler_id}/chapters/generate")
 async def generate_chapters(lang: Lang, souler_id: UUID, request: Request):

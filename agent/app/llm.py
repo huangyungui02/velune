@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AsyncStream
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 from app.config import get_settings
 
@@ -70,7 +71,7 @@ async def complete_text(
         model=model,
         temperature=temperature,
     )
-    completion = await _client.chat.completions.create(**request)
+    completion = cast(ChatCompletion, await _client.chat.completions.create(**request))
     content = completion.choices[0].message.content
     return _normalize_content(content).strip()
 
@@ -97,7 +98,7 @@ async def complete_json(
         },
     )
 
-    completion = await _client.chat.completions.create(**request)
+    completion = cast(ChatCompletion, await _client.chat.completions.create(**request))
     content = _normalize_content(completion.choices[0].message.content).strip()
     if not content:
         raise ValueError("Model returned empty JSON content")
@@ -116,7 +117,10 @@ async def stream_text(
         temperature=temperature,
         stream=True,
     )
-    stream = await _client.chat.completions.create(**request)
+    stream = cast(
+        AsyncStream[ChatCompletionChunk],
+        await _client.chat.completions.create(**request),
+    )
     async for chunk in stream:
         if not chunk.choices:
             continue

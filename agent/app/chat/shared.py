@@ -5,14 +5,14 @@ from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from typing import Awaitable, TypeVar, cast
 
-from app.chapter_reply import (
+from app.chat.chapters.reply import (
     CHAPTER_JSON_OPEN_MARKER,
     build_chapter_system_prompt,
 )
 from app.config import get_settings
-from app.echo_logic import Lang
+from app.shared import Lang, sanitize_title
 from app.llm import complete_text
-from app.supabase_repo import ChapterContext, MessageRow, SessionContext
+from app.repositories import ChapterContext, MessageRow, SessionContext
 
 settings = get_settings()
 
@@ -38,17 +38,6 @@ class ChapterStreamState:
     output_chunks: list[str]
     pending: str
     phase: str
-
-
-def sanitize_title(raw: str, lang: Lang) -> str:
-    trimmed = raw.strip().strip("\"'`")
-    if not trimmed:
-        return "新对话" if lang == "zh" else "New Chat"
-
-    if lang == "zh":
-        return trimmed[:16]
-
-    return " ".join(trimmed.split()[:8])
 
 
 def build_system_prompt(
@@ -202,3 +191,21 @@ def build_prompt_messages(
 
     prompt_messages.append({"role": "user", "content": content})
     return prompt_messages
+
+
+SESSION_TITLE_PROMPT: dict[Lang, str] = {
+    "en": "Create a concise chat title from the user's glimmer and souler echo. Keep it under 8 words, no punctuation, no quotes, and return only the title text. Title must be in English only.",
+    "zh": "根据用户 glimmer 和 souler echo 生成一个简洁会话标题。限制 8 个字以内，不要标点，不要引号，只返回标题文本。标题必须只使用中文。",
+}
+
+
+async def session_title(glimmer: str, echo: str, lang: Lang, *, model: str) -> str:
+    raw = await complete_text(
+        [
+            {"role": "system", "content": SESSION_TITLE_PROMPT[lang]},
+            {"role": "user", "content": f"Glimmer:\n{glimmer}\n\nEcho:\n{echo}"},
+        ],
+        model=model,
+        temperature=settings.MODEL_S_TEMPERATURE,
+    )
+    return sanitize_title(raw, lang)

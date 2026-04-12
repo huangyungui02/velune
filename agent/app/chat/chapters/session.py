@@ -4,13 +4,13 @@ import asyncio
 import logging
 from uuid import UUID
 
-from app.chapter_reply import parse_chapter_combined_response
+from app.chat.chapters.reply import parse_chapter_combined_response
 from app.config import get_settings
-from app.echo_logic import Lang
+from app.shared import Lang
 from app.errors import error_log_payload
 from app.llm import complete_text
-from app.services.billing import CHAT_STARDUST_COST, refund_stardust_safely
-from app.supabase_repo import (
+from app.billing import CHAT_STARDUST_COST, refund_stardust_safely
+from app.repositories import (
     consume_stardust,
     create_or_update_resonance,
     create_session,

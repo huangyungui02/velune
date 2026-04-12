@@ -6,10 +6,10 @@ from uuid import UUID
 
 from fastapi import Request
 
-from app.echo_logic import Lang
-from app.services.billing import CHAT_STARDUST_COST, refund_stardust_safely
+from app.shared import Lang
+from app.billing import CHAT_STARDUST_COST, refund_stardust_safely
 from app.errors import error_log_payload
-from app.supabase_repo import (
+from app.repositories import (
     ChapterContext,
     EchoContext,
     SessionContext,

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
-
-from app.chapter_reply import build_chapter_system_prompt
-from app.echo_logic import Lang
+from app.repositories import ChapterContext
+from app.chat.chapters.reply import build_chapter_system_prompt
+from app.shared import Lang
 
 from .prompt_zh import GENERATION_SYSTEM_PROMPT_ZH
 from .prompt_en import GENERATION_SYSTEM_PROMPT_EN
@@ -24,7 +23,7 @@ def build_generation_messages(souler_name: str, lang: Lang) -> list[dict[str, st
 
 def build_chapter_opening_messages(
     souler_name: str,
-    chapter: dict[str, Any],
+    chapter: ChapterContext,
     lang: Lang,
 ) -> list[dict[str, str]]:
     system_prompt = build_chapter_system_prompt(souler_name, chapter, lang)
