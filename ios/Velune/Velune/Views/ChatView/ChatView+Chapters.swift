@@ -55,8 +55,6 @@ extension ChatView {
             hasRequestedChapterGeneration = true
             chapterState = SoulerChapterState(
                 status: .processing,
-                generatedAt: chapterState?.generatedAt,
-                error: nil,
                 chapters: chapterState?.chapters ?? []
             )
             scheduleChapterPollingIfNeeded()
@@ -75,8 +73,6 @@ extension ChatView {
             let previousChapters = chapterState?.chapters ?? []
             return SoulerChapterState(
                 status: .processing,
-                generatedAt: fetchedState.generatedAt ?? chapterState?.generatedAt,
-                error: nil,
                 chapters: previousChapters.isEmpty ? fetchedState.chapters : previousChapters
             )
         }
@@ -206,8 +202,6 @@ extension ChatView {
         guard chapterState != nil || hasRequestedChapterGeneration else { return nil }
         return chapterState ?? SoulerChapterState(
             status: .processing,
-            generatedAt: nil,
-            error: nil,
             chapters: []
         )
     }

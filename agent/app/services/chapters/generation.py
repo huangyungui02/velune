@@ -6,12 +6,12 @@ from typing import Any
 
 from app.config import get_settings
 from app.echo_logic import Lang
-from app.errors import error_log_payload, error_message
+from app.errors import error_log_payload
 from app.llm import complete_json
 from app.supabase_repo import (
     complete_souler_chapters_generation,
-    fail_souler_chapters_generation,
     get_souler_by_id,
+    mark_chapters_generation_failed,
     start_souler_chapters_generation,
 )
 
@@ -106,9 +106,8 @@ async def run_generation_job(souler_id: str, lang: Lang) -> None:
         )
         try:
             await asyncio.to_thread(
-                fail_souler_chapters_generation,
+                mark_chapters_generation_failed,
                 souler_id,
-                error_message(error),
             )
         except Exception as fail_error:  # noqa: BLE001
             logger.error(

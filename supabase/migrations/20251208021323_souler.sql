@@ -4,8 +4,11 @@ CREATE TABLE soulers (
     name VARCHAR(64) NOT NULL,
     lang VARCHAR(16) NOT NULL,
     bio TEXT,
+    chapters_status TEXT NOT NULL DEFAULT 'pending',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT soulers_chapters_status_check
+        CHECK (chapters_status IN ('pending', 'processing', 'complete', 'failed'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_soulers_name ON soulers (name);

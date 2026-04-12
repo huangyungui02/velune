@@ -32,13 +32,3 @@ def complete_souler_chapters_generation(
             "p_chapters": chapters,
         },
     ).execute()
-
-
-def fail_souler_chapters_generation(souler_id: str, error_message: str) -> None:
-    supabase.rpc(
-        "fail_souler_chapters_generation",
-        {
-            "p_souler_id": souler_id,
-            "p_error": error_message,
-        },
-    ).execute()

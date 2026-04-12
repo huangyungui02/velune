@@ -143,8 +143,6 @@ sessions：新增可空 `chapter_id` 字段
   + `processing`
   + `complete`
   + `failed`
-* `chapters_generated_at`
-* `chapters_error`
 
 ### 数据约束与索引
 
@@ -173,7 +171,6 @@ sessions：新增可空 `chapter_id` 字段
 生成失败时：
 
 * `chapters_status` 写为 `failed`
-* 写入 `chapters_error`
 * 不应留下半套可见的 chapters 数据
 
 因此推荐流程为：
@@ -183,7 +180,6 @@ sessions：新增可空 `chapter_id` 字段
 3. 生成完整 10 章
 4. 一次性写入 chapters
 5. 更新为 `complete`
-6. 写入 `chapters_generated_at`
 
 ## 用户chat流程
 

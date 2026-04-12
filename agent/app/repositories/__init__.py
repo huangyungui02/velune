@@ -2,7 +2,6 @@ from .auth import get_user_id_from_auth_header
 from .catalog import get_chapter_by_id, get_souler_by_id
 from .chapter_generation import (
     complete_souler_chapters_generation,
-    fail_souler_chapters_generation,
     start_souler_chapters_generation,
 )
 from .credit import (
@@ -27,6 +26,7 @@ from .soulers import (
     create_souler,
     get_souler_by_alias,
     get_souler_by_name,
+    mark_chapters_generation_failed,
     update_souler,
 )
 from .types import ChapterContext, EchoContext, MessageRow, Role, SessionContext, Souler
@@ -51,7 +51,7 @@ __all__ = [
     "create_session",
     "start_souler_chapters_generation",
     "complete_souler_chapters_generation",
-    "fail_souler_chapters_generation",
+    "mark_chapters_generation_failed",
     "delete_session",
     "update_session_title",
     "touch_session",

@@ -135,7 +135,7 @@ extension ChatView {
                 case .processing:
                     chapterProcessingView
                 case .failed:
-                    chapterFailedView(error: chapterState.error)
+                    chapterFailedView
                 case .complete:
                     chapterListView(chapters: chapterState.chapters)
                 }
@@ -229,18 +229,11 @@ extension ChatView {
         }
     }
 
-    private func chapterFailedView(error: String?) -> some View {
+    private var chapterFailedView: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("resonance.chat.chapters.failed")
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(UITheme.primaryText)
-
-            if let error, !error.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(UITheme.secondaryText)
-                    .lineLimit(3)
-            }
 
             Button {
                 Task {
