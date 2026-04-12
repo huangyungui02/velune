@@ -9,7 +9,7 @@ from starlette.requests import ClientDisconnect
 
 from app.chapter_reply import parse_chapter_combined_response
 from app.config import get_settings
-from app.echo_nodes import SUPPORTED_LANGS
+from app.echo_nodes import normalize_lang
 from app.echo_logic import Lang
 from app.errors import (
     CreditLimitError,
@@ -42,12 +42,10 @@ settings = get_settings()
 
 
 async def handle_chat(lang: Lang, request: Request) -> StreamingResponse:
-    normalized_lang = str(lang).strip().lower()
-    if normalized_lang not in SUPPORTED_LANGS:
-        return JSONResponse(
-            {"error": "Invalid lang, must be one of: en, chs"},
-            status_code=400,
-        )
+    try:
+        normalized_lang = normalize_lang(lang)
+    except ValueError as error:
+        return JSONResponse({"error": str(error)}, status_code=400)
 
     started_at = asyncio.get_running_loop().time()
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-GENERATION_SYSTEM_PROMPT_CHS = """# 任务描述
+GENERATION_SYSTEM_PROMPT_ZH = """# 任务描述
 将某一人物的核心思想，拆解为10个连续章节（chapters），构建一条“逐步深入的精神路径”，用于用户与AI的沉浸式互动体验。
 请严格输出JSON格式，不要包含任何解释。
 每一章必须包含：

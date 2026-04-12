@@ -9,7 +9,7 @@ settings = get_settings()
 
 PROFILE_PROMPT: dict[Lang, str] = {
     "en": "Write an introduction for the given person.",
-    "chs": "为给定人物写一段人物简介。",
+    "zh": "为给定人物写一段人物简介。",
 }
 
 

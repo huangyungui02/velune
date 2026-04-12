@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from app.echo_nodes import SUPPORTED_LANGS
+from app.echo_nodes import normalize_lang
 from app.echo_logic import Lang
 from app.errors import CreditLimitError, UnauthorizedError, error_log_payload, error_message
 from app.services.chapters import start_chapter_session, start_generation
@@ -19,12 +19,10 @@ logger = logging.getLogger(__name__)
 
 @router.post("/{lang}/soulers/{souler_id}/chapters/generate")
 async def generate_chapters(lang: Lang, souler_id: UUID, request: Request):
-    lang = str(lang).strip().lower()
-    if lang not in SUPPORTED_LANGS:
-        return JSONResponse(
-            {"error": "Invalid lang, must be one of: en, chs"},
-            status_code=400,
-        )
+    try:
+        lang = normalize_lang(lang)
+    except ValueError as error:
+        return JSONResponse({"error": str(error)}, status_code=400)
 
     try:
         await asyncio.to_thread(
@@ -47,12 +45,10 @@ async def start_chapter_session_route(
     chapter_id: UUID,
     request: Request,
 ):
-    lang = str(lang).strip().lower()
-    if lang not in SUPPORTED_LANGS:
-        return JSONResponse(
-            {"error": "Invalid lang, must be one of: en, chs"},
-            status_code=400,
-        )
+    try:
+        lang = normalize_lang(lang)
+    except ValueError as error:
+        return JSONResponse({"error": str(error)}, status_code=400)
 
     try:
         user_id = await asyncio.to_thread(

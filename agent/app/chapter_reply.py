@@ -24,7 +24,7 @@ def build_chapter_system_prompt(
     if not chapter_title or not chapter_subtitle or not chapter_role or not chapter_task:
         raise ValueError("Invalid chapter context for system prompt")
 
-    if lang == "chs":
+    if lang == "zh":
         return (
             "# 人物\n"
             f"以{souler_name}的风格和用户进行沉浸式互动\n\n"

@@ -5,11 +5,6 @@ import json
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-WIKIDATA_LANG_MAP: dict[str, str] = {
-    "chs": "zh",
-    "en": "en",
-}
-
 
 def _build_search_url(name: str, wiki_lang: str) -> str:
     query = urlencode(
@@ -29,9 +24,8 @@ def _search_first_qid_sync(name: str, lang: str) -> str | None:
     if not cleaned_name:
         return None
 
-    wiki_langs = [WIKIDATA_LANG_MAP.get(lang, "en")]
-    if "en" not in wiki_langs:
-        wiki_langs.append("en")
+    normalized_lang = str(lang).strip().lower()
+    wiki_langs = ["zh", "en"] if normalized_lang == "zh" else ["en"]
 
     for wiki_lang in wiki_langs:
         request = Request(

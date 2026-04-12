@@ -43,9 +43,9 @@ class ChapterStreamState:
 def sanitize_title(raw: str, lang: Lang) -> str:
     trimmed = raw.strip().strip("\"'`")
     if not trimmed:
-        return "新对话" if lang == "chs" else "New Chat"
+        return "新对话" if lang == "zh" else "New Chat"
 
-    if lang == "chs":
+    if lang == "zh":
         return trimmed[:16]
 
     return " ".join(trimmed.split()[:8])
@@ -60,7 +60,7 @@ def build_system_prompt(
         return build_chapter_system_prompt(name, chapter, lang)
 
     template: dict[Lang, str] = {
-        "chs": "请以{name}的思想和风格与用户进行深度对话",
+        "zh": "请以{name}的思想和风格与用户进行深度对话",
         "en": "Please have a deep conversation with the user in the thought and style of {name}.",
     }
     return template[lang].format(name=name)
@@ -117,7 +117,7 @@ async def generate_session_title(
 ) -> str:
     system_prompt = (
         "根据用户消息和助手回复生成简洁聊天标题。限制 12 个字以内，不要标点，不要引号，只返回标题文本。"
-        if lang == "chs"
+        if lang == "zh"
         else "Create a concise chat title based on the user message and assistant reply. "
         "Keep it under 8 words, no punctuation, no quotes, and return only title text."
     )

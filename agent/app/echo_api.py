@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from starlette.requests import ClientDisconnect
 
-from app.echo_nodes import SUPPORTED_LANGS
+from app.echo_nodes import normalize_lang
 from app.echo_logic import EchoGraphFailedError, Lang, invoke_echo_graph
 from app.errors import CreditLimitError, credit_error_payload, error_log_payload, error_message
 from app.services.billing import ECHO_STARDUST_COST, refund_stardust_safely
@@ -110,7 +110,7 @@ async def _compose_worker(
             glimmer_id=glimmer_id,
             glimmer_content=str(glimmer.get("content", content)),
             num=ECHO_STARDUST_COST,
-            lang=lang,  # type: ignore[arg-type]
+            lang=lang,
             model=ECHO_MODEL,
             on_echo=lambda echo_row: send(_echo_event_payload(echo_row)),
         )
@@ -167,9 +167,10 @@ async def _compose_worker(
 
 @router.post("/{lang}/glimmers/compose")
 async def compose_glimmer(lang: Lang, request: Request):
-    lang = str(lang).strip().lower()
-    if lang not in SUPPORTED_LANGS:
-        return JSONResponse({"error": "Invalid lang, must be one of: en, chs"}, status_code=400)
+    try:
+        lang = normalize_lang(lang)
+    except ValueError as error:
+        return JSONResponse({"error": str(error)}, status_code=400)
 
     try:
         body = await request.json()

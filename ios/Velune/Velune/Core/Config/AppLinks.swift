@@ -15,7 +15,7 @@ enum AppLanguage {
         case .english:
             "en"
         case .simplifiedChinese:
-            "chs"
+            "zh"
         }
     }
 }
