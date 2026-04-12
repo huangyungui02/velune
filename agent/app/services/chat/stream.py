@@ -181,7 +181,6 @@ async def handle_chat(lang: Lang, request: Request) -> StreamingResponse:
                 prepared.user_id,
                 prepared.session["soulerId"],
                 prepared.session["id"],
-                generated_title or prepared.session["title"],
                 timeout=settings.POST_STREAM_TIMEOUT_SECONDS,
             )
             log_stage("stream_done")

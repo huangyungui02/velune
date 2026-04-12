@@ -99,7 +99,6 @@ async def start_chapter_session(
                 user_id,
                 str(souler_id),
                 created_session_id,
-                chapter["title"],
             )
         except Exception as side_effect_error:  # noqa: BLE001
             logger.warning(

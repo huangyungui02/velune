@@ -59,7 +59,7 @@ extension Resonance {
         var lastSessionId: UUID?
         var lastSessionTitle: String?
         var updatedAt: Date
-        var souler: SoulerName?
+        var soulerName: String?
 
         enum CodingKeys: String, CodingKey {
             case id
@@ -67,12 +67,8 @@ extension Resonance {
             case lastSessionId = "last_session_id"
             case lastSessionTitle = "last_session_title"
             case updatedAt = "updated_at"
-            case souler = "soulers"
+            case soulerName = "souler_name"
         }
-    }
-
-    private struct SoulerName: Codable {
-        var name: String
     }
 
     private static func mapResponse(_ response: [Response], userId: String) -> [Resonance] {
@@ -84,7 +80,7 @@ extension Resonance {
                 id: res.id,
                 userId: userId,
                 soulerId: res.soulerId,
-                soulerName: res.souler?.name ?? fallbackName,
+                soulerName: res.soulerName ?? fallbackName,
                 lastSessionId: res.lastSessionId,
                 lastSessionTitle: resolvedTitle,
                 updatedAt: res.updatedAt
@@ -106,8 +102,8 @@ extension Resonance {
 
         let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
-            .from("resonances")
-            .select("id, souler_id, last_session_id, last_session_title, updated_at, soulers(name)")
+            .from("resonances_with_souler")
+            .select("id, souler_id, last_session_id, last_session_title, updated_at, souler_name")
             .order("updated_at", ascending: false)
             .range(from: pageOffset, to: upperBound)
             .execute()
@@ -130,8 +126,8 @@ extension Resonance {
 
         let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
-            .from("resonances")
-            .select("id, souler_id, last_session_id, last_session_title, updated_at, soulers(name)")
+            .from("resonances_with_souler")
+            .select("id, souler_id, last_session_id, last_session_title, updated_at, souler_name")
             .gte("updated_at", value: encodeTimestamp(overlappedDate))
             .order("updated_at", ascending: false)
             .range(from: pageOffset, to: upperBound)

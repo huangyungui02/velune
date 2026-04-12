@@ -151,7 +151,6 @@ async def invoke_echo_graph(
             user_id,
             souler_id,
             None,
-            "",
         )
 
         if on_echo:

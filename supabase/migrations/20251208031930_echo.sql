@@ -27,7 +27,9 @@ ALTER PUBLICATION supabase_realtime
 ADD TABLE echoes;
 
 -- Create a view that joins echoes with souler names
-CREATE VIEW echoes_with_souler AS
+CREATE VIEW public.echoes_with_souler
+WITH (security_invoker = true)
+AS
 SELECT 
     e.id,
     e.glimmer_id,

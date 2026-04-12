@@ -88,7 +88,6 @@
 "resonance.load.failed" = "Failed to load resonances";
 "resonance.sort.title" = "Sort";
 "resonance.sort.updatedAt" = "Most recent";
-"resonance.sort.count" = "Most resonated";
 "resonance.chat.placeholder" = "Say something…";
 "resonance.chat.empty" = "Start a deep conversation";
 "resonance.chat.sessions.empty" = "No conversations yet";

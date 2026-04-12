@@ -7,14 +7,16 @@ def create_or_update_resonance(
     user_id: str,
     souler_id: str,
     last_session_id: str | None,
-    last_session_title: str,
 ) -> None:
-    supabase.rpc(
-        "touch_resonance",
-        {
-            "p_user_id": user_id,
-            "p_souler_id": souler_id,
-            "p_last_session_id": last_session_id,
-            "p_last_session_title": last_session_title,
-        },
-    ).execute()
+    (
+        supabase.table("resonances")
+        .upsert(
+            {
+                "user_id": user_id,
+                "souler_id": souler_id,
+                "last_session_id": last_session_id,
+            },
+            on_conflict="user_id,souler_id",
+        )
+        .execute()
+    )
