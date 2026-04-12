@@ -215,6 +215,78 @@ struct InstallationClientMetadata {
     }
 }
 
+struct UserStatusClientMetadata {
+    let timezone: String
+    let region: String
+    let language: String
+
+    static func current() -> Self {
+        Self(
+            timezone: resolvedTimezone(),
+            region: resolvedRegion(),
+            language: resolvedLanguage()
+        )
+    }
+
+    private static func resolvedTimezone() -> String {
+        let identifier = TimeZone.current.identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        return identifier.isEmpty ? "unknown" : identifier
+    }
+
+    private static func resolvedRegion() -> String {
+        let regionCode = Locale.current.region?.identifier.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return regionCode.isEmpty ? "unknown" : regionCode
+    }
+
+    private static func resolvedLanguage() -> String {
+        let preferred = Locale.preferredLanguages.first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return preferred.isEmpty ? "unknown" : preferred
+    }
+}
+
+enum UserStatusSyncStore {
+    private static let minimumTouchInterval: TimeInterval = 15 * 60
+
+    private static var keyPrefix: String {
+        if let bundleIdentifier = Bundle.main.bundleIdentifier,
+           !bundleIdentifier.isEmpty {
+            return "\(bundleIdentifier).user_status"
+        }
+        return "velune.user_status"
+    }
+
+    private static var userIDKey: String {
+        "\(keyPrefix).last_touched_user_id"
+    }
+
+    private static var touchedAtKey: String {
+        "\(keyPrefix).last_touched_at"
+    }
+
+    static func shouldTouch(userId: UUID, now: Date = .now) -> Bool {
+        let defaults = UserDefaults.standard
+        let userID = userId.uuidString.lowercased()
+
+        guard let lastUserID = defaults.string(forKey: userIDKey),
+              let lastTouchedAt = defaults.object(forKey: touchedAtKey) as? Date
+        else {
+            return true
+        }
+
+        guard lastUserID == userID else {
+            return true
+        }
+
+        return now.timeIntervalSince(lastTouchedAt) >= minimumTouchInterval
+    }
+
+    static func markTouched(userId: UUID, at date: Date = .now) {
+        let defaults = UserDefaults.standard
+        defaults.set(userId.uuidString.lowercased(), forKey: userIDKey)
+        defaults.set(date, forKey: touchedAtKey)
+    }
+}
+
 enum InstallationVersionSyncStore {
     private static var userIDKey: String {
         "\(keyPrefix).last_synced_user_id"

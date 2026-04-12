@@ -162,6 +162,8 @@ final class AuthManager {
             return
         }
 
+        await touchUserStatus(userId: userId)
+
         let metadata = InstallationClientMetadata.current()
         guard InstallationVersionSyncStore.hasSyncChanged(
             userId: userId,
@@ -175,6 +177,29 @@ final class AuthManager {
             try await upsertInstallationBinding(userId: userId, force: true)
         } catch {
             logger.notice("installation metadata sync skipped: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func touchUserStatus(userId: UUID) async {
+        guard UserStatusSyncStore.shouldTouch(userId: userId) else {
+            return
+        }
+
+        let metadata = UserStatusClientMetadata.current()
+        let params: [String: AnyJSON] = [
+            "p_timezone": .string(metadata.timezone),
+            "p_region": .string(metadata.region),
+            "p_language": .string(metadata.language)
+        ]
+
+        do {
+            let supabase = try Backend.requireSupabase()
+            try await supabase
+                .rpc("touch_user_status_for_current_user", params: params)
+                .execute()
+            UserStatusSyncStore.markTouched(userId: userId)
+        } catch {
+            logger.notice("user status touch skipped: \(error.localizedDescription, privacy: .public)")
         }
     }
 
