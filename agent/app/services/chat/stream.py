@@ -18,6 +18,7 @@ from app.errors import (
     error_message,
 )
 from app.llm import stream_text
+from app.services.billing import CHAT_STARDUST_COST, refund_stardust_safely
 from app.sse import emit_once, sse_event, sse_response
 from app.supabase_repo import (
     create_or_update_resonance,
@@ -28,12 +29,10 @@ from app.supabase_repo import (
 
 from .prepare import prepare_chat_request
 from .shared import (
-    CHAT_CREDIT_COST,
     CHAT_MODEL,
     ChapterStreamState,
     consume_chapter_stream_delta,
     generate_session_title,
-    refund_stardust_safely,
     run_blocking,
     stream_with_timeout,
 )
@@ -201,8 +200,9 @@ async def handle_chat(lang: Lang, request: Request) -> StreamingResponse:
             if should_refund_on_failure:
                 await refund_stardust_safely(
                     prepared.user_id,
-                    CHAT_CREDIT_COST,
+                    CHAT_STARDUST_COST,
                     reason="chat_stream_credit_error",
+                    run_blocking=run_blocking,
                 )
             yield sse_event(credit_error_payload(error))
         except (ClientDisconnect, asyncio.CancelledError):
@@ -212,8 +212,9 @@ async def handle_chat(lang: Lang, request: Request) -> StreamingResponse:
             if should_refund_on_failure:
                 await refund_stardust_safely(
                     prepared.user_id,
-                    CHAT_CREDIT_COST,
+                    CHAT_STARDUST_COST,
                     reason="chat_stream_failed",
+                    run_blocking=run_blocking,
                 )
             logger.error("Failed to process chat request: %s", error_log_payload(error))
             yield sse_event({"type": "error", "message": error_message(error)})

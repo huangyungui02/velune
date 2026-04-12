@@ -338,54 +338,6 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.consume_echo_credit(
-    p_user_id UUID
-)
-RETURNS TABLE (
-    ok BOOLEAN,
-    code TEXT,
-    message TEXT,
-    credits INT,
-    is_entitlement_active BOOLEAN
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-    RETURN QUERY
-    SELECT *
-    FROM public.consume_stardust(
-        p_user_id,
-        1
-    );
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.consume_chat_credit(
-    p_user_id UUID
-)
-RETURNS TABLE (
-    ok BOOLEAN,
-    code TEXT,
-    message TEXT,
-    credits INT,
-    is_entitlement_active BOOLEAN
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-    RETURN QUERY
-    SELECT *
-    FROM public.consume_stardust(
-        p_user_id,
-        1
-    );
-END;
-$$;
-
 CREATE OR REPLACE FUNCTION public.refund_stardust(
     p_user_id UUID,
     p_amount INT
@@ -449,13 +401,10 @@ REVOKE ALL ON FUNCTION public.refresh_user_billing_state(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.get_user_credit_state() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.consume_stardust(UUID, INT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.consume_echo_credit(UUID) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.consume_chat_credit(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.refund_stardust(UUID, INT) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.get_user_credit_state() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_user_credit_state() TO service_role;
 GRANT EXECUTE ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) TO service_role;
-GRANT EXECUTE ON FUNCTION public.consume_echo_credit(UUID) TO service_role;
-GRANT EXECUTE ON FUNCTION public.consume_chat_credit(UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.consume_stardust(UUID, INT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.refund_stardust(UUID, INT) TO service_role;

@@ -17,14 +17,10 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-def _is_invalid_lang(lang: Lang) -> bool:
-    return str(lang).strip().lower() not in SUPPORTED_LANGS
-
-
 @router.post("/{lang}/soulers/{souler_id}/chapters/generate")
 async def generate_chapters(lang: Lang, souler_id: UUID, request: Request):
     lang = str(lang).strip().lower()
-    if _is_invalid_lang(lang):
+    if lang not in SUPPORTED_LANGS:
         return JSONResponse(
             {"error": "Invalid lang, must be one of: en, chs"},
             status_code=400,
@@ -52,7 +48,7 @@ async def start_chapter_session_route(
     request: Request,
 ):
     lang = str(lang).strip().lower()
-    if _is_invalid_lang(lang):
+    if lang not in SUPPORTED_LANGS:
         return JSONResponse(
             {"error": "Invalid lang, must be one of: en, chs"},
             status_code=400,

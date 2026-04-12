@@ -7,17 +7,17 @@ from uuid import UUID
 from app.chapter_reply import parse_chapter_combined_response
 from app.config import get_settings
 from app.echo_logic import Lang
-from app.errors import CreditLimitError, error_log_payload
+from app.errors import error_log_payload
 from app.llm import complete_text
+from app.services.billing import CHAT_STARDUST_COST, refund_stardust_safely
 from app.supabase_repo import (
-    consume_chat_credit,
+    consume_stardust,
     create_or_update_resonance,
     create_session,
     delete_session,
     get_chapter_by_id,
     get_souler_by_id,
     insert_message,
-    refund_stardust,
     touch_session,
 )
 
@@ -27,19 +27,6 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 CHAPTER_SESSION_MODEL = "qwen3.5-flash"
-CHAT_CREDIT_COST = 1
-
-
-async def refund_chat_credit_safely(user_id: str, *, reason: str) -> None:
-    try:
-        await asyncio.to_thread(refund_stardust, user_id, CHAT_CREDIT_COST)
-    except Exception as error:  # noqa: BLE001
-        logger.error(
-            "Failed to refund chat credit: reason=%s user_id=%s error=%s",
-            reason,
-            user_id,
-            error_log_payload(error),
-        )
 
 
 async def start_chapter_session(
@@ -49,7 +36,7 @@ async def start_chapter_session(
     chapter_id: UUID,
     lang: Lang,
 ) -> dict[str, object]:
-    await asyncio.to_thread(consume_chat_credit, user_id)
+    await asyncio.to_thread(consume_stardust, user_id, CHAT_STARDUST_COST)
 
     created_session_id: str | None = None
     assistant_written = False
@@ -130,5 +117,9 @@ async def start_chapter_session(
                     error_log_payload(cleanup_error),
                 )
 
-        await refund_chat_credit_safely(user_id, reason="chapter_session_start_failed")
+        await refund_stardust_safely(
+            user_id,
+            CHAT_STARDUST_COST,
+            reason="chapter_session_start_failed",
+        )
         raise

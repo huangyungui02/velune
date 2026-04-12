@@ -5,8 +5,6 @@ from .chapter_generation import (
     start_souler_chapters_generation,
 )
 from .credit import (
-    consume_chat_credit,
-    consume_echo_credit,
     consume_stardust,
     refund_stardust,
 )
@@ -58,8 +56,6 @@ __all__ = [
     "get_recent_messages",
     "insert_message",
     "consume_stardust",
-    "consume_echo_credit",
-    "consume_chat_credit",
     "refund_stardust",
     "create_or_update_resonance",
     "get_souler_by_name",

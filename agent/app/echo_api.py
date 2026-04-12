@@ -12,19 +12,18 @@ from starlette.requests import ClientDisconnect
 from app.echo_nodes import SUPPORTED_LANGS
 from app.echo_logic import EchoGraphFailedError, Lang, invoke_echo_graph
 from app.errors import CreditLimitError, credit_error_payload, error_log_payload, error_message
+from app.services.billing import ECHO_STARDUST_COST, refund_stardust_safely
 from app.sse import sse_event, sse_response
 from app.supabase_repo import (
-    consume_echo_credit,
+    consume_stardust,
     ensure_glimmer,
     get_user_id_from_auth_header,
     list_glimmer_echoes,
-    refund_stardust,
     update_glimmer_status,
 )
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-ECHO_STARDUST_COST = 5
 ECHO_MODEL = "qwen3.5-flash"
 
 type Send = Callable[[dict[str, Any]], Awaitable[None]]
@@ -35,17 +34,6 @@ def _fail_glimmer_safely(glimmer_id: str) -> None:
         update_glimmer_status(glimmer_id, "failed")
     except Exception:  # noqa: BLE001
         pass
-
-
-async def _emit_existing_echoes(
-    send: Send,
-    glimmer_id: str,
-) -> int:
-    echoed = 0
-    for row in list_glimmer_echoes(glimmer_id):
-        await send(_echo_event_payload(row))
-        echoed += 1
-    return echoed
 
 
 def _echo_event_payload(row: dict[str, Any]) -> dict[str, Any]:
@@ -59,33 +47,6 @@ def _echo_event_payload(row: dict[str, Any]) -> dict[str, Any]:
             "content": row.get("content"),
         },
     }
-
-
-def _done_event_payload() -> dict[str, Any]:
-    return {
-        "type": "done",
-    }
-
-
-async def _refund_stardust_safely(
-    user_id: str,
-    amount: int,
-    *,
-    reason: str,
-) -> None:
-    if amount <= 0:
-        return
-
-    try:
-        refund_stardust(user_id, amount)
-    except Exception as refund_error:  # noqa: BLE001
-        logger.error(
-            "Failed to refund stardust: reason=%s user_id=%s amount=%s error=%s",
-            reason,
-            user_id,
-            amount,
-            error_log_payload(refund_error),
-        )
 
 
 async def _compose_worker(
@@ -113,9 +74,12 @@ async def _compose_worker(
             }
         )
 
-        replayed = await _emit_existing_echoes(send, glimmer_id)
+        replayed = 0
+        for row in list_glimmer_echoes(glimmer_id):
+            await send(_echo_event_payload(row))
+            replayed += 1
         if replayed > 0 or status in {"complete", "incomplete"}:
-            await send(_done_event_payload())
+            await send({"type": "done"})
             return
 
         if status == "processing":
@@ -138,7 +102,7 @@ async def _compose_worker(
 
         update_glimmer_status(glimmer_id, "processing")
         processing_started = True
-        consume_echo_credit(user_id, amount=ECHO_STARDUST_COST)
+        consume_stardust(user_id, ECHO_STARDUST_COST)
         charged_credits = ECHO_STARDUST_COST
 
         result = await invoke_echo_graph(
@@ -152,7 +116,7 @@ async def _compose_worker(
         )
         generation_finished = True
 
-        await _refund_stardust_safely(
+        await refund_stardust_safely(
             user_id,
             result.refund_credits,
             reason=f"partial echo failure for glimmer {glimmer_id}",
@@ -163,7 +127,7 @@ async def _compose_worker(
             "complete" if result.completed else "incomplete",
         )
 
-        await send(_done_event_payload())
+        await send({"type": "done"})
     except (ClientDisconnect, asyncio.CancelledError):
         if processing_started and not generation_finished:
             _fail_glimmer_safely(glimmer_id)
@@ -179,7 +143,7 @@ async def _compose_worker(
             refund_amount = max(refund_amount, error.refund_credits)
 
         if user_id and refund_amount > 0:
-            await _refund_stardust_safely(
+            await refund_stardust_safely(
                 user_id,
                 refund_amount,
                 reason=f"failed echo compose for glimmer {glimmer_id}",
@@ -201,13 +165,25 @@ async def _compose_worker(
             )
 
 
-def _compose_stream(
-    *,
-    request: Request,
-    lang: Lang,
-    glimmer_id: str,
-    content: str,
-):
+@router.post("/{lang}/glimmers/compose")
+async def compose_glimmer(lang: Lang, request: Request):
+    lang = str(lang).strip().lower()
+    if lang not in SUPPORTED_LANGS:
+        return JSONResponse({"error": "Invalid lang, must be one of: en, chs"}, status_code=400)
+
+    try:
+        body = await request.json()
+    except Exception:  # noqa: BLE001
+        return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
+
+    glimmer_id = str(body.get("glimmerId", "")).strip()
+    content = str(body.get("content", "")).strip()
+
+    if not glimmer_id:
+        return JSONResponse({"error": "Missing glimmerId"}, status_code=400)
+    if not content:
+        return JSONResponse({"error": "Missing content"}, status_code=400)
+
     async def event_stream():
         queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
         stream_closed = asyncio.Event()
@@ -244,30 +220,3 @@ def _compose_stream(
         await worker_task
 
     return sse_response(event_stream())
-
-
-@router.post("/{lang}/glimmers/compose")
-async def compose_glimmer(lang: Lang, request: Request):
-    lang = str(lang).strip().lower()
-    if lang not in SUPPORTED_LANGS:
-        return JSONResponse({"error": "Invalid lang, must be one of: en, chs"}, status_code=400)
-
-    try:
-        body = await request.json()
-    except Exception:  # noqa: BLE001
-        return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
-
-    glimmer_id = str(body.get("glimmerId", "")).strip()
-    content = str(body.get("content", "")).strip()
-
-    if not glimmer_id:
-        return JSONResponse({"error": "Missing glimmerId"}, status_code=400)
-    if not content:
-        return JSONResponse({"error": "Missing content"}, status_code=400)
-
-    return _compose_stream(
-        request=request,
-        lang=lang,
-        glimmer_id=glimmer_id,
-        content=content,
-    )

@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import Request
 
 from app.echo_logic import Lang
+from app.services.billing import CHAT_STARDUST_COST, refund_stardust_safely
 from app.errors import error_log_payload
 from app.supabase_repo import (
     ChapterContext,
@@ -14,7 +15,7 @@ from app.supabase_repo import (
     SessionContext,
     Souler,
     bind_echo_session_if_missing,
-    consume_chat_credit,
+    consume_stardust,
     create_session,
     delete_session,
     get_chapter_by_id,
@@ -27,10 +28,8 @@ from app.supabase_repo import (
 )
 
 from .shared import (
-    CHAT_CREDIT_COST,
     PreparedChat,
     build_prompt_messages,
-    refund_stardust_safely,
     run_blocking,
 )
 
@@ -68,7 +67,7 @@ async def prepare_chat_request(
     if not content:
         raise ValueError("Missing content")
 
-    await run_blocking("Credit check", consume_chat_credit, user_id)
+    await run_blocking("Credit check", consume_stardust, user_id, CHAT_STARDUST_COST)
     log_stage("credit_checked")
 
     try:
@@ -250,7 +249,8 @@ async def prepare_chat_request(
     except Exception:
         await refund_stardust_safely(
             user_id,
-            CHAT_CREDIT_COST,
+            CHAT_STARDUST_COST,
             reason="chat_prepare_failed",
+            run_blocking=run_blocking,
         )
         raise

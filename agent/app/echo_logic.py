@@ -38,14 +38,6 @@ class EchoGraphFailedError(RuntimeError):
         self.refund_credits = max(refund_credits, 0)
 
 
-def _souler_id(souler_data: dict[str, Any]) -> str:
-    return str(souler_data["id"])
-
-
-def _souler_name(souler_data: dict[str, Any]) -> str:
-    return str(souler_data["name"]).strip()
-
-
 def _reason_to_message(reason: Any) -> str:
     if isinstance(reason, Exception) and str(reason).strip():
         return str(reason)
@@ -78,9 +70,11 @@ async def _resolve_souler(
     if not souler_data:
         souler_data = create_souler(resolved_name, lang)
 
+    souler_id = str(souler_data["id"])
+    souler_name = str(souler_data["name"]).strip()
     add_souler_alias(
-        _souler_id(souler_data),
-        _souler_name(souler_data),
+        souler_id,
+        souler_name,
         matched_name,
         lang,
     )
@@ -91,8 +85,8 @@ async def _ensure_souler_assets(
     souler_data: dict[str, Any],
     lang: Lang,
 ) -> dict[str, Any]:
-    souler_id = _souler_id(souler_data)
-    souler_name = _souler_name(souler_data)
+    souler_id = str(souler_data["id"])
+    souler_name = str(souler_data["name"]).strip()
 
     bio = souler_data.get("bio")
     if not isinstance(bio, str) or not bio.strip():
@@ -132,8 +126,8 @@ async def invoke_echo_graph(
     async def process_item(matched_name: str) -> None:
         souler_data = await _resolve_souler(matched_name, lang, model=model)
         souler_data = await _ensure_souler_assets(souler_data, lang)
-        souler_id = _souler_id(souler_data)
-        souler_name = _souler_name(souler_data)
+        souler_id = str(souler_data["id"])
+        souler_name = str(souler_data["name"]).strip()
 
         answer = await souler_answer(
             glimmer_content,
