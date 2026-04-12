@@ -43,7 +43,26 @@ def get_souler_by_alias(candidate_name: str, lang: str) -> dict[str, Any] | None
     return first_row(alias_row.get("soulers"))
 
 
-def create_souler(name: str, lang: str) -> dict[str, Any]:
+def get_souler_by_wiki_id(wiki_id: str, lang: str) -> dict[str, Any] | None:
+    raw_wiki_id = str(wiki_id).strip()
+    query_lang = lang.strip()
+    if not raw_wiki_id:
+        return None
+    if not query_lang:
+        return None
+
+    response = (
+        supabase.table("soulers")
+        .select("*")
+        .eq("wiki_id", raw_wiki_id)
+        .eq("lang", query_lang)
+        .limit(1)
+        .execute()
+    )
+    return first_row(response.data)
+
+
+def create_souler(name: str, lang: str, wiki_id: str | None = None) -> dict[str, Any]:
     cleaned_name = name.strip()
     cleaned_lang = lang.strip()
     if not cleaned_name:
@@ -51,15 +70,18 @@ def create_souler(name: str, lang: str) -> dict[str, Any]:
     if not cleaned_lang:
         raise ValueError("Souler lang cannot be empty")
 
+    payload: dict[str, Any] = {
+        "name": cleaned_name,
+        "lang": cleaned_lang,
+    }
+    if isinstance(wiki_id, str):
+        cleaned_wiki_id = wiki_id.strip()
+        if cleaned_wiki_id:
+            payload["wiki_id"] = cleaned_wiki_id
+
     response = (
         supabase.table("soulers")
-        .insert(
-            {
-                "name": cleaned_name,
-                "lang": cleaned_lang,
-            },
-            returning="representation",
-        )
+        .insert(payload, returning="representation")
         .execute()
     )
 

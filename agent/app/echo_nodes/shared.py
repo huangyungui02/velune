@@ -5,17 +5,6 @@ from typing import Any
 Lang = str
 SUPPORTED_LANGS: frozenset[Lang] = frozenset({"en", "chs"})
 
-RESOLVED_NAME_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "resolved_name": {
-            "type": "string",
-        }
-    },
-    "required": ["resolved_name"],
-    "additionalProperties": False,
-}
-
 
 def build_match_schema(num: int) -> dict[str, Any]:
     return {
@@ -31,6 +20,7 @@ def build_match_schema(num: int) -> dict[str, Any]:
         "required": ["data"],
         "additionalProperties": False,
     }
+
 
 def sanitize_title(raw: str, lang: Lang) -> str:
     trimmed = raw.strip().strip('"\'`')

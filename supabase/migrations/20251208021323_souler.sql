@@ -3,6 +3,7 @@ CREATE TABLE soulers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(64) NOT NULL,
     lang VARCHAR(16) NOT NULL,
+    wiki_id VARCHAR(32),
     bio TEXT,
     chapters_status TEXT NOT NULL DEFAULT 'pending',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -13,6 +14,10 @@ CREATE TABLE soulers (
 
 CREATE INDEX IF NOT EXISTS idx_soulers_name ON soulers (name);
 CREATE INDEX IF NOT EXISTS idx_soulers_lang ON soulers (lang);
+CREATE INDEX IF NOT EXISTS idx_soulers_wiki_id ON soulers (wiki_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_soulers_wiki_id_lang_unique
+    ON soulers (wiki_id, lang)
+    WHERE wiki_id IS NOT NULL;
 
 CREATE TABLE souler_aliases (
     souler_id UUID NOT NULL REFERENCES soulers(id) ON DELETE CASCADE,

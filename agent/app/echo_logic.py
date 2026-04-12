@@ -8,11 +8,11 @@ from typing import Any
 from app.echo_nodes import (
     Lang,
     match_soulers,
-    resolve_souler_name,
     souler_answer,
     souler_profile,
 )
 from app.errors import CreditLimitError
+from app.services.wikidata import search_wikidata_qid
 from app.supabase_repo import (
     add_souler_alias,
     create_echo,
@@ -20,6 +20,7 @@ from app.supabase_repo import (
     create_souler,
     get_souler_by_alias,
     get_souler_by_name,
+    get_souler_by_wiki_id,
     update_souler,
 )
 
@@ -54,8 +55,6 @@ def _reason_to_message(reason: Any) -> str:
 async def _resolve_souler(
     matched_name: str,
     lang: Lang,
-    *,
-    model: str,
 ) -> dict[str, Any]:
     souler_data = get_souler_by_alias(matched_name, lang)
     if souler_data:
@@ -65,20 +64,35 @@ async def _resolve_souler(
     if souler_data:
         return souler_data
 
-    resolved_name = await resolve_souler_name(matched_name, lang, model=model)
-    souler_data = get_souler_by_name(resolved_name, lang)
-    if not souler_data:
-        souler_data = create_souler(resolved_name, lang)
+    wiki_id = await search_wikidata_qid(matched_name, lang)
+    if wiki_id is not None:
+        souler_data = get_souler_by_wiki_id(wiki_id, lang)
+        if souler_data:
+            add_souler_alias(
+                str(souler_data["id"]),
+                str(souler_data["name"]).strip(),
+                matched_name,
+                lang,
+            )
+            return souler_data
 
-    souler_id = str(souler_data["id"])
-    souler_name = str(souler_data["name"]).strip()
-    add_souler_alias(
-        souler_id,
-        souler_name,
-        matched_name,
-        lang,
-    )
-    return souler_data
+    if wiki_id is None:
+        return create_souler(matched_name, lang)
+
+    try:
+        return create_souler(matched_name, lang, wiki_id=wiki_id)
+    except Exception:  # noqa: BLE001
+        # Concurrent requests can race on the (wiki_id, lang) unique index.
+        souler_data = get_souler_by_wiki_id(wiki_id, lang)
+        if not souler_data:
+            raise
+        add_souler_alias(
+            str(souler_data["id"]),
+            str(souler_data["name"]).strip(),
+            matched_name,
+            lang,
+        )
+        return souler_data
 
 
 async def _ensure_souler_assets(
@@ -124,7 +138,7 @@ async def invoke_echo_graph(
         raise EchoGraphFailedError("Failed to match echoes", num)
 
     async def process_item(matched_name: str) -> None:
-        souler_data = await _resolve_souler(matched_name, lang, model=model)
+        souler_data = await _resolve_souler(matched_name, lang)
         souler_data = await _ensure_souler_assets(souler_data, lang)
         souler_id = str(souler_data["id"])
         souler_name = str(souler_data["name"]).strip()
