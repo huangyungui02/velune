@@ -116,7 +116,8 @@ AS $$
 DECLARE
     v_state billings;
     v_reference TIMESTAMPTZ := NOW();
-    v_today DATE := timezone('utc', v_reference)::DATE;
+    v_user_timezone TEXT := 'UTC';
+    v_refresh_cycle_day DATE;
     v_is_active BOOLEAN;
     v_daily_credits INT;
     v_should_refresh BOOLEAN;
@@ -136,6 +137,19 @@ BEGIN
         RAISE EXCEPTION 'Billing state not found for user %', p_user_id;
     END IF;
 
+    SELECT us.timezone
+    INTO v_user_timezone
+    FROM public.user_status AS us
+    WHERE us.user_id = p_user_id;
+
+    v_user_timezone := COALESCE(NULLIF(trim(COALESCE(v_user_timezone, '')), ''), 'UTC');
+    BEGIN
+        v_refresh_cycle_day := timezone(v_user_timezone, v_reference - INTERVAL '4 hour')::DATE;
+    EXCEPTION
+        WHEN invalid_parameter_value THEN
+            v_refresh_cycle_day := timezone('UTC', v_reference - INTERVAL '4 hour')::DATE;
+    END;
+
     v_is_active := public.billing_effective_is_active(
         v_state.is_entitlement_active,
         v_state.entitlement_expires_at,
@@ -147,12 +161,12 @@ BEGIN
         v_state.entitlement_id,
         v_state.product_id
     );
-    v_should_refresh := v_state.credits_refreshed_on IS DISTINCT FROM v_today;
+    v_should_refresh := v_state.credits_refreshed_on IS DISTINCT FROM v_refresh_cycle_day;
     v_credits_before_refresh := GREATEST(COALESCE(v_state.credits, 0), 0);
 
     IF v_should_refresh AND v_credits_before_refresh < v_daily_credits THEN
         v_credits := v_daily_credits;
-        v_refreshed_on := v_today;
+        v_refreshed_on := v_refresh_cycle_day;
     ELSE
         v_credits := v_credits_before_refresh;
         v_refreshed_on := v_state.credits_refreshed_on;
@@ -356,7 +370,6 @@ AS $$
 DECLARE
     v_state billings;
     v_amount INT;
-    v_daily_credits INT;
 BEGIN
     v_amount := GREATEST(COALESCE(p_amount, 0), 0);
     v_state := public.refresh_billing(p_user_id);
@@ -372,14 +385,8 @@ BEGIN
         RETURN;
     END IF;
 
-    v_daily_credits := public.billing_daily_credits(
-        v_state.is_entitlement_active,
-        v_state.entitlement_id,
-        v_state.product_id
-    );
-
     UPDATE public.billings AS ubs
-    SET credits = LEAST(ubs.credits + v_amount, v_daily_credits)
+    SET credits = ubs.credits + v_amount
     WHERE ubs.user_id = p_user_id
     RETURNING ubs.* INTO v_state;
 

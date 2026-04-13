@@ -263,6 +263,10 @@ enum UserStatusSyncStore {
         "\(keyPrefix).last_touched_at"
     }
 
+    private static var statusSyncedUserIDKey: String {
+        "\(keyPrefix).status_synced_user_id"
+    }
+
     static func shouldTouch(userId: UUID, now: Date = .now) -> Bool {
         let defaults = UserDefaults.standard
         let userID = userId.uuidString.lowercased()
@@ -284,6 +288,19 @@ enum UserStatusSyncStore {
         let defaults = UserDefaults.standard
         defaults.set(userId.uuidString.lowercased(), forKey: userIDKey)
         defaults.set(date, forKey: touchedAtKey)
+    }
+
+    static func shouldSyncStatus(userId: UUID) -> Bool {
+        let defaults = UserDefaults.standard
+        let userID = userId.uuidString.lowercased()
+        return defaults.string(forKey: statusSyncedUserIDKey) != userID
+    }
+
+    static func markStatusSynced(userId: UUID) {
+        UserDefaults.standard.set(
+            userId.uuidString.lowercased(),
+            forKey: statusSyncedUserIDKey
+        )
     }
 }
 

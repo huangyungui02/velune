@@ -181,23 +181,35 @@ final class AuthManager {
     }
 
     private func touchUserStatus(userId: UUID) async {
-        guard UserStatusSyncStore.shouldTouch(userId: userId) else {
+        let shouldTouch = UserStatusSyncStore.shouldTouch(userId: userId)
+        let shouldSyncStatus = UserStatusSyncStore.shouldSyncStatus(userId: userId)
+
+        guard shouldTouch || shouldSyncStatus else {
             return
         }
 
-        let metadata = UserStatusClientMetadata.current()
-        let params: [String: AnyJSON] = [
-            "p_timezone": .string(metadata.timezone),
-            "p_region": .string(metadata.region),
-            "p_language": .string(metadata.language)
-        ]
-
         do {
             let supabase = try Backend.requireSupabase()
-            try await supabase
-                .rpc("touch_user_status_for_current_user", params: params)
-                .execute()
-            UserStatusSyncStore.markTouched(userId: userId)
+
+            if shouldSyncStatus {
+                let metadata = UserStatusClientMetadata.current()
+                let params: [String: AnyJSON] = [
+                    "p_timezone": .string(metadata.timezone),
+                    "p_region": .string(metadata.region),
+                    "p_language": .string(metadata.language)
+                ]
+                try await supabase
+                    .rpc("upsert_user_status_for_current_user", params: params)
+                    .execute()
+                UserStatusSyncStore.markStatusSynced(userId: userId)
+            }
+
+            if shouldTouch {
+                try await supabase
+                    .rpc("touch_user_status_for_current_user")
+                    .execute()
+                UserStatusSyncStore.markTouched(userId: userId)
+            }
         } catch {
             logger.notice("user status touch skipped: \(error.localizedDescription, privacy: .public)")
         }
