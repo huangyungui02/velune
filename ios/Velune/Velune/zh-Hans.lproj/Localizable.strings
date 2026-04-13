@@ -94,11 +94,8 @@
 "resonance.chat.action.newConversation" = "新建对话";
 "resonance.chat.newConversation" = "新对话";
 "resonance.chat.chapters.title" = "章节体验";
-"resonance.chat.chapters.pending" = "你可以先自由聊天，也可以先生成章节后进入沉浸体验。";
-"resonance.chat.chapters.generate" = "生成章节";
-"resonance.chat.chapters.processing" = "章节生成中，请稍候…";
-"resonance.chat.chapters.failed" = "章节生成失败";
-"resonance.chat.chapters.retry" = "重试生成";
+"resonance.chat.chapters.unavailable.title" = "章节内容不可用";
+"resonance.chat.chapters.unavailable.subtitle" = "当前 souler 还没有可用章节。";
 "resonance.unknownSouler" = "未命名灵魂";
 
 "app.error.unauthenticated" = "用户尚未登录";

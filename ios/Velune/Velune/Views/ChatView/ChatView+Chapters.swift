@@ -3,85 +3,18 @@ import OSLog
 
 extension ChatView {
     @MainActor
-    func loadChapterState(silent: Bool = false) async {
+    func loadChapters() async {
         if isLoadingChapters { return }
-        if !silent {
-            isLoadingChapters = true
-        }
-        defer {
-            if !silent {
-                isLoadingChapters = false
-            }
-        }
+
+        isLoadingChapters = true
+        defer { isLoadingChapters = false }
 
         do {
-            let fetchedState = try await SoulerChapterState.fetch(for: soulerId)
-            chapterState = reconcileChapterState(with: fetchedState)
-            scheduleChapterPollingIfNeeded()
+            chapters = try await SoulerChapter.fetchList(for: soulerId)
         } catch {
-            logger.error("loading chapter state failed: \(error.localizedDescription, privacy: .public)")
-            // Keep current visual state on transient read failures.
-            chapterState = fallbackChapterStateAfterLoadFailure()
+            logger.error("loading chapters failed: \(error.localizedDescription, privacy: .public)")
+            chapters = []
         }
-    }
-
-    @MainActor
-    func scheduleChapterPollingIfNeeded() {
-        cancelChapterPolling()
-
-        guard chapterState?.status == .processing else { return }
-        chapterPollingTask = Task {
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(2))
-                await loadChapterState(silent: true)
-                if chapterState?.status != .processing {
-                    break
-                }
-            }
-        }
-    }
-
-    @MainActor
-    func generateChapters() async {
-        if isTriggeringChapterGeneration { return }
-        isTriggeringChapterGeneration = true
-        defer { isTriggeringChapterGeneration = false }
-
-        do {
-            _ = try await ChapterGenerationService.generate(
-                soulerId: soulerId,
-                path: chapterGenerationPath
-            )
-            hasRequestedChapterGeneration = true
-            chapterState = SoulerChapterState(
-                status: .processing,
-                chapters: chapterState?.chapters ?? []
-            )
-            scheduleChapterPollingIfNeeded()
-        } catch {
-            hasRequestedChapterGeneration = false
-            errorMessage = error.localizedDescription
-            billingErrorContext = error.billingErrorContext
-        }
-    }
-
-    @MainActor
-    func reconcileChapterState(with fetchedState: SoulerChapterState) -> SoulerChapterState {
-        if fetchedState.status == .pending,
-           hasRequestedChapterGeneration || chapterState?.status == .processing
-        {
-            let previousChapters = chapterState?.chapters ?? []
-            return SoulerChapterState(
-                status: .processing,
-                chapters: previousChapters.isEmpty ? fetchedState.chapters : previousChapters
-            )
-        }
-
-        if fetchedState.status != .pending {
-            hasRequestedChapterGeneration = false
-        }
-
-        return fetchedState
     }
 
     @MainActor
@@ -184,26 +117,8 @@ extension ChatView {
         }
     }
 
-    var chapterGenerationPath: String {
-        "\(AppLanguage.current.apiLanguageCode)/soulers/\(soulerId.uuidString)/chapters/generate"
-    }
-
     func chapterSessionStartPath(for chapterId: UUID) -> String {
         "\(AppLanguage.current.apiLanguageCode)/soulers/\(soulerId.uuidString)/chapters/\(chapterId.uuidString)/start"
-    }
-
-    @MainActor
-    func cancelChapterPolling() {
-        chapterPollingTask?.cancel()
-        chapterPollingTask = nil
-    }
-
-    func fallbackChapterStateAfterLoadFailure() -> SoulerChapterState? {
-        guard chapterState != nil || hasRequestedChapterGeneration else { return nil }
-        return chapterState ?? SoulerChapterState(
-            status: .processing,
-            chapters: []
-        )
     }
 
     func setChapterOptions(_ options: [String]?) {

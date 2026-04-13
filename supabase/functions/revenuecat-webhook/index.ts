@@ -1,9 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
+import { supabase } from "../_shared/supabase.ts";
 
 type RevenueCatEntitlement = {
   id: string | null;

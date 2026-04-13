@@ -5,7 +5,6 @@ import OSLog
 extension ChatView {
     @MainActor
     func prepareConversation() async {
-        cancelChapterPolling()
         messages = []
         inputText = ""
         chapterOptions = []
@@ -20,7 +19,7 @@ extension ChatView {
         }
 
         if messages.isEmpty {
-            await loadChapterState()
+            await loadChapters()
         }
     }
 
@@ -241,7 +240,6 @@ extension ChatView {
             return
         }
 
-        cancelChapterPolling()
         activeSessionId = UUID()
         isDraftSession = true
         draftEchoId = nil
@@ -249,13 +247,12 @@ extension ChatView {
         messages = []
         inputText = ""
         chapterOptions = []
-        hasRequestedChapterGeneration = false
         errorMessage = nil
         billingErrorContext = nil
         hasScrolledToLatestOnAppear = false
 
         Task {
-            await loadChapterState()
+            await loadChapters()
         }
     }
 

@@ -33,13 +33,10 @@ struct ChatView: View {
     @State var hasPerformedInitialLoad = false
     @State var shouldPauseAutoScrollDuringStreaming = false
     @State var billingErrorContext: BillingErrorContext?
-    @State var chapterState: SoulerChapterState?
+    @State var chapters: [SoulerChapter] = []
     @State var isLoadingChapters = false
-    @State var isTriggeringChapterGeneration = false
-    @State var hasRequestedChapterGeneration = false
     @State var isStartingChapterSession = false
     @State var chapterOptions: [String] = []
-    @State var chapterPollingTask: Task<Void, Never>?
     @FocusState var isComposerFocused: Bool
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     @Environment(\.modelContext) var modelContext
@@ -188,9 +185,6 @@ struct ChatView: View {
             } else {
                 isComposerFocused = false
             }
-        }
-        .onDisappear {
-            cancelChapterPolling()
         }
         .navigationDestination(isPresented: $isShowingSouler) {
             SoulerView(soulerId: soulerId)

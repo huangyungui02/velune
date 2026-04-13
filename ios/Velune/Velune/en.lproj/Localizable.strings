@@ -94,11 +94,8 @@
 "resonance.chat.action.newConversation" = "New Conversation";
 "resonance.chat.newConversation" = "New Chat";
 "resonance.chat.chapters.title" = "Chapter Journey";
-"resonance.chat.chapters.pending" = "You can chat freely, or generate chapters to enter a guided dialogue path.";
-"resonance.chat.chapters.generate" = "Generate Chapters";
-"resonance.chat.chapters.processing" = "Generating chapters…";
-"resonance.chat.chapters.failed" = "Chapter generation failed";
-"resonance.chat.chapters.retry" = "Retry generation";
+"resonance.chat.chapters.unavailable.title" = "Chapters unavailable";
+"resonance.chat.chapters.unavailable.subtitle" = "No chapter content is available for this souler yet.";
 "resonance.unknownSouler" = "Unknown souler";
 
 "app.error.unauthenticated" = "User is not authenticated";

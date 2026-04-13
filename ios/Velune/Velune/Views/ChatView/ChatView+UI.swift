@@ -120,7 +120,7 @@ extension ChatView {
                 .fontDesign(.serif)
                 .foregroundStyle(UITheme.primaryText)
 
-            if isLoadingChapters && chapterState == nil {
+            if isLoadingChapters {
                 HStack(spacing: 10) {
                     ProgressView()
                         .tint(UITheme.primaryText)
@@ -128,19 +128,10 @@ extension ChatView {
                         .font(.footnote)
                         .foregroundStyle(UITheme.secondaryText)
                 }
-            } else if let chapterState {
-                switch chapterState.status {
-                case .pending:
-                    chapterPendingView
-                case .processing:
-                    chapterProcessingView
-                case .failed:
-                    chapterFailedView
-                case .complete:
-                    chapterListView(chapters: chapterState.chapters)
-                }
+            } else if chapters.isEmpty {
+                chapterUnavailableView
             } else {
-                chapterPendingView
+                chapterListView
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -189,100 +180,43 @@ extension ChatView {
         }
     }
 
-    private var chapterPendingView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("resonance.chat.chapters.pending")
-                .font(.footnote)
-                .foregroundStyle(UITheme.secondaryText)
-
-            Button {
-                Task {
-                    await generateChapters()
-                }
-            } label: {
-                Text("resonance.chat.chapters.generate")
-                    .font(.footnote.weight(.semibold))
-                    .fontDesign(.serif)
-                    .foregroundStyle(UITheme.primaryText)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(.white.opacity(0.12), in: .capsule)
-                    .overlay {
-                        Capsule()
-                            .stroke(.white.opacity(0.2), lineWidth: 0.8)
-                    }
-            }
-            .buttonStyle(.plain)
-            .disabled(isTriggeringChapterGeneration)
+    private var chapterUnavailableView: some View {
+        ContentUnavailableView {
+            Label("resonance.chat.chapters.unavailable.title", systemImage: "text.book.closed")
+        } description: {
+            Text("resonance.chat.chapters.unavailable.subtitle")
         }
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
-    private var chapterProcessingView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                ProgressView()
-                    .tint(UITheme.primaryText)
-                Text("resonance.chat.chapters.processing")
-                    .font(.footnote)
-                    .foregroundStyle(UITheme.secondaryText)
-            }
-        }
-    }
-
-    private var chapterFailedView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("resonance.chat.chapters.failed")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(UITheme.primaryText)
-
-            Button {
-                Task {
-                    await generateChapters()
-                }
-            } label: {
-                Text("resonance.chat.chapters.retry")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(UITheme.primaryText)
-            }
-            .buttonStyle(.plain)
-            .disabled(isTriggeringChapterGeneration)
-        }
-    }
-
-    private func chapterListView(chapters: [SoulerChapter]) -> some View {
+    private var chapterListView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if chapters.isEmpty {
-                Text("resonance.chat.chapters.pending")
-                    .font(.footnote)
-                    .foregroundStyle(UITheme.secondaryText)
-            } else {
-                ForEach(chapters) { chapter in
-                    Button {
-                        Task {
-                            await startChapterSession(chapter)
-                        }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(chapter.title)
-                                .font(.body.weight(.medium))
-                                .fontDesign(.serif)
-                                .foregroundStyle(UITheme.primaryText)
-                                .lineLimit(1)
-
-                            Text(chapter.subtitle)
-                                .font(.footnote)
-                                .fontDesign(.serif)
-                                .foregroundStyle(UITheme.secondaryText)
-                                .lineLimit(2)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.white.opacity(0.08), in: .rect(cornerRadius: 12))
+            ForEach(chapters) { chapter in
+                Button {
+                    Task {
+                        await startChapterSession(chapter)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(isSending || isTriggeringChapterGeneration || isStartingChapterSession)
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(chapter.title)
+                            .font(.body.weight(.medium))
+                            .fontDesign(.serif)
+                            .foregroundStyle(UITheme.primaryText)
+                            .lineLimit(1)
+
+                        Text(chapter.subtitle)
+                            .font(.footnote)
+                            .fontDesign(.serif)
+                            .foregroundStyle(UITheme.secondaryText)
+                            .lineLimit(2)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.white.opacity(0.08), in: .rect(cornerRadius: 12))
                 }
+                .buttonStyle(.plain)
+                .disabled(isSending || isStartingChapterSession)
             }
         }
     }

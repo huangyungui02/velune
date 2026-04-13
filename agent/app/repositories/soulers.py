@@ -132,13 +132,3 @@ def update_souler(souler_id: str, data: dict[str, Any]) -> dict[str, Any]:
     if not row:
         raise ValueError("Failed to update souler")
     return row
-
-
-def mark_chapters_generation_failed(souler_id: str) -> None:
-    (
-        supabase.table("soulers")
-        .update({"chapters_status": "failed"})
-        .eq("id", souler_id)
-        .eq("chapters_status", "processing")
-        .execute()
-    )

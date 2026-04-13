@@ -5,7 +5,8 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
-from app.echo.nodes import match_soulers, souler_answer, souler_profile
+from .match import match_soulers
+from .answer import souler_answer
 from app.errors import CreditLimitError
 from app.repositories import (
     add_souler_alias,
@@ -15,12 +16,10 @@ from app.repositories import (
     get_souler_by_alias,
     get_souler_by_name,
     get_souler_by_wiki_id,
-    update_souler,
 )
 from app.shared import Lang
 from app.wikidata import search_wikidata_qid
 
-ECHO_PROFILE_MODEL = "qwen3.5-plus"
 ECHO_MATCH_MODEL = "qwen3.5-plus"
 
 
@@ -97,26 +96,6 @@ async def _resolve_souler(
         return souler_data
 
 
-async def _ensure_souler_assets(
-    souler_data: dict[str, Any],
-    lang: Lang,
-) -> dict[str, Any]:
-    souler_id = str(souler_data["id"])
-    souler_name = str(souler_data["name"]).strip()
-
-    bio = souler_data.get("bio")
-    if not isinstance(bio, str) or not bio.strip():
-        generated_bio = await souler_profile(
-            souler_name,
-            lang,
-            model=ECHO_PROFILE_MODEL,
-        )
-        souler_data["bio"] = generated_bio
-        update_souler(souler_id, {"bio": generated_bio})
-
-    return souler_data
-
-
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
@@ -146,7 +125,6 @@ async def invoke_echo_graph(
 
     async def process_item(matched_name: str) -> None:
         souler_data = await _resolve_souler(matched_name, lang)
-        souler_data = await _ensure_souler_assets(souler_data, lang)
         souler_id = str(souler_data["id"])
         souler_name = str(souler_data["name"]).strip()
 

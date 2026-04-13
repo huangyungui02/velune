@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from app.shared import Lang, normalize_lang
 from app.errors import CreditLimitError, UnauthorizedError, error_log_payload, error_message
 from app.chat import handle_chat
-from app.chat.chapters import start_chapter_session, start_generation
+from app.chat.chapters import start_chapter_session
 from app.repositories import get_user_id_from_auth_header
 
 logger = logging.getLogger(__name__)
@@ -19,26 +19,6 @@ router = APIRouter()
 @router.post("/{lang}/chat")
 async def chat(lang: Lang, request: Request):
     return await handle_chat(lang, request)
-
-@router.post("/{lang}/soulers/{souler_id}/chapters/generate")
-async def generate_chapters(lang: Lang, souler_id: UUID, request: Request):
-    try:
-        lang = normalize_lang(lang)
-    except ValueError as error:
-        return JSONResponse({"error": str(error)}, status_code=400)
-
-    try:
-        await asyncio.to_thread(
-            get_user_id_from_auth_header,
-            request.headers.get("Authorization"),
-        )
-        status_code, payload = await start_generation(str(souler_id), lang)
-        return JSONResponse(payload, status_code=status_code)
-    except UnauthorizedError:
-        return JSONResponse({"error": "Unauthorized"}, status_code=401)
-    except Exception as error:  # noqa: BLE001
-        logger.error("Failed to generate chapters: %s", error_log_payload(error))
-        return JSONResponse({"error": error_message(error)}, status_code=400)
 
 
 @router.post("/{lang}/soulers/{souler_id}/chapters/{chapter_id}/start")
