@@ -86,7 +86,7 @@ struct SoulerView: View {
                 Markdown(souler.bio)
                     .veluneMarkdownBodyStyle()
                     .frame(maxWidth: 560, alignment: .leading)
-                    .padding(24)
+                    .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 24, style: .continuous)
                             .fill(Color.white.opacity(0.035))
