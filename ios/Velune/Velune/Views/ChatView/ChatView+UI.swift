@@ -129,7 +129,7 @@ extension ChatView {
                 && !isStartingChapterSession
                 && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
-            HStack(alignment: .bottom, spacing: 10) {
+            HStack(alignment: .bottom, spacing: 6) {
                 TextField(
                     "resonance.chat.placeholder",
                     text: $inputText,
@@ -141,16 +141,9 @@ extension ChatView {
                 .font(.body)
                 .fontDesign(.serif)
                 .foregroundStyle(UITheme.primaryText)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(Color.clear, in: .rect(cornerRadius: 16))
-                .glassEffect(in: .rect(cornerRadius: 16))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(.white.opacity(isComposerFocused ? 0.18 : 0.10), lineWidth: 0.8)
-                }
-                .shadow(color: .black.opacity(0.10), radius: 14, y: 2)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: isComposerFocused)
+                .padding(.leading, 16)
+                .padding(.trailing, 4)
+                .padding(.vertical, 14)
 
                 Button {
                     Task {
@@ -159,20 +152,19 @@ extension ChatView {
                 } label: {
                     Image(systemName: "arrow.up")
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(canSend ? UITheme.primaryText : UITheme.tertiaryText)
-                        .frame(width: 45, height: 45)
-                        .background(Color.clear, in: .circle)
-                        .glassEffect(in: .circle)
-                        .overlay {
-                            Circle()
-                                .strokeBorder(.white.opacity(canSend ? 0.16 : 0.08), lineWidth: 0.8)
-                        }
-                        .shadow(color: .black.opacity(canSend ? 0.12 : 0.08), radius: 12, y: 2)
+                        .foregroundStyle(.black)
+                        .frame(width: 36, height: 36)
+                        .background(.white, in: .circle)
                 }
                 .disabled(!canSend)
+                .opacity(canSend ? 1.0 : 0.4)
                 .scaleEffect(canSend ? 1 : 0.94)
+                .padding(.trailing, 6)
+                .padding(.bottom, 6)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: canSend)
             }
+            .background(Color.clear, in: .rect(cornerRadius: 24))
+            .glassEffect(in: .rect(cornerRadius: 24))
             .padding()
             .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: isSending)
             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -207,14 +199,10 @@ extension ChatView {
                         .fontDesign(.serif)
                         .foregroundStyle(UITheme.primaryText)
                         .lineLimit(2)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.white.opacity(0.08), in: .rect(cornerRadius: 12))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(.white.opacity(0.16), lineWidth: 0.8)
-                        }
+                        .background(.white.opacity(0.06), in: .rect(cornerRadius: 16))
                 }
                 .buttonStyle(.plain)
                 .disabled(isSending || isLoading)
@@ -313,20 +301,29 @@ private struct ChatBubble: View {
                 Spacer(minLength: 32)
             }
 
-            Markdown(content)
-                .markdownTextStyle {
-                    ForegroundColor(UITheme.primaryText)
+            Group {
+                if !isUser && content.isEmpty {
+                    Image(systemName: "waveform")
+                        .font(.body)
+                        .foregroundStyle(UITheme.primaryText.opacity(0.6))
+                        .symbolEffect(.variableColor.iterative.reversing, options: .repeating)
+                } else {
+                    Markdown(content)
+                        .markdownTextStyle {
+                            ForegroundColor(UITheme.primaryText)
+                        }
+                        .fontDesign(.serif)
+                        .lineSpacing(5)
                 }
-                .fontDesign(.serif)
-                .lineSpacing(5)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(
-                    isUser
-                        ? .white.opacity(0.16)
-                        : .white.opacity(0.08),
-                    in: .rect(cornerRadius: 14)
-                )
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                isUser
+                    ? .white.opacity(0.12)
+                    : .white.opacity(0.06),
+                in: .rect(cornerRadius: 16)
+            )
                 .frame(maxWidth: 320, alignment: isUser ? .trailing : .leading)
 
             if !isUser {
