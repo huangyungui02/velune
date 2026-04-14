@@ -100,9 +100,9 @@ struct ProfileView: View {
                     ForEach(timelineSections) { section in
                         VStack(alignment: .leading, spacing: 12) {
                             title(for: section.bucket)
-                                .font(.title3.weight(.semibold))
-                                .fontDesign(.rounded)
-                                .foregroundStyle(UITheme.primaryText)
+                                .font(.title3.weight(.medium))
+                                .fontDesign(.serif)
+                                .foregroundStyle(UITheme.primaryText.opacity(0.85))
                                 .padding(.horizontal, 6)
                                 .padding(.bottom, 2)
 
@@ -117,8 +117,15 @@ struct ProfileView: View {
 
                                     if index < section.items.count - 1 {
                                         VStack(spacing: 8) {
-                                            Divider()
-                                                .overlay(.white.opacity(0.04))
+                                            Rectangle()
+                                                .fill(
+                                                    LinearGradient(
+                                                        colors: [.clear, .white.opacity(0.06), .clear],
+                                                        startPoint: .leading,
+                                                        endPoint: .trailing
+                                                    )
+                                                )
+                                                .frame(height: 1)
                                         }
                                         .padding(.horizontal, 18)
                                         .padding(.vertical, 6)
@@ -126,8 +133,11 @@ struct ProfileView: View {
                                 }
                             }
                             .padding(.vertical, 6)
-                            .background(Color.clear, in: .rect(cornerRadius: 18))
-                            .glassEffect(in: .rect(cornerRadius: 18))
+                            .background(
+                                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                    .fill(Color.white.opacity(0.035))
+                                    .shadow(color: .white.opacity(0.035), radius: 30, x: 0, y: 0)
+                            )
                         }
                     }
 
@@ -373,9 +383,6 @@ private struct GlimmerListRow: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                Image(systemName: "clock.fill")
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(UITheme.tertiaryText)
                 Text(glimmer.createdAt, format: .relative(presentation: .named).locale(locale))
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(UITheme.tertiaryText)
