@@ -32,7 +32,7 @@ extension ChatView {
                 soulerId: soulerId,
                 sessionId: nil,
                 role: .assistant,
-                content: "…",
+                content: "",
                 createdAt: .now
             )
         ]

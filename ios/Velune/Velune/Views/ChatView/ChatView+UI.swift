@@ -303,10 +303,11 @@ private struct ChatBubble: View {
 
             Group {
                 if !isUser && content.isEmpty {
-                    Image(systemName: "waveform")
-                        .font(.body)
-                        .foregroundStyle(UITheme.primaryText.opacity(0.6))
-                        .symbolEffect(.variableColor.iterative.reversing, options: .repeating)
+                    MatchingWaveIcon(
+                        ringSize: 10,
+                        containerSize: 22,
+                        color: UITheme.primaryText.opacity(0.6)
+                    )
                 } else {
                     Markdown(content)
                         .veluneMarkdownBodyStyle()

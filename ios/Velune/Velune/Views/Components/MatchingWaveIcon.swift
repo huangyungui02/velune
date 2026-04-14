@@ -3,6 +3,7 @@ import SwiftUI
 struct MatchingWaveIcon: View {
     var ringSize: CGFloat = 8
     var containerSize: CGFloat = 12
+    var color: Color = UITheme.accent
 
     @State private var animate = false
 
@@ -10,7 +11,7 @@ struct MatchingWaveIcon: View {
         ZStack {
             ForEach(0 ..< 3, id: \.self) { index in
                 Circle()
-                    .stroke(UITheme.accent, lineWidth: 1)
+                    .stroke(color, lineWidth: 1)
                     .frame(width: ringSize, height: ringSize)
                     .scaleEffect(animate ? 2.1 : 0.2)
                     .opacity(animate ? 0.0 : 0.75)
