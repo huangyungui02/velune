@@ -26,7 +26,7 @@
 "settings.billing.renewalTime" = "续订时间";
 "settings.billing.plan" = "当前方案";
 "settings.billing.plan.free" = "免费";
-"settings.billing.plan.awaken" = "初觉";
+"settings.billing.plan.awaken" = "心启";
 "settings.billing.plan.depth" = "深处";
 "settings.billing.price" = "订阅价格";
 "settings.billing.stardust.description" = "免费用户每日获得 10 星尘。\n\n每次回响消耗 5 星尘，每次对话消耗 1 星尘。";
@@ -111,7 +111,7 @@
 
 "paywall.title" = "微澜";
 "paywall.subtitle" = "心有微澜，回响未止。";
-"paywall.tier.awaken.title" = "微澜 · 初觉";
+"paywall.tier.awaken.title" = "微澜 · 心启";
 "paywall.tier.awaken.subtitle" = "每日 50 星尘";
 "paywall.tier.deep.title" = "微澜 · 深处";
 "paywall.tier.deep.subtitle" = "每日 100 星尘";

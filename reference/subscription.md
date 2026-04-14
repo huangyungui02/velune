@@ -5,7 +5,7 @@
 credits：10 stardust/day
 price：free
 
-### Awaken/初觉
+### Awaken/心启
 credits：50 stardust/day
 price：$4.99/month
 
