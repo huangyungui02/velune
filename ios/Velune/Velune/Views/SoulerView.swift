@@ -63,51 +63,65 @@ struct SoulerView: View {
         .animation(.easeInOut, value: souler != nil)
     }
 
+    @ViewBuilder
     private func soulerDetailView(_ souler: Souler) -> some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                Text(souler.name)
-                    .font(.title2.weight(.semibold))
-                    .fontDesign(.serif)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 20)
-                    .background {
-                        GeometryReader { geometry in
-                            Color.clear
-                                .onAppear {
-                                    nameBlockHeight = geometry.size.height
-                                }
+        if souler.bio.isEmpty {
+            SereneContentUnavailableView(
+                title: "souler.bio.empty.title",
+                symbol: "sparkles",
+                actionTitle: "common.refresh",
+                actionIcon: "arrow.clockwise"
+            ) {
+                Task {
+                    await loadSouler()
+                }
+            }
+        } else {
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text(souler.name)
+                        .font(.title2.weight(.semibold))
+                        .fontDesign(.serif)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 20)
+                        .background {
+                            GeometryReader { geometry in
+                                Color.clear
+                                    .onAppear {
+                                        nameBlockHeight = geometry.size.height
+                                    }
+                            }
                         }
-                    }
 
-                Markdown(souler.bio)
-                    .veluneMarkdownBodyStyle()
-                    .frame(maxWidth: 560, alignment: .leading)
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .fill(Color.white.opacity(0.035))
-                            .shadow(color: .white.opacity(0.035), radius: 30, x: 0, y: 0)
-                    )
-                    .padding()
+                    Markdown(souler.bio)
+                        .veluneMarkdownBodyStyle()
+                        .frame(maxWidth: 560, alignment: .leading)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .fill(Color.white.opacity(0.035))
+                                .shadow(color: .white.opacity(0.035), radius: 30, x: 0, y: 0)
+                        )
+                        .padding()
+                }
+                .padding(.vertical)
             }
-            .padding(.vertical)
-        }
-        .onScrollGeometryChange(
-            for: CGFloat.self,
-            of: { geometry in
-                geometry.contentOffset.y + geometry.contentInsets.top
-            },
-            action: { _, visibleOffsetY in
-                let trigger = max(24, nameBlockHeight + navTitleThreshold)
-                showNavigationTitle = visibleOffsetY > trigger
+            .onScrollGeometryChange(
+                for: CGFloat.self,
+                of: { geometry in
+                    geometry.contentOffset.y + geometry.contentInsets.top
+                },
+                action: { _, visibleOffsetY in
+                    let trigger = max(24, nameBlockHeight + navTitleThreshold)
+                    showNavigationTitle = visibleOffsetY > trigger
+                }
+            )
+            .onAppear {
+                showNavigationTitle = false
             }
-        )
-        .onAppear {
-            showNavigationTitle = false
         }
     }
 

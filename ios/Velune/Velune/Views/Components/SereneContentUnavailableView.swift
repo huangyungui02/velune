@@ -6,6 +6,7 @@ struct SereneContentUnavailableView: View {
     let symbol: String
     let subtitle: LocalizedStringKey?
     let actionTitle: LocalizedStringKey?
+    let actionIcon: String
     let action: (() -> Void)?
 
     init(
@@ -13,12 +14,14 @@ struct SereneContentUnavailableView: View {
         symbol: String,
         subtitle: LocalizedStringKey? = nil,
         actionTitle: LocalizedStringKey? = nil,
+        actionIcon: String = "pencil",
         action: (() -> Void)? = nil
     ) {
         self.title = title
         self.symbol = symbol
         self.subtitle = subtitle
         self.actionTitle = actionTitle
+        self.actionIcon = actionIcon
         self.action = action
     }
 
@@ -59,7 +62,7 @@ struct SereneContentUnavailableView: View {
                         Text(actionTitle)
                             .fontDesign(.serif)
                     } icon: {
-                        Image(systemName: "pencil")
+                        Image(systemName: actionIcon)
                     }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(UITheme.primaryActionForeground(for: colorScheme))

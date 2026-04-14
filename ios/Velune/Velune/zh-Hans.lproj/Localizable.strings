@@ -126,3 +126,5 @@
 "paywall.signInRequired.title" = "需要先登录";
 "paywall.signInRequired.description" = "匿名账号暂不支持订阅。请先登录。";
 "paywall.restore.signInRequired.description" = "匿名账号暂不支持恢复购买。请先登录。";
+"souler.bio.empty.title" = "当前页面正在完善中";
+"common.refresh" = "刷新";

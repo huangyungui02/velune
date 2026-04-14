@@ -126,3 +126,5 @@
 "paywall.signInRequired.title" = "Sign In Required";
 "paywall.signInRequired.description" = "Anonymous accounts can’t subscribe. Sign in to continue.";
 "paywall.restore.signInRequired.description" = "Anonymous accounts can’t restore purchases. Sign in to continue.";
+"souler.bio.empty.title" = "This page is being perfected";
+"common.refresh" = "Refresh";
