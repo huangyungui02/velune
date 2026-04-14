@@ -37,6 +37,7 @@ struct ChatView: View {
     @State var isLoadingChapters = false
     @State var isStartingChapterSession = false
     @State var chapterOptions: [String] = []
+    @State var selectedChapter: SoulerChapter?
     @FocusState var isComposerFocused: Bool
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     @Environment(\.modelContext) var modelContext

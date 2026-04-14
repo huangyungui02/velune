@@ -96,6 +96,8 @@
 "resonance.chat.chapters.title" = "章节体验";
 "resonance.chat.chapters.unavailable.title" = "章节内容不可用";
 "resonance.chat.chapters.unavailable.subtitle" = "当前 souler 还没有可用章节。";
+"resonance.chat.chapters.action.start" = "开始探索";
+"resonance.chat.chapters.action.freeChat" = "自由对话";
 "resonance.unknownSouler" = "未命名灵魂";
 
 "app.error.unauthenticated" = "用户尚未登录";

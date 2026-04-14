@@ -60,66 +60,118 @@ extension ChatView {
         }
     }
 
+    @ViewBuilder
     var composer: some View {
-        let canSend = !isSending
-            && !isStartingChapterSession
-            && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
-        return HStack(alignment: .bottom, spacing: 10) {
-            TextField(
-                "resonance.chat.placeholder",
-                text: $inputText,
-                axis: .vertical
-            )
-            .focused($isComposerFocused)
-            .lineLimit(1 ... 4)
-            .textFieldStyle(.plain)
-            .font(.body)
-            .fontDesign(.serif)
-            .foregroundStyle(UITheme.primaryText)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(Color.clear, in: .rect(cornerRadius: 16))
-            .glassEffect(in: .rect(cornerRadius: 16))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.white.opacity(isComposerFocused ? 0.18 : 0.10), lineWidth: 0.8)
-            }
-            .shadow(color: .black.opacity(0.10), radius: 14, y: 2)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: isComposerFocused)
-
-            Button {
-                Task {
-                    await sendMessage()
-                }
-            } label: {
-                Image(systemName: "arrow.up")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(canSend ? UITheme.primaryText : UITheme.tertiaryText)
-                    .frame(width: 45, height: 45)
-                    .background(Color.clear, in: .circle)
-                    .glassEffect(in: .circle)
-                    .overlay {
-                        Circle()
-                            .strokeBorder(.white.opacity(canSend ? 0.16 : 0.08), lineWidth: 0.8)
+        if let chapter = selectedChapter {
+            HStack(spacing: 12) {
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        self.selectedChapter = nil
                     }
-                    .shadow(color: .black.opacity(canSend ? 0.12 : 0.08), radius: 12, y: 2)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        self.isComposerFocused = true
+                    }
+                } label: {
+                    Text("resonance.chat.chapters.action.freeChat")
+                        .font(.body)
+                        .fontDesign(.serif)
+                        .foregroundStyle(UITheme.primaryText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(.white.opacity(0.08), in: .rect(cornerRadius: 16))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                        }
+                }
+                .buttonStyle(.plain)
+                .disabled(isStartingChapterSession)
+
+                Button {
+                    let selected = chapter
+                    withAnimation {
+                        self.selectedChapter = nil
+                    }
+                    Task {
+                        await startChapterSession(selected)
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        if isStartingChapterSession {
+                            ProgressView().tint(.black)
+                        } else {
+                            Text("resonance.chat.chapters.action.start")
+                        }
+                    }
+                    .font(.body.weight(.medium))
+                    .fontDesign(.serif)
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(UITheme.primaryText, in: .rect(cornerRadius: 16))
+                }
+                .buttonStyle(.plain)
+                .disabled(isStartingChapterSession)
             }
-            .disabled(!canSend)
-            .scaleEffect(canSend ? 1 : 0.94)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: canSend)
+            .padding()
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else {
+            let canSend = !isSending
+                && !isStartingChapterSession
+                && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+            HStack(alignment: .bottom, spacing: 10) {
+                TextField(
+                    "resonance.chat.placeholder",
+                    text: $inputText,
+                    axis: .vertical
+                )
+                .focused($isComposerFocused)
+                .lineLimit(1 ... 4)
+                .textFieldStyle(.plain)
+                .font(.body)
+                .fontDesign(.serif)
+                .foregroundStyle(UITheme.primaryText)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(Color.clear, in: .rect(cornerRadius: 16))
+                .glassEffect(in: .rect(cornerRadius: 16))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(.white.opacity(isComposerFocused ? 0.18 : 0.10), lineWidth: 0.8)
+                }
+                .shadow(color: .black.opacity(0.10), radius: 14, y: 2)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: isComposerFocused)
+
+                Button {
+                    Task {
+                        await sendMessage()
+                    }
+                } label: {
+                    Image(systemName: "arrow.up")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(canSend ? UITheme.primaryText : UITheme.tertiaryText)
+                        .frame(width: 45, height: 45)
+                        .background(Color.clear, in: .circle)
+                        .glassEffect(in: .circle)
+                        .overlay {
+                            Circle()
+                                .strokeBorder(.white.opacity(canSend ? 0.16 : 0.08), lineWidth: 0.8)
+                        }
+                        .shadow(color: .black.opacity(canSend ? 0.12 : 0.08), radius: 12, y: 2)
+                }
+                .disabled(!canSend)
+                .scaleEffect(canSend ? 1 : 0.94)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: canSend)
+            }
+            .padding()
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: isSending)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
         }
-        .padding()
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: isSending)
     }
 
     var chapterPanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("resonance.chat.chapters.title")
-                .font(.headline.weight(.semibold))
-                .fontDesign(.serif)
-                .foregroundStyle(UITheme.primaryText)
-
+        VStack(alignment: .leading, spacing: 20) {
             if isLoadingChapters {
                 HStack(spacing: 10) {
                     ProgressView()
@@ -128,6 +180,7 @@ extension ChatView {
                         .font(.footnote)
                         .foregroundStyle(UITheme.secondaryText)
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
             } else if chapters.isEmpty {
                 chapterUnavailableView
             } else {
@@ -135,13 +188,6 @@ extension ChatView {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(.white.opacity(0.08), in: .rect(cornerRadius: 16))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(.white.opacity(0.16), lineWidth: 0.9)
-        }
-        .glassEffect(in: .rect(cornerRadius: 16))
     }
 
     func chapterOptionsInlineView(options: [String]) -> some View {
@@ -190,16 +236,21 @@ extension ChatView {
     }
 
     private var chapterListView: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             ForEach(chapters) { chapter in
+                let isSelected = selectedChapter?.id == chapter.id
                 Button {
-                    Task {
-                        await startChapterSession(chapter)
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        if isSelected {
+                            selectedChapter = nil
+                        } else {
+                            selectedChapter = chapter
+                        }
                     }
                 } label: {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(chapter.title)
-                            .font(.body.weight(.medium))
+                            .font(.body.weight(isSelected ? .semibold : .medium))
                             .fontDesign(.serif)
                             .foregroundStyle(UITheme.primaryText)
                             .lineLimit(1)
@@ -210,10 +261,22 @@ extension ChatView {
                             .foregroundStyle(UITheme.secondaryText)
                             .lineLimit(2)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.white.opacity(0.08), in: .rect(cornerRadius: 12))
+                    .background(
+                        isSelected ? .white.opacity(0.12) : .white.opacity(0.04),
+                        in: .rect(cornerRadius: 16)
+                    )
+                    .overlay {
+                        if isSelected {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(.white.opacity(0.2), lineWidth: 0.5)
+                        } else {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(.white.opacity(0.05), lineWidth: 0.5)
+                        }
+                    }
                 }
                 .buttonStyle(.plain)
                 .disabled(isSending || isStartingChapterSession)
