@@ -38,16 +38,7 @@ struct EchoCardView: View {
         PremiumCardView {
             VStack(alignment: .leading, spacing: 24) {
                 Markdown(echo.content)
-                    .markdownTextStyle {
-                        ForegroundColor(UITheme.primaryText)
-                    }
-                    .markdownBlockStyle(\.paragraph) { configuration in
-                        configuration.label
-                            .lineSpacing(8)
-                            .markdownMargin(top: .zero, bottom: .em(1))
-                    }
-                    .fontDesign(.serif)
-                    .multilineTextAlignment(.leading)
+                    .veluneMarkdownBodyStyle()
                     .tracking(0.5)
 
                 Divider()

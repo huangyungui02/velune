@@ -309,11 +309,7 @@ private struct ChatBubble: View {
                         .symbolEffect(.variableColor.iterative.reversing, options: .repeating)
                 } else {
                     Markdown(content)
-                        .markdownTextStyle {
-                            ForegroundColor(UITheme.primaryText)
-                        }
-                        .fontDesign(.serif)
-                        .lineSpacing(5)
+                        .veluneMarkdownBodyStyle()
                 }
             }
             .padding(.horizontal, 16)

@@ -84,16 +84,7 @@ struct SoulerView: View {
                     }
 
                 Markdown(souler.bio)
-                    .markdownTextStyle {
-                        ForegroundColor(UITheme.primaryText)
-                    }
-                    .markdownBlockStyle(\.paragraph) { configuration in
-                        configuration.label
-                            .relativeLineSpacing(.em(0.35))
-                            .markdownMargin(top: .zero, bottom: .em(0.85))
-                    }
-                    .fontDesign(.serif)
-                    .multilineTextAlignment(.leading)
+                    .veluneMarkdownBodyStyle()
                     .frame(maxWidth: 560, alignment: .leading)
                     .padding(16)
                     .background(Color.clear, in: .rect(cornerRadius: 16))
