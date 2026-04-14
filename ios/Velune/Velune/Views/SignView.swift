@@ -167,19 +167,43 @@ private struct AppMarkView: View {
             let side = min(proxy.size.width, proxy.size.height)
             let outerDiameter = side * (720.0 / 1024.0)
             let innerDiameter = side * (480.0 / 1024.0)
-            let outerStroke = side * (16.0 / 1024.0)
-            let innerStroke = side * (20.0 / 1024.0)
+            
+            // Slightly thicker and clearer strokes
+            let outerStroke = max(1.5, side * (8.0 / 1024.0))
+            let innerStroke = max(2.0, side * (12.0 / 1024.0))
 
             ZStack {
+                // Outer Echo Circle - "回响" (Resonance)
                 Circle()
-                    .stroke(style: StrokeStyle(lineWidth: outerStroke))
+                    .stroke(
+                        LinearGradient(
+                            stops: [
+                                .init(color: .white.opacity(0.5), location: 0.0),
+                                .init(color: .white.opacity(0.15), location: 0.5),
+                                .init(color: .white.opacity(0.4), location: 1.0)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: outerStroke)
+                    )
                     .frame(width: outerDiameter, height: outerDiameter)
-                    .opacity(0.5)
 
+                // Inner Soul Circle - "微澜" (Slight Ripple)
                 Circle()
-                    .stroke(style: StrokeStyle(lineWidth: innerStroke))
+                    .stroke(
+                        LinearGradient(
+                            stops: [
+                                .init(color: .white.opacity(0.95), location: 0.0),
+                                .init(color: .white.opacity(0.4), location: 0.5),
+                                .init(color: .white.opacity(0.8), location: 1.0)
+                            ],
+                            startPoint: .bottomTrailing,
+                            endPoint: .topLeading
+                        ),
+                        style: StrokeStyle(lineWidth: innerStroke)
+                    )
                     .frame(width: innerDiameter, height: innerDiameter)
-                    .opacity(0.8)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }

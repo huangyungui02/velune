@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="512" cy="512" r="360" stroke="#FFFFFF" stroke-width="16"/>
+  <defs>
+    <linearGradient id="outerEchoGrad" x1="152" y1="152" x2="872" y2="872" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.4"/>
+    </linearGradient>
+  </defs>
+  <circle cx="512" cy="512" r="360" stroke="url(#outerEchoGrad)" stroke-width="8"/>
 </svg>
