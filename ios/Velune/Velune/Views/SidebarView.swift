@@ -333,7 +333,15 @@ struct SidebarView: View {
         .padding(12)
         .frame(width: sidebarWidth, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(.ultraThinMaterial)
+        .background {
+            ZStack {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .environment(\.colorScheme, .dark)
+                Color.black.opacity(0.4)
+            }
+            .ignoresSafeArea()
+        }
         .task(id: authManager.currentUserId) {
             if authManager.isAnonymous || authManager.currentUserId == nil {
                 resetResonanceState()
@@ -389,7 +397,6 @@ struct SidebarView: View {
         .background(Color.clear, in: .capsule)
         .glassEffect(in: .capsule)
         .padding(.horizontal, 2)
-        .shadow(color: .black.opacity(0.12), radius: 14, y: 6)
     }
 
     private func centeredSidebarStatus<Content: View>(@ViewBuilder content: () -> Content) -> some View {
