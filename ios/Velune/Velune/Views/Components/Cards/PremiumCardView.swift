@@ -26,8 +26,8 @@ struct PremiumCardView<Content: View>: View {
                     .frame(maxWidth: .infinity)
                     .background(
                         RoundedRectangle(cornerRadius: 32, style: .continuous)
-                            .fill(Color.white.opacity(0.02))
-                            .shadow(color: .white.opacity(0.02), radius: 30, x: 0, y: 0)
+                            .fill(Color.white.opacity(0.035))
+                            .shadow(color: .white.opacity(0.035), radius: 30, x: 0, y: 0)
                     )
                     .padding(.horizontal)
 

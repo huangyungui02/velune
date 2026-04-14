@@ -86,13 +86,12 @@ struct SoulerView: View {
                 Markdown(souler.bio)
                     .veluneMarkdownBodyStyle()
                     .frame(maxWidth: 560, alignment: .leading)
-                    .padding(16)
-                    .background(Color.clear, in: .rect(cornerRadius: 16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(.white.opacity(0.18), lineWidth: 1)
+                    .padding(24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .fill(Color.white.opacity(0.035))
+                            .shadow(color: .white.opacity(0.035), radius: 30, x: 0, y: 0)
                     )
-                    .glassEffect(in: .rect(cornerRadius: 16))
                     .padding()
             }
             .padding(.vertical)
