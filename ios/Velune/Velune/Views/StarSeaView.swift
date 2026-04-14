@@ -183,7 +183,7 @@ struct StarSeaView: View {
             Button {
                 isShowingProfile = true
             } label: {
-                Image(systemName: "house.fill")
+                Image(systemName: "person.crop.circle")
             }
         }
     }
@@ -331,7 +331,13 @@ extension StarSeaView {
     }
 
     private var closeButton: some View {
-        Button(role: .cancel, action: closeCurrentGlimmer)
+        Button(role: .cancel, action: closeCurrentGlimmer) {
+            Image(systemName: "chevron.down")
+                .font(.body.weight(.medium))
+                .foregroundStyle(UITheme.secondaryText)
+                .padding(8)
+                .contentShape(.circle)
+        }
     }
 
     private var chatButton: some View {
