@@ -26,7 +26,7 @@ type Chapter = {
 };
 
 const QWEN_MODEL = getQwenModel();
-const CHAPTERS_TEMPERATURE = 0.5;
+const CHAPTERS_TEMPERATURE = 0.35;
 const CHAPTER_COUNT = 10;
 const MODEL_TIMEOUT_MS = 60_000;
 
