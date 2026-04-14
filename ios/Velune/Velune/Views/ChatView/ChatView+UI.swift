@@ -2,14 +2,23 @@ import SwiftUI
 import MarkdownUI
 
 extension ChatView {
+    @ViewBuilder
     var emptyConversationView: some View {
-        ScrollView {
-            chapterPanel
-                .padding(.horizontal)
-                .padding(.top, 12)
-                .padding(.bottom, 16)
+        if isLoadingChapters {
+            ProgressView()
+                .tint(UITheme.primaryText)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if chapters.isEmpty {
+            chapterUnavailableView
+        } else {
+            ScrollView {
+                chapterPanel
+                    .padding(.horizontal)
+                    .padding(.top, 12)
+                    .padding(.bottom, 16)
+            }
+            .scrollDismissesKeyboard(.interactively)
         }
-        .scrollDismissesKeyboard(.interactively)
     }
 
     var messageList: some View {
@@ -172,20 +181,7 @@ extension ChatView {
 
     var chapterPanel: some View {
         VStack(alignment: .leading, spacing: 20) {
-            if isLoadingChapters {
-                HStack(spacing: 10) {
-                    ProgressView()
-                        .tint(UITheme.primaryText)
-                    Text("common.loading")
-                        .font(.footnote)
-                        .foregroundStyle(UITheme.secondaryText)
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-            } else if chapters.isEmpty {
-                chapterUnavailableView
-            } else {
-                chapterListView
-            }
+            chapterListView
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -228,11 +224,9 @@ extension ChatView {
 
     private var chapterUnavailableView: some View {
         ContentUnavailableView {
-            Label("resonance.chat.chapters.unavailable.title", systemImage: "text.book.closed")
-        } description: {
-            Text("resonance.chat.chapters.unavailable.subtitle")
+            Label("resonance.chat.empty", systemImage: "sparkles")
         }
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var chapterListView: some View {
