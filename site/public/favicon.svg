@@ -1,4 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <circle cx="512" cy="512" r="360" stroke="#fff" stroke-opacity="0.5" stroke-width="16" fill="none" />
-  <circle cx="512" cy="512" r="240" stroke="#fff" stroke-opacity="0.8" stroke-width="20" fill="none" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="outerEchoGrad" x1="152" y1="152" x2="872" y2="872" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="innerCoreGrad" x1="752" y1="752" x2="272" y2="272" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+  <circle cx="512" cy="512" r="360" stroke="url(#outerEchoGrad)" stroke-width="8" />
+  <circle cx="512" cy="512" r="240" stroke="url(#innerCoreGrad)" stroke-width="12" />
 </svg>

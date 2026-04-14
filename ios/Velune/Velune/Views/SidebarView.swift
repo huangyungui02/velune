@@ -35,7 +35,7 @@ struct SidebarContainer<Content: View>: View {
     @Binding var sidebarNavigation: SidebarNavigationState
     let sidebarWidth: CGFloat
     let isSidebarEnabled: Bool
-    let onOpenGlimmerComposer: () -> Void
+    let onOpenStirringComposer: () -> Void
     let content: Content
 
     @State private var sidebarDragOffset: CGFloat = 0
@@ -46,13 +46,13 @@ struct SidebarContainer<Content: View>: View {
         sidebarNavigation: Binding<SidebarNavigationState>,
         sidebarWidth: CGFloat = 280,
         isSidebarEnabled: Bool = true,
-        onOpenGlimmerComposer: @escaping () -> Void,
+        onOpenStirringComposer: @escaping () -> Void,
         @ViewBuilder content: () -> Content
     ) {
         _sidebarNavigation = sidebarNavigation
         self.sidebarWidth = sidebarWidth
         self.isSidebarEnabled = isSidebarEnabled
-        self.onOpenGlimmerComposer = onOpenGlimmerComposer
+        self.onOpenStirringComposer = onOpenStirringComposer
         self.content = content()
     }
 
@@ -83,8 +83,8 @@ struct SidebarContainer<Content: View>: View {
                     sidebarNavigation.showDraftChat(draftTarget)
                     closeSidebar()
                 },
-                onOpenGlimmerComposer: {
-                    onOpenGlimmerComposer()
+                onOpenStirringComposer: {
+                    onOpenStirringComposer()
                     closeSidebar()
                 }
             )
@@ -178,7 +178,7 @@ struct SidebarView: View {
     let sidebarWidth: CGFloat
     let onOpenSession: (ChatSession) -> Void
     let onOpenDraftChat: (SidebarDraftChatTarget) -> Void
-    let onOpenGlimmerComposer: () -> Void
+    let onOpenStirringComposer: () -> Void
     @State private var resonances: [Resonance] = []
     @State private var isSyncingResonances = false
     @State private var isLoadingMoreResonances = false
@@ -373,8 +373,8 @@ struct SidebarView: View {
             title: "starsea.empty.resonanceTitle",
             symbol: "bubble.left.and.bubble.right",
             subtitle: "starsea.empty.resonanceSubtitle",
-            actionTitle: "starsea.action.writeGlimmer",
-            action: onOpenGlimmerComposer
+            actionTitle: "starsea.action.writeStirring",
+            action: onOpenStirringComposer
         )
     }
 
@@ -480,7 +480,7 @@ struct SidebarView: View {
                     lastSyncedAt: resolvedLastSyncedAt,
                     hasMore: syncPayload.hasMore ?? currentState.resonances.hasMore
                 ),
-                glimmers: currentState.glimmers
+                stirrings: currentState.stirrings
             )
             SyncStateStore.set(nextState, userId: userId)
             hasMoreResonances = nextState.resonances.hasMore
@@ -547,7 +547,7 @@ struct SidebarView: View {
                         lastSyncedAt: nextSyncedAt,
                         hasMore: hasMoreResonances
                     ),
-                    glimmers: currentState.glimmers
+                    stirrings: currentState.stirrings
                 ),
                 userId: userId
             )

@@ -2,24 +2,24 @@ import OSLog
 import SwiftData
 import SwiftUI
 
-struct GlimmerView: View {
+struct StirringView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @State private var showingDeleteAlert = false
     @State private var isDeleting: Bool = false
     @State private var errorMessage: String? = nil
     @State private var isLoading: Bool = false
-    @State private var glimmer: Glimmer
-    @State private var currentPage: CardID? = .glimmer
+    @State private var stirring: Stirring
+    @State private var currentPage: CardID? = .stirring
     @State private var chatRoute: EchoChatRoute?
     private let logger = AppLogger.storage
 
-    init(glimmer: Glimmer) {
-        self.glimmer = glimmer
+    init(stirring: Stirring) {
+        self.stirring = stirring
     }
 
     private var echoes: [Echo] {
-        glimmer.echoes.sorted { $0.createdAt < $1.createdAt }
+        stirring.echoes.sorted { $0.createdAt < $1.createdAt }
     }
 
     var body: some View {
@@ -30,7 +30,7 @@ struct GlimmerView: View {
                 .frame(maxHeight: .infinity, alignment: .top)
                 .padding(.vertical)
         }
-        .navigationTitle("glimmer.title")
+        .navigationTitle("stirring.title")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -38,7 +38,7 @@ struct GlimmerView: View {
                     Button(role: .destructive) {
                         showingDeleteAlert = true
                     } label: {
-                        Label("glimmer.action.delete", systemImage: "trash")
+                        Label("stirring.action.delete", systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -74,18 +74,18 @@ struct GlimmerView: View {
                 focusComposerOnAppear: true
             )
         }
-        .alert("glimmer.delete.title", isPresented: $showingDeleteAlert) {
+        .alert("stirring.delete.title", isPresented: $showingDeleteAlert) {
             Button("common.cancel", role: .cancel) {}
-            Button("glimmer.action.delete", role: .destructive) {
+            Button("stirring.action.delete", role: .destructive) {
                 Task {
-                    let success = await deleteGlimmer()
+                    let success = await deleteStirring()
                     if success {
                         dismiss()
                     }
                 }
             }
         } message: {
-            Text("glimmer.delete.message")
+            Text("stirring.delete.message")
         }
         .alert("settings.error.title", isPresented: errorAlertBinding) {
             Button("common.ok", role: .cancel) {}
@@ -94,24 +94,24 @@ struct GlimmerView: View {
         }
         .overlay {
             if isDeleting {
-                ProgressView("glimmer.delete.progress")
+                ProgressView("stirring.delete.progress")
                     .padding()
                     .background(.regularMaterial)
                     .cornerRadius(10)
             }
         }
         .task {
-            await refreshGlimmer()
+            await refreshStirring()
         }
     }
 
-    func deleteGlimmer() async -> Bool {
+    func deleteStirring() async -> Bool {
         isDeleting = true
         defer { isDeleting = false }
 
         do {
-            try await Glimmer.delete(glimmer.id)
-            context.delete(glimmer)
+            try await Stirring.delete(stirring.id)
+            context.delete(stirring)
             try context.save()
             return true
         } catch {
@@ -120,27 +120,27 @@ struct GlimmerView: View {
         }
     }
 
-    func refreshGlimmer() async {
-        if glimmer.status != "pending", glimmer.status != "processing" {
-            if !glimmer.echoes.isEmpty || glimmer.status == "failed" { return }
+    func refreshStirring() async {
+        if stirring.status != "pending", stirring.status != "processing" {
+            if !stirring.echoes.isEmpty || stirring.status == "failed" { return }
         }
 
         isLoading = true
         defer { isLoading = false }
 
         do {
-            let newGlimmer = try await Glimmer.get(glimmer.id)
-            let remoteEchoes = try await Echo.getAll(newGlimmer.id)
+            let newStirring = try await Stirring.get(stirring.id)
+            let remoteEchoes = try await Echo.getAll(newStirring.id)
 
-            context.insert(newGlimmer)
+            context.insert(newStirring)
             for echo in remoteEchoes {
-                echo.glimmer = newGlimmer
+                echo.stirring = newStirring
                 context.insert(echo)
             }
 
             try? context.save()
         } catch {
-            logger.error("refreshing glimmer failed: glimmerId=\(glimmer.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            logger.error("refreshing stirring failed: stirringId=\(stirring.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
             return
         }
     }
@@ -151,9 +151,9 @@ struct GlimmerView: View {
             currentPage: $currentPage,
             autoSwitchToFirstEcho: false
         ) {
-            GlimmerCardView(
-                content: glimmer.content,
-                createdAt: glimmer.createdAt
+            StirringCardView(
+                content: stirring.content,
+                createdAt: stirring.createdAt
             )
         }
     }
@@ -171,7 +171,7 @@ struct GlimmerView: View {
         guard let selectedEcho else { return nil }
         return EchoChatRoute(
             echo: selectedEcho,
-            glimmerContent: glimmer.content
+            stirringContent: stirring.content
         )
     }
 

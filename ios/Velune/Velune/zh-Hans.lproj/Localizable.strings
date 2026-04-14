@@ -56,17 +56,17 @@
 "anonymous.restricted.sidebar.title" = "登录后开启共鸣";
 "anonymous.restricted.sidebar.description" = "登录后，可浏览共鸣并回到每段会话。";
 
-"profile.empty.noGlimmers" = "暂无心澜";
-"profile.empty.noGlimmers.subtitle" = "写下第一道心澜，静候第一声回响。";
-"profile.title.glimmers" = "心舍";
+"profile.empty.noStirrings" = "暂无心澜";
+"profile.empty.noStirrings.subtitle" = "写下第一道心澜，静候第一声回响。";
+"profile.title.stirrings" = "心舍";
 "profile.section.today" = "今天";
 "profile.section.yesterday" = "昨天";
 "profile.section.pastWeek" = "过去一周";
 "profile.section.pastMonth" = "过去一个月";
 
 "starsea.hero.verse" = "心有微澜\n宇宙自现";
-"starsea.prompt.glimmerWithin" = "此刻，有什么在你心中泛起";
-"starsea.action.writeGlimmer" = "写下心澜";
+"starsea.prompt.stirringWithin" = "此刻，有什么在你心中泛起";
+"starsea.action.writeStirring" = "写下心澜";
 "starsea.empty.resonanceTitle" = "还没有共鸣";
 "starsea.empty.resonanceSubtitle" = "写下第一道心澜，静候第一声回响。";
 
@@ -74,11 +74,11 @@
 "matching.error.title" = "错误";
 "matching.error.unknown" = "未知错误";
 
-"glimmer.title" = "心澜";
-"glimmer.action.delete" = "删除";
-"glimmer.delete.title" = "删除";
-"glimmer.delete.message" = "确定要删除吗？该操作不可撤销。";
-"glimmer.delete.progress" = "删除中…";
+"stirring.title" = "心澜";
+"stirring.action.delete" = "删除";
+"stirring.delete.title" = "删除";
+"stirring.delete.message" = "确定要删除吗？该操作不可撤销。";
+"stirring.delete.progress" = "删除中…";
 
 "souler.load.failed" = "加载失败";
 "echo.reply.placeholder" = "回应这段回响…";

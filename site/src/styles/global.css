@@ -145,28 +145,6 @@ main {
   transition: transform 220ms ease, filter 220ms ease;
 }
 
-.hero-mark::before,
-.hero-mark::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.hero-mark::before {
-  width: 72%;
-  height: 72%;
-  border: 1.7px solid rgba(227, 235, 255, 0.52);
-}
-
-.hero-mark::after {
-  width: 46%;
-  height: 46%;
-  border: 2.1px solid rgba(237, 242, 255, 0.8);
-}
-
 .eyebrow {
   margin: 0;
   color: var(--text-soft);

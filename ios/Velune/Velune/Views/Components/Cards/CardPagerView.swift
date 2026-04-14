@@ -1,10 +1,10 @@
 import SwiftUI
 
-struct CardPagerView<GlimmerCard: View>: View {
+struct CardPagerView<StirringCard: View>: View {
     let echoes: [Echo]
     @Binding var currentPage: CardID?
     let autoSwitchToFirstEcho: Bool
-    let glimmerCard: () -> GlimmerCard
+    let stirringCard: () -> StirringCard
 
     private var hasEchoes: Bool {
         !echoes.isEmpty
@@ -13,9 +13,9 @@ struct CardPagerView<GlimmerCard: View>: View {
     var body: some View {
         ScrollView(.horizontal) {
             LazyHStack(spacing: 0) {
-                glimmerCard()
+                stirringCard()
                     .containerRelativeFrame(.horizontal)
-                    .id(CardID.glimmer)
+                    .id(CardID.stirring)
 
                 ForEach(echoes) { echo in
                     EchoCardView(echo: echo)
@@ -30,7 +30,7 @@ struct CardPagerView<GlimmerCard: View>: View {
         .scrollIndicators(.hidden)
         .onChange(of: hasEchoes) { _, newValue in
             guard autoSwitchToFirstEcho, newValue else { return }
-            guard case .glimmer = currentPage else { return }
+            guard case .stirring = currentPage else { return }
             guard let firstEcho = echoes.first else { return }
 
             UIImpactFeedbackGenerator(style: .light).impactOccurred()

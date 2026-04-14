@@ -10,7 +10,7 @@ class Echo {
     var sessionId: UUID?
     var createdAt: Date
 
-    var glimmer: Glimmer?
+    var stirring: Stirring?
     var soulerId: UUID
     var soulerName: String
 
@@ -53,7 +53,7 @@ class Echo {
 }
 
 extension Echo {
-    static func getAll(_ glimmerId: UUID) async throws -> [Echo] {
+    static func getAll(_ stirringId: UUID) async throws -> [Echo] {
         struct Response: Codable, Identifiable {
             var id: UUID
             var content: String
@@ -77,7 +77,7 @@ extension Echo {
         let response: [Response] = try await supabase
             .from("echoes_with_souler")
             .select()
-            .eq("glimmer_id", value: glimmerId)
+            .eq("glimmer_id", value: stirringId)
             .execute()
             .value
 

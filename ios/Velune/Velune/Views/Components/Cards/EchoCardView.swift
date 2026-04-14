@@ -11,14 +11,14 @@ struct EchoChatRoute: Identifiable, Hashable {
         sessionId ?? echoId
     }
 
-    init(echo: Echo, glimmerContent: String? = nil) {
+    init(echo: Echo, stirringContent: String? = nil) {
         soulerId = echo.soulerId
         soulerName = echo.soulerName
         echoId = echo.id
         sessionId = echo.sessionId
         if sessionId == nil {
             draftPrelude = .init(
-                glimmerContent: glimmerContent ?? echo.glimmer?.content ?? "",
+                stirringContent: stirringContent ?? echo.stirring?.content ?? "",
                 echoContent: echo.content
             )
         } else {

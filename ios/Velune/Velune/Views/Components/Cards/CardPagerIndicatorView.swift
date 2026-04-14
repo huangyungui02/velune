@@ -11,7 +11,7 @@ struct CardPagerIndicatorView: View {
     private let dotSpacing: CGFloat = 8
 
     private var pages: [CardID] {
-        [.glimmer] + echoes.map { .echo($0.id) }
+        [.stirring] + echoes.map { .echo($0.id) }
     }
 
     var body: some View {

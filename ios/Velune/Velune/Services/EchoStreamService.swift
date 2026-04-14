@@ -7,7 +7,7 @@ enum EchoStreamService {
 
     struct EchoPayload {
         let id: UUID
-        let glimmerId: UUID
+        let stirringId: UUID
         let soulerId: UUID
         let soulerName: String?
         let content: String
@@ -20,17 +20,30 @@ enum EchoStreamService {
     }
 
     private struct RequestBody: Encodable {
-        let glimmerId: UUID
+        let stirringId: UUID
         let content: String?
+
+        enum CodingKeys: String, CodingKey {
+            case stirringId = "glimmerId"
+            case content
+        }
     }
 
     private struct StreamEvent: Decodable {
         struct EchoData: Decodable {
             let id: UUID
-            let glimmerId: UUID
+            let stirringId: UUID
             let soulerId: UUID
             let soulerName: String?
             let content: String
+
+            enum CodingKeys: String, CodingKey {
+                case id
+                case stirringId = "glimmerId"
+                case soulerId
+                case soulerName
+                case content
+            }
         }
 
         let type: String
@@ -40,13 +53,13 @@ enum EchoStreamService {
     }
 
     static func stream(
-        glimmerId: UUID,
+        stirringId: UUID,
         content: String? = nil,
         path: String
     ) -> AsyncThrowingStream<Event, Error> {
         let payloadDataStream = APISSEClient.stream(
             path: path,
-            body: RequestBody(glimmerId: glimmerId, content: content)
+            body: RequestBody(stirringId: stirringId, content: content)
         )
 
         return AsyncThrowingStream { continuation in
@@ -82,7 +95,7 @@ enum EchoStreamService {
             return .echo(
                 EchoPayload(
                     id: echoData.id,
-                    glimmerId: echoData.glimmerId,
+                    stirringId: echoData.stirringId,
                     soulerId: echoData.soulerId,
                     soulerName: echoData.soulerName,
                     content: echoData.content

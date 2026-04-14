@@ -9,7 +9,24 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 >
   <div class="page" id="top">
     <header class="hero">
-      <div class="hero-mark reveal" data-parallax="0.12" aria-hidden="true"></div>
+      <div class="hero-mark reveal" data-parallax="0.12" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none" style="width: 100%; height: 100%; border-radius: 50%;">
+          <defs>
+            <linearGradient id="outerEchoGrad" x1="152" y1="152" x2="872" y2="872" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.5"/>
+              <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.15"/>
+              <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.4"/>
+            </linearGradient>
+            <linearGradient id="innerCoreGrad" x1="752" y1="752" x2="272" y2="272" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+              <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.8"/>
+            </linearGradient>
+          </defs>
+          <circle cx="512" cy="512" r="360" stroke="url(#outerEchoGrad)" stroke-width="8" />
+          <circle cx="512" cy="512" r="240" stroke="url(#innerCoreGrad)" stroke-width="12" />
+        </svg>
+      </div>
       <h1 class="reveal hero-title">Velune</h1>
     </header>
 

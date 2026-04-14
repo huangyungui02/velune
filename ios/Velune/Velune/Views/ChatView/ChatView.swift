@@ -5,7 +5,7 @@ struct ChatView: View {
     let logger = AppLogger.chat
 
     struct DraftPrelude: Hashable {
-        let glimmerContent: String
+        let stirringContent: String
         let echoContent: String
     }
 
