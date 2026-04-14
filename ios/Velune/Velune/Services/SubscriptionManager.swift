@@ -109,16 +109,43 @@ final class SubscriptionManager {
 
     func restorePurchases() async throws {
         let currentUserId = try requireAuthenticatedRevenueCatUserId()
-        try await ensureRevenueCatIdentityMatches(userId: currentUserId)
-        let infoBeforeRestore = try await Purchases.shared.customerInfo()
-        try ensureRestoreAccountMatches(infoBeforeRestore, expectedUserId: currentUserId)
 
         isRestoring = true
         defer { isRestoring = false }
 
-        let customerInfo = try await Purchases.shared.restorePurchases()
-        try ensureRestoreAccountMatches(customerInfo, expectedUserId: currentUserId)
+        try await ensureRevenueCatIdentityMatches(userId: currentUserId)
+
+        var customerInfo = try await Purchases.shared.customerInfo()
+        var activeProductId = resolveRevenueCatActiveProductId(customerInfo)
+
+        if activeProductId == nil {
+            logger.notice("restore probing store receipt because current RevenueCat user has no active subscription")
+            customerInfo = try await Purchases.shared.restorePurchases()
+            activeProductId = resolveRevenueCatActiveProductId(customerInfo)
+        }
+
+        guard let activeProductId else {
+            logger.notice("restore skipped: no active RevenueCat subscription after receipt restore")
+            return
+        }
+
+        if isRestoreStateConsistent(revenueCatProductId: activeProductId) {
+            logger.notice("restore skipped: RevenueCat subscription already consistent with local state")
+            return
+        }
+
+        let boundUserId = resolveRevenueCatBoundUserId(customerInfo)
+        if boundUserId != currentUserId {
+            logger.notice(
+                "restore rebinding RevenueCat user from \(boundUserId ?? "unknown", privacy: .public) to \(currentUserId, privacy: .public)"
+            )
+            _ = try await Purchases.shared.logIn(currentUserId)
+            activeAppUserID = currentUserId
+            customerInfo = try await Purchases.shared.restorePurchases()
+        }
+
         applyCustomerInfo(customerInfo)
+        try await syncRestorePurchaseOnServer()
         await syncBillingStateQuietly()
     }
 
@@ -214,18 +241,17 @@ final class SubscriptionManager {
     }
 
     private func apply(_ payload: BillingSyncResponse) {
-        isPremium = payload.isEntitlementActive
-        currentPlan = BillingConfig.resolvePlan(
-            isEntitlementActive: payload.isEntitlementActive,
+        let expiration = parseISODate(payload.expirationAt)
+        let hasProduct = payload.productId != nil
+        let notExpired = expiration.map { $0 > Date() } ?? true
+        let resolvedPlan = BillingConfig.resolvePlan(
             productId: payload.productId,
             dailyCredits: payload.dailyCredits
         )
+        currentPlan = resolvedPlan
+        isPremium = (resolvedPlan != .free || hasProduct) && notExpired
         credits = payload.credits
-        entitlementExpiresAt = parseISODate(payload.entitlementExpiresAt)
-
-        if payload.isEntitlementActive, payload.productId == nil, payload.dailyCredits == nil {
-            Task { await refreshPlanFromRevenueCatIfNeeded() }
-        }
+        entitlementExpiresAt = expiration
     }
 
     private func applyCustomerInfo(_ info: CustomerInfo) {
@@ -243,22 +269,6 @@ final class SubscriptionManager {
         }
     }
 
-    private func refreshPlanFromRevenueCatIfNeeded() async {
-        guard isRevenueCatAvailable else { return }
-
-        do {
-            let customerInfo = try await Purchases.shared.customerInfo()
-            guard !customerInfo.entitlements.active.isEmpty else {
-                return
-            }
-            if let resolved = BillingConfig.resolvePlan(productIdentifiers: Array(customerInfo.activeSubscriptions)) {
-                currentPlan = resolved
-            }
-        } catch {
-            logger.notice("RevenueCat customer info fetch skipped while resolving plan: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
     private func syncBillingStateQuietly() async {
         let synced = await syncBillingState(maxAttempts: 5, expectPremium: isPremium)
         if !synced {
@@ -272,7 +282,7 @@ final class SubscriptionManager {
                 let response = try await callBillingSync()
                 apply(response)
                 lastErrorMessage = nil
-                if !expectPremium || response.isEntitlementActive {
+                if !expectPremium || isPremium {
                     return true
                 }
             } catch {
@@ -304,6 +314,19 @@ final class SubscriptionManager {
         }
 
         return state
+    }
+
+    private func syncRestorePurchaseOnServer() async throws {
+        let supabase = try Backend.requireSupabase()
+        let response: RestorePurchaseResponse = try await supabase.functions.invoke("restore-purchase")
+
+        guard response.ok else {
+            throw NSError(
+                domain: "RestorePurchase",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "restore-purchase returned invalid response"]
+            )
+        }
     }
 
     private func parseISODate(_ value: String?) -> Date? {
@@ -343,21 +366,34 @@ final class SubscriptionManager {
         return String(prefix) + shortenedFraction + suffix
     }
 
-    private func ensureRestoreAccountMatches(_ customerInfo: CustomerInfo, expectedUserId: String) throws {
-        guard let originalUserId = normalizeUUID(customerInfo.originalAppUserId) else {
-            return
-        }
+    private func resolveRevenueCatActiveProductId(_ customerInfo: CustomerInfo) -> String? {
+        let products = Array(customerInfo.activeSubscriptions)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
 
-        guard originalUserId == expectedUserId else {
-            logger.error("restore blocked: expectedAppUserID=\(expectedUserId, privacy: .public) originalAppUserID=\(originalUserId, privacy: .public)")
-            throw NSError(
-                domain: "Billing",
-                code: -5,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "billing.error.restoreAccountMismatch")
-                ]
-            )
+        guard !products.isEmpty else { return nil }
+        if let depth = products.first(where: { $0.localizedCaseInsensitiveContains("depth") }) {
+            return depth
         }
+        if let awaken = products.first(where: { $0.localizedCaseInsensitiveContains("awaken") }) {
+            return awaken
+        }
+        return products.sorted().first
+    }
+
+    private func isRestoreStateConsistent(revenueCatProductId: String) -> Bool {
+        guard isPremium else { return false }
+        guard let revenueCatPlan = BillingConfig.resolvePlan(productIdentifiers: [revenueCatProductId]) else {
+            return false
+        }
+        return currentPlan == revenueCatPlan
+    }
+
+    private func resolveRevenueCatBoundUserId(_ customerInfo: CustomerInfo) -> String? {
+        if let appUserId = normalizeUUID(Purchases.shared.appUserID) {
+            return appUserId
+        }
+        return normalizeUUID(customerInfo.originalAppUserId)
     }
 
     private func normalizeUUID(_ value: String) -> String? {
@@ -389,18 +425,18 @@ final class SubscriptionManager {
 
 private struct BillingSyncResponse: Decodable {
     var credits: Int
-    var isEntitlementActive: Bool
-    var entitlementExpiresAt: String?
-    var entitlementId: String?
     var productId: String?
     var dailyCredits: Int?
+    var expirationAt: String?
 
     enum CodingKeys: String, CodingKey {
         case credits
-        case isEntitlementActive = "is_entitlement_active"
-        case entitlementExpiresAt = "entitlement_expires_at"
-        case entitlementId = "entitlement_id"
         case productId = "product_id"
         case dailyCredits = "daily_credits"
+        case expirationAt = "expiration_at"
     }
+}
+
+private struct RestorePurchaseResponse: Decodable {
+    var ok: Bool
 }

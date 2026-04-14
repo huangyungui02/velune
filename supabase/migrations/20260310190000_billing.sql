@@ -1,13 +1,10 @@
 CREATE EXTENSION IF NOT EXISTS moddatetime SCHEMA extensions;
 
-CREATE TABLE billings (
+CREATE TABLE public.billings (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    is_entitlement_active BOOLEAN NOT NULL DEFAULT false,
-    entitlement_expires_at TIMESTAMPTZ,
-    entitlement_id TEXT,
     product_id TEXT,
-    rc_environment TEXT,
-    rc_last_synced_at TIMESTAMPTZ,
+    expiration_at TIMESTAMPTZ,
+    environment TEXT,
     credits INT NOT NULL DEFAULT 0,
     credits_refreshed_on DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -15,85 +12,73 @@ CREATE TABLE billings (
     CONSTRAINT billings_credits_check CHECK (credits >= 0)
 );
 
-ALTER TABLE billings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.billings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow users to view their own billing state"
-    ON billings FOR SELECT
+    ON public.billings FOR SELECT
     USING (user_id = (SELECT auth.uid()));
 
 CREATE TRIGGER handle_billing_updated_at
-    BEFORE UPDATE ON billings
+    BEFORE UPDATE ON public.billings
     FOR EACH ROW
     EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
-CREATE OR REPLACE FUNCTION public.ensure_billing(p_user_id UUID)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-    v_exists BOOLEAN;
-BEGIN
-    SELECT EXISTS (
-        SELECT 1
-        FROM auth.users
-        WHERE id = p_user_id
-    ) INTO v_exists;
-
-    IF NOT v_exists THEN
-        RETURN;
-    END IF;
-
-    INSERT INTO public.billings (user_id)
-    VALUES (p_user_id)
-    ON CONFLICT (user_id) DO NOTHING;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.billing_effective_is_active(
-    p_is_entitlement_active BOOLEAN,
-    p_entitlement_expires_at TIMESTAMPTZ,
-    p_reference TIMESTAMPTZ DEFAULT NOW()
-)
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SET search_path = public
-AS $$
-    SELECT COALESCE(p_is_entitlement_active, false)
-        AND (
-            p_entitlement_expires_at IS NULL
-            OR p_entitlement_expires_at > p_reference
-        );
-$$;
-
-CREATE OR REPLACE FUNCTION public.billing_daily_credits(
-    p_is_entitlement_active BOOLEAN,
-    p_entitlement_id TEXT,
-    p_product_id TEXT
-)
+CREATE OR REPLACE FUNCTION public.daily_credits(p_product_id TEXT)
 RETURNS INT
 LANGUAGE sql
 STABLE
 SET search_path = public
 AS $$
     SELECT CASE
-        WHEN NOT COALESCE(p_is_entitlement_active, false) THEN 10
-        WHEN lower(COALESCE(p_product_id, '')) LIKE '%awaken%' THEN 50
+        WHEN NULLIF(trim(COALESCE(p_product_id, '')), '') IS NULL THEN 10
         WHEN lower(COALESCE(p_product_id, '')) LIKE '%depth%' THEN 100
-        ELSE 100
+        WHEN lower(COALESCE(p_product_id, '')) LIKE '%awaken%' THEN 50
+        ELSE 10
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.handle_new_auth_billing()
+CREATE OR REPLACE FUNCTION public.billing_refresh_day(
+    p_user_id UUID,
+    p_reference TIMESTAMPTZ DEFAULT NOW()
+)
+RETURNS DATE
+LANGUAGE plpgsql
+STABLE
+SET search_path = public
+AS $$
+DECLARE
+    v_user_timezone TEXT := 'UTC';
+    v_refresh_day DATE;
+BEGIN
+    SELECT us.timezone
+    INTO v_user_timezone
+    FROM public.user_status AS us
+    WHERE us.user_id = p_user_id;
+
+    v_user_timezone := COALESCE(NULLIF(trim(COALESCE(v_user_timezone, '')), ''), 'UTC');
+
+    BEGIN
+        v_refresh_day := timezone(v_user_timezone, p_reference)::DATE;
+    EXCEPTION
+        WHEN invalid_parameter_value THEN
+            v_refresh_day := timezone('UTC', p_reference)::DATE;
+    END;
+
+    RETURN v_refresh_day;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.init_billing()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-    PERFORM public.ensure_billing(NEW.id);
+    INSERT INTO public.billings (user_id)
+    VALUES (NEW.id)
+    ON CONFLICT (user_id) DO NOTHING;
+
     RETURN NEW;
 END;
 $$;
@@ -101,32 +86,25 @@ $$;
 CREATE TRIGGER on_auth_user_created_billing
     AFTER INSERT ON auth.users
     FOR EACH ROW
-    EXECUTE FUNCTION public.handle_new_auth_billing();
+    EXECUTE FUNCTION public.init_billing();
 
 INSERT INTO public.billings (user_id)
-SELECT id FROM auth.users
+SELECT id
+FROM auth.users
 ON CONFLICT (user_id) DO NOTHING;
 
-CREATE OR REPLACE FUNCTION public.refresh_billing(p_user_id UUID)
-RETURNS billings
+CREATE OR REPLACE FUNCTION public.refresh_daily_credits(p_user_id UUID)
+RETURNS public.billings
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-    v_state billings;
-    v_reference TIMESTAMPTZ := NOW();
-    v_user_timezone TEXT := 'UTC';
-    v_refresh_cycle_day DATE;
-    v_is_active BOOLEAN;
+    v_state public.billings;
+    v_refresh_day DATE;
     v_daily_credits INT;
-    v_should_refresh BOOLEAN;
-    v_credits_before_refresh INT;
     v_credits INT;
-    v_refreshed_on DATE;
 BEGIN
-    PERFORM public.ensure_billing(p_user_id);
-
     SELECT *
     INTO v_state
     FROM public.billings
@@ -137,52 +115,82 @@ BEGIN
         RAISE EXCEPTION 'Billing state not found for user %', p_user_id;
     END IF;
 
-    SELECT us.timezone
-    INTO v_user_timezone
-    FROM public.user_status AS us
-    WHERE us.user_id = p_user_id;
+    v_refresh_day := public.billing_refresh_day(p_user_id, NOW());
 
-    v_user_timezone := COALESCE(NULLIF(trim(COALESCE(v_user_timezone, '')), ''), 'UTC');
-    BEGIN
-        v_refresh_cycle_day := timezone(v_user_timezone, v_reference - INTERVAL '4 hour')::DATE;
-    EXCEPTION
-        WHEN invalid_parameter_value THEN
-            v_refresh_cycle_day := timezone('UTC', v_reference - INTERVAL '4 hour')::DATE;
-    END;
-
-    v_is_active := public.billing_effective_is_active(
-        v_state.is_entitlement_active,
-        v_state.entitlement_expires_at,
-        v_reference
-    );
-
-    v_daily_credits := public.billing_daily_credits(
-        v_is_active,
-        v_state.entitlement_id,
-        v_state.product_id
-    );
-    v_should_refresh := v_state.credits_refreshed_on IS DISTINCT FROM v_refresh_cycle_day;
-    v_credits_before_refresh := GREATEST(COALESCE(v_state.credits, 0), 0);
-
-    IF v_should_refresh AND v_credits_before_refresh < v_daily_credits THEN
-        v_credits := v_daily_credits;
-        v_refreshed_on := v_refresh_cycle_day;
-    ELSE
-        v_credits := v_credits_before_refresh;
-        v_refreshed_on := v_state.credits_refreshed_on;
+    IF v_state.credits_refreshed_on IS NOT DISTINCT FROM v_refresh_day THEN
+        RETURN v_state;
     END IF;
 
-    IF v_state.is_entitlement_active IS DISTINCT FROM v_is_active
-        OR v_state.credits_refreshed_on IS DISTINCT FROM v_refreshed_on
-        OR v_state.credits IS DISTINCT FROM v_credits
-    THEN
-        UPDATE public.billings
-        SET
-            is_entitlement_active = v_is_active,
-            credits_refreshed_on = v_refreshed_on,
-            credits = v_credits
-        WHERE user_id = p_user_id
-        RETURNING * INTO v_state;
+    v_daily_credits := public.daily_credits(v_state.product_id);
+    v_credits := GREATEST(COALESCE(v_state.credits, 0), 0);
+
+    IF v_credits < v_daily_credits THEN
+        v_credits := v_daily_credits;
+    END IF;
+
+    UPDATE public.billings AS ubs
+    SET
+        credits = v_credits,
+        credits_refreshed_on = v_refresh_day
+    WHERE ubs.user_id = p_user_id
+    RETURNING * INTO v_state;
+
+    RETURN v_state;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.sync_subscription(
+    p_user_id UUID,
+    p_product_id TEXT,
+    p_expiration_at TIMESTAMPTZ,
+    p_environment TEXT
+)
+RETURNS public.billings
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_state public.billings;
+BEGIN
+    UPDATE public.billings AS ubs
+    SET
+        product_id = NULLIF(trim(COALESCE(p_product_id, '')), ''),
+        expiration_at = p_expiration_at,
+        environment = NULLIF(trim(COALESCE(p_environment, '')), ''),
+        credits_refreshed_on = NULL
+    WHERE ubs.user_id = p_user_id
+    RETURNING * INTO v_state;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Billing state not found for user %', p_user_id;
+    END IF;
+
+    RETURN public.refresh_daily_credits(p_user_id);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.sync_expiration(p_user_id UUID)
+RETURNS public.billings
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_state public.billings;
+BEGIN
+    UPDATE public.billings AS ubs
+    SET
+        product_id = NULL,
+        expiration_at = NULL,
+        environment = NULL,
+        credits = public.daily_credits(NULL),
+        credits_refreshed_on = NULL
+    WHERE ubs.user_id = p_user_id
+    RETURNING * INTO v_state;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Billing state not found for user %', p_user_id;
     END IF;
 
     RETURN v_state;
@@ -192,11 +200,9 @@ $$;
 CREATE OR REPLACE FUNCTION public.get_user_credit_state()
 RETURNS TABLE (
     credits INT,
-    is_entitlement_active BOOLEAN,
-    entitlement_expires_at TIMESTAMPTZ,
-    entitlement_id TEXT,
     product_id TEXT,
-    daily_credits INT
+    daily_credits INT,
+    expiration_at TIMESTAMPTZ
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -204,7 +210,7 @@ SET search_path = public
 AS $$
 DECLARE
     v_user_id UUID;
-    v_state billings;
+    v_state public.billings;
 BEGIN
     v_user_id := (SELECT auth.uid());
 
@@ -222,74 +228,14 @@ BEGIN
             USING ERRCODE = '28000';
     END IF;
 
-    v_state := public.refresh_billing(v_user_id);
+    v_state := public.refresh_daily_credits(v_user_id);
 
     RETURN QUERY
     SELECT
         v_state.credits,
-        v_state.is_entitlement_active,
-        v_state.entitlement_expires_at,
-        v_state.entitlement_id,
         v_state.product_id,
-        public.billing_daily_credits(
-            v_state.is_entitlement_active,
-            v_state.entitlement_id,
-            v_state.product_id
-        );
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.sync_billing_subscription(
-    p_user_id UUID,
-    p_entitlement_id TEXT,
-    p_product_id TEXT,
-    p_is_entitlement_active BOOLEAN,
-    p_entitlement_expires_at TIMESTAMPTZ,
-    p_rc_environment TEXT
-)
-RETURNS TABLE (
-    credits INT,
-    is_entitlement_active BOOLEAN,
-    entitlement_expires_at TIMESTAMPTZ
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-    v_reference TIMESTAMPTZ := NOW();
-    v_incoming_active BOOLEAN;
-    v_state billings;
-BEGIN
-    PERFORM public.ensure_billing(p_user_id);
-
-    v_incoming_active := public.billing_effective_is_active(
-        COALESCE(p_is_entitlement_active, false),
-        p_entitlement_expires_at,
-        v_reference
-    );
-
-    UPDATE public.billings AS ubs
-    SET
-        entitlement_id = NULLIF(trim(COALESCE(p_entitlement_id, '')), ''),
-        product_id = NULLIF(trim(COALESCE(p_product_id, '')), ''),
-        is_entitlement_active = v_incoming_active,
-        entitlement_expires_at = p_entitlement_expires_at,
-        credits_refreshed_on = CASE
-            WHEN ubs.is_entitlement_active IS DISTINCT FROM v_incoming_active THEN NULL
-            ELSE ubs.credits_refreshed_on
-        END,
-        rc_environment = NULLIF(trim(COALESCE(p_rc_environment, '')), ''),
-        rc_last_synced_at = NOW()
-    WHERE ubs.user_id = p_user_id;
-
-    v_state := public.refresh_billing(p_user_id);
-
-    RETURN QUERY
-    SELECT
-        v_state.credits,
-        v_state.is_entitlement_active,
-        v_state.entitlement_expires_at;
+        public.daily_credits(v_state.product_id),
+        v_state.expiration_at;
 END;
 $$;
 
@@ -302,18 +248,19 @@ RETURNS TABLE (
     code TEXT,
     message TEXT,
     credits INT,
-    is_entitlement_active BOOLEAN
+    product_id TEXT,
+    daily_credits INT
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-    v_state billings;
+    v_state public.billings;
     v_cost INT;
 BEGIN
     v_cost := GREATEST(COALESCE(p_cost, 0), 0);
-    v_state := public.refresh_billing(p_user_id);
+    v_state := public.refresh_daily_credits(p_user_id);
 
     IF v_cost = 0 THEN
         RETURN QUERY
@@ -322,33 +269,46 @@ BEGIN
             NULL::TEXT,
             NULL::TEXT,
             v_state.credits,
-            v_state.is_entitlement_active;
-        RETURN;
-    END IF;
-
-    IF v_state.credits < v_cost THEN
-        RETURN QUERY
-        SELECT
-            false,
-            'INSUFFICIENT_CREDITS',
-            'Not enough credits for this request',
-            v_state.credits,
-            v_state.is_entitlement_active;
+            v_state.product_id,
+            public.daily_credits(v_state.product_id);
         RETURN;
     END IF;
 
     UPDATE public.billings AS ubs
     SET credits = ubs.credits - v_cost
     WHERE ubs.user_id = p_user_id
+      AND ubs.credits >= v_cost
     RETURNING ubs.* INTO v_state;
+
+    IF FOUND THEN
+        RETURN QUERY
+        SELECT
+            true,
+            NULL::TEXT,
+            NULL::TEXT,
+            v_state.credits,
+            v_state.product_id,
+            public.daily_credits(v_state.product_id);
+        RETURN;
+    END IF;
+
+    SELECT *
+    INTO v_state
+    FROM public.billings
+    WHERE user_id = p_user_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Billing state not found for user %', p_user_id;
+    END IF;
 
     RETURN QUERY
     SELECT
-        true,
-        NULL::TEXT,
-        NULL::TEXT,
+        false,
+        'INSUFFICIENT_CREDITS',
+        'Not enough credits for this request',
         v_state.credits,
-        v_state.is_entitlement_active;
+        v_state.product_id,
+        public.daily_credits(v_state.product_id);
 END;
 $$;
 
@@ -361,18 +321,19 @@ RETURNS TABLE (
     code TEXT,
     message TEXT,
     credits INT,
-    is_entitlement_active BOOLEAN
+    product_id TEXT,
+    daily_credits INT
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-    v_state billings;
+    v_state public.billings;
     v_amount INT;
 BEGIN
     v_amount := GREATEST(COALESCE(p_amount, 0), 0);
-    v_state := public.refresh_billing(p_user_id);
+    v_state := public.refresh_daily_credits(p_user_id);
 
     IF v_amount = 0 THEN
         RETURN QUERY
@@ -381,7 +342,8 @@ BEGIN
             NULL::TEXT,
             NULL::TEXT,
             v_state.credits,
-            v_state.is_entitlement_active;
+            v_state.product_id,
+            public.daily_credits(v_state.product_id);
         RETURN;
     END IF;
 
@@ -390,28 +352,35 @@ BEGIN
     WHERE ubs.user_id = p_user_id
     RETURNING ubs.* INTO v_state;
 
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Billing state not found for user %', p_user_id;
+    END IF;
+
     RETURN QUERY
     SELECT
         true,
         NULL::TEXT,
         NULL::TEXT,
         v_state.credits,
-        v_state.is_entitlement_active;
+        v_state.product_id,
+        public.daily_credits(v_state.product_id);
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.ensure_billing(UUID) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.billing_effective_is_active(BOOLEAN, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.billing_daily_credits(BOOLEAN, TEXT, TEXT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.handle_new_auth_billing() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.refresh_billing(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.daily_credits(TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.billing_refresh_day(UUID, TIMESTAMPTZ) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.init_billing() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.refresh_daily_credits(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.sync_subscription(UUID, TEXT, TIMESTAMPTZ, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.sync_expiration(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.get_user_credit_state() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.consume_stardust(UUID, INT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.refund_stardust(UUID, INT) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.get_user_credit_state() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_user_credit_state() TO service_role;
-GRANT EXECUTE ON FUNCTION public.sync_billing_subscription(UUID, TEXT, TEXT, BOOLEAN, TIMESTAMPTZ, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION public.refresh_daily_credits(UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.sync_subscription(UUID, TEXT, TIMESTAMPTZ, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION public.sync_expiration(UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION public.consume_stardust(UUID, INT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.refund_stardust(UUID, INT) TO service_role;

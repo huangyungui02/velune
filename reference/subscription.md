@@ -17,7 +17,7 @@ price：$9.99/month
 每个echo生成消耗5个stardust，每次chat消耗1个stardust
 
 ### revenuecat
-entitlement_id: premium
-products:
-- awaken
-- depth
+app_user_id: 后端 user_id
+product_id:
+- com.echoversa.velune.awaken.monthly
+- com.echoversa.velune.depth.monthly

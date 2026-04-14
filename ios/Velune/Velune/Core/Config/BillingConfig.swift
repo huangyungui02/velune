@@ -39,12 +39,9 @@ enum BillingConfig {
     }
 
     static func resolvePlan(
-        isEntitlementActive: Bool,
         productId: String?,
         dailyCredits: Int?
     ) -> BillingPlan {
-        guard isEntitlementActive else { return .free }
-
         if let productId, let matched = resolvePlan(productIdentifiers: [productId]) {
             return matched
         }
@@ -62,7 +59,7 @@ enum BillingConfig {
             }
         }
 
-        return .depth
+        return .free
     }
 
     static func resolvePlan(productIdentifiers: [String]) -> BillingPlan? {
