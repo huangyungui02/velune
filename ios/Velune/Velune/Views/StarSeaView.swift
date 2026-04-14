@@ -228,7 +228,7 @@ struct StarSeaView: View {
                 draftPreviewField
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
-                    .glassEffect(in: .rect(cornerRadius: 20))
+                    .glassEffect(in: .rect(cornerRadius: 24))
                     .contentShape(.rect)
                     .highPriorityGesture(
                         TapGesture().onEnded {
@@ -404,20 +404,26 @@ private struct ComposeView: View {
             .background(.clear)
             .navigationTitle("glimmer.title")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(Color.black.opacity(0.92), for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(role: .close) {
+                    Button {
                         dismissKeyboard()
                         dismiss()
+                    } label: {
+                        Image(systemName: "chevron.down")
                     }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(role: .confirm) {
+                    Button {
                         dismissKeyboard()
                         onSend()
                         dismiss()
+                    } label: {
+                        Image(systemName: "arrow.up")
                     }
                     .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
