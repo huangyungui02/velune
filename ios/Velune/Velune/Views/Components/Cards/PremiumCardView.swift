@@ -24,8 +24,11 @@ struct PremiumCardView<Content: View>: View {
                     .frame(height: cardHeight, alignment: .top)
                     .padding(.vertical)
                     .frame(maxWidth: .infinity)
-                    .background(Color.clear, in: .rect(cornerRadius: 28))
-                    .glassEffect(in: .rect(cornerRadius: 28))
+                    .background(
+                        RoundedRectangle(cornerRadius: 32, style: .continuous)
+                            .fill(Color.white.opacity(0.02))
+                            .shadow(color: .white.opacity(0.02), radius: 30, x: 0, y: 0)
+                    )
                     .padding(.horizontal)
 
                 if !isScrollable {

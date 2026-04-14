@@ -41,8 +41,15 @@ struct EchoCardView: View {
                     .veluneMarkdownBodyStyle()
                     .tracking(0.5)
 
-                Divider()
-                    .background(.white.opacity(0.01))
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.clear, .white.opacity(0.08), .clear],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 1)
 
                 soulerSignature
             }
