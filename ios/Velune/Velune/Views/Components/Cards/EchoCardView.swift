@@ -66,11 +66,6 @@ struct EchoCardView: View {
                     .font(.body.weight(.medium))
                     .fontDesign(.serif)
                     .foregroundStyle(UITheme.primaryText.opacity(0.85))
-
-                Image(systemName: "arrow.up.right")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(UITheme.tertiaryText)
-                    .offset(y: -2)
             }
             .contentShape(.rect)
         }
