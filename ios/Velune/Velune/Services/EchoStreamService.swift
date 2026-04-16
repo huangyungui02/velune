@@ -7,7 +7,7 @@ enum EchoStreamService {
 
     struct EchoPayload {
         let id: UUID
-        let stirringId: UUID
+        let glimmerId: UUID
         let soulerId: UUID
         let soulerName: String?
         let content: String
@@ -20,11 +20,11 @@ enum EchoStreamService {
     }
 
     private struct RequestBody: Encodable {
-        let stirringId: UUID
+        let glimmerId: UUID
         let content: String?
 
         enum CodingKeys: String, CodingKey {
-            case stirringId = "glimmerId"
+            case glimmerId = "glimmerId"
             case content
         }
     }
@@ -32,14 +32,14 @@ enum EchoStreamService {
     private struct StreamEvent: Decodable {
         struct EchoData: Decodable {
             let id: UUID
-            let stirringId: UUID
+            let glimmerId: UUID
             let soulerId: UUID
             let soulerName: String?
             let content: String
 
             enum CodingKeys: String, CodingKey {
                 case id
-                case stirringId = "glimmerId"
+                case glimmerId = "glimmerId"
                 case soulerId
                 case soulerName
                 case content
@@ -53,13 +53,13 @@ enum EchoStreamService {
     }
 
     static func stream(
-        stirringId: UUID,
+        glimmerId: UUID,
         content: String? = nil,
         path: String
     ) -> AsyncThrowingStream<Event, Error> {
         let payloadDataStream = APISSEClient.stream(
             path: path,
-            body: RequestBody(stirringId: stirringId, content: content)
+            body: RequestBody(glimmerId: glimmerId, content: content)
         )
 
         return AsyncThrowingStream { continuation in
@@ -95,7 +95,7 @@ enum EchoStreamService {
             return .echo(
                 EchoPayload(
                     id: echoData.id,
-                    stirringId: echoData.stirringId,
+                    glimmerId: echoData.glimmerId,
                     soulerId: echoData.soulerId,
                     soulerName: echoData.soulerName,
                     content: echoData.content

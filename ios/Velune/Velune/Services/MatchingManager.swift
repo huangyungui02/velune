@@ -10,7 +10,7 @@ class MatchingManager {
     
     var text = ""
     var isMatching = false
-    var currentStirring: Stirring?
+    var currentGlimmer: Glimmer?
     var errorMessage: String?
     var billingErrorContext: BillingErrorContext?
     private var matchingTask: Task<Void, Never>?
@@ -20,7 +20,7 @@ class MatchingManager {
     func startMatching(text: String, context: ModelContext) {
         matchingTask?.cancel()
         self.text = text
-        currentStirring = nil
+        currentGlimmer = nil
         isMatching = true
         errorMessage = nil
         billingErrorContext = nil
@@ -37,7 +37,7 @@ class MatchingManager {
             await MainActor.run {
                 isMatching = false
                 text = ""
-                currentStirring = nil
+                currentGlimmer = nil
                 errorMessage = nil
                 billingErrorContext = nil
             }
@@ -53,7 +53,7 @@ class MatchingManager {
             await MainActor.run {
                 errorMessage = error.localizedDescription
                 billingErrorContext = error.billingErrorContext
-                currentStirring?.status = "failed"
+                currentGlimmer?.status = "failed"
                 persistChangesIfNeeded(context: context)
             }
             logger.error("matching failed: \(error.localizedDescription, privacy: .public)")
@@ -66,18 +66,18 @@ class MatchingManager {
     
     private func composeAndStreamEchoes(context: ModelContext) async throws {
         let userId = try AuthManager.shared.getUserId()
-        let newStirring = Stirring(userId: userId.uuidString, content: text)
+        let newGlimmer = Glimmer(userId: userId.uuidString, content: text)
         await MainActor.run {
-            context.insert(newStirring)
-            currentStirring = newStirring
+            context.insert(newGlimmer)
+            currentGlimmer = newGlimmer
         }
 
-        let stirring = newStirring
+        let glimmer = newGlimmer
         var receivedDone = false
 
         for try await event in EchoStreamService.stream(
-            stirringId: stirring.id,
-            content: stirring.content,
+            glimmerId: glimmer.id,
+            content: glimmer.content,
             path: "\(AppLanguage.current.apiLanguageCode)/glimmers/compose"
         ) {
             if Task.isCancelled { break }
@@ -99,14 +99,14 @@ class MatchingManager {
 
                 let echo = Echo(
                     id: payload.id,
-                    userId: stirring.userId,
+                    userId: glimmer.userId,
                     content: payload.content,
                     soulerId: payload.soulerId,
                     soulerName: displayName
                 )
                 await MainActor.run {
-                    if currentStirring?.echoes.contains(where: { $0.id == echo.id }) == false {
-                        currentStirring?.echoes.append(echo)
+                    if currentGlimmer?.echoes.contains(where: { $0.id == echo.id }) == false {
+                        currentGlimmer?.echoes.append(echo)
                     }
                 }
             case .done:
@@ -116,7 +116,7 @@ class MatchingManager {
 
         if !Task.isCancelled && receivedDone {
             await MainActor.run {
-                currentStirring?.status = "complete"
+                currentGlimmer?.status = "complete"
                 persistChangesIfNeeded(context: context)
             }
         }

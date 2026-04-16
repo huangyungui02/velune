@@ -260,17 +260,17 @@ extension ChatView {
     func applyDraftPreludeIfNeeded() {
         guard let activeDraftPrelude else { return }
 
-        let trimmedStirring = activeDraftPrelude.stirringContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedGlimmer = activeDraftPrelude.glimmerContent.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedEcho = activeDraftPrelude.echoContent.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if !trimmedStirring.isEmpty {
+        if !trimmedGlimmer.isEmpty {
             messages.append(
                 Message(
                     id: UUID(),
                     soulerId: soulerId,
                     sessionId: nil,
                     role: .user,
-                    content: trimmedStirring,
+                    content: trimmedGlimmer,
                     createdAt: .now
                 )
             )

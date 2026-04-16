@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct StirringCardView: View {
+struct GlimmerCardView: View {
     @Environment(\.locale) private var locale
     let content: String
     let createdAt: Date?

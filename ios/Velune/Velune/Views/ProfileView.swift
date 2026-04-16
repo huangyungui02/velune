@@ -7,19 +7,19 @@ struct ProfileView: View {
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var context
     @State private var authManager = AuthManager.shared
-    @State private var stirrings: [Stirring] = []
+    @State private var glimmers: [Glimmer] = []
     @State private var isRefreshing: Bool = false
     @State private var isLoadingMore: Bool = false
-    @State private var hasMoreStirrings: Bool = false
-    @State private var stirringOffset: Int = 0
+    @State private var hasMoreGlimmers: Bool = false
+    @State private var glimmerOffset: Int = 0
     @State private var feedbackMessage: String?
-    let onOpenStirringComposer: () -> Void
+    let onOpenGlimmerComposer: () -> Void
 
-    private let stirringPageSize = 10
+    private let glimmerPageSize = 10
     private let logger = AppLogger.profile
 
-    init(onOpenStirringComposer: @escaping () -> Void = {}) {
-        self.onOpenStirringComposer = onOpenStirringComposer
+    init(onOpenGlimmerComposer: @escaping () -> Void = {}) {
+        self.onOpenGlimmerComposer = onOpenGlimmerComposer
     }
 
     private var currentUserId: String {
@@ -36,13 +36,13 @@ struct ProfileView: View {
                     title: "anonymous.restricted.profile.title",
                     description: "anonymous.restricted.profile.description"
                 )
-            } else if !stirrings.isEmpty {
-                stirringListView
+            } else if !glimmers.isEmpty {
+                glimmerListView
             } else {
                 profileEmptyStateView
             }
         }
-        .navigationTitle("profile.title.stirrings")
+        .navigationTitle("profile.title.glimmers")
         .navigationBarTitleDisplayMode(.inline)
         .id(locale.identifier)
         .toolbar {
@@ -56,19 +56,19 @@ struct ProfileView: View {
         }
         .task(id: authManager.currentUserId) {
             guard !authManager.isAnonymous else {
-                stirrings = []
+                glimmers = []
                 isRefreshing = false
                 isLoadingMore = false
-                hasMoreStirrings = false
-                stirringOffset = 0
+                hasMoreGlimmers = false
+                glimmerOffset = 0
                 return
             }
-            loadLocalStirrings()
-            stirringOffset = stirrings.count
-            hasMoreStirrings = SyncStateStore.state(userId: currentUserId).stirrings.hasMore
+            loadLocalGlimmers()
+            glimmerOffset = glimmers.count
+            hasMoreGlimmers = SyncStateStore.state(userId: currentUserId).glimmers.hasMore
 
-            if hasMoreStirrings && stirrings.isEmpty {
-                await loadMoreStirrings()
+            if hasMoreGlimmers && glimmers.isEmpty {
+                await loadMoreGlimmers()
             }
         }
         .alert("settings.error.title", isPresented: feedbackAlertBinding) {
@@ -80,17 +80,17 @@ struct ProfileView: View {
 
     private var profileEmptyStateView: some View {
         SereneContentUnavailableView(
-            title: "profile.empty.noStirrings",
+            title: "profile.empty.noGlimmers",
             symbol: "sparkles",
-            subtitle: "profile.empty.noStirrings.subtitle",
-            actionTitle: "starsea.action.writeStirring",
-            action: onOpenStirringComposer
+            subtitle: "profile.empty.noGlimmers.subtitle",
+            actionTitle: "starsea.action.writeGlimmer",
+            action: onOpenGlimmerComposer
         )
     }
 
-    private var stirringListView: some View {
+    private var glimmerListView: some View {
         ScrollView {
-            if isRefreshing && stirrings.isEmpty {
+            if isRefreshing && glimmers.isEmpty {
                 ProgressView()
                     .frame(maxWidth: .infinity, minHeight: 320)
                     .padding(.horizontal, 16)
@@ -107,11 +107,11 @@ struct ProfileView: View {
                                 .padding(.bottom, 2)
 
                             VStack(spacing: 0) {
-                                ForEach(Array(section.items.enumerated()), id: \.element.id) { index, stirring in
+                                ForEach(Array(section.items.enumerated()), id: \.element.id) { index, glimmer in
                                     NavigationLink {
-                                        StirringView(stirring: stirring)
+                                        GlimmerView(glimmer: glimmer)
                                     } label: {
-                                        StirringListRow(stirring: stirring)
+                                        GlimmerListRow(glimmer: glimmer)
                                     }
                                     .buttonStyle(.plain)
 
@@ -150,12 +150,12 @@ struct ProfileView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 4)
-                    } else if hasMoreStirrings {
+                    } else if hasMoreGlimmers {
                         Color.clear
                             .frame(height: 1)
                             .onAppear {
                                 Task {
-                                    await loadMoreStirrings()
+                                    await loadMoreGlimmers()
                                 }
                             }
                     }
@@ -166,7 +166,7 @@ struct ProfileView: View {
             }
         }
         .refreshable {
-            await refreshLatestStirrings(showLoadingIndicator: stirrings.isEmpty)
+            await refreshLatestGlimmers(showLoadingIndicator: glimmers.isEmpty)
         }
     }
 
@@ -182,13 +182,13 @@ struct ProfileView: View {
         var sectionIndices: [TimelineBucket: Int] = [:]
         let now = Date()
 
-        for stirring in stirrings {
-            let bucket = bucket(for: stirring.createdAt, now: now)
+        for glimmer in glimmers {
+            let bucket = bucket(for: glimmer.createdAt, now: now)
             if let sectionIndex = sectionIndices[bucket] {
-                sections[sectionIndex].items.append(stirring)
+                sections[sectionIndex].items.append(glimmer)
             } else {
                 sectionIndices[bucket] = sections.count
-                sections.append(TimelineSection(bucket: bucket, items: [stirring]))
+                sections.append(TimelineSection(bucket: bucket, items: [glimmer]))
             }
         }
 
@@ -250,32 +250,32 @@ struct ProfileView: View {
     }
 
     @MainActor
-    private func loadLocalStirrings() {
+    private func loadLocalGlimmers() {
         do {
-            stirrings = try fetchLocalStirrings()
+            glimmers = try fetchLocalGlimmers()
         } catch {
             let message = error.localizedDescription
-            logger.error("local stirring load failed: \(message, privacy: .public)")
+            logger.error("local glimmer load failed: \(message, privacy: .public)")
             feedbackMessage = message
         }
     }
 
     @MainActor
-    private func refreshLatestStirrings(showLoadingIndicator: Bool) async {
+    private func refreshLatestGlimmers(showLoadingIndicator: Bool) async {
         guard !isRefreshing else { return }
 
         isRefreshing = showLoadingIndicator
 
         do {
-            let page = try await Stirring.getPage(limit: stirringPageSize, offset: 0)
-            try upsertLocalStirrings(page.items)
-            stirrings = try fetchLocalStirrings()
-            stirringOffset = stirrings.count
-            hasMoreStirrings = page.hasMore
-            updateHasMoreStirringsState(page.hasMore)
+            let page = try await Glimmer.getPage(limit: glimmerPageSize, offset: 0)
+            try upsertLocalGlimmers(page.items)
+            glimmers = try fetchLocalGlimmers()
+            glimmerOffset = glimmers.count
+            hasMoreGlimmers = page.hasMore
+            updateHasMoreGlimmersState(page.hasMore)
         } catch {
             let errorMessage = error.localizedDescription
-            logger.error("stirring refresh failed: \(errorMessage, privacy: .public)")
+            logger.error("glimmer refresh failed: \(errorMessage, privacy: .public)")
             feedbackMessage = errorMessage
         }
 
@@ -283,48 +283,48 @@ struct ProfileView: View {
     }
 
     @MainActor
-    private func loadMoreStirrings() async {
+    private func loadMoreGlimmers() async {
         guard !isLoadingMore, !isRefreshing else { return }
 
         isLoadingMore = true
         defer { isLoadingMore = false }
 
         do {
-            let page = try await Stirring.getPage(limit: stirringPageSize, offset: stirringOffset)
-            try upsertLocalStirrings(page.items)
-            stirrings = try fetchLocalStirrings()
-            stirringOffset += page.items.count
-            hasMoreStirrings = page.hasMore
-            updateHasMoreStirringsState(page.hasMore)
+            let page = try await Glimmer.getPage(limit: glimmerPageSize, offset: glimmerOffset)
+            try upsertLocalGlimmers(page.items)
+            glimmers = try fetchLocalGlimmers()
+            glimmerOffset += page.items.count
+            hasMoreGlimmers = page.hasMore
+            updateHasMoreGlimmersState(page.hasMore)
         } catch {
             let message = error.localizedDescription
-            logger.error("loading more stirrings failed: \(message, privacy: .public)")
+            logger.error("loading more glimmers failed: \(message, privacy: .public)")
             feedbackMessage = message
         }
     }
 
-    private func updateHasMoreStirringsState(_ hasMore: Bool) {
+    private func updateHasMoreGlimmersState(_ hasMore: Bool) {
         var syncState = SyncStateStore.state(userId: currentUserId)
-        syncState.stirrings.hasMore = hasMore
+        syncState.glimmers.hasMore = hasMore
         SyncStateStore.set(syncState, userId: currentUserId)
     }
 
     @MainActor
-    private func fetchLocalStirrings() throws -> [Stirring] {
+    private func fetchLocalGlimmers() throws -> [Glimmer] {
         try context.fetch(
-            FetchDescriptor<Stirring>(
-                predicate: #Predicate<Stirring> { $0.userId == currentUserId },
+            FetchDescriptor<Glimmer>(
+                predicate: #Predicate<Glimmer> { $0.userId == currentUserId },
                 sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
             )
         )
     }
 
     @MainActor
-    private func upsertLocalStirrings(_ remoteStirrings: [Stirring]) throws {
-        let localStirrings = try fetchLocalStirrings()
-        let localById = Dictionary(uniqueKeysWithValues: localStirrings.map { ($0.id, $0) })
+    private func upsertLocalGlimmers(_ remoteGlimmers: [Glimmer]) throws {
+        let localGlimmers = try fetchLocalGlimmers()
+        let localById = Dictionary(uniqueKeysWithValues: localGlimmers.map { ($0.id, $0) })
 
-        for remote in remoteStirrings {
+        for remote in remoteGlimmers {
             if let local = localById[remote.id] {
                 local.status = remote.status
             } else {
@@ -348,7 +348,7 @@ private enum TimelineBucket: Hashable {
 
 private struct TimelineSection: Identifiable {
     let bucket: TimelineBucket
-    var items: [Stirring]
+    var items: [Glimmer]
 
     var id: String {
         switch bucket {
@@ -368,8 +368,8 @@ private struct TimelineSection: Identifiable {
 
 // MARK: - Row
 
-private struct StirringListRow: View {
-    let stirring: Stirring
+private struct GlimmerListRow: View {
+    let glimmer: Glimmer
     @Environment(\.locale) private var locale
 
     var body: some View {
@@ -383,13 +383,13 @@ private struct StirringListRow: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                Text(stirring.createdAt, format: .relative(presentation: .named).locale(locale))
+                Text(glimmer.createdAt, format: .relative(presentation: .named).locale(locale))
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(UITheme.tertiaryText)
                 Spacer()
             }
 
-            Text(stirring.content)
+            Text(glimmer.content)
                 .font(.body)
                 .fontDesign(.serif)
                 .lineLimit(3)

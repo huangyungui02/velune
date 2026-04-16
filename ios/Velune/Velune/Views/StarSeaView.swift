@@ -17,7 +17,7 @@ struct StarSeaView: View {
     @State private var showError = false
     @State private var showPaywall = false
     @State private var shouldRecoverToVerseAfterError = false
-    @State private var currentPage: CardID? = .stirring
+    @State private var currentPage: CardID? = .glimmer
     @State private var isShowingProfile = false
     @State private var chatRoute: EchoChatRoute?
 
@@ -25,7 +25,7 @@ struct StarSeaView: View {
         SidebarContainer(
             sidebarNavigation: $sidebarNavigation,
             isSidebarEnabled: isSidebarEnabled,
-            onOpenStirringComposer: openStirringComposerFromSidebar
+            onOpenGlimmerComposer: openGlimmerComposerFromSidebar
         ) {
             NavigationStack {
                 mainContent
@@ -44,7 +44,7 @@ struct StarSeaView: View {
                     }
                     .navigationBarTitleDisplayMode(.inline)
                     .navigationDestination(isPresented: $isShowingProfile) {
-                        ProfileView(onOpenStirringComposer: openStirringComposerFromProfile)
+                        ProfileView(onOpenGlimmerComposer: openGlimmerComposerFromProfile)
                     }
                     .navigationDestination(item: $sidebarNavigation.activeSession) { session in
                         ChatView(
@@ -140,7 +140,7 @@ struct StarSeaView: View {
     }
 
     private var echoes: [Echo] {
-        (manager.currentStirring?.echoes ?? [])
+        (manager.currentGlimmer?.echoes ?? [])
             .sorted { $0.createdAt < $1.createdAt }
     }
 
@@ -157,7 +157,7 @@ struct StarSeaView: View {
         guard let selectedEcho else { return nil }
         return EchoChatRoute(
             echo: selectedEcho,
-            stirringContent: manager.currentStirring?.content ?? manager.text
+            glimmerContent: manager.currentGlimmer?.content ?? manager.text
         )
     }
 
@@ -217,7 +217,7 @@ struct StarSeaView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "sparkles")
 
-                    Text("starsea.prompt.stirringWithin")
+                    Text("starsea.prompt.glimmerWithin")
                         .foregroundStyle(UITheme.primaryText)
                         .font(.body)
                         .fontDesign(.serif)
@@ -267,14 +267,14 @@ struct StarSeaView: View {
 
         manager.startMatching(text: input, context: context)
         text = ""
-        currentPage = .stirring
+        currentPage = .glimmer
 
         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
             stage = .matching
         }
     }
 
-    private func closeCurrentStirring() {
+    private func closeCurrentGlimmer() {
         resetToVerse()
     }
 
@@ -283,11 +283,11 @@ struct StarSeaView: View {
         shouldRecoverToVerseAfterError = false
     }
 
-    private func openStirringComposerFromSidebar() {
+    private func openGlimmerComposerFromSidebar() {
         isPresented = true
     }
 
-    private func openStirringComposerFromProfile() {
+    private func openGlimmerComposerFromProfile() {
         isShowingProfile = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
             isPresented = true
@@ -297,7 +297,7 @@ struct StarSeaView: View {
     private func resetToVerse() {
         manager.reset()
         stage = .verse
-        currentPage = .stirring
+        currentPage = .glimmer
     }
 }
 
@@ -309,7 +309,7 @@ extension StarSeaView {
                 currentPage: $currentPage,
                 autoSwitchToFirstEcho: true
             ) {
-                StirringCardView(content: manager.text)
+                GlimmerCardView(content: manager.text)
             }
             .frame(maxHeight: .infinity, alignment: .top)
             .padding(.vertical)
@@ -331,7 +331,7 @@ extension StarSeaView {
     }
 
     private var closeButton: some View {
-        Button(role: .cancel, action: closeCurrentStirring) {
+        Button(role: .cancel, action: closeCurrentGlimmer) {
             Image(systemName: "chevron.down")
                 .font(.body.weight(.medium))
                 .foregroundStyle(UITheme.secondaryText)
@@ -389,7 +389,7 @@ private struct ComposeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                TextField("starsea.prompt.stirringWithin", text: $text, axis: .vertical)
+                TextField("starsea.prompt.glimmerWithin", text: $text, axis: .vertical)
                     .focused($isFocused)
                     .font(.body)
                     .fontDesign(.serif)
@@ -402,7 +402,7 @@ private struct ComposeView: View {
                     .onTapGesture(perform: dismissKeyboard)
             }
             .background(.clear)
-            .navigationTitle("stirring.title")
+            .navigationTitle("glimmer.title")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(Color.black.opacity(0.92), for: .navigationBar)

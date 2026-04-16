@@ -494,7 +494,7 @@ struct AccountSettingsView: View {
             if let userId {
                 try Resonance.clearCached(userId: userId, context: modelContext)
             }
-            try modelContext.delete(model: Stirring.self)
+            try modelContext.delete(model: Glimmer.self)
             try modelContext.delete(model: Echo.self)
             dismiss()
         } catch {

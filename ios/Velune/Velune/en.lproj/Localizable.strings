@@ -52,33 +52,33 @@
 "sign.privacy.label" = "Privacy Policy";
 
 "anonymous.restricted.profile.title" = "Unlock Hearthaven";
-"anonymous.restricted.profile.description" = "Sign in to view, keep, and revisit your stirrings.";
+"anonymous.restricted.profile.description" = "Sign in to view, keep, and revisit your glimmers.";
 "anonymous.restricted.sidebar.title" = "Open Resonance Threads";
 "anonymous.restricted.sidebar.description" = "Sign in to browse resonances and return to each conversation.";
 
-"profile.empty.noStirrings" = "No stirrings yet";
-"profile.empty.noStirrings.subtitle" = "Write your first stirring, and listen for the first echo.";
-"profile.title.stirrings" = "Hearthaven";
+"profile.empty.noGlimmers" = "No glimmers yet";
+"profile.empty.noGlimmers.subtitle" = "Write your first glimmer, and listen for the first echo.";
+"profile.title.glimmers" = "Hearthaven";
 "profile.section.today" = "Today";
 "profile.section.yesterday" = "Yesterday";
 "profile.section.pastWeek" = "Past Week";
 "profile.section.pastMonth" = "Past Month";
 
-"starsea.hero.verse" = "A stirring in the heart, and the universe unfolds.";
-"starsea.prompt.stirringWithin" = "What stirs within you";
-"starsea.action.writeStirring" = "Write a stirring";
+"starsea.hero.verse" = "A glimmer in the heart, and the universe unfolds.";
+"starsea.prompt.glimmerWithin" = "What glimmers within you";
+"starsea.action.writeGlimmer" = "Write a glimmer";
 "starsea.empty.resonanceTitle" = "No resonances yet";
-"starsea.empty.resonanceSubtitle" = "Write your first stirring, and listen for the first echo.";
+"starsea.empty.resonanceSubtitle" = "Write your first glimmer, and listen for the first echo.";
 
 "matching.status.listening" = "Listening for echoes";
 "matching.error.title" = "Error";
 "matching.error.unknown" = "Unknown error";
 
-"stirring.title" = "Stirring";
-"stirring.action.delete" = "Delete";
-"stirring.delete.title" = "Delete";
-"stirring.delete.message" = "Are you sure you want to delete this? This action can’t be undone.";
-"stirring.delete.progress" = "Deleting…";
+"glimmer.title" = "Glimmer";
+"glimmer.action.delete" = "Delete";
+"glimmer.delete.title" = "Delete";
+"glimmer.delete.message" = "Are you sure you want to delete this? This action can’t be undone.";
+"glimmer.delete.progress" = "Deleting…";
 
 "souler.load.failed" = "Failed to load";
 "echo.reply.placeholder" = "Reply to this echo…";
@@ -112,7 +112,7 @@
 "paywall.restore.notFound" = "No active subscription found. If you recently purchased, please try again in a moment.";
 
 "paywall.title" = "Velune";
-"paywall.subtitle" = "A stirring in the heart, and the echo goes on.";
+"paywall.subtitle" = "A glimmer in the heart, and the echo goes on.";
 "paywall.tier.awaken.title" = "Velune · Awaken";
 "paywall.tier.awaken.subtitle" = "50 stardust daily";
 "paywall.tier.deep.title" = "Velune · Depth";

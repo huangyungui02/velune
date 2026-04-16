@@ -11,7 +11,7 @@ class DataContainer {
 
     init(inMemoryOnly: Bool = false) throws {
         let schema = Schema([
-            Stirring.self,
+            Glimmer.self,
             Echo.self,
             Resonance.self,
         ])

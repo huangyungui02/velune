@@ -3,14 +3,14 @@ import Supabase
 import SwiftData
 
 @Model
-class Stirring {
+class Glimmer {
     @Attribute(.unique) var id: UUID
     var userId: String
     var content: String
     var createdAt: Date
     var status: String
 
-    @Relationship(deleteRule: .cascade, inverse: \Echo.stirring)
+    @Relationship(deleteRule: .cascade, inverse: \Echo.glimmer)
     var echoes: [Echo] = []
 
     init(
@@ -29,9 +29,9 @@ class Stirring {
 
 }
 
-extension Stirring {
+extension Glimmer {
     nonisolated struct Page {
-        var items: [Stirring]
+        var items: [Glimmer]
         var hasMore: Bool
     }
 
@@ -49,18 +49,18 @@ extension Stirring {
         }
     }
 
-    static func get(_ stirringId: UUID) async throws -> Stirring {
+    static func get(_ glimmerId: UUID) async throws -> Glimmer {
         let supabase = try Backend.requireSupabase()
         let response: Response = try await supabase
             .from("glimmers")
             .select("id, content, created_at, status")
-            .eq("id", value: stirringId)
+            .eq("id", value: glimmerId)
             .single()
             .execute()
             .value
 
         let userId = try await AuthManager.shared.getUserId()
-        return Stirring(
+        return Glimmer(
             id: response.id,
             userId: userId.uuidString,
             content: response.content,
@@ -86,7 +86,7 @@ extension Stirring {
             .value
 
         let items = response.map { response in
-            Stirring(
+            Glimmer(
                 id: response.id,
                 userId: userId.uuidString,
                 content: response.content,
@@ -98,7 +98,7 @@ extension Stirring {
         return Page(items: items, hasMore: response.count == pageSize)
     }
 
-    static func getAll() async throws -> [Stirring] {
+    static func getAll() async throws -> [Glimmer] {
         let userId = try await AuthManager.shared.getUserId()
 
         let supabase = try Backend.requireSupabase()
@@ -111,7 +111,7 @@ extension Stirring {
             .value
 
         return response.map { response in
-            Stirring(
+            Glimmer(
                 id: response.id,
                 userId: userId.uuidString,
                 content: response.content,
@@ -121,7 +121,7 @@ extension Stirring {
         }
     }
 
-    static func create(_ stirring: Stirring, status: String = "pending") async throws {
+    static func create(_ glimmer: Glimmer, status: String = "pending") async throws {
         struct Data: Codable {
             var id: UUID
             var userId: UUID
@@ -140,10 +140,10 @@ extension Stirring {
 
         let userId = try await AuthManager.shared.getUserId()
         let data = Data(
-            id: stirring.id,
+            id: glimmer.id,
             userId: userId,
-            content: stirring.content,
-            createdAt: stirring.createdAt,
+            content: glimmer.content,
+            createdAt: glimmer.createdAt,
             status: status
         )
 
@@ -154,12 +154,12 @@ extension Stirring {
             .execute()
     }
 
-    static func delete(_ stirringId: UUID) async throws {
+    static func delete(_ glimmerId: UUID) async throws {
         let supabase = try Backend.requireSupabase()
         try await supabase
             .from("glimmers")
             .delete()
-            .eq("id", value: stirringId)
+            .eq("id", value: glimmerId)
             .execute()
     }
 }

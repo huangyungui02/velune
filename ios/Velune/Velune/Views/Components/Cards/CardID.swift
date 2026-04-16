@@ -1,6 +1,6 @@
 import Foundation
 
 enum CardID: Hashable {
-    case stirring
+    case glimmer
     case echo(UUID)
 }
