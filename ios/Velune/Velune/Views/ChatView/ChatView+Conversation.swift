@@ -274,8 +274,8 @@ extension ChatView {
         isDraftSession = false
         draftEchoId = nil
         activeDraftPrelude = nil
-        await prepareConversation()
         await loadConversationSessions()
+        await prepareConversation()
         setChapterOptions(initialOptions)
     }
 }

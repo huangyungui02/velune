@@ -99,42 +99,47 @@ struct ChatView: View {
 
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button {
-                        startNewConversation()
-                    } label: {
-                        Label("resonance.chat.action.newConversation", systemImage: "plus.bubble")
-                    }
+                    Group {
+                        Button {
+                            startNewConversation()
+                        } label: {
+                            Label("resonance.chat.action.newConversation", systemImage: "plus.bubble")
+                        }
+                    
+                        Divider()
 
-                    Divider()
-
-                    if let sessionMenuError {
-                        Section {
-                            Text(sessionMenuError)
-                            Button("common.retry") {
-                                Task { await loadConversationSessions() }
+                        if let sessionMenuError {
+                            Section {
+                                Text(sessionMenuError)
+                                Button("common.retry") {
+                                    Task { await syncConversationSessionsOnMenuAppear() }
+                                }
                             }
-                        }
-                    } else if isLoadingSessions, conversationSessions.isEmpty {
-                        Section {
-                            Label("common.loading", systemImage: "hourglass")
-                        }
-                    } else if conversationSessions.isEmpty {
-                        Section {
-                            Text("resonance.chat.sessions.empty")
-                        }
-                    } else {
-                        Section {
-                            ForEach(conversationSessions) { session in
-                                Button {
-                                    openSession(session)
-                                } label: {
-                                    Label(
-                                        session.hasTitle ? session.title : session.soulerName,
-                                        systemImage: selectedSessionId == session.id ? "checkmark" : "message"
-                                    )
+                        } else if isLoadingSessions, conversationSessions.isEmpty {
+                            Section {
+                                Label("common.loading", systemImage: "hourglass")
+                            }
+                        } else if conversationSessions.isEmpty {
+                            Section {
+                                Text("resonance.chat.sessions.empty")
+                            }
+                        } else {
+                            Section {
+                                ForEach(conversationSessions) { session in
+                                    Button {
+                                        openSession(session)
+                                    } label: {
+                                        Label(
+                                            session.hasTitle ? session.title : session.soulerName,
+                                            systemImage: selectedSessionId == session.id ? "checkmark" : "message"
+                                        )
+                                    }
                                 }
                             }
                         }
+                    }
+                    .onAppear {
+                        Task { await syncConversationSessionsOnMenuAppear() }
                     }
                 } label: {
                     Image(systemName: "clock.arrow.circlepath")
@@ -175,8 +180,8 @@ struct ChatView: View {
         .task {
             guard !hasPerformedInitialLoad else { return }
             hasPerformedInitialLoad = true
-            await prepareConversation()
             await loadConversationSessions()
+            await prepareConversation()
         }
         .onAppear {
             if focusComposerOnAppear {

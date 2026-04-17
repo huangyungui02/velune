@@ -17,6 +17,17 @@ extension ChatView {
 
     @MainActor
     func loadConversationSessions() async {
+        guard let userId = AuthManager.shared.currentUserId?.uuidString else {
+            sessions = []
+            sessionMenuError = nil
+            return
+        }
+
+        _ = loadLocalConversationSessions(userId: userId)
+    }
+
+    @MainActor
+    func syncConversationSessionsOnMenuAppear() async {
         if isLoadingSessions { return }
         isLoadingSessions = true
         defer { isLoadingSessions = false }
@@ -27,7 +38,7 @@ extension ChatView {
             return
         }
 
-        let hasLocalCache = loadLocalConversationSessions(userId: userId)
+        let hasLocalCache = !sessions.isEmpty || loadLocalConversationSessions(userId: userId)
         await syncConversationSessions(userId: userId, hasLocalCache: hasLocalCache)
     }
 

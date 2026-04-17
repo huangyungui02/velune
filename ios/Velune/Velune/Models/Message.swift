@@ -35,6 +35,25 @@ extension Message {
         }
     }
 
+    private static func mapResponse(_ response: [Response]) -> [Message] {
+        response.map { item in
+            Message(
+                id: item.id,
+                soulerId: item.soulerId,
+                sessionId: item.sessionId,
+                role: item.role,
+                content: item.content,
+                createdAt: item.createdAt
+            )
+        }
+    }
+
+    private static func encodeTimestamp(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.string(from: date)
+    }
+
     static func getHistory(sessionId: UUID) async throws -> [Message] {
         let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
@@ -45,16 +64,26 @@ extension Message {
             .execute()
             .value
 
-        return response.map { item in
-            Message(
-                id: item.id,
-                soulerId: item.soulerId,
-                sessionId: item.sessionId,
-                role: item.role,
-                content: item.content,
-                createdAt: item.createdAt
-            )
-        }
+        return mapResponse(response)
+    }
+
+    static func getHistory(
+        sessionId: UUID,
+        createdAfterOrAt date: Date,
+        overlapSeconds: TimeInterval = 1
+    ) async throws -> [Message] {
+        let lowerBound = date.addingTimeInterval(-max(overlapSeconds, 0))
+        let supabase = try Backend.requireSupabase()
+        let response: [Response] = try await supabase
+            .from("messages")
+            .select("id, souler_id, session_id, role, content, created_at")
+            .eq("session_id", value: sessionId.uuidString)
+            .gte("created_at", value: encodeTimestamp(lowerBound))
+            .order("created_at", ascending: true)
+            .execute()
+            .value
+
+        return mapResponse(response)
     }
 
     @MainActor
@@ -83,7 +112,7 @@ extension Message {
             return true
         }
 
-        guard let sessionUpdatedAt else { return false }
+        guard let sessionUpdatedAt else { return true }
         return bucket.lastSessionUpdatedAt < sessionUpdatedAt
     }
 
@@ -98,6 +127,7 @@ extension Message {
     ) throws {
         let key = bucketKey(userId: userId, sessionId: sessionId)
         let now = Date()
+        let latestRemoteMessageCreatedAt = messages.last?.createdAt ?? now
 
         let bucket: MessageCacheBucket
         if let existingBucket = try fetchBucket(sessionId: sessionId, userId: userId, context: context) {
@@ -109,7 +139,7 @@ extension Message {
                 sessionId: sessionId,
                 enqueuedAt: now,
                 lastSessionUpdatedAt: sessionUpdatedAt,
-                lastSyncedAt: now,
+                lastSyncedAt: latestRemoteMessageCreatedAt,
                 messageCount: messages.count
             )
             context.insert(bucket)
@@ -125,7 +155,7 @@ extension Message {
         }
 
         bucket.lastSessionUpdatedAt = sessionUpdatedAt
-        bucket.lastSyncedAt = now
+        bucket.lastSyncedAt = latestRemoteMessageCreatedAt
         bucket.messageCount = messages.count
 
         try context.save()
