@@ -43,6 +43,8 @@ struct StarSeaView: View {
                         matchingToolbarContent
                     }
                     .navigationBarTitleDisplayMode(.inline)
+                    .toolbar(isPresented ? .hidden : .visible, for: .navigationBar)
+                    .toolbar(isPresented ? .hidden : .visible, for: .bottomBar)
                     .navigationDestination(isPresented: $isShowingProfile) {
                         ProfileView(onOpenGlimmerComposer: openGlimmerComposerFromProfile)
                     }
@@ -404,8 +406,7 @@ private struct ComposeView: View {
             .background(.clear)
             .navigationTitle("glimmer.title")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarBackground(Color.black.opacity(0.92), for: .navigationBar)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -414,6 +415,7 @@ private struct ComposeView: View {
                         dismiss()
                     } label: {
                         Image(systemName: "chevron.down")
+                            .font(.body.weight(.medium))
                     }
                 }
 
@@ -424,6 +426,7 @@ private struct ComposeView: View {
                         dismiss()
                     } label: {
                         Image(systemName: "arrow.up")
+                            .font(.body.weight(.medium))
                     }
                     .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
