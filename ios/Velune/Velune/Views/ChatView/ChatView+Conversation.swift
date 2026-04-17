@@ -28,25 +28,6 @@ extension ChatView {
     }
 
     @MainActor
-    func loadMessages() async {
-        if isDraftSession {
-            messages = []
-            return
-        }
-        if isLoading { return }
-
-        isLoading = true
-        defer { isLoading = false }
-
-        do {
-            messages = try await Message.getHistory(sessionId: activeSessionId)
-        } catch {
-            errorMessage = error.localizedDescription
-            billingErrorContext = error.billingErrorContext
-        }
-    }
-
-    @MainActor
     func sendMessage(prefilledContent: String? = nil) async {
         if isSending { return }
 
@@ -163,19 +144,36 @@ extension ChatView {
         }
 
         let sessionId = resolvedSessionId ?? activeSessionId
-        messages = try await Message.getHistory(sessionId: sessionId)
+        let remoteMessages = try await Message.getHistory(sessionId: sessionId)
+        messages = remoteMessages
+
+        var authoritativeSession: ChatSession?
+        if let fetchedSession = try? await ChatSession.get(id: sessionId) {
+            authoritativeSession = fetchedSession
+            mergeConversationSessionCacheIfPossible([fetchedSession])
+        }
+
+        cacheMessagesIfPossible(
+            remoteMessages,
+            sessionId: sessionId,
+            fallbackSessionUpdatedAt: authoritativeSession?.updatedAt ?? Date.now
+        )
+
         await loadConversationSessions()
 
         guard startedFromDraft, let resolvedSessionId, let onSelectSession else { return }
 
         let fallbackTitle = resolvedTitle ?? String(localized: "resonance.chat.newConversation")
-        let routeSession = sessions.first(where: { $0.id == resolvedSessionId }) ?? ChatSession(
-            id: resolvedSessionId,
-            soulerId: soulerId,
-            chapterId: nil,
-            soulerName: soulerName,
-            title: fallbackTitle
-        )
+        let routeSession = sessions.first(where: { $0.id == resolvedSessionId })
+            ?? authoritativeSession
+            ?? ChatSession(
+                id: resolvedSessionId,
+                soulerId: soulerId,
+                chapterId: nil,
+                soulerName: soulerName,
+                title: fallbackTitle,
+                updatedAt: .now
+            )
         onSelectSession(routeSession)
     }
 
@@ -196,29 +194,6 @@ extension ChatView {
             try modelContext.save()
         } catch {
             logger.error("persisting echo sessionId failed: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    var selectedSessionId: UUID {
-        activeSessionId
-    }
-
-    var conversationSessions: [ChatSession] {
-        sessions
-    }
-
-    @MainActor
-    func loadConversationSessions() async {
-        if isLoadingSessions { return }
-        isLoadingSessions = true
-        defer { isLoadingSessions = false }
-
-        do {
-            sessions = try await ChatSession.getPage(soulerId: soulerId, limit: 20, offset: 0)
-            sessionMenuError = nil
-        } catch {
-            sessionMenuError = error.localizedDescription
-            sessions = []
         }
     }
 

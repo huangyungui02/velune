@@ -14,6 +14,9 @@ class DataContainer {
             Glimmer.self,
             Echo.self,
             Resonance.self,
+            CachedChatSession.self,
+            CachedMessage.self,
+            MessageCacheBucket.self,
         ])
 
         let modelConfiguration = ModelConfiguration(

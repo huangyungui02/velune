@@ -43,13 +43,15 @@ extension ChatView {
                 chapterId: chapter.id,
                 path: chapterSessionStartPath(for: chapter.id)
             )
+            let assistantCreatedAt = parseServerDate(payload.assistantMessage.createdAt) ?? .now
 
-            let startedSession = ChatSession(
+            var startedSession = ChatSession(
                 id: payload.sessionId,
                 soulerId: payload.soulerId,
                 chapterId: payload.chapterId,
                 soulerName: soulerName,
-                title: payload.title
+                title: payload.title,
+                updatedAt: .now
             )
 
             activeSessionId = payload.sessionId
@@ -60,7 +62,7 @@ extension ChatView {
             if let messageIndex = messages.firstIndex(where: { $0.id == localAssistantId }) {
                 messages[messageIndex].id = payload.assistantMessage.id
                 messages[messageIndex].sessionId = payload.sessionId
-                messages[messageIndex].createdAt = .now
+                messages[messageIndex].createdAt = assistantCreatedAt
                 messages[messageIndex].content = ""
                 await streamChapterOpeningContent(
                     payload.assistantMessage.content,
@@ -74,10 +76,20 @@ extension ChatView {
                         sessionId: payload.sessionId,
                         role: .assistant,
                         content: payload.assistantMessage.content,
-                        createdAt: .now
+                        createdAt: assistantCreatedAt
                     )
                 ]
             }
+
+            if let fetchedSession = try? await ChatSession.get(id: payload.sessionId) {
+                startedSession = fetchedSession
+            }
+            mergeConversationSessionCacheIfPossible([startedSession])
+            cacheMessagesIfPossible(
+                messages,
+                sessionId: payload.sessionId,
+                fallbackSessionUpdatedAt: startedSession.updatedAt
+            )
 
             setChapterOptions(payload.options)
             await loadConversationSessions()
@@ -132,5 +144,17 @@ extension ChatView {
                 .filter { !$0.isEmpty }
                 .prefix(4)
         )
+    }
+
+    func parseServerDate(_ value: String) -> Date? {
+        let fractionalFormatter = ISO8601DateFormatter()
+        fractionalFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractionalFormatter.date(from: value) {
+            return date
+        }
+
+        let plainFormatter = ISO8601DateFormatter()
+        plainFormatter.formatOptions = [.withInternetDateTime]
+        return plainFormatter.date(from: value)
     }
 }

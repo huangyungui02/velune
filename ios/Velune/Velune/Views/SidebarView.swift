@@ -564,7 +564,8 @@ struct SidebarView: View {
                 soulerId: resonance.soulerId,
                 chapterId: nil,
                 soulerName: resonance.soulerName,
-                title: resonance.lastSessionTitle
+                title: resonance.lastSessionTitle,
+                updatedAt: resonance.updatedAt
             ))
         } else {
             onOpenDraftChat(draftTarget(for: resonance))
