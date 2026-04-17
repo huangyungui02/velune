@@ -102,8 +102,7 @@ struct SoulerView: View {
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .fill(Color.white.opacity(0.035))
-                                .shadow(color: .white.opacity(0.035), radius: 30, x: 0, y: 0)
+                                .fill(Color.white.opacity(0.05))
                         )
                         .padding()
                 }
