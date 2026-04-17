@@ -23,7 +23,6 @@ extension ChatView {
         isStartingChapterSession = true
         defer { isStartingChapterSession = false }
 
-        chapterOptions = []
         shouldPauseAutoScrollDuringStreaming = false
         let localAssistantId = UUID()
         messages = [
@@ -44,6 +43,8 @@ extension ChatView {
                 path: chapterSessionStartPath(for: chapter.id)
             )
             let assistantCreatedAt = parseServerDate(payload.assistantMessage.createdAt) ?? .now
+            let fullAssistantContent = payload.assistantMessage.content
+            let openingBody = chapterMessageBody(from: fullAssistantContent)
 
             var startedSession = ChatSession(
                 id: payload.sessionId,
@@ -65,9 +66,10 @@ extension ChatView {
                 messages[messageIndex].createdAt = assistantCreatedAt
                 messages[messageIndex].content = ""
                 await streamChapterOpeningContent(
-                    payload.assistantMessage.content,
+                    openingBody,
                     into: payload.assistantMessage.id
                 )
+                messages[messageIndex].content = fullAssistantContent
             } else {
                 messages = [
                     Message(
@@ -75,7 +77,7 @@ extension ChatView {
                         soulerId: soulerId,
                         sessionId: payload.sessionId,
                         role: .assistant,
-                        content: payload.assistantMessage.content,
+                        content: fullAssistantContent,
                         createdAt: assistantCreatedAt
                     )
                 ]
@@ -91,7 +93,6 @@ extension ChatView {
                 fallbackSessionUpdatedAt: startedSession.updatedAt
             )
 
-            setChapterOptions(payload.options)
             await loadConversationSessions()
 
             if let onSelectSession {
@@ -131,10 +132,6 @@ extension ChatView {
 
     func chapterSessionStartPath(for chapterId: UUID) -> String {
         "\(AppLanguage.current.apiLanguageCode)/soulers/\(soulerId.uuidString)/chapters/\(chapterId.uuidString)/start"
-    }
-
-    func setChapterOptions(_ options: [String]?) {
-        chapterOptions = normalizeChapterOptions(options ?? [])
     }
 
     func normalizeChapterOptions(_ options: [String]) -> [String] {

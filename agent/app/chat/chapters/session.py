@@ -64,7 +64,7 @@ async def start_chapter_session(
             model=CHAPTER_SESSION_MODEL,
             temperature=settings.CHAT_TEMPERATURE,
         )
-        opening_content, options = parse_chapter_combined_response(opening_raw)
+        _, options = parse_chapter_combined_response(opening_raw)
         opening_storage_content = opening_raw.strip()
         if not opening_storage_content:
             raise ValueError("Empty chapter opening response")
@@ -102,7 +102,7 @@ async def start_chapter_session(
             "assistant_message": {
                 "id": assistant_message["id"],
                 "created_at": assistant_message["created_at"],
-                "content": opening_content,
+                "content": opening_storage_content,
             },
             "options": options,
         }

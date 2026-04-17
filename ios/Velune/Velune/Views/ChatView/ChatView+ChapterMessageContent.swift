@@ -1,13 +1,12 @@
 import Foundation
 
+private let chapterJSONOpenMarker = "---JSON---"
+private let chapterJSONCloseMarker = "---END_JSON---"
+
 extension ChatView {
     var inlineChapterOptions: [String] {
         guard let lastMessage = messages.last, lastMessage.role == .assistant else {
             return []
-        }
-
-        if !chapterOptions.isEmpty {
-            return chapterOptions
         }
 
         return chapterMessagePayload(from: lastMessage.content)?.options ?? []
@@ -18,22 +17,41 @@ extension ChatView {
             return message.content
         }
 
-        guard let payload = chapterMessagePayload(from: message.content) else {
-            return message.content
-        }
+        return chapterMessageBody(from: message.content)
+    }
 
+    func chapterMessageBody(from content: String) -> String {
+        guard let payload = chapterMessagePayload(from: content) else {
+            return content
+        }
         return payload.body
     }
 
-    private func chapterMessagePayload(from content: String) -> (body: String, options: [String])? {
-        let openMarker = "---JSON---"
-        let closeMarker = "---END_JSON---"
+    func chapterMessageStorageContent(body: String, options: [String]) -> String {
+        let normalizedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedBody = normalizedBody.isEmpty ? body : normalizedBody
+        let normalizedOptions = normalizeChapterOptions(options)
+        guard !normalizedOptions.isEmpty else {
+            return resolvedBody
+        }
 
-        guard let openRange = content.range(of: openMarker) else {
+        let payload: [String: Any] = ["options": normalizedOptions]
+        guard
+            let data = try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted]),
+            let jsonBlock = String(data: data, encoding: .utf8)
+        else {
+            return resolvedBody
+        }
+
+        return "\(resolvedBody)\n\n\(chapterJSONOpenMarker)\n\(jsonBlock)\n\(chapterJSONCloseMarker)"
+    }
+
+    private func chapterMessagePayload(from content: String) -> (body: String, options: [String])? {
+        guard let openRange = content.range(of: chapterJSONOpenMarker) else {
             return nil
         }
         guard let closeRange = content.range(
-            of: closeMarker,
+            of: chapterJSONCloseMarker,
             range: openRange.upperBound ..< content.endIndex
         ) else {
             return nil

@@ -7,7 +7,6 @@ extension ChatView {
     func prepareConversation() async {
         messages = []
         inputText = ""
-        chapterOptions = []
         errorMessage = nil
         billingErrorContext = nil
         hasScrolledToLatestOnAppear = false
@@ -39,7 +38,6 @@ extension ChatView {
         shouldPauseAutoScrollDuringStreaming = false
         dismissComposer()
         inputText = ""
-        chapterOptions = []
         defer {
             isSending = false
             shouldPauseAutoScrollDuringStreaming = false
@@ -65,7 +63,13 @@ extension ChatView {
                         messages[index].content += delta
                     }
                 case let .options(options):
-                    setChapterOptions(options)
+                    if let index = messages.firstIndex(where: { $0.id == assistantLocalId }) {
+                        let currentBody = chapterMessageBody(from: messages[index].content)
+                        messages[index].content = chapterMessageStorageContent(
+                            body: currentBody,
+                            options: options
+                        )
+                    }
                 case let .done(payload):
                     let result = applyDonePayload(payload)
                     resolvedSessionId = result.sessionId ?? resolvedSessionId
@@ -221,7 +225,6 @@ extension ChatView {
         activeDraftPrelude = nil
         messages = []
         inputText = ""
-        chapterOptions = []
         errorMessage = nil
         billingErrorContext = nil
         hasScrolledToLatestOnAppear = false
@@ -266,16 +269,12 @@ extension ChatView {
     }
 
     @MainActor
-    func switchToExistingSession(
-        _ sessionId: UUID,
-        initialOptions: [String] = []
-    ) async {
+    func switchToExistingSession(_ sessionId: UUID) async {
         activeSessionId = sessionId
         isDraftSession = false
         draftEchoId = nil
         activeDraftPrelude = nil
         await loadConversationSessions()
         await prepareConversation()
-        setChapterOptions(initialOptions)
     }
 }
