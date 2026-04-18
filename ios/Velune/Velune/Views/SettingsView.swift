@@ -13,7 +13,6 @@ struct SettingsView: View {
     @State private var showStardustInfo = false
     @State private var showSignInSheet = false
     @State private var signInSheetDescriptionKey = "paywall.restore.signInRequired.description"
-    @State private var showRedeemAlert = false
     @State private var redeemCodeInput = ""
     @State private var isRedeemingCode = false
     @State private var feedbackTitleKey = "settings.error.title"
@@ -122,25 +121,32 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                     .disabled(subscriptionManager.isRestoring || !subscriptionManager.isRevenueCatAvailable)
 
-                    Button {
-                        showRedeemAlert = true
-                    } label: {
+                    VStack(alignment: .leading, spacing: 10) {
+                        settingsRowLabel("settings.billing.redeem.title", systemImage: "ticket")
+
                         HStack(spacing: 10) {
-                            settingsRowLabel("settings.billing.redeem.title", systemImage: "gift")
-                            Spacer(minLength: 0)
-                            if isRedeemingCode {
-                                ProgressView()
-                                    .controlSize(.small)
-                            } else {
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundStyle(UITheme.tertiaryText)
+                            TextField("settings.billing.redeem.placeholder", text: $redeemCodeInput)
+                                .textInputAutocapitalization(.characters)
+                                .autocorrectionDisabled(true)
+                                .submitLabel(.done)
+                                .onSubmit { handleRedeemTap() }
+
+                            Button {
+                                handleRedeemTap()
+                            } label: {
+                                if isRedeemingCode {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .frame(minWidth: 36)
+                                } else {
+                                    Text("settings.billing.action.redeem")
+                                }
                             }
+                            .buttonStyle(.bordered)
+                            .disabled(!canRedeemCode)
                         }
-                        .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
-                    .disabled(isRedeemingCode)
+                    .padding(.vertical, 2)
                 } header: {
                     sectionHeader("settings.section.billing")
                 } footer: {
@@ -235,17 +241,6 @@ struct SettingsView: View {
             Button("common.ok", role: .cancel) {}
         } message: {
             Text(feedbackMessage ?? "")
-        }
-        .alert("settings.billing.redeem.title", isPresented: $showRedeemAlert) {
-            TextField("settings.billing.redeem.placeholder", text: $redeemCodeInput)
-                .textInputAutocapitalization(.characters)
-                .autocorrectionDisabled(true)
-            Button("common.cancel", role: .cancel) {
-                redeemCodeInput = ""
-            }
-            Button("settings.billing.action.redeem") {
-                handleRedeemTap()
-            }
         }
         .onAppear {
             Task {

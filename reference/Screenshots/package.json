@@ -1,0 +1,13 @@
+{
+  "name": "velune-app-store-screenshots",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "export": "node ./export.mjs",
+    "export:zh": "node ./export.mjs zh",
+    "export:en": "node ./export.mjs en"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  }
+}
