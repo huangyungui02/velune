@@ -23,6 +23,19 @@
 "settings.billing.action.getStardust" = "Get Stardust";
 "settings.billing.action.upgrade" = "Upgrade";
 "settings.billing.action.restore" = "Restore Purchases";
+"settings.billing.action.redeem" = "Redeem";
+"settings.billing.redeem.title" = "Redeem Code";
+"settings.billing.redeem.placeholder" = "Enter code";
+"settings.billing.redeem.success.format" = "Redeemed successfully. %d stardust added.";
+"settings.billing.redeem.signInRequired.description" = "Anonymous accounts can’t redeem codes. Sign in to continue.";
+"settings.billing.redeem.error.empty" = "Please enter a redeem code.";
+"settings.billing.redeem.error.unauthorized" = "Please sign in before redeeming.";
+"settings.billing.redeem.error.notFound" = "This redeem code does not exist.";
+"settings.billing.redeem.error.inactive" = "This redeem code is inactive.";
+"settings.billing.redeem.error.notStarted" = "This redeem code is not active yet.";
+"settings.billing.redeem.error.expired" = "This redeem code has expired.";
+"settings.billing.redeem.error.limitReached" = "This redeem code has reached its limit.";
+"settings.billing.redeem.error.alreadyRedeemed" = "You already redeemed this code.";
 "settings.billing.renewalTime" = "Renewal Time";
 "settings.billing.plan" = "Current Plan";
 "settings.billing.plan.free" = "Free";
@@ -33,6 +46,7 @@
 "settings.billing.stardust.description.premium.format" = "Your subscription includes %d stardust each day.\n\nEach echo costs 5 stardust, and each chat message costs 1 stardust.";
 "settings.billing.revenuecat.missingKey" = "RevenueCat public key is missing. Purchases are disabled.";
 "settings.error.title" = "Action Failed";
+"settings.notice.title" = "Notice";
 "settings.signOut.confirm.title" = "Are you sure you want to sign out?";
 "settings.signOut.confirm.message" = "You’ll need to sign in again to continue using the app.";
 "settings.delete.confirm.title" = "Delete account permanently?";

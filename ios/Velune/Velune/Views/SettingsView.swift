@@ -12,6 +12,10 @@ struct SettingsView: View {
     @State private var showPaywall = false
     @State private var showStardustInfo = false
     @State private var showSignInSheet = false
+    @State private var signInSheetDescriptionKey = "paywall.restore.signInRequired.description"
+    @State private var redeemCodeInput = ""
+    @State private var isRedeemingCode = false
+    @State private var feedbackTitleKey = "settings.error.title"
     @State private var feedbackMessage: String?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.requestReview) private var requestReview
@@ -29,7 +33,7 @@ struct SettingsView: View {
                                 .foregroundStyle(UITheme.primaryText)
 
                             AppleSignInSettingsRow { error in
-                                feedbackMessage = error
+                                showError(error)
                             }
                         }
                         .padding(.vertical, 4)
@@ -116,6 +120,33 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(subscriptionManager.isRestoring || !subscriptionManager.isRevenueCatAvailable)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        settingsRowLabel("settings.billing.redeem.title", systemImage: "ticket")
+
+                        HStack(spacing: 10) {
+                            TextField("settings.billing.redeem.placeholder", text: $redeemCodeInput)
+                                .textInputAutocapitalization(.characters)
+                                .autocorrectionDisabled(true)
+                                .submitLabel(.done)
+                                .onSubmit { handleRedeemTap() }
+
+                            Button {
+                                handleRedeemTap()
+                            } label: {
+                                if isRedeemingCode {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .frame(minWidth: 36)
+                                } else {
+                                    Text("settings.billing.action.redeem")
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(!canRedeemCode)
+                        }
+                    }
+                    .padding(.vertical, 2)
                 } header: {
                     sectionHeader("settings.section.billing")
                 } footer: {
@@ -203,7 +234,7 @@ struct SettingsView: View {
         } message: {
             Text("settings.signOut.confirm.message")
         }
-        .alert("settings.error.title", isPresented: Binding(
+        .alert(LocalizedStringKey(feedbackTitleKey), isPresented: Binding(
             get: { feedbackMessage != nil },
             set: { if !$0 { feedbackMessage = nil } }
         )) {
@@ -220,7 +251,7 @@ struct SettingsView: View {
             PaywallView()
         }
         .sheet(isPresented: $showSignInSheet) {
-            SignInRequiredSheet(descriptionKey: "paywall.restore.signInRequired.description")
+            SignInRequiredSheet(descriptionKey: LocalizedStringKey(signInSheetDescriptionKey))
         }
     }
 
@@ -289,7 +320,7 @@ struct SettingsView: View {
             SyncStateStore.clear(userId: userId)
             dismiss()
         } catch {
-            feedbackMessage = error.localizedDescription
+            showError(error.localizedDescription)
         }
     }
 
@@ -298,17 +329,54 @@ struct SettingsView: View {
             try await subscriptionManager.restorePurchases()
             await subscriptionManager.refreshBillingState(force: true)
         } catch {
-            feedbackMessage = error.localizedDescription
+            showError(error.localizedDescription)
         }
     }
 
     private func handleRestoreTap() {
         guard !authManager.isAnonymous else {
-            showSignInSheet = true
+            presentSignInSheet(descriptionKey: "paywall.restore.signInRequired.description")
             return
         }
 
         Task { await restorePurchases() }
+    }
+
+    private func handleRedeemTap() {
+        guard !authManager.isAnonymous else {
+            presentSignInSheet(descriptionKey: "settings.billing.redeem.signInRequired.description")
+            return
+        }
+
+        Task { await redeemCode() }
+    }
+
+    private func redeemCode() async {
+        let normalizedCode = redeemCodeInput
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+
+        guard !normalizedCode.isEmpty else {
+            showError(String(localized: "settings.billing.redeem.error.empty"))
+            return
+        }
+
+        isRedeemingCode = true
+        defer { isRedeemingCode = false }
+
+        do {
+            let result = try await subscriptionManager.redeemCode(normalizedCode)
+            redeemCodeInput = ""
+            let format = String(localized: "settings.billing.redeem.success.format")
+            let message = String(
+                format: format,
+                locale: Locale.current,
+                result.rewardCredits
+            )
+            showNotice(message)
+        } catch {
+            showError(error.localizedDescription)
+        }
     }
 
     private var appVersion: String {
@@ -330,6 +398,12 @@ struct SettingsView: View {
 
     private var shouldShowUpgradeRow: Bool {
         !subscriptionManager.isPremium
+    }
+
+    private var canRedeemCode: Bool {
+        !redeemCodeInput
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty && !isRedeemingCode
     }
 
     private var renewalTimeText: String? {
@@ -360,6 +434,21 @@ struct SettingsView: View {
             .font(.system(.body, design: .rounded).monospacedDigit())
             .fontWeight(.medium)
             .foregroundStyle(UITheme.primaryText)
+    }
+
+    private func presentSignInSheet(descriptionKey: String) {
+        signInSheetDescriptionKey = descriptionKey
+        showSignInSheet = true
+    }
+
+    private func showError(_ message: String) {
+        feedbackTitleKey = "settings.error.title"
+        feedbackMessage = message
+    }
+
+    private func showNotice(_ message: String) {
+        feedbackTitleKey = "settings.notice.title"
+        feedbackMessage = message
     }
 }
 
