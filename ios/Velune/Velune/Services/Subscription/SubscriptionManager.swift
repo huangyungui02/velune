@@ -1,13 +1,12 @@
 import Foundation
 import OSLog
 import RevenueCat
-import Supabase
 
 @MainActor
 @Observable
 final class SubscriptionManager {
     static let shared = SubscriptionManager()
-    private let logger = AppLogger.billing
+    let logger = AppLogger.billing
 
     var isPremium = false
     var currentPlan: BillingPlan = .free
@@ -29,19 +28,11 @@ final class SubscriptionManager {
     private var activeAppUserID: String?
     private var currentBillingUserID: UUID?
     private var pendingForcedRefresh = false
-    private static let iso8601Formatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
-
-    private static let iso8601FractionalFormatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
     private init() {}
+
+    func updateLastErrorMessage(_ message: String?) {
+        lastErrorMessage = message
+    }
 
     func bootstrap(userId: UUID?) async {
         currentBillingUserID = userId
@@ -240,203 +231,4 @@ final class SubscriptionManager {
         currentBillingUserID = nil
     }
 
-    private func apply(_ payload: BillingSyncResponse) {
-        let expiration = parseISODate(payload.expirationAt)
-        let hasProduct = payload.productId != nil
-        let notExpired = expiration.map { $0 > Date() } ?? true
-        let resolvedPlan = BillingConfig.resolvePlan(
-            productId: payload.productId,
-            dailyCredits: payload.dailyCredits
-        )
-        currentPlan = resolvedPlan
-        isPremium = (resolvedPlan != .free || hasProduct) && notExpired
-        credits = payload.credits
-        entitlementExpiresAt = expiration
-    }
-
-    private func applyCustomerInfo(_ info: CustomerInfo) {
-        guard !info.entitlements.active.isEmpty else {
-            isPremium = false
-            currentPlan = .free
-            return
-        }
-
-        isPremium = true
-        if let resolved = BillingConfig.resolvePlan(productIdentifiers: Array(info.activeSubscriptions)) {
-            currentPlan = resolved
-        } else if currentPlan == .free {
-            currentPlan = .depth
-        }
-    }
-
-    private func syncBillingStateQuietly() async {
-        let synced = await syncBillingState(maxAttempts: 5, expectPremium: isPremium)
-        if !synced {
-            logger.notice("billing state not yet reconciled after retries")
-        }
-    }
-
-    private func syncBillingState(maxAttempts: Int, expectPremium: Bool) async -> Bool {
-        for attempt in 1 ... maxAttempts {
-            do {
-                let response = try await callBillingSync()
-                apply(response)
-                lastErrorMessage = nil
-                if !expectPremium || isPremium {
-                    return true
-                }
-            } catch {
-                lastErrorMessage = error.localizedDescription
-                logger.error("billing sync attempt \(attempt, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
-            }
-
-            if attempt < maxAttempts {
-                try? await Task.sleep(nanoseconds: 700_000_000)
-            }
-        }
-
-        return false
-    }
-
-    private func callBillingSync() async throws -> BillingSyncResponse {
-        let supabase = try Backend.requireSupabase()
-        let rows: [BillingSyncResponse] = try await supabase
-            .rpc("get_user_credit_state")
-            .execute()
-            .value
-
-        guard let state = rows.first else {
-            throw NSError(
-                domain: "BillingRPC",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Billing state is empty"]
-            )
-        }
-
-        return state
-    }
-
-    private func syncRestorePurchaseOnServer() async throws {
-        let supabase = try Backend.requireSupabase()
-        let response: RestorePurchaseResponse = try await supabase.functions.invoke("restore-purchase")
-
-        guard response.ok else {
-            throw NSError(
-                domain: "RestorePurchase",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "restore-purchase returned invalid response"]
-            )
-        }
-    }
-
-    private func parseISODate(_ value: String?) -> Date? {
-        guard let value else { return nil }
-        let normalized = value.replacingOccurrences(of: " ", with: "T")
-        let timezoneNormalized = normalized.hasSuffix("+00")
-            ? String(normalized.dropLast(3)) + "Z"
-            : normalized
-        let trimmedFraction = trimFractionalSeconds(timezoneNormalized)
-        let candidates = [value, normalized, timezoneNormalized, trimmedFraction]
-
-        for candidate in candidates {
-            if let parsed = Self.iso8601FractionalFormatter.date(from: candidate) {
-                return parsed
-            }
-            if let parsed = Self.iso8601Formatter.date(from: candidate) {
-                return parsed
-            }
-        }
-
-        return nil
-    }
-
-    private func trimFractionalSeconds(_ value: String) -> String {
-        guard let dotIndex = value.firstIndex(of: ".") else { return value }
-        guard let zoneIndex = value[dotIndex...].firstIndex(where: { $0 == "Z" || $0 == "+" || $0 == "-" }) else {
-            return value
-        }
-
-        let fractionStart = value.index(after: dotIndex)
-        let fraction = value[fractionStart ..< zoneIndex]
-        if fraction.count <= 3 { return value }
-
-        let prefix = value[..<fractionStart]
-        let shortenedFraction = fraction.prefix(3)
-        let suffix = value[zoneIndex...]
-        return String(prefix) + shortenedFraction + suffix
-    }
-
-    private func resolveRevenueCatActiveProductId(_ customerInfo: CustomerInfo) -> String? {
-        let products = Array(customerInfo.activeSubscriptions)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        guard !products.isEmpty else { return nil }
-        if let depth = products.first(where: { $0.localizedCaseInsensitiveContains("depth") }) {
-            return depth
-        }
-        if let awaken = products.first(where: { $0.localizedCaseInsensitiveContains("awaken") }) {
-            return awaken
-        }
-        return products.sorted().first
-    }
-
-    private func isRestoreStateConsistent(revenueCatProductId: String) -> Bool {
-        guard isPremium else { return false }
-        guard let revenueCatPlan = BillingConfig.resolvePlan(productIdentifiers: [revenueCatProductId]) else {
-            return false
-        }
-        return currentPlan == revenueCatPlan
-    }
-
-    private func resolveRevenueCatBoundUserId(_ customerInfo: CustomerInfo) -> String? {
-        if let appUserId = normalizeUUID(Purchases.shared.appUserID) {
-            return appUserId
-        }
-        return normalizeUUID(customerInfo.originalAppUserId)
-    }
-
-    private func normalizeUUID(_ value: String) -> String? {
-        let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard UUID(uuidString: normalized) != nil else {
-            return nil
-        }
-        return normalized.lowercased()
-    }
-
-    private func requireAuthenticatedRevenueCatUserId() throws -> String {
-        guard isRevenueCatAvailable else {
-            throw NSError(
-                domain: "RevenueCat",
-                code: -1,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "billing.error.missingRevenueCatKey")
-                ]
-            )
-        }
-
-        guard let currentUserId = AuthManager.shared.currentUserId?.uuidString else {
-            throw AppError.unauthenticated
-        }
-
-        return currentUserId.lowercased()
-    }
-}
-
-private struct BillingSyncResponse: Decodable {
-    var credits: Int
-    var productId: String?
-    var dailyCredits: Int?
-    var expirationAt: String?
-
-    enum CodingKeys: String, CodingKey {
-        case credits
-        case productId = "product_id"
-        case dailyCredits = "daily_credits"
-        case expirationAt = "expiration_at"
-    }
-}
-
-private struct RestorePurchaseResponse: Decodable {
-    var ok: Bool
 }
