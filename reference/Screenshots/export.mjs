@@ -196,7 +196,11 @@ async function createSlide(locale, slide) {
     </svg>
   `;
 
-  return sharp(Buffer.from(svg)).png().toBuffer();
+  return sharp(Buffer.from(svg))
+    .flatten({ background: "#060607" })
+    .removeAlpha()
+    .png()
+    .toBuffer();
 }
 
 async function exportLocale(locale, slides) {
