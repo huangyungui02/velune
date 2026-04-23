@@ -17,8 +17,8 @@ CREATE INDEX IF NOT EXISTS idx_echoes_souler_id ON echoes (souler_id);
 ALTER TABLE echoes ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
-CREATE POLICY "Allow users to view their own echoes" ON echoes FOR SELECT USING (auth.uid() = (SELECT user_id FROM glimmers WHERE id = echoes.glimmer_id));
-CREATE POLICY "Allow users to delete their own echoes" ON echoes FOR DELETE USING (auth.uid() = (SELECT user_id FROM glimmers WHERE id = echoes.glimmer_id));
+CREATE POLICY "Allow users to view their own echoes" ON echoes FOR SELECT USING ((SELECT auth.uid()) = (SELECT user_id FROM glimmers WHERE id = echoes.glimmer_id));
+CREATE POLICY "Allow users to delete their own echoes" ON echoes FOR DELETE USING ((SELECT auth.uid()) = (SELECT user_id FROM glimmers WHERE id = echoes.glimmer_id));
 CREATE POLICY "Deny anyone from updating echoes" ON echoes FOR UPDATE TO PUBLIC WITH CHECK (false);
 CREATE POLICY "Deny anyone from inserting echoes" ON echoes FOR INSERT TO PUBLIC WITH CHECK (false);
 

@@ -4,14 +4,20 @@ CREATE EXTENSION IF NOT EXISTS moddatetime schema extensions;
 CREATE TABLE soulers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(64) NOT NULL,
+    canonical_name VARCHAR(128),
     lang VARCHAR(16) NOT NULL,
     wiki_id VARCHAR(32),
+    image_path TEXT DEFAULT NULL,
+    checked BOOLEAN NOT NULL DEFAULT FALSE,
     bio TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_soulers_name ON soulers (name);
+CREATE INDEX IF NOT EXISTS idx_soulers_canonical_name ON soulers (canonical_name);
+CREATE INDEX IF NOT EXISTS idx_soulers_canonical_name_lang
+    ON soulers (canonical_name, lang);
 CREATE INDEX IF NOT EXISTS idx_soulers_lang ON soulers (lang);
 CREATE INDEX IF NOT EXISTS idx_soulers_wiki_id ON soulers (wiki_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_soulers_wiki_id_lang_unique
@@ -20,7 +26,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_soulers_wiki_id_lang_unique
 
 CREATE TABLE souler_aliases (
     souler_id UUID NOT NULL REFERENCES soulers(id) ON DELETE CASCADE,
-    alias VARCHAR(128) NOT NULL UNIQUE,
+    alias VARCHAR(128) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (souler_id, alias)
 );
@@ -61,6 +67,11 @@ CREATE TRIGGER handle_souler_insert_create_status
     AFTER INSERT ON soulers
     FOR EACH ROW
     EXECUTE FUNCTION create_souler_status();
+
+CREATE TRIGGER handle_soulers_updated_at
+    BEFORE UPDATE ON soulers
+    FOR EACH ROW
+    EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 -- Enable row level security
 ALTER TABLE soulers ENABLE ROW LEVEL SECURITY;

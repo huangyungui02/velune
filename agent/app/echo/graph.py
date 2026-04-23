@@ -5,8 +5,9 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
-from .match import match_soulers
 from .answer import souler_answer
+from .canonical import canonicalize_souler_name
+from .match import match_soulers
 from app.errors import CreditLimitError
 from app.repositories import (
     add_souler_alias,
@@ -14,11 +15,10 @@ from app.repositories import (
     create_or_update_resonance,
     create_souler,
     get_souler_by_alias,
+    get_souler_by_canonical_name,
     get_souler_by_name,
-    get_souler_by_wiki_id,
 )
 from app.shared import Lang
-from app.wikidata import search_wikidata_qid
 
 ECHO_MATCH_MODEL = "qwen3.5-plus"
 
@@ -57,34 +57,34 @@ async def _resolve_souler(
     matched_name: str,
     lang: Lang,
 ) -> dict[str, Any]:
-    souler_data = get_souler_by_alias(matched_name, lang)
-    if souler_data:
-        return souler_data
-
     souler_data = get_souler_by_name(matched_name, lang)
     if souler_data:
         return souler_data
 
-    wiki_id = await search_wikidata_qid(matched_name, lang)
-    if wiki_id is not None:
-        souler_data = get_souler_by_wiki_id(wiki_id, lang)
-        if souler_data:
-            add_souler_alias(
-                str(souler_data["id"]),
-                str(souler_data["name"]).strip(),
-                matched_name,
-                lang,
-            )
-            return souler_data
+    souler_data = get_souler_by_alias(matched_name, lang)
+    if souler_data:
+        return souler_data
 
-    if wiki_id is None:
-        return create_souler(matched_name, lang)
+    canonical_name = await canonicalize_souler_name(matched_name, lang)
+    souler_data = get_souler_by_canonical_name(canonical_name, lang)
+    if souler_data:
+        add_souler_alias(
+            str(souler_data["id"]),
+            str(souler_data["name"]).strip(),
+            matched_name,
+            lang,
+        )
+        return souler_data
 
     try:
-        return create_souler(matched_name, lang, wiki_id=wiki_id)
+        return create_souler(
+            matched_name,
+            lang,
+            canonical_name=canonical_name,
+        )
     except Exception:  # noqa: BLE001
-        # Concurrent requests can race on the (wiki_id, lang) unique index.
-        souler_data = get_souler_by_wiki_id(wiki_id, lang)
+        # Concurrent requests can race while inserting the same canonical name.
+        souler_data = get_souler_by_canonical_name(canonical_name, lang)
         if not souler_data:
             raise
         add_souler_alias(

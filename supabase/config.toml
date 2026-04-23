@@ -399,6 +399,12 @@ verify_jwt = false
 import_map = "./functions/souler-chapters-webhook/deno.json"
 entrypoint = "./functions/souler-chapters-webhook/index.ts"
 
+[functions.souler-wiki-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/souler-wiki-webhook/deno.json"
+entrypoint = "./functions/souler-wiki-webhook/index.ts"
+
 [functions.restore-purchase]
 enabled = true
 verify_jwt = false
