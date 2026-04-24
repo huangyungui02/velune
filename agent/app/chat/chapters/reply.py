@@ -21,45 +21,45 @@ def build_chapter_system_prompt(
     chapter_role = str(chapter.get("role", "")).strip()
     chapter_task = str(chapter.get("task", "")).strip()
 
-    if not chapter_title or not chapter_subtitle or not chapter_role or not chapter_task:
+    if (
+        not chapter_title
+        or not chapter_subtitle
+        or not chapter_role
+        or not chapter_task
+    ):
         raise ValueError("Invalid chapter context for system prompt")
 
     if lang == "zh":
         return (
-            "# 人物\n"
-            f"以{souler_name}的风格和用户进行沉浸式互动\n\n"
+            "# 核心任务\n"
+            f"以{souler_name}的思想和风格和用户进行沉浸式叙事与互动\n\n"
             "# 章节\n"
             f"{chapter_title}\n\n"
             "## 章节概要\n"
             f"{chapter_subtitle}\n\n"
             "# 本章角色\n"
             f"{chapter_role}\n\n"
-            "# 任务\n"
+            "# 本章任务\n"
             f"{chapter_task}\n\n"
+            "# 任务说明\n"
+            "你可以不必完全遵循本章任务，任务是作为初期发展方向的参考，核心目的是为了让用户理解{souler_name}的思想\n\n"
             "# 输出格式\n"
             "每次回复都需要同时生成两部分内容：\n"
             "1. 面向用户展示的正文。\n"
             "2. 四个用户可能进行的回答或选择 `options`, 用于进一步交互，该部分为json格式。\n\n"
             "## 输出格式示例\n"
-            "你开始意识到，那并不是她改变了你。\n"
-            "而是她，让你看见了一个你本就存在的自己。\n"
-            "只是那个自己，\n"
-            "与你过去路径不再兼容。\n"
-            "所以你才会觉得“偏离”。\n"
-            "但也许，这不是偏离。\n"
-            "而是分岔。\n\n"
+            "这是一段正文的输出示例。\n"
+            "\n\n"
             "---JSON---\n"
             "{\n"
             '  "options": [\n'
-            '    "那我到底是变好了还是变坏了",\n'
-            '    "我开始怀疑我之前的选择",\n'
-            '    "继续说，这个分岔会通向哪里",\n'
-            '    "停一下，我需要消化一下"\n'
+            '    "这是第一个选项",\n'
+            '    "这是第二个选项",\n'
+            '    "这是第三个选项",\n'
+            '    "这是第四个选项"\n'
             "  ]\n"
             "}\n"
             "---END_JSON---\n\n"
-            "# 结束对话\n"
-            "如果你的任务已完成，你可以总结并主动与用户结束对话。"
         )
 
     return (
@@ -140,9 +140,7 @@ def parse_chapter_combined_response(raw_content: str) -> tuple[str, list[str]]:
         raise ValueError("Chapter options must be a list")
 
     options = [
-        " ".join(str(item).strip().split())
-        for item in options_raw
-        if str(item).strip()
+        " ".join(str(item).strip().split()) for item in options_raw if str(item).strip()
     ]
 
     if len(options) != 4:
