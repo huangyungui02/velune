@@ -9,9 +9,12 @@ from app.config import get_settings
 from app.shared import Lang
 from app.errors import error_log_payload
 from app.llm import complete_text
-from app.billing import CHAT_STARDUST_COST, refund_stardust_safely
+from app.billing import (
+    CHAT_STARDUST_COST,
+    consume_stardust_if_enabled,
+    refund_stardust_safely,
+)
 from app.repositories import (
-    consume_stardust,
     create_or_update_resonance,
     create_session,
     delete_session,
@@ -36,7 +39,7 @@ async def start_chapter_session(
     chapter_id: UUID,
     lang: Lang,
 ) -> dict[str, object]:
-    await asyncio.to_thread(consume_stardust, user_id, CHAT_STARDUST_COST)
+    await consume_stardust_if_enabled(user_id, CHAT_STARDUST_COST)
 
     created_session_id: str | None = None
     assistant_written = False

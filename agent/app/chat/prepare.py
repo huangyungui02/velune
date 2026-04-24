@@ -7,7 +7,11 @@ from uuid import UUID
 from fastapi import Request
 
 from app.shared import Lang
-from app.billing import CHAT_STARDUST_COST, refund_stardust_safely
+from app.billing import (
+    CHAT_STARDUST_COST,
+    consume_stardust_if_enabled,
+    refund_stardust_safely,
+)
 from app.errors import error_log_payload
 from app.repositories import (
     ChapterContext,
@@ -15,7 +19,6 @@ from app.repositories import (
     SessionContext,
     Souler,
     bind_echo_session_if_missing,
-    consume_stardust,
     create_session,
     delete_session,
     get_chapter_by_id,
@@ -67,7 +70,11 @@ async def prepare_chat_request(
     if not content:
         raise ValueError("Missing content")
 
-    await run_blocking("Credit check", consume_stardust, user_id, CHAT_STARDUST_COST)
+    await consume_stardust_if_enabled(
+        user_id,
+        CHAT_STARDUST_COST,
+        run_blocking=run_blocking,
+    )
     log_stage("credit_checked")
 
     try:

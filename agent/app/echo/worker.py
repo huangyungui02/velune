@@ -7,11 +7,14 @@ from typing import Any
 
 from starlette.requests import ClientDisconnect
 
-from app.billing import ECHO_STARDUST_COST, refund_stardust_safely
+from app.billing import (
+    ECHO_STARDUST_COST,
+    consume_stardust_if_enabled,
+    refund_stardust_safely,
+)
 from app.echo.graph import EchoGraphFailedError, invoke_echo_graph
 from app.errors import CreditLimitError, credit_error_payload, error_log_payload, error_message
 from app.repositories import (
-    consume_stardust,
     ensure_glimmer,
     list_glimmer_echoes,
     update_glimmer_status,
@@ -95,8 +98,7 @@ async def compose_worker(
 
         update_glimmer_status(glimmer_id, "processing")
         processing_started = True
-        consume_stardust(user_id, ECHO_STARDUST_COST)
-        charged_credits = ECHO_STARDUST_COST
+        charged_credits = await consume_stardust_if_enabled(user_id, ECHO_STARDUST_COST)
 
         result = await invoke_echo_graph(
             user_id=user_id,
