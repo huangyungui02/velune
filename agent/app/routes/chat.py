@@ -6,15 +6,22 @@ from uuid import UUID
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 from app.shared import Lang, normalize_lang
 from app.errors import CreditLimitError, UnauthorizedError, error_log_payload, error_message
 from app.chat import handle_chat
 from app.chat.chapters import start_chapter_session
+from app.echo.canonical import canonicalize_souler_name
 from app.repositories import get_user_id_from_auth_header
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+class CanonicalizeSoulerRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+
 
 @router.post("/{lang}/chat")
 async def chat(lang: Lang, request: Request):
@@ -62,4 +69,34 @@ async def start_chapter_session_route(
         )
     except Exception as error:  # noqa: BLE001
         logger.error("Failed to start chapter session: %s", error_log_payload(error))
+        return JSONResponse({"error": error_message(error)}, status_code=400)
+
+
+@router.post("/{lang}/soulers/canonicalize")
+async def canonicalize_souler_name_route(
+    lang: Lang,
+    payload: CanonicalizeSoulerRequest,
+    request: Request,
+):
+    try:
+        lang = normalize_lang(lang)
+    except ValueError as error:
+        return JSONResponse({"error": str(error)}, status_code=400)
+
+    try:
+        await asyncio.to_thread(
+            get_user_id_from_auth_header,
+            request.headers.get("Authorization"),
+        )
+    except UnauthorizedError:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    except Exception as error:  # noqa: BLE001
+        logger.error("Failed to validate auth: %s", error_log_payload(error))
+        return JSONResponse({"error": error_message(error)}, status_code=400)
+
+    try:
+        canonical_name = await canonicalize_souler_name(payload.name, lang)
+        return JSONResponse({"canonical_name": canonical_name}, status_code=200)
+    except Exception as error:  # noqa: BLE001
+        logger.error("Failed to canonicalize souler: %s", error_log_payload(error))
         return JSONResponse({"error": error_message(error)}, status_code=400)
