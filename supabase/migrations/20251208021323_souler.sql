@@ -22,6 +22,9 @@ CREATE INDEX IF NOT EXISTS idx_soulers_wiki_id ON soulers (wiki_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_soulers_wiki_id_lang_unique
     ON soulers (wiki_id, lang)
     WHERE wiki_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_soulers_checked_true_updated_at_desc
+    ON public.soulers (updated_at DESC)
+    WHERE checked = true;
 
 CREATE TABLE souler_avatars (
     wiki_id VARCHAR(32) PRIMARY KEY,

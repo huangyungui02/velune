@@ -6,13 +6,15 @@ type SoulerRow = {
 	id: string;
 	name: string;
 	wiki_id: string | null;
+	updated_at: string;
 };
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const { data: soulersRaw } = await locals.supabase
 		.from('soulers')
-		.select('id, name, wiki_id')
-		.order('name', { ascending: true });
+		.select('id, name, wiki_id, updated_at')
+		.eq('checked', true)
+		.order('updated_at', { ascending: false });
 
 	const soulers = (soulersRaw ?? []) as SoulerRow[];
 	const avatarByWikiId = await fetchAvatarMap(
