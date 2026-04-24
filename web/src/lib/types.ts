@@ -20,6 +20,20 @@ export type SoulerChapter = {
 	subtitle: string;
 };
 
+export type AdminSoulerKeyword = {
+	word: string;
+	weight: number;
+};
+
+export type AdminSoulerChapter = {
+	id: string;
+	seq: number;
+	title: string;
+	subtitle: string;
+	role: string;
+	task: string;
+};
+
 export type AdminSoulerListItem = {
 	id: string;
 	name: string;
@@ -35,9 +49,10 @@ export type AdminSoulerDetail = {
 	bio: string;
 	checked: boolean;
 	canonicalName: string;
+	wikidata: string;
 	imageUrl: string | null;
-	keywords: string[];
-	chapters: SoulerChapter[];
+	keywords: AdminSoulerKeyword[];
+	chapters: AdminSoulerChapter[];
 };
 
 export type ConversationMessage = {
