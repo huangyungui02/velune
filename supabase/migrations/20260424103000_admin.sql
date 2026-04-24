@@ -25,6 +25,16 @@ CREATE POLICY "Allow admins to update soulers"
     ON public.soulers FOR UPDATE TO authenticated
     USING (public.is_admin())
     WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to insert souler avatars"
+    ON public.souler_avatars FOR INSERT TO authenticated
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to update souler avatars"
+    ON public.souler_avatars FOR UPDATE TO authenticated
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to delete souler avatars"
+    ON public.souler_avatars FOR DELETE TO authenticated
+    USING (public.is_admin());
 
 CREATE POLICY "Allow admins to insert chapters"
     ON public.chapters FOR INSERT TO authenticated

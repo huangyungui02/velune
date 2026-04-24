@@ -10,6 +10,7 @@ import {
 	normalizeAdminTab,
 	normalizeText
 } from '$lib/server/admin';
+import { normalizeWikiId } from '$lib/server/avatar';
 import type { Actions, PageServerLoad } from './$types';
 
 type KeywordInput = {
@@ -232,6 +233,24 @@ export const actions: Actions = {
 			return fail(400, { action: 'uploadAvatar', message: '缺少 souler_id。' });
 		}
 
+		const { data: soulerRaw, error: soulerError } = await locals.supabase
+			.from('soulers')
+			.select('wiki_id')
+			.eq('id', soulerId)
+			.maybeSingle();
+		if (soulerError || !soulerRaw) {
+			return fail(404, { action: 'uploadAvatar', message: '人物不存在。', soulerId });
+		}
+
+		const wikiId = normalizeWikiId((soulerRaw as { wiki_id: string | null }).wiki_id);
+		if (!wikiId) {
+			return fail(400, {
+				action: 'uploadAvatar',
+				message: '请先填写 Wikidata（wiki_id）再上传头像。',
+				soulerId
+			});
+		}
+
 		if (!(avatar instanceof File) || avatar.size <= 0) {
 			return fail(400, { action: 'uploadAvatar', message: '请选择头像文件。', soulerId });
 		}
@@ -245,7 +264,8 @@ export const actions: Actions = {
 		}
 
 		const extension = inferFileExt(avatar.name);
-		const objectPath = `${soulerId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+		const wikiSegment = wikiId.replace(/[^a-zA-Z0-9._-]/g, '_');
+		const objectPath = `${wikiSegment}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
 
 		const { error: uploadError } = await locals.supabase.storage.from(AVATAR_BUCKET).upload(objectPath, avatar, {
 			contentType: avatar.type || undefined,
@@ -263,13 +283,18 @@ export const actions: Actions = {
 			return fail(400, { action: 'uploadAvatar', message: '头像地址生成失败。', soulerId });
 		}
 
-		const { error: updateError } = await locals.supabase
-			.from('soulers')
-			.update({ image_path: imageUrl })
-			.eq('id', soulerId);
+		const { error: avatarUpsertError } = await locals.supabase
+			.from('souler_avatars')
+			.upsert(
+				{
+					wiki_id: wikiId,
+					image_path: imageUrl
+				},
+				{ onConflict: 'wiki_id' }
+			);
 
-		if (updateError) {
-			return fail(400, { action: 'uploadAvatar', message: updateError.message, soulerId });
+		if (avatarUpsertError) {
+			return fail(400, { action: 'uploadAvatar', message: avatarUpsertError.message, soulerId });
 		}
 
 		redirect(303, `/admin/${encodeURIComponent(soulerId)}?tab=${tab}&ok=avatar`);

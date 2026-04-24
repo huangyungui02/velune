@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { getAgentApiBaseUrl } from '$lib/server/agent';
+import { fetchAvatarMap, normalizeWikiId } from '$lib/server/avatar';
 import { isAdminUser } from '$lib/server/roles';
 import type { AdminSoulerChapter, AdminSoulerDetail, AdminSoulerListItem } from '$lib/types';
 
@@ -8,7 +9,7 @@ type SoulerListRow = {
 	name: string;
 	lang: string;
 	checked: boolean;
-	image_path: string | null;
+	wiki_id: string | null;
 };
 
 type SoulerDetailRow = {
@@ -19,7 +20,6 @@ type SoulerDetailRow = {
 	checked: boolean;
 	canonical_name: string | null;
 	wiki_id: string | null;
-	image_path: string | null;
 };
 
 type KeywordRow = {
@@ -70,23 +70,6 @@ export function normalizeAdminTab(value: string | null): AdminTab {
 	return 'unchecked';
 }
 
-export function resolveImageUrl(rawPath: string | null) {
-	if (!rawPath) {
-		return null;
-	}
-
-	const value = rawPath.trim();
-	if (!value) {
-		return null;
-	}
-
-	if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/')) {
-		return value;
-	}
-
-	return null;
-}
-
 export function clampWeight(value: number) {
 	if (!Number.isFinite(value)) {
 		return 0.5;
@@ -122,23 +105,35 @@ export async function assertAdmin(locals: App.Locals) {
 export async function fetchSoulerLists(locals: App.Locals) {
 	const { data: uncheckedRaw } = await locals.supabase
 		.from('soulers')
-		.select('id, name, lang, checked, image_path')
+		.select('id, name, lang, checked, wiki_id')
 		.eq('checked', false)
 		.order('name', { ascending: true });
 
 	const { data: checkedRaw } = await locals.supabase
 		.from('soulers')
-		.select('id, name, lang, checked, image_path')
+		.select('id, name, lang, checked, wiki_id')
 		.eq('checked', true)
 		.order('name', { ascending: true });
 
-	const toItem = (row: SoulerListRow): AdminSoulerListItem => ({
-		id: row.id,
-		name: row.name?.trim() || '未命名人物',
-		lang: row.lang?.trim() || 'zh',
-		checked: row.checked,
-		imageUrl: resolveImageUrl(row.image_path)
-	});
+	const rows = [
+		...((uncheckedRaw ?? []) as SoulerListRow[]),
+		...((checkedRaw ?? []) as SoulerListRow[])
+	] as SoulerListRow[];
+	const avatarByWikiId = await fetchAvatarMap(
+		locals,
+		rows.map((row) => row.wiki_id)
+	);
+
+	const toItem = (row: SoulerListRow): AdminSoulerListItem => {
+		const wikiId = normalizeWikiId(row.wiki_id);
+		return {
+			id: row.id,
+			name: row.name?.trim() || '未命名人物',
+			lang: row.lang?.trim() || 'zh',
+			checked: row.checked,
+			imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null
+		};
+	};
 
 	return {
 		unchecked: ((uncheckedRaw ?? []) as SoulerListRow[]).map(toItem),
@@ -149,7 +144,7 @@ export async function fetchSoulerLists(locals: App.Locals) {
 export async function fetchSoulerDetail(locals: App.Locals, soulerId: string) {
 	const { data: soulerRaw } = await locals.supabase
 		.from('soulers')
-		.select('id, name, lang, bio, checked, canonical_name, wiki_id, image_path')
+		.select('id, name, lang, bio, checked, canonical_name, wiki_id')
 		.eq('id', soulerId)
 		.maybeSingle();
 
@@ -158,6 +153,8 @@ export async function fetchSoulerDetail(locals: App.Locals, soulerId: string) {
 	}
 
 	const souler = soulerRaw as SoulerDetailRow;
+	const wikiId = normalizeWikiId(souler.wiki_id);
+	const avatarByWikiId = await fetchAvatarMap(locals, [wikiId]);
 
 	const { data: keywordRaw } = await locals.supabase
 		.from('souler_keyword')
@@ -191,8 +188,8 @@ export async function fetchSoulerDetail(locals: App.Locals, soulerId: string) {
 		bio: souler.bio ?? '',
 		checked: souler.checked,
 		canonicalName: souler.canonical_name?.trim() || '',
-		wikidata: souler.wiki_id?.trim() || '',
-		imageUrl: resolveImageUrl(souler.image_path),
+		wikidata: wikiId ?? '',
+		imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null,
 		keywords,
 		chapters
 	};

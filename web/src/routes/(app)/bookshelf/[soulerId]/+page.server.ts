@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { fetchAvatarMap, normalizeWikiId } from '$lib/server/avatar';
 import type { PageServerLoad } from './$types';
 import type { SoulerChapter } from '$lib/types';
 
@@ -6,7 +7,7 @@ type SoulerRow = {
 	id: string;
 	name: string;
 	bio: string | null;
-	image_path: string | null;
+	wiki_id: string | null;
 };
 
 type KeywordRow = {
@@ -23,29 +24,12 @@ type KeywordRow = {
 
 type ChapterRow = SoulerChapter;
 
-function resolveImageUrl(rawPath: string | null) {
-	if (!rawPath) {
-		return null;
-	}
-
-	const value = rawPath.trim();
-	if (!value) {
-		return null;
-	}
-
-	if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/')) {
-		return value;
-	}
-
-	return null;
-}
-
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const soulerId = params.soulerId;
 
 	const { data: soulerRaw, error: soulerError } = await locals.supabase
 		.from('soulers')
-		.select('id, name, bio, image_path')
+		.select('id, name, bio, wiki_id')
 		.eq('id', soulerId)
 		.single();
 
@@ -54,6 +38,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	}
 
 	const souler = soulerRaw as SoulerRow;
+	const wikiId = normalizeWikiId(souler.wiki_id);
+	const avatarByWikiId = await fetchAvatarMap(locals, [wikiId]);
 
 	const { data: keywordRaw } = await locals.supabase
 		.from('souler_keyword')
@@ -86,7 +72,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			id: souler.id,
 			name: souler.name,
 			bio: souler.bio ?? '',
-			imageUrl: resolveImageUrl(souler.image_path)
+			imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null
 		},
 		keywords,
 		chapters
