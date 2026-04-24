@@ -3,12 +3,14 @@ type AvatarRow = {
 	image_path: string | null;
 };
 
+const AVATAR_BUCKET = 'avatars';
+
 export function normalizeWikiId(value: string | null | undefined) {
 	const wikiId = value?.trim() ?? '';
 	return wikiId || null;
 }
 
-export function resolveImageUrl(rawPath: string | null) {
+export function normalizeImagePath(rawPath: string | null) {
 	if (!rawPath) {
 		return null;
 	}
@@ -18,11 +20,31 @@ export function resolveImageUrl(rawPath: string | null) {
 		return null;
 	}
 
-	if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/')) {
-		return value;
+	return value;
+}
+
+export function resolveImageUrl(locals: App.Locals, rawPath: string | null) {
+	const imagePath = normalizeImagePath(rawPath);
+	if (!imagePath) {
+		return null;
 	}
 
-	return null;
+	// Backward compatibility for old rows that may still store direct URLs.
+	if (
+		imagePath.startsWith('http://') ||
+		imagePath.startsWith('https://') ||
+		imagePath.startsWith('/')
+	) {
+		return imagePath;
+	}
+
+	const { data } = locals.supabase.storage.from(AVATAR_BUCKET).getPublicUrl(imagePath);
+	const publicUrl = data.publicUrl?.trim() ?? '';
+	if (!publicUrl) {
+		return null;
+	}
+
+	return publicUrl;
 }
 
 export async function fetchAvatarMap(locals: App.Locals, rawWikiIds: (string | null | undefined)[]) {
@@ -43,8 +65,13 @@ export async function fetchAvatarMap(locals: App.Locals, rawWikiIds: (string | n
 			continue;
 		}
 
-		avatarByWikiId.set(wikiId, resolveImageUrl(row.image_path));
+		avatarByWikiId.set(wikiId, resolveImageUrl(locals, row.image_path));
 	}
 
 	return avatarByWikiId;
+}
+
+export function ensureAvatarPath(wikiId: string) {
+	const wikiSegment = wikiId.replace(/[^a-zA-Z0-9._-]/g, '_');
+	return `soulers/${wikiSegment}.png`;
 }

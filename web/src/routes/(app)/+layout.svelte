@@ -30,7 +30,7 @@
 			<nav class="grid gap-2">
 				<a
 					class={`rounded-2xl border px-3 py-2 text-sm transition ${navClass('/explore')}`}
-					href="/explore">探索</a
+					href="/explore">发现</a
 				>
 				<a
 					class={`rounded-2xl border px-3 py-2 text-sm transition ${navClass('/bookshelf')}`}
@@ -99,7 +99,7 @@
 	>
 		<a
 			class={`rounded-xl px-3 py-2 text-center text-sm transition ${navClass('/explore')}`}
-			href="/explore">探索</a
+			href="/explore">发现</a
 		>
 		<a
 			class={`rounded-xl px-3 py-2 text-center text-sm transition ${navClass('/bookshelf')}`}

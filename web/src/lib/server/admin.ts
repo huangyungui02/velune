@@ -77,17 +77,6 @@ export function clampWeight(value: number) {
 	return Math.max(0, Math.min(1, Number(value.toFixed(4))));
 }
 
-export function inferFileExt(filename: string) {
-	const cleaned = filename.trim().toLowerCase();
-	const dotIndex = cleaned.lastIndexOf('.');
-	if (dotIndex < 0) {
-		return 'jpg';
-	}
-
-	const ext = cleaned.slice(dotIndex + 1).replace(/[^a-z0-9]/g, '');
-	return ext || 'jpg';
-}
-
 export async function assertAdmin(locals: App.Locals) {
 	const { session, user } = await locals.safeGetSession();
 	if (!session || !user) {

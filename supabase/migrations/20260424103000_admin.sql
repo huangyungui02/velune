@@ -76,6 +76,9 @@ SET
 CREATE POLICY "Allow admins to insert avatar objects"
     ON storage.objects FOR INSERT TO authenticated
     WITH CHECK (bucket_id = 'avatars' AND public.is_admin());
+CREATE POLICY "Allow admins to select avatar objects"
+    ON storage.objects FOR SELECT TO authenticated
+    USING (bucket_id = 'avatars' AND public.is_admin());
 CREATE POLICY "Allow admins to update avatar objects"
     ON storage.objects FOR UPDATE TO authenticated
     USING (bucket_id = 'avatars' AND public.is_admin())

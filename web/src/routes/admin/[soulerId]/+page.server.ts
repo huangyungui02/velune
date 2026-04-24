@@ -6,11 +6,10 @@ import {
 	assertAdmin,
 	clampWeight,
 	fetchSoulerDetail,
-	inferFileExt,
 	normalizeAdminTab,
 	normalizeText
 } from '$lib/server/admin';
-import { normalizeWikiId } from '$lib/server/avatar';
+import { ensureAvatarPath, normalizeWikiId } from '$lib/server/avatar';
 import type { Actions, PageServerLoad } from './$types';
 
 type KeywordInput = {
@@ -263,24 +262,15 @@ export const actions: Actions = {
 			return fail(400, { action: 'uploadAvatar', message: '头像不能超过 5MB。', soulerId });
 		}
 
-		const extension = inferFileExt(avatar.name);
-		const wikiSegment = wikiId.replace(/[^a-zA-Z0-9._-]/g, '_');
-		const objectPath = `${wikiSegment}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+		const filePath = ensureAvatarPath(wikiId);
 
-		const { error: uploadError } = await locals.supabase.storage.from(AVATAR_BUCKET).upload(objectPath, avatar, {
+		const { error: uploadError } = await locals.supabase.storage.from(AVATAR_BUCKET).upload(filePath, avatar, {
 			contentType: avatar.type || undefined,
-			cacheControl: '3600',
-			upsert: false
+			upsert: true
 		});
 
 		if (uploadError) {
 			return fail(400, { action: 'uploadAvatar', message: uploadError.message, soulerId });
-		}
-
-		const { data: publicUrlData } = locals.supabase.storage.from(AVATAR_BUCKET).getPublicUrl(objectPath);
-		const imageUrl = publicUrlData.publicUrl?.trim();
-		if (!imageUrl) {
-			return fail(400, { action: 'uploadAvatar', message: '头像地址生成失败。', soulerId });
 		}
 
 		const { error: avatarUpsertError } = await locals.supabase
@@ -288,7 +278,7 @@ export const actions: Actions = {
 			.upsert(
 				{
 					wiki_id: wikiId,
-					image_path: imageUrl
+					image_path: filePath
 				},
 				{ onConflict: 'wiki_id' }
 			);
