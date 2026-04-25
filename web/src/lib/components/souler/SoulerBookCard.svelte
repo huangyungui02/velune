@@ -7,6 +7,7 @@
 		imageUrl = null,
 		subtitle = '',
 		fallbackSubtitle = '',
+		tags = [],
 		class: className
 	}: {
 		href: string;
@@ -14,6 +15,7 @@
 		imageUrl?: string | null;
 		subtitle?: string;
 		fallbackSubtitle?: string;
+		tags?: string[];
 		class?: string;
 	} = $props();
 
@@ -44,6 +46,17 @@
 		</h2>
 		{#if subtitleText}
 			<p class="line-clamp-2 text-sm leading-6 text-muted-foreground">{subtitleText}</p>
+		{/if}
+		{#if tags.length > 0}
+			<div class="mt-2 flex flex-wrap justify-center gap-1.5">
+				{#each tags as tag (tag)}
+					<span
+						class="rounded-full bg-muted/55 px-2 py-0.5 text-[0.68rem] leading-5 tracking-[0.01em] text-muted-foreground"
+					>
+						{tag}
+					</span>
+				{/each}
+			</div>
 		{/if}
 	</div>
 </a>

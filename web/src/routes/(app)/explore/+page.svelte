@@ -16,9 +16,15 @@
 	</header>
 
 	{#if data.soulers.length > 0}
-		<div class="grid gap-x-6 gap-y-9 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+		<div class="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
 			{#each data.soulers as souler (souler.id)}
-				<SoulerBookCard href={`/bookshelf/${souler.id}`} name={souler.name} imageUrl={souler.imageUrl} />
+				<SoulerBookCard
+					class="mx-auto w-full max-w-[10.5rem] lg:max-w-[11.5rem]"
+					href={`/bookshelf/${souler.id}`}
+					name={souler.name}
+					imageUrl={souler.imageUrl}
+					tags={souler.tags}
+				/>
 			{/each}
 		</div>
 	{:else}

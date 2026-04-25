@@ -11,6 +11,7 @@ export type ExploreSoulerItem = {
 	id: string;
 	name: string;
 	imageUrl: string | null;
+	tags: string[];
 };
 
 export type SoulerChapter = {
