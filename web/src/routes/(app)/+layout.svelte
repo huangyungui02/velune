@@ -18,10 +18,10 @@
 <div class="h-dvh w-full overflow-hidden px-4 py-4 md:px-6 md:py-5 lg:px-8 lg:py-6">
 	<div class="mx-auto grid h-full w-full max-w-7xl gap-5 lg:grid-cols-[17rem_minmax(0,1fr)]">
 		<aside
-			class="scrollbar-none hidden h-full overflow-y-auto rounded-3xl border border-border/70 bg-card/80 p-4 lg:flex lg:flex-col"
+			class="hidden h-full overflow-hidden rounded-3xl border border-border/70 bg-card/80 lg:flex lg:flex-col"
 		>
-			<div class="space-y-5">
-				<div class="flex items-start justify-between gap-3 px-2">
+			<div class="space-y-5 px-4 pt-4">
+				<div class="flex items-start justify-between gap-3">
 					<div class="min-w-0">
 						<p class="font-hand text-3xl leading-none text-primary">Velune</p>
 						<p class="mt-2 truncate text-xs text-muted-foreground">{data.user?.email ?? ''}</p>
@@ -67,8 +67,8 @@
 				</nav>
 			</div>
 
-			<div class="scrollbar-none mt-6 min-h-0 flex-1 overflow-y-auto">
-				<p class="px-2 pb-3 text-xs tracking-[0.18em] text-muted-foreground">RESONANCES</p>
+			<div class="scrollbar-soft mt-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+				<p class="pb-3 text-xs tracking-[0.18em] text-muted-foreground">RESONANCES</p>
 				<div class="grid gap-2">
 					{#if data.bookshelf?.length}
 						{#each data.bookshelf as item (item.id)}
@@ -90,7 +90,7 @@
 		</aside>
 
 		<main
-			class="scrollbar-none h-full overflow-y-auto rounded-3xl border border-border/70 bg-card/70 p-5 pb-24 md:p-7 md:pb-24 lg:pb-7"
+			class="scrollbar-soft h-full overflow-y-auto rounded-3xl border border-border/70 bg-card/70 p-5 pb-24 md:p-7 md:pb-24 lg:pb-7"
 		>
 			{@render children()}
 		</main>
