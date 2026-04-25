@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { fetchAvatarMap, normalizeWikiId } from '$lib/server/avatar';
+import { readExploreCache, writeExploreCache } from '$lib/server/explore-cache';
 import type { ExploreSoulerItem } from '$lib/types';
 
 type SoulerRow = {
@@ -23,6 +24,13 @@ type KeywordRow = {
 };
 
 export const load: PageServerLoad = async ({ locals }) => {
+	const cachedSoulers = readExploreCache();
+	if (cachedSoulers) {
+		return {
+			soulers: cachedSoulers
+		};
+	}
+
 	const { data: soulersRaw } = await locals.supabase
 		.from('soulers')
 		.select('id, name, wiki_id, updated_at')
@@ -70,6 +78,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			tags: keywordBySoulerId.get(souler.id) ?? []
 		};
 	});
+
+	writeExploreCache(items);
 
 	return {
 		soulers: items

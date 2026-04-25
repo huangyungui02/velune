@@ -74,6 +74,8 @@
 						variant={isActive('/explore') ? 'default' : 'ghost'}
 						size="sm"
 						class="h-9 w-full justify-start gap-2 rounded-xl"
+						data-sveltekit-preload-data="tap"
+						data-sveltekit-preload-code="viewport"
 					>
 						<Compass class="size-4" />
 						发现
@@ -135,6 +137,8 @@
 	{#if !hideMobileNav}
 		<nav
 			class="fixed inset-x-4 bottom-4 z-30 grid grid-cols-2 gap-2 rounded-2xl border border-border/50 bg-background/80 p-2 shadow-sm backdrop-blur lg:hidden"
+			data-sveltekit-preload-data="tap"
+			data-sveltekit-preload-code="viewport"
 		>
 			<Button
 				href="/explore"

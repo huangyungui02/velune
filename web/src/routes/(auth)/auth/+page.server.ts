@@ -8,7 +8,7 @@ function normalizeCredential(value: FormDataEntryValue | null) {
 export const load: PageServerLoad = async ({ locals }) => {
 	const { session } = await locals.safeGetSession();
 	if (session) {
-		redirect(303, '/bookshelf');
+		redirect(303, '/explore');
 	}
 };
 
@@ -28,7 +28,7 @@ export const actions: Actions = {
 			return fail(400, { message: error.message, email });
 		}
 
-		redirect(303, '/bookshelf');
+		redirect(303, '/explore');
 	},
 	signup: async ({ request, locals, url }) => {
 		const formData = await request.formData();
@@ -43,7 +43,7 @@ export const actions: Actions = {
 			email,
 			password,
 			options: {
-				emailRedirectTo: `${url.origin}/bookshelf`
+				emailRedirectTo: `${url.origin}/explore`
 			}
 		});
 
@@ -58,6 +58,6 @@ export const actions: Actions = {
 			};
 		}
 
-		redirect(303, '/bookshelf');
+		redirect(303, '/explore');
 	}
 };

@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { fetchAvatarMap, normalizeWikiId } from '$lib/server/avatar';
+import { readBookshelfCache, writeBookshelfCache } from '$lib/server/bookshelf-cache';
 import type { LayoutServerLoad } from './$types';
 import type { BookshelfItem } from '$lib/types';
 
@@ -27,6 +28,14 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 
 	if (!session || !user) {
 		redirect(303, '/auth');
+	}
+
+	const cachedBookshelf = readBookshelfCache(user.id);
+	if (cachedBookshelf) {
+		return {
+			user,
+			bookshelf: cachedBookshelf
+		};
 	}
 
 	const { data: resonancesRaw } = await locals.supabase
@@ -82,6 +91,8 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		updatedAt: item.updated_at,
 		imageUrl: imageBySoulerId.get(item.souler_id) ?? null
 	}));
+
+	writeBookshelfCache(user.id, bookshelf);
 
 	return {
 		user,
