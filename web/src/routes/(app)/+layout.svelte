@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Compass from '@lucide/svelte/icons/compass';
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import LibraryBig from '@lucide/svelte/icons/library-big';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import UserRound from '@lucide/svelte/icons/user-round';
@@ -13,6 +14,7 @@
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
+	let bookshelfExpanded = $state(true);
 
 	function isActive(href: string) {
 		return (
@@ -83,24 +85,40 @@
 			</div>
 
 			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-soft pl-6 pr-1 pb-4">
-				<p class="pt-6 pb-4 px-2 text-xs font-sans tracking-[0.2em] text-muted-foreground/70">RESONANCES</p>
-				<div class="grid gap-2 pb-2">
-					{#if data.bookshelf?.length}
-						{#each data.bookshelf as item (item.id)}
-							<SoulerSidebarItem
-								href={getResonanceHref(item)}
-								name={item.soulerName}
-								imageUrl={item.imageUrl}
-								lastSessionTitle={item.lastSessionTitle}
-								active={page.url.pathname.startsWith(`/bookshelf/${item.soulerId}`)}
-							/>
-						{/each}
-					{:else}
-						<p class="px-3 py-4 text-sm text-muted-foreground/60">
-							还没有共鸣人物
-						</p>
-					{/if}
-				</div>
+				<button
+					type="button"
+					class="flex w-full items-center justify-between px-2 pb-4 pt-6 text-left"
+					aria-label="切换书架展开状态"
+					aria-expanded={bookshelfExpanded}
+					onclick={() => (bookshelfExpanded = !bookshelfExpanded)}
+				>
+					<span class="font-hand text-3xl leading-tight text-primary">书架</span>
+					<ChevronDown
+						class={cn(
+							'size-4 text-muted-foreground/80 transition-transform duration-200',
+							bookshelfExpanded ? 'rotate-180' : ''
+						)}
+					/>
+				</button>
+				{#if bookshelfExpanded}
+					<div class="grid gap-2 pb-2">
+						{#if data.bookshelf?.length}
+							{#each data.bookshelf as item (item.id)}
+								<SoulerSidebarItem
+									href={getResonanceHref(item)}
+									name={item.soulerName}
+									imageUrl={item.imageUrl}
+									lastSessionTitle={item.lastSessionTitle}
+									active={page.url.pathname.startsWith(`/bookshelf/${item.soulerId}`)}
+								/>
+							{/each}
+						{:else}
+							<p class="px-3 py-4 text-sm text-muted-foreground/60">
+								还没有共鸣人物
+							</p>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		</aside>
 

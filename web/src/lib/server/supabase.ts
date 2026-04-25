@@ -20,6 +20,9 @@ export function createSupabaseServerClient(event: RequestEvent) {
 				for (const { name, value, options } of cookiesToSet) {
 					event.cookies.set(name, value, {
 						...options,
+						// SvelteKit defaults secure=true for non-localhost hosts.
+						// In LAN dev over http://192.168.x.x, Secure cookies are dropped by browsers.
+						secure: options.secure ?? event.url.protocol === 'https:',
 						path: options.path ?? '/'
 					});
 				}
