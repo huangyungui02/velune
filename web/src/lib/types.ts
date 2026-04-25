@@ -2,6 +2,8 @@ export type BookshelfItem = {
 	id: string;
 	soulerId: string;
 	soulerName: string;
+	lastSessionId: string | null;
+	lastChapterId: string | null;
 	lastSessionTitle: string;
 	updatedAt: string;
 	imageUrl: string | null;

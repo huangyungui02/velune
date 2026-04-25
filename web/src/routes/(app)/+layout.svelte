@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import SoulerSidebarItem from '$lib/components/souler/SoulerSidebarItem.svelte';
+	import type { BookshelfItem } from '$lib/types';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -12,6 +13,14 @@
 		return active
 			? 'bg-primary text-primary-foreground border-primary/20'
 			: 'bg-card/50 text-foreground border-border/70 hover:bg-accent/40';
+	}
+
+	function getResonanceHref(item: BookshelfItem) {
+		if (!item.lastSessionId || !item.lastChapterId) {
+			return `/bookshelf/${item.soulerId}`;
+		}
+		const query = new URLSearchParams({ session: item.lastSessionId });
+		return `/bookshelf/${item.soulerId}/chapter/${item.lastChapterId}?${query.toString()}`;
 	}
 </script>
 
@@ -73,7 +82,7 @@
 					{#if data.bookshelf?.length}
 						{#each data.bookshelf as item (item.id)}
 							<SoulerSidebarItem
-								href={`/bookshelf/${item.soulerId}`}
+								href={getResonanceHref(item)}
 								name={item.soulerName}
 								imageUrl={item.imageUrl}
 								lastSessionTitle={item.lastSessionTitle}

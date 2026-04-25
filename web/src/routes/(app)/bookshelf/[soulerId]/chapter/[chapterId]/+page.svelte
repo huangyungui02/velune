@@ -30,6 +30,16 @@
 	let errorMessage = $state('');
 	let messageContainer = $state<HTMLElement | null>(null);
 
+	$effect(() => {
+		sessionId = data.initialSessionId ?? null;
+		const hydrated = hydrateConversation(data.initialMessages ?? []);
+		messages = hydrated.messages;
+		options = hydrated.options;
+		inputValue = '';
+		errorMessage = '';
+		isLoading = false;
+	});
+
 	function escapeHtml(raw: string) {
 		return raw
 			.replaceAll('&', '&amp;')
@@ -99,12 +109,84 @@
 			.slice(0, 4);
 	}
 
-	function extractChapterBody(rawContent: string) {
-		const marker = rawContent.indexOf('---JSON---');
-		if (marker < 0) {
-			return rawContent.trim();
+	function parseAssistantMessage(rawContent: string) {
+		const jsonStartMarker = '---JSON---';
+		const jsonEndMarker = '---END_JSON---';
+		const startIndex = rawContent.lastIndexOf(jsonStartMarker);
+
+		if (startIndex < 0) {
+			return {
+				content: rawContent.trim(),
+				options: [] as string[]
+			};
 		}
-		return rawContent.slice(0, marker).trim();
+
+		const endIndex = rawContent.indexOf(jsonEndMarker, startIndex + jsonStartMarker.length);
+		if (endIndex < 0) {
+			return {
+				content: rawContent.trim(),
+				options: [] as string[]
+			};
+		}
+
+		const body = rawContent.slice(0, startIndex).trim();
+		const jsonRaw = rawContent.slice(startIndex + jsonStartMarker.length, endIndex).trim();
+
+		try {
+			const parsed = JSON.parse(jsonRaw) as {
+				options?: unknown;
+			};
+			const rawOptions = Array.isArray(parsed.options)
+				? parsed.options.filter((item): item is string => typeof item === 'string')
+				: undefined;
+
+			return {
+				content: body,
+				options: normalizeOptions(rawOptions)
+			};
+		} catch {
+			return {
+				content: body,
+				options: [] as string[]
+			};
+		}
+	}
+
+	function hydrateConversation(rawMessages: ConversationMessage[]) {
+		const normalizedMessages: ConversationMessage[] = [];
+		const optionsByAssistantIndex: string[][] = [];
+
+		for (const message of rawMessages) {
+			if (message.role !== 'assistant') {
+				normalizedMessages.push(message);
+				continue;
+			}
+
+			const parsed = parseAssistantMessage(message.content);
+			normalizedMessages.push({
+				role: 'assistant',
+				content: parsed.content
+			});
+			if (parsed.options.length > 0) {
+				optionsByAssistantIndex[normalizedMessages.length - 1] = parsed.options;
+			}
+		}
+
+		let lastAssistantIndex = -1;
+		for (let i = normalizedMessages.length - 1; i >= 0; i -= 1) {
+			if (normalizedMessages[i].role === 'assistant') {
+				lastAssistantIndex = i;
+				break;
+			}
+		}
+
+		return {
+			messages: normalizedMessages,
+			options:
+				lastAssistantIndex >= 0
+					? (optionsByAssistantIndex[lastAssistantIndex] ?? [])
+					: ([] as string[])
+		};
 	}
 
 	async function startChapter() {
@@ -134,13 +216,15 @@
 			}
 
 			sessionId = payload.session_id;
+			const parsedAssistant = parseAssistantMessage(payload.assistant_message.content);
+			const normalizedOptions = normalizeOptions(payload.options);
 			messages = [
 				{
 					role: 'assistant',
-					content: extractChapterBody(payload.assistant_message.content)
+					content: parsedAssistant.content
 				}
 			];
-			options = normalizeOptions(payload.options);
+			options = normalizedOptions.length > 0 ? normalizedOptions : parsedAssistant.options;
 		} catch (err) {
 			errorMessage = err instanceof Error ? err.message : '章节启动失败';
 		} finally {
