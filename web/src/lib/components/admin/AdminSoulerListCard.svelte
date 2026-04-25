@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import * as Card from '$lib/components/ui/card/index.js';
+
 	let {
 		href,
 		name,
@@ -12,24 +16,19 @@
 	} = $props();
 </script>
 
-<article class="rounded-2xl border border-border/70 bg-background/55 p-3">
-	<div class="grid grid-cols-[3.2rem_1fr] gap-3">
-		<div class="relative aspect-[3/4] overflow-hidden rounded-lg border border-border/70 bg-muted/30">
+<Card.Root class="gap-0 rounded-2xl bg-background/52 py-3 ring-1 ring-border/62">
+	<Card.Content class="grid grid-cols-[3.2rem_1fr] items-start gap-3 px-3">
+		<div class="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted/30 ring-1 ring-border/65">
 			{#if imageUrl}
 				<img src={imageUrl} alt={name} class="h-full w-full object-cover" />
 			{:else}
 				<div class="grid h-full place-items-center text-[10px] text-muted-foreground">无图</div>
 			{/if}
 		</div>
-		<div class="min-w-0 space-y-2">
+		<div class="min-w-0 space-y-2.5">
 			<p class="truncate text-base leading-6">{name}</p>
-			<p class="text-xs text-muted-foreground">{lang}</p>
-			<a
-				href={href}
-				class="inline-flex h-8 items-center rounded-lg border border-primary/25 bg-primary/10 px-3 text-xs text-primary transition hover:bg-primary/15"
-			>
-				去编辑
-			</a>
+			<Badge variant="outline" class="text-[0.68rem]">{lang}</Badge>
+			<Button {href} variant="outline" size="sm" class="h-8 rounded-lg text-xs">去编辑</Button>
 		</div>
-	</div>
-</article>
+	</Card.Content>
+</Card.Root>

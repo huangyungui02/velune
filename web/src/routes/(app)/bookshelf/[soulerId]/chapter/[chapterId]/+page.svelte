@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { marked } from 'marked';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
+	import { Separator } from '$lib/components/ui/separator/index.js';
 	import type { ConversationMessage } from '$lib/types';
 	import type { PageProps } from './$types';
 
@@ -93,8 +98,8 @@
 	$effect(() => {
 		messages.length;
 		tick().then(() => {
-			if (messageContainer) {
-				messageContainer.scrollTop = messageContainer.scrollHeight;
+			if (messageContainer && messageContainer.lastElementChild) {
+				messageContainer.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'start' });
 			}
 		});
 	});
@@ -349,77 +354,89 @@
 	<title>Velune · {data.chapter.title}</title>
 </svelte:head>
 
-<section class="space-y-5">
-	<header class="space-y-3">
-		<a
+<div class="space-y-5 pb-44 lg:pb-32">
+	<header class="space-y-3 px-2">
+		<Button
 			href={`/bookshelf/${data.souler.id}`}
-			class="inline-flex items-center rounded-full border border-border/70 px-3 py-1 text-xs text-muted-foreground transition hover:bg-accent/30"
-			>返回人物</a
-		>
-		<h1 class="text-3xl leading-tight text-primary">{data.chapter.title}</h1>
-		<p class="text-sm leading-6 text-muted-foreground">{data.chapter.subtitle}</p>
+			variant="ghost"
+			size="sm"
+			class="h-7 rounded-full text-muted-foreground/70 pl-0 hover:bg-transparent hover:text-primary">
+			← 返回人物
+		</Button>
+		<h1 class="font-hand text-4xl leading-tight text-primary">{data.chapter.title}</h1>
+		<p class="font-sans text-sm leading-6 tracking-wide text-muted-foreground/80">{data.chapter.subtitle}</p>
+		<div class="h-px w-full bg-border/40 mt-4"></div>
 	</header>
 
-	<div class="space-y-4 rounded-2xl border border-border/70 bg-background/45 p-4 md:p-5">
-		<div bind:this={messageContainer} class="max-h-[52vh] space-y-3 overflow-y-auto pr-1">
-			{#if messages.length === 0}
-				<p
-					class="rounded-xl border border-dashed border-border px-3 py-4 text-sm text-muted-foreground"
-				>
-					点击「开始」，AI 会为你展开第一段叙述。
-				</p>
-			{/if}
-
-			{#each messages as message, index (`${message.role}-${index}`)}
-				<div class={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-					<div
-						class={`max-w-[86%] rounded-2xl px-4 py-3 text-sm leading-7 ${
-							message.role === 'user'
-								? 'border border-primary/20 bg-primary/12 text-foreground'
-								: 'border border-border/70 bg-card/90 text-foreground'
-						}`}
-					>
-						{#if message.role === 'assistant'}
-							<div class="markdown-content">
-								{@html renderAssistantMarkdown(message.content || (isLoading && index === messages.length - 1 ? '...' : ''))}
-							</div>
-						{:else}
-							{message.content}
-						{/if}
-					</div>
-				</div>
-			{/each}
-		</div>
-
-		{#if errorMessage}
-			<p class="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{errorMessage}</p>
+	<div class="px-2 md:px-4 space-y-6" bind:this={messageContainer}>
+		{#if messages.length === 0}
+			<p class="py-8 text-sm text-muted-foreground/60 text-center font-sans tracking-widest">
+				—— 叙述由此展开 ——
+			</p>
 		{/if}
 
-		{#if !sessionId}
-			<button
-				class="h-11 rounded-xl border border-primary/30 bg-primary px-5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-				onclick={startChapter}
-				disabled={isLoading}
-			>
-				{isLoading ? '启动中...' : '开始'}
-			</button>
-		{:else}
-			<div class="space-y-3">
-				<div class="grid gap-2 sm:grid-cols-2">
-					{#each options as option, optionIndex (`${option}-${optionIndex}`)}
-						<button
-							class="min-h-12 rounded-xl border border-border/70 bg-card/80 px-3 py-2 text-left text-sm leading-6 transition hover:border-primary/25 hover:bg-card disabled:cursor-not-allowed disabled:opacity-60"
-							onclick={() => sendMessage(option)}
-							disabled={isLoading}
-						>
-							{option}
-						</button>
-					{/each}
+		{#each messages as message, index (`${message.role}-${index}`)}
+			<div class={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+				<div class={`max-w-[90%] md:max-w-[80%] px-4 py-3 leading-8 text-[1.1rem] ${
+					message.role === 'user'
+						? 'bg-primary/5 text-primary rounded-2xl rounded-tr-sm border border-primary/10'
+						: 'text-foreground'
+				}`}>
+					{#if message.role === 'assistant'}
+						<div class="markdown-content">
+							{@html renderAssistantMarkdown(
+								message.content || (isLoading && index === messages.length - 1 ? '...' : '')
+							)}
+						</div>
+					{:else}
+						{message.content}
+					{/if}
 				</div>
+			</div>
+		{/each}
 
-				<div class="flex gap-2">
-					<input
-						class="h-11 flex-1 rounded-xl border border-input bg-background/70 px-3 text-sm transition outline-none focus:border-primary/60"
+		{#if errorMessage}
+			<p class="rounded-xl bg-destructive/5 px-4 py-3 text-sm text-destructive border border-destructive/20">
+				{errorMessage}
+			</p>
+		{/if}
+
+		{#if sessionId && options.length > 0}
+			<div class="grid gap-3 sm:grid-cols-2 pt-4">
+				{#each options as option, optionIndex (`${option}-${optionIndex}`)}
+					<button
+						class="h-auto min-h-12 w-full text-left rounded-xl border border-border/40 bg-background/50 px-5 py-4 text-[1.05rem] leading-7 text-foreground/90 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all font-sans break-words whitespace-normal"
+						onclick={() => sendMessage(option)}
+						disabled={isLoading}
+					>
+						{option}
+					</button>
+				{/each}
+			</div>
+		{/if}
+	</div>
+</div>
+
+<div
+	class="fixed left-0 right-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] lg:left-[16rem] lg:bottom-0 p-4 md:p-6 bg-gradient-to-t from-background via-background/95 to-transparent pt-12 pointer-events-none z-10"
+>
+	<div class="max-w-4xl mx-auto w-full pointer-events-auto">
+		{#if !sessionId}
+			<div class="flex justify-center">
+				<Button
+					class="h-12 rounded-full px-10 text-sm font-sans tracking-widest font-medium bg-primary/90 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+					onclick={startChapter}
+					disabled={isLoading}
+				>
+					{isLoading ? '启动中...' : '开始阅读'}
+				</Button>
+			</div>
+		{:else}
+			<div class="space-y-4 bg-background/80 backdrop-blur-md p-3 md:p-4 rounded-3xl border border-border/50 shadow-xl shadow-black/5">
+
+				<div class="flex gap-3 items-end">
+					<Input
+						class="min-h-12 flex-1 rounded-2xl bg-background/50 border-border/50 text-[1.05rem] px-4 font-sans focus-visible:ring-primary/30"
 						bind:value={inputValue}
 						placeholder="写下你的回应..."
 						onkeydown={(event) => {
@@ -430,18 +447,18 @@
 						}}
 						disabled={isLoading}
 					/>
-					<button
-						class="h-11 rounded-xl border border-primary/30 bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+					<Button
+						class="h-12 rounded-2xl px-6 text-sm font-sans font-medium bg-primary/90 hover:bg-primary"
 						onclick={() => sendMessage()}
 						disabled={isLoading || !inputValue.trim()}
 					>
 						发送
-					</button>
+					</Button>
 				</div>
 			</div>
 		{/if}
 	</div>
-</section>
+</div>
 
 <style>
 	:global(.markdown-content > *:first-child) {

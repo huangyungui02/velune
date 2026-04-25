@@ -1,4 +1,6 @@
 <script lang="ts">
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { Separator } from '$lib/components/ui/separator/index.js';
 	import SoulerBookCard from '$lib/components/souler/SoulerBookCard.svelte';
 	import type { PageProps } from './$types';
 
@@ -13,6 +15,7 @@
 	<header class="space-y-2">
 		<h1 class="text-3xl leading-tight text-primary">发现</h1>
 		<p class="text-sm text-muted-foreground">与所有 soulers 相遇，从一张封面开始。</p>
+		<Separator class="mt-3" />
 	</header>
 
 	{#if data.soulers.length > 0}
@@ -28,8 +31,6 @@
 			{/each}
 		</div>
 	{:else}
-		<div class="rounded-2xl bg-muted/25 px-5 py-9 text-sm text-muted-foreground">
-			还没有可发现的人物。
-		</div>
+		<div class="px-2 py-8 text-sm text-muted-foreground/70">还没有可发现的人物。</div>
 	{/if}
 </section>

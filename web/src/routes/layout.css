@@ -5,25 +5,25 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-	--background: oklch(0.96 0.015 85);
-	--foreground: oklch(0.3 0.03 58);
-	--card: oklch(0.985 0.01 87);
-	--card-foreground: oklch(0.3 0.03 58);
-	--popover: oklch(0.985 0.01 87);
-	--popover-foreground: oklch(0.3 0.03 58);
+	--background: oklch(0.975 0.015 80);
+	--foreground: oklch(0.28 0.02 50);
+	--card: oklch(0.985 0.01 80);
+	--card-foreground: oklch(0.28 0.02 50);
+	--popover: oklch(0.985 0.01 80);
+	--popover-foreground: oklch(0.28 0.02 50);
 	--primary: oklch(0.42 0.045 57);
 	--primary-foreground: oklch(0.985 0.004 80);
-	--secondary: oklch(0.94 0.012 86);
+	--secondary: oklch(0.95 0.012 80);
 	--secondary-foreground: oklch(0.34 0.03 60);
-	--muted: oklch(0.93 0.01 86);
-	--muted-foreground: oklch(0.49 0.02 61);
-	--accent: oklch(0.92 0.018 75);
+	--muted: oklch(0.94 0.01 80);
+	--muted-foreground: oklch(0.52 0.02 61);
+	--accent: oklch(0.93 0.018 75);
 	--accent-foreground: oklch(0.32 0.035 55);
 	--destructive: oklch(0.61 0.22 26);
-	--border: oklch(0.84 0.015 83);
+	--border: oklch(0.88 0.015 80);
 	--input: oklch(0.89 0.012 84);
 	--ring: oklch(0.62 0.05 57);
-	--radius: 1rem;
+	--radius: 0.8rem;
 }
 
 @theme inline {
@@ -66,22 +66,16 @@
 	}
 
 	html {
-		@apply font-serif antialiased;
+		@apply antialiased;
 	}
 
 	body {
-		@apply text-foreground;
+		@apply text-foreground font-hand text-[1.05rem] tracking-wide;
 		background-color: var(--background);
 		background-image:
-			radial-gradient(circle at 20% 5%, oklch(1 0.01 90 / 55%), transparent 36%),
-			radial-gradient(circle at 85% 10%, oklch(0.93 0.03 75 / 25%), transparent 42%),
-			repeating-linear-gradient(
-				0deg,
-				oklch(0.98 0.006 85 / 35%) 0,
-				oklch(0.98 0.006 85 / 35%) 1px,
-				transparent 1px,
-				transparent 3px
-			);
+			radial-gradient(circle at 20% 5%, oklch(1 0.01 80 / 65%), transparent 36%),
+			radial-gradient(circle at 85% 10%, oklch(0.93 0.03 70 / 30%), transparent 42%),
+			url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
 		min-height: 100dvh;
 	}
 
@@ -96,6 +90,7 @@
 @layer utilities {
 	.scrollbar-soft {
 		scrollbar-width: thin;
+		scrollbar-gutter: stable;
 		scrollbar-color: color-mix(in oklch, var(--muted-foreground) 28%, transparent) transparent;
 	}
 

@@ -1,53 +1,77 @@
 <script lang="ts">
+	import ClipboardCheck from '@lucide/svelte/icons/clipboard-check';
+	import FilePlus2 from '@lucide/svelte/icons/file-plus-2';
+	import Files from '@lucide/svelte/icons/files';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
+	import { Separator } from '$lib/components/ui/separator/index.js';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
-
-	function tabClass(tab: 'unchecked' | 'checked' | 'create') {
-		return data.activeTab === tab
-			? 'border-primary/25 bg-primary text-primary-foreground'
-			: 'border-border/70 bg-card/70 text-foreground hover:bg-accent/45';
-	}
 </script>
 
 <svelte:head>
 	<title>Velune · Admin</title>
 </svelte:head>
 
-<div class="mx-auto w-full max-w-7xl px-4 py-5 md:px-6 lg:px-8">
-	<div class="grid min-h-[calc(100dvh-2.5rem)] gap-5 lg:grid-cols-[15rem_1fr]">
-		<aside class="rounded-3xl border border-border/70 bg-card/80 p-4">
-			<div class="space-y-2 px-2 pb-4">
+<div class="h-dvh w-full overflow-hidden px-4 py-5 md:px-6 lg:px-8">
+	<div class="mx-auto grid h-full min-h-0 w-full max-w-7xl gap-5 lg:grid-cols-[15rem_1fr]">
+		<Card.Root class="h-full min-h-0 rounded-3xl bg-card/82 py-0 ring-1 ring-border/72">
+			<Card.Header class="space-y-2 px-4 pt-4">
 				<p class="font-hand text-3xl leading-none text-primary">Velune Admin</p>
-				<p class="text-xs text-muted-foreground">{data.userEmail}</p>
-			</div>
+				<p class="truncate text-xs text-muted-foreground">{data.userEmail}</p>
+			</Card.Header>
 
-			<nav class="grid gap-2">
-				<a
-					href="/admin?tab=unchecked"
-					class={`rounded-2xl border px-3 py-2 text-sm transition ${tabClass('unchecked')}`}
-				>
-					待审核
-					<span class="ml-2 text-xs opacity-80">{data.uncheckedSoulers.length}</span>
-				</a>
-				<a
-					href="/admin?tab=checked"
-					class={`rounded-2xl border px-3 py-2 text-sm transition ${tabClass('checked')}`}
-				>
-					已审核
-					<span class="ml-2 text-xs opacity-80">{data.checkedSoulers.length}</span>
-				</a>
-				<a
-					href="/admin?tab=create"
-					class={`rounded-2xl border px-3 py-2 text-sm transition ${tabClass('create')}`}
-				>
-					新建
-				</a>
-			</nav>
-		</aside>
+			<Separator class="mx-4" />
 
-		<main class="rounded-3xl border border-border/70 bg-card/70 p-5 md:p-7">
-			{@render children()}
-		</main>
+			<ScrollArea
+				class="min-h-0 flex-1 p-4"
+				scrollbarYClasses="data-vertical:w-2 data-vertical:border-l-0"
+			>
+				<nav class="grid gap-2">
+					<Button
+						href="/admin?tab=unchecked"
+						variant={data.activeTab === 'unchecked' ? 'default' : 'outline'}
+						size="sm"
+						class="h-10 justify-start gap-2 rounded-2xl"
+					>
+						<Files class="size-4" />
+						待审核
+						<span class="ml-auto text-xs opacity-80">{data.uncheckedSoulers.length}</span>
+					</Button>
+					<Button
+						href="/admin?tab=checked"
+						variant={data.activeTab === 'checked' ? 'default' : 'outline'}
+						size="sm"
+						class="h-10 justify-start gap-2 rounded-2xl"
+					>
+						<ClipboardCheck class="size-4" />
+						已审核
+						<span class="ml-auto text-xs opacity-80">{data.checkedSoulers.length}</span>
+					</Button>
+					<Button
+						href="/admin?tab=create"
+						variant={data.activeTab === 'create' ? 'default' : 'outline'}
+						size="sm"
+						class="h-10 justify-start gap-2 rounded-2xl"
+					>
+						<FilePlus2 class="size-4" />
+						新建
+					</Button>
+				</nav>
+			</ScrollArea>
+		</Card.Root>
+
+		<Card.Root class="h-full min-h-0 rounded-3xl bg-card/72 py-0 ring-1 ring-border/70">
+			<ScrollArea
+				class="h-full min-h-0 rounded-[inherit]"
+				scrollbarYClasses="data-vertical:w-2 data-vertical:border-l-0"
+			>
+				<main class="p-5 md:p-7">
+					{@render children()}
+				</main>
+			</ScrollArea>
+		</Card.Root>
 	</div>
 </div>

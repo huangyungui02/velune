@@ -1,4 +1,6 @@
 <script lang="ts">
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { Separator } from '$lib/components/ui/separator/index.js';
 	import SoulerBookCard from '$lib/components/souler/SoulerBookCard.svelte';
 	import type { PageProps } from './$types';
 
@@ -13,6 +15,7 @@
 	<header class="space-y-2">
 		<h1 class="text-3xl leading-tight text-primary">书架</h1>
 		<p class="text-sm text-muted-foreground">从最近一次共鸣开始，继续读下去。</p>
+		<Separator class="mt-3" />
 	</header>
 
 	{#if data.bookshelf?.length}
@@ -28,7 +31,7 @@
 			{/each}
 		</div>
 	{:else}
-		<div class="rounded-2xl bg-muted/25 px-5 py-9 text-sm text-muted-foreground">
+		<div class="px-2 py-8 text-sm text-muted-foreground/70">
 			还没有共鸣人物。先去移动端生成 Echo 或开启聊天，书架会自动出现。
 		</div>
 	{/if}
