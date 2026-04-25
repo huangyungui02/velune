@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import UserRound from '@lucide/svelte/icons/user-round';
 	import { marked } from 'marked';
+	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
 	import type { ConversationMessage } from '$lib/types';
 	import type { PageProps } from './$types';
 
@@ -354,18 +353,26 @@
 	<title>Velune · {data.chapter.title}</title>
 </svelte:head>
 
-<div class="space-y-5 pb-44 lg:pb-32">
-	<header class="space-y-3 px-2">
-		<Button
-			href={`/bookshelf/${data.souler.id}`}
-			variant="ghost"
-			size="sm"
-			class="h-7 rounded-full text-muted-foreground/70 pl-0 hover:bg-transparent hover:text-primary">
-			← 返回人物
-		</Button>
+<div class="pb-40 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pt-2 lg:pb-32">
+	<PageTopToolbar title={data.chapter.title} backHref="/bookshelf" class="md:hidden">
+		{#snippet children()}
+			<Button
+				href={`/bookshelf/${data.souler.id}`}
+				variant="ghost"
+				size="icon-sm"
+				class="size-9 rounded-full text-muted-foreground/80 hover:text-primary"
+				aria-label="人物详情"
+			>
+				<UserRound class="size-4" />
+			</Button>
+		{/snippet}
+	</PageTopToolbar>
+
+	<header class="mb-6 hidden md:block">
 		<h1 class="font-hand text-4xl leading-tight text-primary">{data.chapter.title}</h1>
-		<p class="font-sans text-sm leading-6 tracking-wide text-muted-foreground/80">{data.chapter.subtitle}</p>
-		<div class="h-px w-full bg-border/40 mt-4"></div>
+		{#if data.chapter.subtitle}
+			<p class="mt-2 text-sm leading-7 text-muted-foreground/80">{data.chapter.subtitle}</p>
+		{/if}
 	</header>
 
 	<div class="px-2 md:px-4 space-y-6" bind:this={messageContainer}>
@@ -376,23 +383,21 @@
 		{/if}
 
 		{#each messages as message, index (`${message.role}-${index}`)}
-			<div class={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-				<div class={`max-w-[90%] md:max-w-[80%] px-4 py-3 leading-8 text-[1.1rem] ${
-					message.role === 'user'
-						? 'bg-primary/5 text-primary rounded-2xl rounded-tr-sm border border-primary/10'
-						: 'text-foreground'
-				}`}>
-					{#if message.role === 'assistant'}
-						<div class="markdown-content">
-							{@html renderAssistantMarkdown(
-								message.content || (isLoading && index === messages.length - 1 ? '...' : '')
-							)}
-						</div>
-					{:else}
+			{#if message.role === 'assistant'}
+				<article class="w-full px-1 text-[1.1rem] leading-8 text-foreground md:px-2">
+					<div class="markdown-content">
+						{@html renderAssistantMarkdown(
+							message.content || (isLoading && index === messages.length - 1 ? '...' : '')
+						)}
+					</div>
+				</article>
+			{:else}
+				<div class="flex justify-end">
+					<div class="max-w-[92%] rounded-2xl rounded-tr-sm border border-primary/10 bg-primary/5 px-4 py-3 text-[1.05rem] leading-7 text-primary">
 						{message.content}
-					{/if}
+					</div>
 				</div>
-			</div>
+			{/if}
 		{/each}
 
 		{#if errorMessage}
@@ -418,7 +423,7 @@
 </div>
 
 <div
-	class="fixed left-0 right-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] lg:left-[16rem] lg:bottom-0 p-4 md:p-6 bg-gradient-to-t from-background via-background/95 to-transparent pt-12 pointer-events-none z-10"
+	class="fixed left-0 right-0 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-gradient-to-t from-background via-background/95 to-transparent p-4 pt-10 pointer-events-none z-10 md:p-6 lg:left-[16rem] lg:bottom-0"
 >
 	<div class="max-w-4xl mx-auto w-full pointer-events-auto">
 		{#if !sessionId}
@@ -432,11 +437,10 @@
 				</Button>
 			</div>
 		{:else}
-			<div class="space-y-4 bg-background/80 backdrop-blur-md p-3 md:p-4 rounded-3xl border border-border/50 shadow-xl shadow-black/5">
-
-				<div class="flex gap-3 items-end">
+			<div class="rounded-2xl bg-background/88 p-2.5 shadow-sm ring-1 ring-border/35 backdrop-blur">
+				<div class="flex items-center gap-2">
 					<Input
-						class="min-h-12 flex-1 rounded-2xl bg-background/50 border-border/50 text-[1.05rem] px-4 font-sans focus-visible:ring-primary/30"
+						class="h-11 flex-1 rounded-xl border-0 bg-transparent px-3 text-[1rem] font-sans shadow-none focus-visible:border-0 focus-visible:ring-0 focus-visible:outline-none"
 						bind:value={inputValue}
 						placeholder="写下你的回应..."
 						onkeydown={(event) => {
@@ -448,7 +452,7 @@
 						disabled={isLoading}
 					/>
 					<Button
-						class="h-12 rounded-2xl px-6 text-sm font-sans font-medium bg-primary/90 hover:bg-primary"
+						class="h-10 rounded-xl px-4 text-sm font-sans font-medium bg-primary/90 hover:bg-primary"
 						onclick={() => sendMessage()}
 						disabled={isLoading || !inputValue.trim()}
 					>

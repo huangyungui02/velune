@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import type { PageProps } from './$types';
 
@@ -10,7 +11,9 @@
 	<title>Velune · {data.souler.name}</title>
 </svelte:head>
 
-<section class="space-y-7">
+<section class="space-y-7 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pt-0">
+	<PageTopToolbar title={data.souler.name} backHref="/bookshelf" class="md:hidden" />
+
 	<header class="grid grid-cols-[7.25rem_minmax(0,1fr)] items-start gap-x-4 gap-y-4 md:grid-cols-[12rem_1fr] md:gap-6">
 		<div class="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-muted/20 shadow-sm md:max-w-[13rem]">
 			{#if data.souler.imageUrl}

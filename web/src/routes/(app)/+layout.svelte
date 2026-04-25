@@ -15,6 +15,7 @@
 
 	let { data, children }: LayoutProps = $props();
 	let bookshelfExpanded = $state(true);
+	let hideMobileNav = $derived(/^\/bookshelf\/[^/]+(?:\/chapter\/[^/]+)?$/.test(page.url.pathname));
 
 	function isActive(href: string) {
 		return (
@@ -131,26 +132,28 @@
 		</main>
 	</div>
 
-	<nav
-		class="fixed inset-x-4 bottom-4 z-30 grid grid-cols-2 gap-2 rounded-2xl border border-border/50 bg-background/80 p-2 shadow-sm backdrop-blur lg:hidden"
-	>
-		<Button
-			href="/explore"
-			variant={isActive('/explore') ? 'default' : 'ghost'}
-			size="sm"
-			class="h-10 gap-2 rounded-xl"
+	{#if !hideMobileNav}
+		<nav
+			class="fixed inset-x-4 bottom-4 z-30 grid grid-cols-2 gap-2 rounded-2xl border border-border/50 bg-background/80 p-2 shadow-sm backdrop-blur lg:hidden"
 		>
-			<Compass class="size-4" />
-			发现
-		</Button>
-		<Button
-			href="/bookshelf"
-			variant={isActive('/bookshelf') ? 'default' : 'ghost'}
-			size="sm"
-			class="h-10 gap-2 rounded-xl"
-		>
-			<LibraryBig class="size-4" />
-			书架
-		</Button>
-	</nav>
+			<Button
+				href="/explore"
+				variant={isActive('/explore') ? 'default' : 'ghost'}
+				size="sm"
+				class="h-10 gap-2 rounded-xl"
+			>
+				<Compass class="size-4" />
+				发现
+			</Button>
+			<Button
+				href="/bookshelf"
+				variant={isActive('/bookshelf') ? 'default' : 'ghost'}
+				size="sm"
+				class="h-10 gap-2 rounded-xl"
+			>
+				<LibraryBig class="size-4" />
+				书架
+			</Button>
+		</nav>
+	{/if}
 </div>

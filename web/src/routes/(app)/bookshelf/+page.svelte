@@ -1,9 +1,18 @@
 <script lang="ts">
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import SoulerBookCard from '$lib/components/souler/SoulerBookCard.svelte';
+	import type { BookshelfItem } from '$lib/types';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+
+	function getMobileBookshelfHref(item: BookshelfItem) {
+		if (!item.lastSessionId || !item.lastChapterId) {
+			return `/bookshelf/${item.soulerId}`;
+		}
+		const query = new URLSearchParams({ session: item.lastSessionId });
+		return `/bookshelf/${item.soulerId}/chapter/${item.lastChapterId}?${query.toString()}`;
+	}
 </script>
 
 <svelte:head>
@@ -21,7 +30,7 @@
 		<div class="space-y-3 md:hidden">
 			{#each data.bookshelf as item (item.id)}
 				<a
-					href={`/bookshelf/${item.soulerId}`}
+					href={getMobileBookshelfHref(item)}
 					class="group flex items-start gap-4 rounded-2xl px-2 py-2 transition hover:bg-primary/5"
 				>
 					<div class="relative h-[7.5rem] w-[5.625rem] shrink-0 overflow-hidden rounded-xl bg-muted/20">
