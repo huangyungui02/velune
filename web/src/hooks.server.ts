@@ -21,7 +21,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 			return { session: null, user: null };
 		}
 
-		return { session, user };
+		return {
+			session: {
+				access_token: session.access_token
+			},
+			user
+		};
 	};
 
 	return resolve(event, {
