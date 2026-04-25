@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import SoulerSidebarItem from '$lib/components/souler/SoulerSidebarItem.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -11,12 +12,6 @@
 			: 'bg-card/50 text-foreground border-border/70 hover:bg-accent/40';
 	}
 
-	function bookClass(soulerId: string) {
-		const active = page.url.pathname.startsWith(`/bookshelf/${soulerId}`);
-		return active
-			? 'border-primary/35 bg-primary/10'
-			: 'border-border/70 bg-card/60 hover:bg-card/95';
-	}
 </script>
 
 <div class="mx-auto w-full max-w-7xl px-4 py-5 md:px-6 lg:px-8">
@@ -47,36 +42,13 @@
 				<div class="grid gap-2">
 					{#if data.bookshelf?.length}
 						{#each data.bookshelf as item (item.id)}
-							<a
+							<SoulerSidebarItem
 								href={`/bookshelf/${item.soulerId}`}
-								class={`grid grid-cols-[2.3rem_1fr] gap-2 rounded-2xl border p-2 transition ${bookClass(item.soulerId)}`}
-							>
-								<div
-									class="relative aspect-[3/4] overflow-hidden rounded-lg border border-border/70 bg-muted/40"
-								>
-									{#if item.imageUrl}
-										<img
-											src={item.imageUrl}
-											alt={item.soulerName}
-											class="h-full w-full object-cover"
-										/>
-									{:else}
-										<div class="grid h-full place-items-center text-xs text-muted-foreground">
-											无图
-										</div>
-									{/if}
-								</div>
-								<div class="min-w-0">
-									<p class="truncate text-sm leading-6">{item.soulerName}</p>
-									{#if item.lastSessionTitle}
-										<p class="line-clamp-2 text-xs leading-5 text-muted-foreground">
-											{item.lastSessionTitle}
-										</p>
-									{:else}
-										<p class="text-xs leading-5 text-muted-foreground">尚未开始章节</p>
-									{/if}
-								</div>
-							</a>
+								name={item.soulerName}
+								imageUrl={item.imageUrl}
+								lastSessionTitle={item.lastSessionTitle}
+								active={page.url.pathname.startsWith(`/bookshelf/${item.soulerId}`)}
+							/>
 						{/each}
 					{:else}
 						<p

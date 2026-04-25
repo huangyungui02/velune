@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AdminSoulerListCard from '$lib/components/admin/AdminSoulerListCard.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -74,27 +75,12 @@
 		<section class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
 			{#if data.visibleSoulers.length > 0}
 				{#each data.visibleSoulers as souler (souler.id)}
-					<article class="rounded-2xl border border-border/70 bg-background/55 p-3">
-						<div class="grid grid-cols-[3.2rem_1fr] gap-3">
-							<div class="relative aspect-[3/4] overflow-hidden rounded-lg border border-border/70 bg-muted/30">
-								{#if souler.imageUrl}
-									<img src={souler.imageUrl} alt={souler.name} class="h-full w-full object-cover" />
-								{:else}
-									<div class="grid h-full place-items-center text-[10px] text-muted-foreground">无图</div>
-								{/if}
-							</div>
-							<div class="min-w-0 space-y-2">
-								<p class="truncate text-base leading-6">{souler.name}</p>
-								<p class="text-xs text-muted-foreground">{souler.lang}</p>
-								<a
-									href={detailHref(souler.id)}
-									class="inline-flex h-8 items-center rounded-lg border border-primary/25 bg-primary/10 px-3 text-xs text-primary transition hover:bg-primary/15"
-								>
-									去编辑
-								</a>
-							</div>
-						</div>
-					</article>
+					<AdminSoulerListCard
+						href={detailHref(souler.id)}
+						name={souler.name}
+						lang={souler.lang}
+						imageUrl={souler.imageUrl}
+					/>
 				{/each}
 			{:else}
 				<p class="rounded-2xl border border-dashed border-border px-4 py-8 text-sm text-muted-foreground">
