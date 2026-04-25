@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { marked } from 'marked';
 	import type { ConversationMessage } from '$lib/types';
 	import type { PageProps } from './$types';
 
@@ -28,6 +29,56 @@
 	let isLoading = $state(false);
 	let errorMessage = $state('');
 	let messageContainer = $state<HTMLElement | null>(null);
+
+	function escapeHtml(raw: string) {
+		return raw
+			.replaceAll('&', '&amp;')
+			.replaceAll('<', '&lt;')
+			.replaceAll('>', '&gt;')
+			.replaceAll('"', '&quot;')
+			.replaceAll("'", '&#39;');
+	}
+
+	function escapeAttribute(raw: string) {
+		return raw
+			.replaceAll('&', '&amp;')
+			.replaceAll('"', '&quot;')
+			.replaceAll('<', '&lt;')
+			.replaceAll('>', '&gt;');
+	}
+
+	const markdownRenderer = new marked.Renderer();
+	markdownRenderer.html = () => '';
+	markdownRenderer.link = function ({ href, title, tokens }) {
+		const parsed = this.parser.parseInline(tokens);
+		if (!href) {
+			return parsed;
+		}
+		const normalizedHref = href.trim();
+		if (!/^(https?:|mailto:|\/|#)/i.test(normalizedHref)) {
+			return parsed;
+		}
+		const safeHref = escapeAttribute(normalizedHref);
+		const safeTitle = title ? ` title="${escapeAttribute(title)}"` : '';
+		return `<a href="${safeHref}"${safeTitle} target="_blank" rel="noopener noreferrer nofollow">${parsed}</a>`;
+	};
+
+	function renderAssistantMarkdown(raw: string) {
+		const content = raw.trim();
+		if (!content) {
+			return '';
+		}
+		try {
+			return marked.parse(escapeHtml(content), {
+				async: false,
+				gfm: true,
+				breaks: true,
+				renderer: markdownRenderer
+			}) as string;
+		} catch {
+			return `<p>${escapeHtml(content)}</p>`;
+		}
+	}
 
 	$effect(() => {
 		messages.length;
@@ -244,7 +295,13 @@
 								: 'border border-border/70 bg-card/90 text-foreground'
 						}`}
 					>
-						{message.content || (isLoading && index === messages.length - 1 ? '...' : '')}
+						{#if message.role === 'assistant'}
+							<div class="markdown-content">
+								{@html renderAssistantMarkdown(message.content || (isLoading && index === messages.length - 1 ? '...' : ''))}
+							</div>
+						{:else}
+							{message.content}
+						{/if}
 					</div>
 				</div>
 			{/each}
@@ -301,3 +358,63 @@
 		{/if}
 	</div>
 </section>
+
+<style>
+	:global(.markdown-content > *:first-child) {
+		margin-top: 0;
+	}
+
+	:global(.markdown-content > *:last-child) {
+		margin-bottom: 0;
+	}
+
+	:global(.markdown-content p + p) {
+		margin-top: 0.6rem;
+	}
+
+	:global(.markdown-content ul),
+	:global(.markdown-content ol) {
+		margin: 0.55rem 0;
+		padding-left: 1.2rem;
+	}
+
+	:global(.markdown-content li + li) {
+		margin-top: 0.2rem;
+	}
+
+	:global(.markdown-content code) {
+		border: 1px solid oklch(0.9 0.01 82 / 0.6);
+		border-radius: 0.4rem;
+		padding: 0.05rem 0.35rem;
+		background: oklch(0.98 0.01 86 / 0.7);
+		font-size: 0.85em;
+	}
+
+	:global(.markdown-content pre) {
+		margin: 0.65rem 0;
+		overflow-x: auto;
+		border: 1px solid oklch(0.9 0.01 82 / 0.8);
+		border-radius: 0.8rem;
+		padding: 0.65rem 0.75rem;
+		background: oklch(0.99 0.01 86 / 0.9);
+	}
+
+	:global(.markdown-content pre code) {
+		border: 0;
+		padding: 0;
+		background: transparent;
+	}
+
+	:global(.markdown-content a) {
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 3px;
+	}
+
+	:global(.markdown-content blockquote) {
+		margin: 0.65rem 0;
+		border-left: 2px solid oklch(0.86 0.01 82);
+		padding-left: 0.7rem;
+		color: oklch(0.48 0.02 80);
+	}
+</style>
