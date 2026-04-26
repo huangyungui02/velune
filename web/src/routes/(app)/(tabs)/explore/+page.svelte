@@ -159,7 +159,7 @@
 <section class="space-y-8">
 	<header class="space-y-2">
 		<div class="flex flex-wrap items-start justify-between gap-4">
-			<h1 class="text-3xl leading-tight text-primary">发现</h1>
+			<h1 class="text-2xl leading-tight text-primary">发现</h1>
 			<div class="inline-flex rounded-2xl border border-border/50 bg-muted/20 p-1">
 				<Button
 					type="button"
@@ -190,7 +190,7 @@
 				{#each data.exploreInitial.featuredSections as section (section.id)}
 					<section class="space-y-4">
 						<div class="px-1">
-							<h2 class="font-hand text-[1.9rem] leading-tight text-primary md:text-[2.2rem]">
+							<h2 class="font-serif text-xl leading-tight text-primary md:text-2xl">
 								{section.title}
 							</h2>
 							{#if section.subtitle}

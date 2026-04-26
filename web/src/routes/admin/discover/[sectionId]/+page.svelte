@@ -16,7 +16,7 @@
 		<Button href={backHref} variant="ghost" size="sm" class="h-7 px-0 text-muted-foreground"
 			>返回精选列表</Button
 		>
-		<h1 class="text-3xl leading-tight text-primary">编辑精选分组</h1>
+		<h1 class="text-2xl leading-tight text-primary">编辑精选分组</h1>
 		<p class="text-sm text-muted-foreground">
 			{data.section.title} · {data.section.lang} · key: {data.section.key}
 		</p>

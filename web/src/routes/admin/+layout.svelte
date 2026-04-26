@@ -22,7 +22,7 @@
 	<div class="mx-auto grid h-full min-h-0 w-full max-w-7xl gap-5 lg:grid-cols-[15rem_1fr]">
 		<Card.Root class="h-full min-h-0 rounded-3xl bg-card/82 py-0 ring-1 ring-border/72">
 			<Card.Header class="space-y-2 px-4 pt-4">
-				<p class="font-hand text-3xl leading-none text-primary">Velune Admin</p>
+				<p class="font-serif text-2xl leading-none text-primary">Velune Admin</p>
 				<p class="truncate text-xs text-muted-foreground">{data.userEmail}</p>
 			</Card.Header>
 

@@ -10,7 +10,7 @@
 
 <section class="space-y-6">
 	<header class="space-y-2">
-		<h1 class="text-3xl leading-tight text-primary">设置</h1>
+		<h1 class="text-2xl leading-tight text-primary">设置</h1>
 		<p class="text-sm text-muted-foreground">当前账号：{data.user?.email ?? '未知用户'}</p>
 	</header>
 

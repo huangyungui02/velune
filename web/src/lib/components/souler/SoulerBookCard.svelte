@@ -41,9 +41,7 @@
 		</div>
 
 		<div class="space-y-1.5 px-1 pt-4 pb-2.5 text-center">
-			<h2
-				class="truncate font-hand text-[1.4rem] leading-7 text-foreground transition group-hover:text-primary"
-			>
+			<h2 class="truncate font-serif text-lg leading-7 text-foreground transition group-hover:text-primary">
 				{name}
 			</h2>
 			{#if subtitleText}

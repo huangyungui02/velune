@@ -35,7 +35,7 @@
 
 <section class="space-y-5">
 	<header class="space-y-2">
-		<h1 class="text-3xl leading-tight text-primary">
+		<h1 class="text-2xl leading-tight text-primary">
 			{data.activeTab === 'create'
 				? '新建 Souler'
 				: data.activeTab === 'sections'

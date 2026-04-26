@@ -30,7 +30,7 @@
 
 		<div class="py-1">
 			<div class="space-y-4">
-				<h1 class="font-hand text-4xl leading-tight text-primary md:text-5xl">{data.souler.name}</h1>
+				<h1 class="font-serif text-xl leading-tight text-primary md:text-2xl">{data.souler.name}</h1>
 
 				{#if data.keywords.length > 0}
 					<div class="flex flex-wrap gap-2">
@@ -62,7 +62,7 @@
 	</header>
 
 	<section class="space-y-3">
-		<h2 class="text-2xl text-primary">章节</h2>
+		<h2 class="text-xl text-primary">章节</h2>
 		<Separator />
 
 		{#if data.chapters.length}
@@ -73,7 +73,7 @@
 						class="block group px-4 py-3 border-l-2 border-transparent hover:border-primary/40 transition"
 					>
 						<p class="text-xs font-sans tracking-widest text-muted-foreground/60 mb-1">CHAPTER {chapter.seq}</p>
-						<h3 class="text-2xl leading-8 text-foreground group-hover:text-primary transition">{chapter.title}</h3>
+						<h3 class="text-xl leading-7 text-foreground transition group-hover:text-primary">{chapter.title}</h3>
 						{#if chapter.subtitle}
 							<p class="text-sm leading-6 text-muted-foreground mt-2">{chapter.subtitle}</p>
 						{/if}

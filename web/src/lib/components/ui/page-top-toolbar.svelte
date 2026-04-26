@@ -34,8 +34,11 @@
 			window.history.back();
 			return;
 		}
-		const href = backHref.startsWith('/') ? `${base}${backHref}` : backHref;
-		await goto(href, { keepFocus: true });
+		if (backHref.startsWith('/')) {
+			await goto(`${base}${backHref}`, { keepFocus: true });
+			return;
+		}
+		window.location.assign(backHref);
 	}
 </script>
 
@@ -57,7 +60,7 @@
 			<ChevronLeft class="size-4" />
 		</Button>
 		<h1
-			class="min-w-0 overflow-x-hidden overflow-y-visible text-ellipsis whitespace-nowrap px-1 text-center font-hand text-base leading-[1.2] text-primary/92"
+			class="min-w-0 overflow-x-hidden overflow-y-visible text-ellipsis whitespace-nowrap px-1 text-center font-serif text-sm leading-[1.2] text-primary/92"
 		>
 			{title}
 		</h1>

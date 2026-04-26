@@ -373,7 +373,7 @@
 	</PageTopToolbar>
 
 	<header class="mb-6 hidden md:block">
-		<h1 class="font-hand text-4xl leading-tight text-primary">{data.chapter.title}</h1>
+		<h1 class="font-serif text-xl leading-tight text-primary md:text-2xl">{data.chapter.title}</h1>
 		{#if data.chapter.subtitle}
 			<p class="mt-2 text-sm leading-7 text-muted-foreground/80">{data.chapter.subtitle}</p>
 		{/if}

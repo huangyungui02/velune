@@ -32,7 +32,7 @@
 		<Button href={backHref} variant="ghost" size="sm" class="h-7 px-0 text-muted-foreground"
 			>返回列表</Button
 		>
-		<h1 class="text-3xl leading-tight text-primary">编辑人物</h1>
+		<h1 class="text-2xl leading-tight text-primary">编辑人物</h1>
 		<p class="text-sm text-muted-foreground">
 			{data.souler.canonicalName || '暂无 canonical name'}
 		</p>

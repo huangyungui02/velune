@@ -35,7 +35,7 @@
 			{/if}
 		</div>
 		<div class="min-w-0 flex-1">
-			<p class="truncate font-hand text-[1.22rem] leading-none">{name}</p>
+			<p class="truncate font-serif text-lg leading-6">{name}</p>
 			{#if lastSessionTitle.trim()}
 				<p class="truncate text-sm leading-6 text-muted-foreground/80 mt-1">{lastSessionTitle}</p>
 			{:else}

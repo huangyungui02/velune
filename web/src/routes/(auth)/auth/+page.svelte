@@ -16,7 +16,7 @@
 		class="w-full max-w-md rounded-3xl bg-card/88 py-7 shadow-[0_18px_40px_-28px_oklch(0.2_0.02_40_/_35%)] ring-1 ring-border/65 backdrop-blur-sm"
 	>
 		<Card.Header class="space-y-2 px-7">
-			<p class="font-hand text-3xl text-primary">Velune</p>
+			<p class="font-serif text-2xl text-primary">Velune</p>
 			<Card.Title class="text-xl font-semibold">进入你的书架</Card.Title>
 			<Card.Description class="text-sm">用邮箱密码注册或登录</Card.Description>
 		</Card.Header>

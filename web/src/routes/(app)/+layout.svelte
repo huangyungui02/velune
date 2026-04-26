@@ -62,7 +62,7 @@
 			<div class="gap-4 px-8">
 				<div class="flex items-start justify-between gap-3">
 					<div class="min-w-0">
-						<p class="font-hand text-4xl leading-none text-primary">Velune</p>
+						<p class="font-serif text-2xl leading-none text-primary">Velune</p>
 						<p class="mt-2 truncate font-sans text-xs text-muted-foreground">
 							{data.user?.email ?? ''}
 						</p>
@@ -118,7 +118,7 @@
 						aria-expanded={bookshelfExpanded}
 						onclick={() => (bookshelfExpanded = !bookshelfExpanded)}
 					>
-						<span class="font-hand text-3xl leading-tight text-primary">书架</span>
+						<span class="font-serif text-xl leading-tight text-primary">书架</span>
 					</button>
 					<div class="flex items-center gap-0.5">
 						<Button

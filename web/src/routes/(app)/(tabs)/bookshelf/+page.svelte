@@ -39,7 +39,7 @@
 <section class="space-y-8">
 	<header class="space-y-2">
 		<div class="flex items-center justify-between gap-3">
-			<h1 class="text-3xl leading-tight text-primary">书架</h1>
+			<h1 class="text-2xl leading-tight text-primary">书架</h1>
 			<Button
 				type="button"
 				variant="ghost"
@@ -57,11 +57,11 @@
 
 	{#if data.bookshelf?.length}
 		<div class="space-y-3 md:hidden">
-			{#each data.bookshelf as item (item.id)}
-				<a
-					href={`${base}${getMobileBookshelfHref(item)}`}
-					class="group flex items-start gap-4 rounded-2xl px-2 py-2 transition hover:bg-primary/5"
-				>
+				{#each data.bookshelf as item (item.id)}
+					<a
+						href={`${base}${getMobileBookshelfHref(item)}`}
+						class="group flex items-start gap-4 rounded-2xl px-2 py-2 transition hover:bg-primary/5"
+					>
 					<div
 						class="relative h-[7.5rem] w-[5.625rem] shrink-0 overflow-hidden rounded-xl bg-muted/20"
 					>
@@ -78,9 +78,7 @@
 						{/if}
 					</div>
 					<div class="min-w-0 flex-1 py-1">
-						<h2
-							class="truncate font-hand text-[1.52rem] leading-7 text-foreground transition group-hover:text-primary"
-						>
+						<h2 class="truncate font-serif text-xl leading-7 text-foreground transition group-hover:text-primary">
 							{item.soulerName}
 						</h2>
 						<p class="mt-8 truncate text-sm leading-6 text-muted-foreground/80">
