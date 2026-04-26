@@ -35,6 +35,8 @@
 	let isLoading = $state(false);
 	let errorMessage = $state('');
 	let messageContainer = $state<HTMLElement | null>(null);
+	let loadingDotFrame = $state(0);
+	const loadingDots = $derived('.'.repeat((loadingDotFrame % 3) + 1));
 
 	$effect(() => {
 		sessionId = data.initialSessionId ?? null;
@@ -99,11 +101,27 @@
 	$effect(() => {
 		messages.length;
 		tick().then(() => {
-			if (messageContainer && messageContainer.lastElementChild) {
-				messageContainer.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'start' });
-			}
+			scrollToLatestMessage('smooth');
 		});
 	});
+
+	$effect(() => {
+		if (!isLoading) {
+			loadingDotFrame = 0;
+			return;
+		}
+		const timer = setInterval(() => {
+			loadingDotFrame = (loadingDotFrame + 1) % 3;
+		}, 360);
+		return () => clearInterval(timer);
+	});
+
+	function scrollToLatestMessage(behavior: ScrollBehavior = 'auto') {
+		if (!messageContainer || !messageContainer.lastElementChild) {
+			return;
+		}
+		messageContainer.lastElementChild.scrollIntoView({ behavior, block: 'start' });
+	}
 
 	function normalizeOptions(raw: string[] | undefined) {
 		if (!raw) {
@@ -202,6 +220,9 @@
 
 		isLoading = true;
 		errorMessage = '';
+		options = [];
+		messages = [{ role: 'assistant', content: '' }];
+		const assistantIndex = 0;
 
 		try {
 			const response = await fetch('/api/chapter/start', {
@@ -224,17 +245,32 @@
 			sessionId = payload.session_id;
 			const parsedAssistant = parseAssistantMessage(payload.assistant_message.content);
 			const normalizedOptions = normalizeOptions(payload.options);
-			messages = [
-				{
-					role: 'assistant',
-					content: parsedAssistant.content
-				}
-			];
+			await streamAssistantContent(assistantIndex, parsedAssistant.content);
 			options = normalizedOptions.length > 0 ? normalizedOptions : parsedAssistant.options;
 		} catch (err) {
+			if (!messages[assistantIndex]?.content.trim()) {
+				messages = [];
+			}
 			errorMessage = err instanceof Error ? err.message : '章节启动失败';
 		} finally {
 			isLoading = false;
+		}
+	}
+
+	async function streamAssistantContent(assistantIndex: number, fullContent: string) {
+		const chunks = Array.from(fullContent);
+		if (chunks.length === 0) {
+			return;
+		}
+
+		for (let cursor = 0; cursor < chunks.length; ) {
+			const remaining = chunks.length - cursor;
+			const step = remaining > 420 ? 12 : remaining > 220 ? 8 : remaining > 90 ? 5 : 3;
+			const nextCursor = Math.min(cursor + step, chunks.length);
+			messages[assistantIndex].content += chunks.slice(cursor, nextCursor).join('');
+			scrollToLatestMessage();
+			cursor = nextCursor;
+			await new Promise((resolve) => setTimeout(resolve, 16));
 		}
 	}
 
@@ -244,8 +280,10 @@
 			return;
 		}
 
+		const previousOptions = options;
 		inputValue = '';
 		errorMessage = '';
+		options = [];
 		isLoading = true;
 
 		messages.push({ role: 'user', content });
@@ -271,11 +309,13 @@
 				throw new Error(fallback || '消息发送失败');
 			}
 
-			options = [];
 			await consumeStream(response.body, assistantIndex);
 		} catch (err) {
 			if (!messages[assistantIndex].content.trim()) {
 				messages.pop();
+			}
+			if (previousOptions.length > 0) {
+				options = previousOptions;
 			}
 			errorMessage = err instanceof Error ? err.message : '消息发送失败';
 		} finally {
@@ -330,6 +370,7 @@
 			case 'delta': {
 				const delta = payload.delta ?? '';
 				messages[assistantIndex].content += delta;
+				scrollToLatestMessage();
 				break;
 			}
 			case 'options': {
@@ -356,7 +397,7 @@
 </svelte:head>
 
 <div
-	class="pb-[calc(env(safe-area-inset-bottom)+4rem)] pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pb-[4.25rem] md:pt-2"
+	class="pb-[calc(env(safe-area-inset-bottom)+3.8rem)] pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pb-[4.5rem] md:pt-2"
 >
 	<PageTopToolbar title={data.chapter.title} backHref="/bookshelf" class="md:hidden">
 		{#snippet children()}
@@ -391,7 +432,7 @@
 				<article class="w-full px-1 text-[1.1rem] leading-8 text-foreground md:px-2">
 					<div class="markdown-content">
 						{@html renderAssistantMarkdown(
-							message.content || (isLoading && index === messages.length - 1 ? '...' : '')
+							message.content || (isLoading && index === messages.length - 1 ? loadingDots : '')
 						)}
 					</div>
 				</article>
@@ -411,23 +452,26 @@
 		{/if}
 
 		{#if sessionId && options.length > 0}
-			<div class="grid gap-1.5 pt-0.5 sm:grid-cols-2">
+			<div class="space-y-2 pt-0.5">
+				<p class="px-1 text-[0.72rem] tracking-[0.18em] text-muted-foreground/70">可选回应</p>
+				<div class="grid gap-2 sm:grid-cols-2">
 				{#each options as option, optionIndex (`${option}-${optionIndex}`)}
 					<button
-						class="h-auto min-h-11 w-full rounded-xl border border-border/40 bg-background/50 px-4 py-3 text-left font-sans text-[1rem] leading-7 break-words whitespace-normal text-foreground/90 transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+						class="h-auto min-h-11 w-full rounded-2xl border border-primary/22 bg-primary/[0.065] px-4 py-2.5 text-left font-sans text-[0.96rem] leading-7 break-words whitespace-normal text-foreground/90 shadow-[0_1px_0_rgba(0,0,0,0.03)] transition-all hover:border-primary/42 hover:bg-primary/[0.11] hover:text-primary active:scale-[0.997]"
 						onclick={() => sendMessage(option)}
 						disabled={isLoading}
 					>
 						{option}
 					</button>
 				{/each}
+				</div>
 			</div>
 		{/if}
 	</div>
 </div>
 
 <div
-	class="fixed right-0 bottom-0 left-0 z-20 bg-background/90 pb-[max(env(safe-area-inset-bottom),0.4rem)] pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:right-[max((100vw-80rem)/2,0px)] lg:left-[calc(max((100vw-80rem)/2,0px)+16rem)]"
+	class="fixed right-0 bottom-0 left-0 z-20 bg-background/90 pb-[max(env(safe-area-inset-bottom),0.28rem)] pt-0.5 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:right-[max((100vw-80rem)/2,0px)] lg:left-[calc(max((100vw-80rem)/2,0px)+16rem)]"
 >
 	<div class="pointer-events-auto mx-auto w-full max-w-4xl px-3 md:px-6">
 		{#if !sessionId}

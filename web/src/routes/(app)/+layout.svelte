@@ -20,6 +20,11 @@
 	let bookshelfExpanded = $state(true);
 	let bookshelfRefreshing = $state(false);
 	let hideMobileNav = $derived(/^\/bookshelf\/[^/]+(?:\/chapter\/[^/]+)?$/.test(page.url.pathname));
+	let mainContentPadding = $derived(
+		hideMobileNav
+			? 'p-6 pb-4 md:p-10 md:pb-10 lg:p-12 lg:pb-12'
+			: 'p-6 pb-32 md:p-10 md:pb-12 lg:p-12'
+	);
 	const userEmail = $derived(data.user?.email ?? '');
 	const userInitial = $derived((userEmail.trim().charAt(0) || 'V').toUpperCase());
 	const developerContactUrl = 'https://xhslink.com/m/6RghZ8ot2N0';
@@ -183,7 +188,7 @@
 				class="scrollbar-soft h-full min-h-0 w-full overflow-y-auto overscroll-contain"
 				data-main-scroll-container
 			>
-				<div class="p-6 pb-32 md:p-10 lg:p-12">
+				<div class={mainContentPadding}>
 					{@render children()}
 				</div>
 			</div>
