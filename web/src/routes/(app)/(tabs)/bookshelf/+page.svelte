@@ -22,7 +22,6 @@
 <section class="space-y-8">
 	<header class="space-y-2">
 		<h1 class="text-3xl leading-tight text-primary">书架</h1>
-		<p class="text-sm text-muted-foreground">从最近一次共鸣开始，继续读下去。</p>
 		<Separator class="mt-3" />
 	</header>
 

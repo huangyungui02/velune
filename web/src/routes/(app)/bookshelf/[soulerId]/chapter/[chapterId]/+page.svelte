@@ -355,7 +355,9 @@
 	<title>Velune · {data.chapter.title}</title>
 </svelte:head>
 
-<div class="pb-36 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pb-32 md:pt-2">
+<div
+	class="pb-[calc(env(safe-area-inset-bottom)+6.25rem)] pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pb-28 md:pt-2"
+>
 	<PageTopToolbar title={data.chapter.title} backHref="/bookshelf" class="md:hidden">
 		{#snippet children()}
 			<Button
@@ -409,7 +411,7 @@
 		{/if}
 
 		{#if sessionId && options.length > 0}
-			<div class="grid gap-2.5 pt-2 sm:grid-cols-2">
+			<div class="grid gap-2 pt-1 sm:grid-cols-2">
 				{#each options as option, optionIndex (`${option}-${optionIndex}`)}
 					<button
 						class="h-auto min-h-11 w-full rounded-xl border border-border/40 bg-background/50 px-4 py-3 text-left font-sans text-[1rem] leading-7 break-words whitespace-normal text-foreground/90 transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
@@ -425,7 +427,7 @@
 </div>
 
 <div
-	class="fixed inset-x-0 bottom-0 z-20 border-t border-border/40 bg-background/90 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:left-[16rem]"
+	class="fixed inset-x-0 bottom-0 z-20 border-t border-border/40 bg-background/90 pb-[max(env(safe-area-inset-bottom),0.45rem)] pt-1.5 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:left-[16rem]"
 >
 	<div class="pointer-events-auto mx-auto w-full max-w-4xl px-3 md:px-6">
 		{#if !sessionId}

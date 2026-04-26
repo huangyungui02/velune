@@ -159,10 +159,7 @@
 <section class="space-y-8">
 	<header class="space-y-2">
 		<div class="flex flex-wrap items-start justify-between gap-4">
-			<div class="space-y-2">
-				<h1 class="text-3xl leading-tight text-primary">发现</h1>
-				<p class="text-sm text-muted-foreground">与所有 soulers 相遇，从一张封面开始。</p>
-			</div>
+			<h1 class="text-3xl leading-tight text-primary">发现</h1>
 			<div class="inline-flex rounded-2xl border border-border/50 bg-muted/20 p-1">
 				<Button
 					type="button"
@@ -210,7 +207,6 @@
 										href={`/bookshelf/${souler.id}`}
 										name={souler.name}
 										imageUrl={souler.imageUrl}
-										tags={souler.tags}
 									/>
 								{/each}
 							</div>
@@ -229,7 +225,6 @@
 					href={`/bookshelf/${souler.id}`}
 					name={souler.name}
 					imageUrl={souler.imageUrl}
-					tags={souler.tags}
 				/>
 			{/each}
 		</div>

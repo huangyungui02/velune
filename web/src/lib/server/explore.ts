@@ -36,21 +36,7 @@ type DiscoverSectionItemRow = {
 		| null;
 };
 
-type KeywordRow = {
-	souler_id: string;
-	weight: number;
-	keywords:
-		| {
-				word: string;
-		  }[]
-		| {
-				word: string;
-		  }
-		| null;
-};
-
 const LATEST_PAGE_SIZE = 20;
-const MAX_TAGS_PER_SOULER = 4;
 
 function normalizeLang(raw: string | null | undefined) {
 	const value = raw?.trim().toLowerCase();
@@ -76,41 +62,9 @@ export function resolveExploreLang(user: unknown, acceptLanguage: string | null)
 	return fromHeader ?? 'zh';
 }
 
-async function fetchKeywordMap(locals: App.Locals, soulerIds: string[]) {
-	const keywordBySoulerId = new Map<string, string[]>();
-	if (soulerIds.length === 0) {
-		return keywordBySoulerId;
-	}
-
-	const { data: keywordRaw } = await locals.supabase
-		.from('souler_keyword')
-		.select('souler_id, weight, keywords!inner(word)')
-		.in('souler_id', soulerIds)
-		.order('weight', { ascending: false });
-
-	for (const item of (keywordRaw ?? []) as KeywordRow[]) {
-		const keywordSource = Array.isArray(item.keywords) ? item.keywords[0] : item.keywords;
-		const word = keywordSource?.word?.trim();
-		if (!word) {
-			continue;
-		}
-
-		const existing = keywordBySoulerId.get(item.souler_id) ?? [];
-		if (existing.length >= MAX_TAGS_PER_SOULER || existing.includes(word)) {
-			continue;
-		}
-
-		existing.push(word);
-		keywordBySoulerId.set(item.souler_id, existing);
-	}
-
-	return keywordBySoulerId;
-}
-
 function buildExploreSoulerItems(
 	soulers: SoulerRow[],
-	avatarByWikiId: Map<string, string | null>,
-	keywordBySoulerId: Map<string, string[]>
+	avatarByWikiId: Map<string, string | null>
 ) {
 	return soulers.map((souler) => {
 		const wikiId = normalizeWikiId(souler.wiki_id);
@@ -118,7 +72,7 @@ function buildExploreSoulerItems(
 			id: souler.id,
 			name: souler.name?.trim() || '未命名人物',
 			imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null,
-			tags: keywordBySoulerId.get(souler.id) ?? []
+			tags: []
 		} satisfies ExploreSoulerItem;
 	});
 }
@@ -190,14 +144,8 @@ export async function fetchFeaturedSections(locals: App.Locals, preferredLang: s
 		locals,
 		orderedSoulerRows.map((souler) => souler.wiki_id)
 	);
-	const keywordBySoulerId = await fetchKeywordMap(locals, [
-		...new Set(orderedSoulerRows.map((souler) => souler.id))
-	]);
 	const soulerById = new Map<string, ExploreSoulerItem>(
-		buildExploreSoulerItems(orderedSoulerRows, avatarByWikiId, keywordBySoulerId).map((souler) => [
-			souler.id,
-			souler
-		])
+		buildExploreSoulerItems(orderedSoulerRows, avatarByWikiId).map((souler) => [souler.id, souler])
 	);
 	const soulerIdsBySectionId = new Map<string, string[]>();
 
@@ -241,13 +189,11 @@ export async function fetchLatestSoulersPage(locals: App.Locals, page: number) {
 		.range(from, to);
 
 	const soulers = (soulersRaw ?? []) as SoulerRow[];
-	const soulerIds = soulers.map((souler) => souler.id);
 	const avatarByWikiId = await fetchAvatarMap(
 		locals,
 		soulers.map((souler) => souler.wiki_id)
 	);
-	const keywordBySoulerId = await fetchKeywordMap(locals, soulerIds);
-	const items = buildExploreSoulerItems(soulers, avatarByWikiId, keywordBySoulerId);
+	const items = buildExploreSoulerItems(soulers, avatarByWikiId);
 	const hasNextPage =
 		typeof count === 'number' ? from + items.length < count : items.length === LATEST_PAGE_SIZE;
 
