@@ -259,6 +259,35 @@
 					</form>
 				</Card.Content>
 			</Card.Root>
+
+			<Card.Root class="rounded-2xl bg-destructive/5 py-4 ring-1 ring-destructive/25">
+				<Card.Content class="space-y-3 px-4">
+					<h3 class="text-lg text-destructive">删除人物</h3>
+					<p class="text-sm text-muted-foreground">
+						删除后会级联清理 resonances、chapters、sessions、messages、souler_status、souler_keyword、souler_aliases 等关联数据。
+					</p>
+					<form
+						method="POST"
+						class="w-fit"
+						onsubmit={(event) => {
+							if (!confirm('确认删除该人物吗？此操作不可撤销。')) {
+								event.preventDefault();
+							}
+						}}
+					>
+						<input type="hidden" name="souler_id" value={data.souler.id} />
+						<input type="hidden" name="tab" value={data.tab} />
+						<Button
+							type="submit"
+							formaction="?/deleteSouler"
+							variant="outline"
+							class="h-10 rounded-xl border-destructive/35 bg-destructive/10 px-4 text-sm text-destructive hover:bg-destructive/15"
+						>
+							删除 Souler
+						</Button>
+					</form>
+				</Card.Content>
+			</Card.Root>
 		</div>
 	</div>
 </section>

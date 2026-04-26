@@ -218,6 +218,36 @@ export const actions: Actions = {
 		redirect(303, `/admin/${encodeURIComponent(soulerId)}?tab=${tab}&ok=chapters`);
 	},
 
+	deleteSouler: async ({ request, locals }) => {
+		if (!(await assertAdmin(locals))) {
+			return fail(403, { action: 'deleteSouler', message: '没有权限执行该操作。' });
+		}
+
+		const formData = await request.formData();
+		const soulerId = normalizeText(formData.get('souler_id'));
+		const tab = normalizeAdminTab(normalizeText(formData.get('tab')));
+
+		if (!soulerId) {
+			return fail(400, { action: 'deleteSouler', message: '缺少 souler_id。' });
+		}
+
+		const { data: deletedRows, error: deleteError } = await locals.supabase
+			.from('soulers')
+			.delete()
+			.eq('id', soulerId)
+			.select('id');
+
+		if (deleteError) {
+			return fail(400, { action: 'deleteSouler', message: deleteError.message, soulerId });
+		}
+
+		if (!deletedRows || deletedRows.length === 0) {
+			return fail(404, { action: 'deleteSouler', message: '人物不存在或无法删除。', soulerId });
+		}
+
+		redirect(303, `/admin?tab=${tab}&ok=deleted`);
+	},
+
 	uploadAvatar: async ({ request, locals }) => {
 		if (!(await assertAdmin(locals))) {
 			return fail(403, { action: 'uploadAvatar', message: '没有权限执行该操作。' });

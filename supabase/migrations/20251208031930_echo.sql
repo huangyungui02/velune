@@ -2,7 +2,7 @@
 CREATE TABLE echoes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     glimmer_id UUID NOT NULL REFERENCES glimmers(id) ON DELETE CASCADE,
-    souler_id UUID NOT NULL REFERENCES soulers(id),
+    souler_id UUID NOT NULL REFERENCES soulers(id) ON DELETE CASCADE,
     session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

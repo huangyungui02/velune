@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS moddatetime schema extensions;
 CREATE TABLE IF NOT EXISTS resonances (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    souler_id UUID NOT NULL REFERENCES soulers(id),
+    souler_id UUID NOT NULL REFERENCES soulers(id) ON DELETE CASCADE,
     last_session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

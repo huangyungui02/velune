@@ -261,6 +261,8 @@ export function adminNoticeText(code: string | null) {
 			return '头像已更新。';
 		case 'created':
 			return '人物已创建。';
+		case 'deleted':
+			return '人物已删除，关联数据已清理。';
 		default:
 			return '';
 	}
