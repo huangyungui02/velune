@@ -35,19 +35,18 @@
 
 <div class="h-dvh w-full overflow-hidden">
 	<div class="mx-auto grid h-full min-h-0 w-full max-w-7xl lg:grid-cols-[16rem_minmax(0,1fr)]">
-		<aside class="hidden h-full min-h-0 flex-col border-r border-border/40 pb-4 pt-10 lg:flex">
-			<div class="px-8 gap-4">
+		<aside class="hidden h-full min-h-0 flex-col border-r border-border/40 pt-10 pb-4 lg:flex">
+			<div class="gap-4 px-8">
 				<div class="flex items-start justify-between gap-3">
 					<div class="min-w-0">
 						<p class="font-hand text-4xl leading-none text-primary">Velune</p>
-						<p class="mt-2 truncate font-sans text-xs text-muted-foreground">{data.user?.email ?? ''}</p>
+						<p class="mt-2 truncate font-sans text-xs text-muted-foreground">
+							{data.user?.email ?? ''}
+						</p>
 					</div>
 					<DropdownMenu.Root>
 						<DropdownMenu.Trigger
-							class={cn(
-								buttonVariants({ variant: 'ghost', size: 'icon-sm' }),
-								'rounded-full'
-							)}
+							class={cn(buttonVariants({ variant: 'ghost', size: 'icon-sm' }), 'rounded-full')}
 							aria-label="账号菜单"
 						>
 							<UserRound class="size-4" />
@@ -83,14 +82,14 @@
 				</nav>
 			</div>
 
-			<div class="px-8 mt-6">
+			<div class="mt-6 px-8">
 				<Separator class="opacity-50" />
 			</div>
 
-			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-soft pl-6 pr-1 pb-4">
+			<div class="scrollbar-soft min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-4 pl-6">
 				<button
 					type="button"
-					class="flex w-full items-center justify-between px-2 pb-4 pt-6 text-left"
+					class="flex w-full items-center justify-between px-2 pt-6 pb-4 text-left"
 					aria-label="切换书架展开状态"
 					aria-expanded={bookshelfExpanded}
 					onclick={() => (bookshelfExpanded = !bookshelfExpanded)}
@@ -116,9 +115,7 @@
 								/>
 							{/each}
 						{:else}
-							<p class="px-3 py-4 text-sm text-muted-foreground/60">
-								还没有共鸣人物
-							</p>
+							<p class="px-3 py-4 text-sm text-muted-foreground/60">还没有共鸣人物</p>
 						{/if}
 					</div>
 				{/if}
@@ -126,8 +123,11 @@
 		</aside>
 
 		<main class="relative h-full min-h-0 min-w-0">
-			<div class="h-full min-h-0 w-full overflow-y-auto overscroll-contain scrollbar-soft">
-				<div class="p-6 md:p-10 lg:p-12 pb-32">
+			<div
+				class="scrollbar-soft h-full min-h-0 w-full overflow-y-auto overscroll-contain"
+				data-main-scroll-container
+			>
+				<div class="p-6 pb-32 md:p-10 lg:p-12">
 					{@render children()}
 				</div>
 			</div>

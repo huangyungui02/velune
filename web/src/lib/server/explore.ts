@@ -1,11 +1,4 @@
-import type { PageServerLoad } from './$types';
 import { fetchAvatarMap, normalizeWikiId } from '$lib/server/avatar';
-import {
-	readExploreFeaturedCache,
-	readExploreLatestCache,
-	writeExploreFeaturedCache,
-	writeExploreLatestCache
-} from '$lib/server/explore-cache';
 import type { ExploreSection, ExploreSoulerItem } from '$lib/types';
 
 type SoulerRow = {
@@ -56,25 +49,8 @@ type KeywordRow = {
 		| null;
 };
 
-type ExploreTab = 'featured' | 'latest';
-
 const LATEST_PAGE_SIZE = 20;
 const MAX_TAGS_PER_SOULER = 4;
-
-function normalizeExploreTab(raw: string | null) {
-	if (raw === 'latest') {
-		return 'latest' satisfies ExploreTab;
-	}
-	return 'featured' satisfies ExploreTab;
-}
-
-function normalizePage(raw: string | null) {
-	const value = Number.parseInt(raw ?? '1', 10);
-	if (!Number.isFinite(value) || value < 1) {
-		return 1;
-	}
-	return value;
-}
 
 function normalizeLang(raw: string | null | undefined) {
 	const value = raw?.trim().toLowerCase();
@@ -86,7 +62,7 @@ function normalizeLang(raw: string | null | undefined) {
 	return segment?.trim() || null;
 }
 
-function resolveExploreLang(user: unknown, acceptLanguage: string | null) {
+export function resolveExploreLang(user: unknown, acceptLanguage: string | null) {
 	if (user && typeof user === 'object') {
 		const metadata =
 			(user as { user_metadata?: { lang?: string; language?: string } }).user_metadata ?? {};
@@ -147,33 +123,6 @@ function buildExploreSoulerItems(
 	});
 }
 
-async function fetchLatestSoulersPage(locals: App.Locals, page: number) {
-	const from = (page - 1) * LATEST_PAGE_SIZE;
-	const to = from + LATEST_PAGE_SIZE - 1;
-	const { data: soulersRaw, count } = await locals.supabase
-		.from('soulers')
-		.select('id, name, wiki_id, updated_at', { count: 'exact' })
-		.eq('checked', true)
-		.order('updated_at', { ascending: false })
-		.range(from, to);
-
-	const soulers = (soulersRaw ?? []) as SoulerRow[];
-	const soulerIds = soulers.map((souler) => souler.id);
-	const avatarByWikiId = await fetchAvatarMap(
-		locals,
-		soulers.map((souler) => souler.wiki_id)
-	);
-	const keywordBySoulerId = await fetchKeywordMap(locals, soulerIds);
-	const items = buildExploreSoulerItems(soulers, avatarByWikiId, keywordBySoulerId);
-	const hasNextPage =
-		typeof count === 'number' ? from + items.length < count : items.length === LATEST_PAGE_SIZE;
-
-	return {
-		items,
-		hasNextPage
-	};
-}
-
 async function fetchSectionRowsByLang(locals: App.Locals, lang: string) {
 	const { data: rows } = await locals.supabase
 		.from('discover_sections')
@@ -186,7 +135,7 @@ async function fetchSectionRowsByLang(locals: App.Locals, lang: string) {
 	return (rows ?? []) as DiscoverSectionRow[];
 }
 
-async function fetchFeaturedSections(locals: App.Locals, preferredLang: string) {
+export async function fetchFeaturedSections(locals: App.Locals, preferredLang: string) {
 	let sections = await fetchSectionRowsByLang(locals, preferredLang);
 	if (sections.length === 0 && preferredLang !== 'zh') {
 		sections = await fetchSectionRowsByLang(locals, 'zh');
@@ -280,59 +229,44 @@ async function fetchFeaturedSections(locals: App.Locals, preferredLang: string) 
 		.filter((section) => section.soulers.length > 0);
 }
 
-export const load: PageServerLoad = async ({ locals, url, parent, request }) => {
-	const parentData = await parent();
-	const activeTab = normalizeExploreTab(url.searchParams.get('tab'));
-	const latestPage = normalizePage(url.searchParams.get('page'));
-	const exploreLang = resolveExploreLang(parentData.user, request.headers.get('accept-language'));
+export async function fetchLatestSoulersPage(locals: App.Locals, page: number) {
+	const normalizedPage = Number.isFinite(page) && page > 0 ? Math.trunc(page) : 1;
+	const from = (normalizedPage - 1) * LATEST_PAGE_SIZE;
+	const to = from + LATEST_PAGE_SIZE - 1;
+	const { data: soulersRaw, count } = await locals.supabase
+		.from('soulers')
+		.select('id, name, wiki_id, updated_at', { count: 'exact' })
+		.eq('checked', true)
+		.order('updated_at', { ascending: false })
+		.range(from, to);
 
-	if (activeTab === 'featured') {
-		const cachedSections = readExploreFeaturedCache(exploreLang);
-		if (cachedSections) {
-			return {
-				activeTab,
-				exploreLang,
-				featuredSections: cachedSections,
-				latestItems: [] as ExploreSoulerItem[],
-				latestPage,
-				hasLatestNextPage: false
-			};
-		}
-
-		const featuredSections = await fetchFeaturedSections(locals, exploreLang);
-		writeExploreFeaturedCache(exploreLang, featuredSections);
-
-		return {
-			activeTab,
-			exploreLang,
-			featuredSections,
-			latestItems: [] as ExploreSoulerItem[],
-			latestPage,
-			hasLatestNextPage: false
-		};
-	}
-
-	const cachedLatest = readExploreLatestCache(exploreLang, latestPage);
-	if (cachedLatest) {
-		return {
-			activeTab,
-			exploreLang,
-			featuredSections: [] as ExploreSection[],
-			latestItems: cachedLatest.items,
-			latestPage,
-			hasLatestNextPage: cachedLatest.hasNextPage
-		};
-	}
-
-	const latestPayload = await fetchLatestSoulersPage(locals, latestPage);
-	writeExploreLatestCache(exploreLang, latestPage, latestPayload);
+	const soulers = (soulersRaw ?? []) as SoulerRow[];
+	const soulerIds = soulers.map((souler) => souler.id);
+	const avatarByWikiId = await fetchAvatarMap(
+		locals,
+		soulers.map((souler) => souler.wiki_id)
+	);
+	const keywordBySoulerId = await fetchKeywordMap(locals, soulerIds);
+	const items = buildExploreSoulerItems(soulers, avatarByWikiId, keywordBySoulerId);
+	const hasNextPage =
+		typeof count === 'number' ? from + items.length < count : items.length === LATEST_PAGE_SIZE;
 
 	return {
-		activeTab,
-		exploreLang,
-		featuredSections: [] as ExploreSection[],
-		latestItems: latestPayload.items,
-		latestPage,
-		hasLatestNextPage: latestPayload.hasNextPage
+		page: normalizedPage,
+		items,
+		hasNextPage
 	};
-};
+}
+
+export async function fetchExploreInitial(locals: App.Locals, exploreLang: string) {
+	const [featuredSections, latest] = await Promise.all([
+		fetchFeaturedSections(locals, exploreLang),
+		fetchLatestSoulersPage(locals, 1)
+	]);
+
+	return {
+		exploreLang,
+		featuredSections,
+		latest
+	};
+}
