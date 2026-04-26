@@ -31,10 +31,22 @@
 				>
 					{emailInitial}
 				</div>
-				<div class="min-w-0">
+				<div class="min-w-0 flex-1">
 					<p class="text-xs text-muted-foreground">当前邮箱</p>
 					<p class="truncate text-sm text-foreground">{email}</p>
 				</div>
+				<form method="POST" class="shrink-0">
+					<Button
+						type="submit"
+						variant="ghost"
+						size="icon-sm"
+						class="text-destructive hover:bg-destructive/10 hover:text-destructive"
+						aria-label="退出登录"
+						title="退出登录"
+					>
+						<LogOut class="size-4" />
+					</Button>
+				</form>
 			</div>
 		</article>
 
@@ -58,16 +70,4 @@
 			/>
 		</a>
 	</div>
-
-	<form method="POST" class="mt-auto pt-8">
-		<Button
-			type="submit"
-			variant="destructive"
-			size="lg"
-			class="h-11 w-full rounded-xl"
-		>
-			<LogOut class="size-4" />
-			退出登录
-		</Button>
-	</form>
 </section>

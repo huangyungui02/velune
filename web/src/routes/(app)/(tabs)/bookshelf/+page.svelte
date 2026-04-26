@@ -5,10 +5,20 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import SoulerBookCard from '$lib/components/souler/SoulerBookCard.svelte';
+	import type { BookshelfItem } from '$lib/types';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	let refreshing = $state(false);
+
+	function getBookshelfHref(item: BookshelfItem) {
+		if (item.lastSessionId && item.lastChapterId) {
+			return `${resolve(`/bookshelf/${item.soulerId}/chapter/${item.lastChapterId}`)}?${new URLSearchParams({
+				session: item.lastSessionId
+			}).toString()}`;
+		}
+		return resolve(`/bookshelf/${item.soulerId}`);
+	}
 
 	async function refreshBookshelf() {
 		if (refreshing) {
@@ -47,49 +57,21 @@
 	</header>
 
 	{#if data.bookshelf?.length}
-		<div class="space-y-3 md:hidden">
-				{#each data.bookshelf as item (item.id)}
-					<a
-						href={
-							item.lastSessionId && item.lastChapterId
-								? `${resolve(`/bookshelf/${item.soulerId}/chapter/${item.lastChapterId}`)}?${new URLSearchParams({
-										session: item.lastSessionId
-									}).toString()}`
-								: resolve(`/bookshelf/${item.soulerId}`)
-						}
-						class="group flex items-start gap-4 rounded-2xl px-2 py-2 transition hover:bg-primary/5"
-					>
-					<div
-						class="relative h-[6.25rem] w-[4.6875rem] shrink-0 overflow-hidden rounded-xl bg-muted/20"
-					>
-						{#if item.imageUrl}
-							<img
-								src={item.imageUrl}
-								alt={item.soulerName}
-								class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-							/>
-						{:else}
-							<div class="grid h-full place-items-center text-xs text-muted-foreground/60">
-								无图
-							</div>
-						{/if}
-					</div>
-					<div class="min-w-0 flex-1 py-1">
-						<h2 class="truncate font-serif text-xl leading-7 text-foreground transition group-hover:text-primary">
-							{item.soulerName}
-						</h2>
-						<p class="mt-8 truncate text-sm leading-6 text-muted-foreground/80">
-							{item.lastSessionTitle || '点击开始阅读'}
-						</p>
-					</div>
-				</a>
+		<div class="grid grid-cols-3 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-8 md:hidden">
+			{#each data.bookshelf as item (item.id)}
+				<SoulerBookCard
+					class="mx-auto w-full max-w-[7.25rem] sm:max-w-[8.75rem]"
+					href={getBookshelfHref(item)}
+					name={item.soulerName}
+					imageUrl={item.imageUrl}
+				/>
 			{/each}
 		</div>
 
 		<div class="hidden gap-x-6 gap-y-9 md:grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
 			{#each data.bookshelf as item (item.id)}
 				<SoulerBookCard
-					href={`/bookshelf/${item.soulerId}`}
+					href={getBookshelfHref(item)}
 					name={item.soulerName}
 					imageUrl={item.imageUrl}
 					subtitle={item.lastSessionTitle}

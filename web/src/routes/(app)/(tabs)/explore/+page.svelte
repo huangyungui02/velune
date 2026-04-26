@@ -218,10 +218,10 @@
 			<div class="px-2 py-8 text-sm text-muted-foreground/70">还没有可展示的精选分组。</div>
 		{/if}
 	{:else if latestItems.length > 0}
-		<div class="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
+		<div class="grid grid-cols-3 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-8 lg:grid-cols-4">
 			{#each latestItems as souler (souler.id)}
 				<SoulerBookCard
-					class="mx-auto w-full max-w-[10.5rem] lg:max-w-[11.5rem]"
+					class="mx-auto w-full max-w-[7.25rem] sm:max-w-[8.75rem] lg:max-w-[11.5rem]"
 					href={`/bookshelf/${souler.id}`}
 					name={souler.name}
 					imageUrl={souler.imageUrl}
