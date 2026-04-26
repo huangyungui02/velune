@@ -427,7 +427,7 @@
 </div>
 
 <div
-	class="fixed right-0 bottom-0 left-0 z-20 border-t border-border/40 bg-background/90 pb-[max(env(safe-area-inset-bottom),0.4rem)] pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:right-[max((100vw-80rem)/2,0px)] lg:left-[calc(max((100vw-80rem)/2,0px)+16rem)]"
+	class="fixed right-0 bottom-0 left-0 z-20 bg-background/90 pb-[max(env(safe-area-inset-bottom),0.4rem)] pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:right-[max((100vw-80rem)/2,0px)] lg:left-[calc(max((100vw-80rem)/2,0px)+16rem)]"
 >
 	<div class="pointer-events-auto mx-auto w-full max-w-4xl px-3 md:px-6">
 		{#if !sessionId}

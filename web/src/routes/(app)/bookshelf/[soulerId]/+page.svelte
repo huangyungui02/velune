@@ -1,11 +1,39 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+
+	function scrollMainContainerToTop() {
+		if (typeof document === 'undefined') {
+			return;
+		}
+		const container = document.querySelector<HTMLElement>('[data-main-scroll-container]');
+		container?.scrollTo({ top: 0, behavior: 'auto' });
+	}
+
+	function formatChapterNumber(seq: number) {
+		const value = Number(seq);
+		if (!Number.isFinite(value) || value <= 0) {
+			return '00';
+		}
+		return String(Math.trunc(value)).padStart(2, '0');
+	}
+
+	onMount(() => {
+		scrollMainContainerToTop();
+	});
+
+	$effect(() => {
+		data.souler.id;
+		requestAnimationFrame(() => {
+			scrollMainContainerToTop();
+		});
+	});
 </script>
 
 <svelte:head>
@@ -72,7 +100,9 @@
 						href={resolve(`/bookshelf/${data.souler.id}/chapter/${chapter.id}`)}
 						class="block group px-4 py-3 border-l-2 border-transparent hover:border-primary/40 transition"
 					>
-						<p class="text-xs font-sans tracking-widest text-muted-foreground/60 mb-1">CHAPTER {chapter.seq}</p>
+						<p class="mb-1 text-[0.72rem] tracking-[0.24em] text-muted-foreground/70">
+							{formatChapterNumber(chapter.seq)}
+						</p>
 						<h3 class="text-xl leading-7 text-foreground transition group-hover:text-primary">{chapter.title}</h3>
 						{#if chapter.subtitle}
 							<p class="text-sm leading-6 text-muted-foreground mt-2">{chapter.subtitle}</p>
