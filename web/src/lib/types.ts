@@ -16,6 +16,14 @@ export type ExploreSoulerItem = {
 	tags: string[];
 };
 
+export type ExploreSection = {
+	id: string;
+	key: string;
+	title: string;
+	subtitle: string;
+	soulers: ExploreSoulerItem[];
+};
+
 export type SoulerChapter = {
 	id: string;
 	seq: number;
