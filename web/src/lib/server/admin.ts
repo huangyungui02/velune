@@ -2,7 +2,14 @@ import { redirect } from '@sveltejs/kit';
 import { getAgentApiBaseUrl } from '$lib/server/agent';
 import { fetchAvatarMap, normalizeWikiId } from '$lib/server/avatar';
 import { isAdminUser } from '$lib/server/roles';
-import type { AdminSoulerChapter, AdminSoulerDetail, AdminSoulerListItem } from '$lib/types';
+import type {
+	AdminDiscoverSectionDetail,
+	AdminDiscoverSectionListItem,
+	AdminDiscoverSectionSoulerOption,
+	AdminSoulerChapter,
+	AdminSoulerDetail,
+	AdminSoulerListItem
+} from '$lib/types';
 
 type SoulerListRow = {
 	id: string;
@@ -41,7 +48,47 @@ type CanonicalizeResponse = {
 	error?: string;
 };
 
-export type AdminTab = 'unchecked' | 'checked' | 'create';
+type DiscoverSectionRow = {
+	id: string;
+	lang: string;
+	key: string;
+	title: string;
+	subtitle: string | null;
+	sort_order: number;
+	is_active: boolean;
+	updated_at: string;
+};
+
+type DiscoverSectionItemRow = {
+	souler_id: string;
+	sort_order: number;
+	soulers:
+		| {
+				id: string;
+				name: string;
+				lang: string;
+				wiki_id: string | null;
+				checked: boolean;
+		  }[]
+		| {
+				id: string;
+				name: string;
+				lang: string;
+				wiki_id: string | null;
+				checked: boolean;
+		  }
+		| null;
+};
+
+type SoulerOptionRow = {
+	id: string;
+	name: string;
+	lang: string;
+	wiki_id: string | null;
+	checked: boolean;
+};
+
+export type AdminTab = 'unchecked' | 'checked' | 'create' | 'sections';
 
 export const AVATAR_BUCKET = 'avatars';
 export const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
@@ -67,7 +114,21 @@ export function normalizeAdminTab(value: string | null): AdminTab {
 	if (raw === 'create') {
 		return 'create';
 	}
+	if (raw === 'sections') {
+		return 'sections';
+	}
 	return 'unchecked';
+}
+
+export function normalizeSectionKey(value: FormDataEntryValue | null) {
+	const normalized = normalizeText(value)
+		.toLowerCase()
+		.replace(/[\s_]+/g, '-')
+		.replace(/[^a-z0-9-]/g, '-')
+		.replace(/-+/g, '-')
+		.replace(/^-+|-+$/g, '');
+
+	return normalized.slice(0, 64);
 }
 
 export function clampWeight(value: number) {
@@ -186,6 +247,146 @@ export async function fetchSoulerDetail(locals: App.Locals, soulerId: string) {
 	return detail;
 }
 
+export async function fetchDiscoverSectionCount(locals: App.Locals) {
+	const { count } = await locals.supabase
+		.from('discover_sections')
+		.select('id', { count: 'exact', head: true });
+
+	return count ?? 0;
+}
+
+export async function fetchDiscoverSections(locals: App.Locals) {
+	const { data: sectionsRaw } = await locals.supabase
+		.from('discover_sections')
+		.select('id, lang, key, title, subtitle, sort_order, is_active, updated_at')
+		.order('lang', { ascending: true })
+		.order('sort_order', { ascending: true })
+		.order('updated_at', { ascending: false });
+
+	const sections = (sectionsRaw ?? []) as DiscoverSectionRow[];
+	const sectionIds = sections.map((section) => section.id);
+	const counts = new Map<string, number>();
+
+	if (sectionIds.length > 0) {
+		const { data: itemRowsRaw } = await locals.supabase
+			.from('discover_section_items')
+			.select('section_id')
+			.in('section_id', sectionIds);
+
+		for (const row of (itemRowsRaw ?? []) as { section_id: string }[]) {
+			const sectionId = row.section_id?.trim();
+			if (!sectionId) {
+				continue;
+			}
+			counts.set(sectionId, (counts.get(sectionId) ?? 0) + 1);
+		}
+	}
+
+	return sections.map(
+		(section): AdminDiscoverSectionListItem => ({
+			id: section.id,
+			lang: section.lang?.trim() || 'zh',
+			key: section.key?.trim() || '',
+			title: section.title?.trim() || '未命名分组',
+			subtitle: section.subtitle?.trim() || '',
+			sortOrder: Number(section.sort_order ?? 0),
+			isActive: Boolean(section.is_active),
+			itemCount: counts.get(section.id) ?? 0,
+			updatedAt: section.updated_at
+		})
+	);
+}
+
+export async function fetchDiscoverSectionDetail(locals: App.Locals, sectionId: string) {
+	const { data: sectionRaw } = await locals.supabase
+		.from('discover_sections')
+		.select('id, lang, key, title, subtitle, sort_order, is_active')
+		.eq('id', sectionId)
+		.maybeSingle();
+
+	if (!sectionRaw) {
+		return null;
+	}
+
+	const section = sectionRaw as Omit<DiscoverSectionRow, 'updated_at'>;
+	const { data: itemsRaw } = await locals.supabase
+		.from('discover_section_items')
+		.select('souler_id, sort_order, soulers!inner(id, name, lang, wiki_id, checked)')
+		.eq('section_id', sectionId)
+		.order('sort_order', { ascending: true });
+
+	const itemRows = (itemsRaw ?? []) as DiscoverSectionItemRow[];
+	const soulerRows = itemRows
+		.map((item) => (Array.isArray(item.soulers) ? item.soulers[0] : item.soulers))
+		.filter(Boolean) as {
+		id: string;
+		name: string;
+		lang: string;
+		wiki_id: string | null;
+		checked: boolean;
+	}[];
+	const avatarByWikiId = await fetchAvatarMap(
+		locals,
+		soulerRows.map((row) => row.wiki_id)
+	);
+
+	const items = itemRows
+		.map((item) => {
+			const souler = Array.isArray(item.soulers) ? item.soulers[0] : item.soulers;
+			if (!souler) {
+				return null;
+			}
+
+			const wikiId = normalizeWikiId(souler.wiki_id);
+			return {
+				soulerId: souler.id,
+				soulerName: souler.name?.trim() || '未命名人物',
+				lang: souler.lang?.trim() || section.lang?.trim() || 'zh',
+				sortOrder: Number(item.sort_order ?? 0),
+				imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null
+			};
+		})
+		.filter(Boolean) as AdminDiscoverSectionDetail['items'];
+
+	const includedSoulerIds = new Set(items.map((item) => item.soulerId));
+	const { data: candidatesRaw } = await locals.supabase
+		.from('soulers')
+		.select('id, name, lang, wiki_id, checked')
+		.eq('lang', section.lang)
+		.eq('checked', true)
+		.order('name', { ascending: true });
+
+	const candidateRows = (candidatesRaw ?? []) as SoulerOptionRow[];
+	const candidateAvatarByWikiId = await fetchAvatarMap(
+		locals,
+		candidateRows.map((row) => row.wiki_id)
+	);
+
+	const availableSoulers = candidateRows
+		.filter((row) => !includedSoulerIds.has(row.id))
+		.map((row): AdminDiscoverSectionSoulerOption => {
+			const wikiId = normalizeWikiId(row.wiki_id);
+			return {
+				id: row.id,
+				name: row.name?.trim() || '未命名人物',
+				lang: row.lang?.trim() || section.lang?.trim() || 'zh',
+				imageUrl: wikiId ? (candidateAvatarByWikiId.get(wikiId) ?? null) : null
+			};
+		});
+
+	return {
+		id: section.id,
+		lang: section.lang?.trim() || 'zh',
+		key: section.key?.trim() || '',
+		title: section.title?.trim() || '',
+		subtitle: section.subtitle?.trim() || '',
+		sortOrder: Number(section.sort_order ?? 0),
+		isActive: Boolean(section.is_active),
+		items,
+		availableSoulers
+	} as AdminDiscoverSectionDetail;
+}
+
 export async function findPotentialDuplicate(
 	locals: App.Locals,
 	lang: string,
@@ -224,7 +425,11 @@ export async function findPotentialDuplicate(
 	return null;
 }
 
-export async function canonicalizeWithLlm(accessToken: string, lang: string, name: string): Promise<string> {
+export async function canonicalizeWithLlm(
+	accessToken: string,
+	lang: string,
+	name: string
+): Promise<string> {
 	const baseUrl = getAgentApiBaseUrl();
 	const endpoint = `${baseUrl}/${lang}/soulers/canonicalize`;
 
@@ -263,6 +468,18 @@ export function adminNoticeText(code: string | null) {
 			return '人物已创建。';
 		case 'deleted':
 			return '人物已删除，关联数据已清理。';
+		case 'section-created':
+			return '精选分组已创建。';
+		case 'section-saved':
+			return '精选分组已保存。';
+		case 'section-deleted':
+			return '精选分组已删除。';
+		case 'section-item-added':
+			return '人物已加入分组。';
+		case 'section-items-saved':
+			return '分组排序已保存。';
+		case 'section-item-removed':
+			return '人物已移出分组。';
 		default:
 			return '';
 	}

@@ -1,5 +1,10 @@
 import { redirect } from '@sveltejs/kit';
-import { assertAdmin, fetchSoulerLists, normalizeAdminTab } from '$lib/server/admin';
+import {
+	assertAdmin,
+	fetchDiscoverSectionCount,
+	fetchSoulerLists,
+	normalizeAdminTab
+} from '$lib/server/admin';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
@@ -9,11 +14,13 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 	}
 
 	const lists = await fetchSoulerLists(locals);
+	const discoverSectionCount = await fetchDiscoverSectionCount(locals);
 
 	return {
 		userEmail: adminContext.user.email ?? '',
 		activeTab: normalizeAdminTab(url.searchParams.get('tab')),
 		uncheckedSoulers: lists.unchecked,
-		checkedSoulers: lists.checked
+		checkedSoulers: lists.checked,
+		discoverSectionCount
 	};
 };

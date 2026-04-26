@@ -2,6 +2,8 @@
 	import ClipboardCheck from '@lucide/svelte/icons/clipboard-check';
 	import FilePlus2 from '@lucide/svelte/icons/file-plus-2';
 	import Files from '@lucide/svelte/icons/files';
+	import Sparkles from '@lucide/svelte/icons/sparkles';
+	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
@@ -9,6 +11,7 @@
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
+	const isDiscoverRoute = $derived(page.url.pathname.startsWith('/admin/discover'));
 </script>
 
 <svelte:head>
@@ -58,6 +61,16 @@
 					>
 						<FilePlus2 class="size-4" />
 						新建
+					</Button>
+					<Button
+						href="/admin?tab=sections"
+						variant={isDiscoverRoute || data.activeTab === 'sections' ? 'default' : 'outline'}
+						size="sm"
+						class="h-10 justify-start gap-2 rounded-2xl"
+					>
+						<Sparkles class="size-4" />
+						精选分组
+						<span class="ml-auto text-xs opacity-80">{data.discoverSectionCount}</span>
 					</Button>
 				</nav>
 			</ScrollArea>

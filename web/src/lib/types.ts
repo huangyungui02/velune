@@ -58,6 +58,45 @@ export type AdminSoulerDetail = {
 	chapters: AdminSoulerChapter[];
 };
 
+export type AdminDiscoverSectionListItem = {
+	id: string;
+	lang: string;
+	key: string;
+	title: string;
+	subtitle: string;
+	sortOrder: number;
+	isActive: boolean;
+	itemCount: number;
+	updatedAt: string;
+};
+
+export type AdminDiscoverSectionItem = {
+	soulerId: string;
+	soulerName: string;
+	lang: string;
+	sortOrder: number;
+	imageUrl: string | null;
+};
+
+export type AdminDiscoverSectionSoulerOption = {
+	id: string;
+	name: string;
+	lang: string;
+	imageUrl: string | null;
+};
+
+export type AdminDiscoverSectionDetail = {
+	id: string;
+	lang: string;
+	key: string;
+	title: string;
+	subtitle: string;
+	sortOrder: number;
+	isActive: boolean;
+	items: AdminDiscoverSectionItem[];
+	availableSoulers: AdminDiscoverSectionSoulerOption[];
+};
+
 export type ConversationMessage = {
 	role: 'assistant' | 'user';
 	content: string;
