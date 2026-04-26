@@ -1,23 +1,14 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import RotateCw from '@lucide/svelte/icons/rotate-cw';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import SoulerBookCard from '$lib/components/souler/SoulerBookCard.svelte';
-	import type { BookshelfItem } from '$lib/types';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	let refreshing = $state(false);
-
-	function getMobileBookshelfHref(item: BookshelfItem) {
-		if (!item.lastSessionId || !item.lastChapterId) {
-			return `/bookshelf/${item.soulerId}`;
-		}
-		const query = new URLSearchParams({ session: item.lastSessionId });
-		return `/bookshelf/${item.soulerId}/chapter/${item.lastChapterId}?${query.toString()}`;
-	}
 
 	async function refreshBookshelf() {
 		if (refreshing) {
@@ -59,11 +50,17 @@
 		<div class="space-y-3 md:hidden">
 				{#each data.bookshelf as item (item.id)}
 					<a
-						href={`${base}${getMobileBookshelfHref(item)}`}
+						href={
+							item.lastSessionId && item.lastChapterId
+								? `${resolve(`/bookshelf/${item.soulerId}/chapter/${item.lastChapterId}`)}?${new URLSearchParams({
+										session: item.lastSessionId
+									}).toString()}`
+								: resolve(`/bookshelf/${item.soulerId}`)
+						}
 						class="group flex items-start gap-4 rounded-2xl px-2 py-2 transition hover:bg-primary/5"
 					>
 					<div
-						class="relative h-[7.5rem] w-[5.625rem] shrink-0 overflow-hidden rounded-xl bg-muted/20"
+						class="relative h-[6.25rem] w-[4.6875rem] shrink-0 overflow-hidden rounded-xl bg-muted/20"
 					>
 						{#if item.imageUrl}
 							<img
@@ -82,7 +79,7 @@
 							{item.soulerName}
 						</h2>
 						<p class="mt-8 truncate text-sm leading-6 text-muted-foreground/80">
-							章节 · {item.lastSessionTitle || '点击开始阅读章节'}
+							{item.lastSessionTitle || '点击开始阅读'}
 						</p>
 					</div>
 				</a>
@@ -96,7 +93,7 @@
 					name={item.soulerName}
 					imageUrl={item.imageUrl}
 					subtitle={item.lastSessionTitle}
-					fallbackSubtitle="点击开始阅读章节"
+					fallbackSubtitle="点击开始阅读"
 				/>
 			{/each}
 		</div>

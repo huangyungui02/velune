@@ -200,7 +200,7 @@
 
 						<div class="scrollbar-soft -mx-1 overflow-x-auto overscroll-x-contain pb-3 pl-1">
 							<div
-								class="grid min-w-max auto-cols-[minmax(9.5rem,10.75rem)] grid-flow-col gap-4 pr-4 md:auto-cols-[minmax(10rem,11.5rem)]"
+								class="grid min-w-max auto-cols-[minmax(7.25rem,7.75rem)] grid-flow-col gap-3 pr-4 md:auto-cols-[minmax(10rem,11.5rem)] md:gap-4"
 							>
 								{#each section.soulers as souler (souler.id)}
 									<SoulerBookCard
