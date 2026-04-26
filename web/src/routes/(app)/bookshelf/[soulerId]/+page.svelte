@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
 	import { Separator } from '$lib/components/ui/separator/index.js';
@@ -68,7 +69,7 @@
 			<div class="grid gap-3 pt-4">
 				{#each data.chapters as chapter (chapter.id)}
 					<a
-						href={`/bookshelf/${data.souler.id}/chapter/${chapter.id}`}
+						href={resolve(`/bookshelf/${data.souler.id}/chapter/${chapter.id}`)}
 						class="block group px-4 py-3 border-l-2 border-transparent hover:border-primary/40 transition"
 					>
 						<p class="text-xs font-sans tracking-widest text-muted-foreground/60 mb-1">CHAPTER {chapter.seq}</p>

@@ -8,15 +8,27 @@
 		title,
 		backHref = '/bookshelf',
 		backLabel = '返回',
+		preferHistoryBack = true,
 		class: className,
 		children
 	}: {
 		title: string;
 		backHref?: string;
 		backLabel?: string;
+		preferHistoryBack?: boolean;
 		class?: string;
 		children?: Snippet;
 	} = $props();
+
+	async function handleBack() {
+		if (preferHistoryBack && typeof window !== 'undefined' && window.history.length > 1) {
+			window.history.back();
+			return;
+		}
+		if (typeof window !== 'undefined') {
+			window.location.assign(backHref);
+		}
+	}
 </script>
 
 <header
@@ -27,11 +39,12 @@
 >
 	<div class="grid grid-cols-[2.25rem_1fr_2.25rem] items-center gap-2 px-3 pb-2 pt-[max(env(safe-area-inset-top),0.4rem)]">
 		<Button
-			href={backHref}
+			type="button"
 			variant="ghost"
 			size="icon-sm"
 			class="size-9 rounded-full text-muted-foreground/75 hover:text-primary"
 			aria-label={backLabel}
+			onclick={handleBack}
 		>
 			<ChevronLeft class="size-4" />
 		</Button>

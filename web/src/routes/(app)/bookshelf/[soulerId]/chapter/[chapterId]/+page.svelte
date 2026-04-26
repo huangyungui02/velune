@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { tick } from 'svelte';
 	import UserRound from '@lucide/svelte/icons/user-round';
+	import SendHorizontal from '@lucide/svelte/icons/send-horizontal';
 	import { marked } from 'marked';
 	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -353,11 +355,11 @@
 	<title>Velune · {data.chapter.title}</title>
 </svelte:head>
 
-<div class="pb-40 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pt-2 lg:pb-32">
+<div class="pb-36 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pb-32 md:pt-2">
 	<PageTopToolbar title={data.chapter.title} backHref="/bookshelf" class="md:hidden">
 		{#snippet children()}
 			<Button
-				href={`/bookshelf/${data.souler.id}`}
+				href={resolve(`/bookshelf/${data.souler.id}`)}
 				variant="ghost"
 				size="icon-sm"
 				class="size-9 rounded-full text-muted-foreground/80 hover:text-primary"
@@ -407,10 +409,10 @@
 		{/if}
 
 		{#if sessionId && options.length > 0}
-			<div class="grid gap-3 sm:grid-cols-2 pt-4">
+			<div class="grid gap-2.5 pt-2 sm:grid-cols-2">
 				{#each options as option, optionIndex (`${option}-${optionIndex}`)}
 					<button
-						class="h-auto min-h-12 w-full text-left rounded-xl border border-border/40 bg-background/50 px-5 py-4 text-[1.05rem] leading-7 text-foreground/90 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all font-sans break-words whitespace-normal"
+						class="h-auto min-h-11 w-full rounded-xl border border-border/40 bg-background/50 px-4 py-3 text-left font-sans text-[1rem] leading-7 break-words whitespace-normal text-foreground/90 transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
 						onclick={() => sendMessage(option)}
 						disabled={isLoading}
 					>
@@ -423,13 +425,13 @@
 </div>
 
 <div
-	class="fixed left-0 right-0 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-gradient-to-t from-background via-background/95 to-transparent p-4 pt-10 pointer-events-none z-10 md:p-6 lg:left-[16rem] lg:bottom-0"
+	class="fixed inset-x-0 bottom-0 z-20 border-t border-border/40 bg-background/90 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:left-[16rem]"
 >
-	<div class="max-w-4xl mx-auto w-full pointer-events-auto">
+	<div class="pointer-events-auto mx-auto w-full max-w-4xl px-3 md:px-6">
 		{#if !sessionId}
-			<div class="flex justify-center">
+			<div class="flex justify-center py-1">
 				<Button
-					class="h-12 rounded-full px-10 text-sm font-sans tracking-widest font-medium bg-primary/90 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+					class="h-11 rounded-full bg-primary/90 px-8 font-sans text-sm tracking-widest text-primary-foreground shadow-md shadow-primary/15 hover:bg-primary"
 					onclick={startChapter}
 					disabled={isLoading}
 				>
@@ -437,10 +439,10 @@
 				</Button>
 			</div>
 		{:else}
-			<div class="rounded-2xl bg-background/88 p-2.5 shadow-sm ring-1 ring-border/35 backdrop-blur">
+			<div class="rounded-xl border border-border/45 bg-background/72 px-2 py-2">
 				<div class="flex items-center gap-2">
 					<Input
-						class="h-11 flex-1 rounded-xl border-0 bg-transparent px-3 text-[1rem] font-sans shadow-none focus-visible:border-0 focus-visible:ring-0 focus-visible:outline-none"
+						class="h-10 flex-1 rounded-lg border-0 bg-transparent px-2.5 text-[1rem] font-sans shadow-none focus-visible:border-0 focus-visible:ring-0 focus-visible:outline-none"
 						bind:value={inputValue}
 						placeholder="写下你的回应..."
 						onkeydown={(event) => {
@@ -452,11 +454,13 @@
 						disabled={isLoading}
 					/>
 					<Button
-						class="h-10 rounded-xl px-4 text-sm font-sans font-medium bg-primary/90 hover:bg-primary"
+						size="icon"
+						class="size-9 rounded-full bg-primary/90 text-primary-foreground hover:bg-primary"
 						onclick={() => sendMessage()}
 						disabled={isLoading || !inputValue.trim()}
+						aria-label="发送"
 					>
-						发送
+						<SendHorizontal class="size-4" />
 					</Button>
 				</div>
 			</div>
