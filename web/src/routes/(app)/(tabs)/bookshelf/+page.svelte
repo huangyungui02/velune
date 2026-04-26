@@ -1,10 +1,15 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
+	import { base } from '$app/paths';
+	import RotateCw from '@lucide/svelte/icons/rotate-cw';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import SoulerBookCard from '$lib/components/souler/SoulerBookCard.svelte';
 	import type { BookshelfItem } from '$lib/types';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+	let refreshing = $state(false);
 
 	function getMobileBookshelfHref(item: BookshelfItem) {
 		if (!item.lastSessionId || !item.lastChapterId) {
@@ -12,6 +17,18 @@
 		}
 		const query = new URLSearchParams({ session: item.lastSessionId });
 		return `/bookshelf/${item.soulerId}/chapter/${item.lastChapterId}?${query.toString()}`;
+	}
+
+	async function refreshBookshelf() {
+		if (refreshing) {
+			return;
+		}
+		refreshing = true;
+		try {
+			await invalidateAll();
+		} finally {
+			refreshing = false;
+		}
 	}
 </script>
 
@@ -21,7 +38,20 @@
 
 <section class="space-y-8">
 	<header class="space-y-2">
-		<h1 class="text-3xl leading-tight text-primary">书架</h1>
+		<div class="flex items-center justify-between gap-3">
+			<h1 class="text-3xl leading-tight text-primary">书架</h1>
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon-sm"
+				class="size-9 rounded-full text-muted-foreground/80 hover:text-primary"
+				onclick={refreshBookshelf}
+				disabled={refreshing}
+				aria-label="刷新书架"
+			>
+				<RotateCw class={refreshing ? 'size-4 animate-spin' : 'size-4'} />
+			</Button>
+		</div>
 		<Separator class="mt-3" />
 	</header>
 
@@ -29,7 +59,7 @@
 		<div class="space-y-3 md:hidden">
 			{#each data.bookshelf as item (item.id)}
 				<a
-					href={getMobileBookshelfHref(item)}
+					href={`${base}${getMobileBookshelfHref(item)}`}
 					class="group flex items-start gap-4 rounded-2xl px-2 py-2 transition hover:bg-primary/5"
 				>
 					<div

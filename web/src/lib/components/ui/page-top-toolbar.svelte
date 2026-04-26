@@ -1,5 +1,9 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
+	import { page } from '$app/state';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+	import { hasPreviousRoute } from '$lib/stores/navigation-stack';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { cn } from '$lib/utils.js';
 	import type { Snippet } from 'svelte';
@@ -21,13 +25,17 @@
 	} = $props();
 
 	async function handleBack() {
-		if (preferHistoryBack && typeof window !== 'undefined' && window.history.length > 1) {
+		if (
+			preferHistoryBack &&
+			typeof window !== 'undefined' &&
+			window.history.length > 1 &&
+			hasPreviousRoute(page.url)
+		) {
 			window.history.back();
 			return;
 		}
-		if (typeof window !== 'undefined') {
-			window.location.assign(backHref);
-		}
+		const href = backHref.startsWith('/') ? `${base}${backHref}` : backHref;
+		await goto(href, { keepFocus: true });
 	}
 </script>
 

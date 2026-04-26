@@ -1,11 +1,14 @@
 <script lang="ts">
+	import { afterNavigate, invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import Compass from '@lucide/svelte/icons/compass';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import LibraryBig from '@lucide/svelte/icons/library-big';
 	import LogOut from '@lucide/svelte/icons/log-out';
+	import RotateCw from '@lucide/svelte/icons/rotate-cw';
 	import UserRound from '@lucide/svelte/icons/user-round';
 	import SoulerSidebarItem from '$lib/components/souler/SoulerSidebarItem.svelte';
+	import { pushRoute } from '$lib/stores/navigation-stack';
 	import { cn } from '$lib/utils';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
@@ -15,6 +18,7 @@
 
 	let { data, children }: LayoutProps = $props();
 	let bookshelfExpanded = $state(true);
+	let bookshelfRefreshing = $state(false);
 	let hideMobileNav = $derived(/^\/bookshelf\/[^/]+(?:\/chapter\/[^/]+)?$/.test(page.url.pathname));
 
 	function isActive(href: string) {
@@ -31,6 +35,25 @@
 		const query = new URLSearchParams({ session: item.lastSessionId });
 		return `/bookshelf/${item.soulerId}/chapter/${item.lastChapterId}?${query.toString()}`;
 	}
+
+	async function refreshBookshelf() {
+		if (bookshelfRefreshing) {
+			return;
+		}
+		bookshelfRefreshing = true;
+		try {
+			await invalidateAll();
+		} finally {
+			bookshelfRefreshing = false;
+		}
+	}
+
+	pushRoute(page.url);
+	afterNavigate(({ to }) => {
+		if (to?.url) {
+			pushRoute(to.url);
+		}
+	});
 </script>
 
 <div class="h-dvh w-full overflow-hidden">
@@ -87,21 +110,45 @@
 			</div>
 
 			<div class="scrollbar-soft min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-4 pl-6">
-				<button
-					type="button"
-					class="flex w-full items-center justify-between px-2 pt-6 pb-4 text-left"
-					aria-label="切换书架展开状态"
-					aria-expanded={bookshelfExpanded}
-					onclick={() => (bookshelfExpanded = !bookshelfExpanded)}
-				>
-					<span class="font-hand text-3xl leading-tight text-primary">书架</span>
-					<ChevronDown
-						class={cn(
-							'size-4 text-muted-foreground/80 transition-transform duration-200',
-							bookshelfExpanded ? 'rotate-180' : ''
-						)}
-					/>
-				</button>
+				<div class="flex items-center justify-between px-2 pt-6 pb-4">
+					<button
+						type="button"
+						class="min-w-0 text-left"
+						aria-label="切换书架展开状态"
+						aria-expanded={bookshelfExpanded}
+						onclick={() => (bookshelfExpanded = !bookshelfExpanded)}
+					>
+						<span class="font-hand text-3xl leading-tight text-primary">书架</span>
+					</button>
+					<div class="flex items-center gap-0.5">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							class="size-8 rounded-full text-muted-foreground/75 hover:text-primary"
+							onclick={refreshBookshelf}
+							disabled={bookshelfRefreshing}
+							aria-label="刷新书架"
+						>
+							<RotateCw class={cn('size-3.5', bookshelfRefreshing && 'animate-spin')} />
+						</Button>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							class="size-8 rounded-full text-muted-foreground/75 hover:text-primary"
+							aria-label="切换书架展开状态"
+							onclick={() => (bookshelfExpanded = !bookshelfExpanded)}
+						>
+							<ChevronDown
+								class={cn(
+									'size-4 transition-transform duration-200',
+									bookshelfExpanded ? 'rotate-180' : ''
+								)}
+							/>
+						</Button>
+					</div>
+				</div>
 				{#if bookshelfExpanded}
 					<div class="grid gap-2 pb-2">
 						{#if data.bookshelf?.length}

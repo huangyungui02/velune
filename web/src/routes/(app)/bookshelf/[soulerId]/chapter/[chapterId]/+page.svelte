@@ -356,7 +356,7 @@
 </svelte:head>
 
 <div
-	class="pb-[calc(env(safe-area-inset-bottom)+6.25rem)] pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pb-28 md:pt-2"
+	class="pb-[calc(env(safe-area-inset-bottom)+4rem)] pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pb-[4.25rem] md:pt-2"
 >
 	<PageTopToolbar title={data.chapter.title} backHref="/bookshelf" class="md:hidden">
 		{#snippet children()}
@@ -379,7 +379,7 @@
 		{/if}
 	</header>
 
-	<div class="px-2 md:px-4 space-y-6" bind:this={messageContainer}>
+	<div class="space-y-5 px-2 md:px-4" bind:this={messageContainer}>
 		{#if messages.length === 0}
 			<p class="py-8 text-sm text-muted-foreground/60 text-center font-sans tracking-widest">
 				—— 叙述由此展开 ——
@@ -411,7 +411,7 @@
 		{/if}
 
 		{#if sessionId && options.length > 0}
-			<div class="grid gap-2 pt-1 sm:grid-cols-2">
+			<div class="grid gap-1.5 pt-0.5 sm:grid-cols-2">
 				{#each options as option, optionIndex (`${option}-${optionIndex}`)}
 					<button
 						class="h-auto min-h-11 w-full rounded-xl border border-border/40 bg-background/50 px-4 py-3 text-left font-sans text-[1rem] leading-7 break-words whitespace-normal text-foreground/90 transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
@@ -427,7 +427,7 @@
 </div>
 
 <div
-	class="fixed inset-x-0 bottom-0 z-20 border-t border-border/40 bg-background/90 pb-[max(env(safe-area-inset-bottom),0.45rem)] pt-1.5 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:left-[16rem]"
+	class="fixed right-0 bottom-0 left-0 z-20 border-t border-border/40 bg-background/90 pb-[max(env(safe-area-inset-bottom),0.4rem)] pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:right-[max((100vw-80rem)/2,0px)] lg:left-[calc(max((100vw-80rem)/2,0px)+16rem)]"
 >
 	<div class="pointer-events-auto mx-auto w-full max-w-4xl px-3 md:px-6">
 		{#if !sessionId}
