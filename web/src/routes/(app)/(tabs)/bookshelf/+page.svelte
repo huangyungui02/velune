@@ -101,8 +101,10 @@
 			{/each}
 		</div>
 	{:else}
-		<div class="px-2 py-8 text-sm text-muted-foreground/70">
-			还没有共鸣人物。先去移动端生成 Echo 或开启聊天，书架会自动出现。
+		<div
+			class="grid min-h-[calc(100svh-14rem)] place-items-center px-2 text-sm text-muted-foreground/70 md:min-h-0 md:place-items-start md:py-8"
+		>
+			书架为空
 		</div>
 	{/if}
 </section>
