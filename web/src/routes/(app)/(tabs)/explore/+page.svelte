@@ -14,9 +14,6 @@
 		type ExploreTab
 	} from '$lib/stores/explore-view-state';
 	import type { ExploreSection } from '$lib/types';
-	import type { PageProps } from './$types';
-
-	let { data }: PageProps = $props();
 
 	function normalizePage(raw: string | null) {
 		const value = Number.parseInt(raw ?? '1', 10);
@@ -49,36 +46,17 @@
 				? memory.latestPage
 				: 1;
 
-	function getServerLatestPageEntry(): { page: number; state: ExploreLatestPageState } | null {
-		if (!data.exploreLatest) {
-			return null;
-		}
-		return {
-			page: data.exploreLatest.page,
-			state: {
-				items: data.exploreLatest.items,
-				hasNextPage: data.exploreLatest.hasNextPage
-			}
-		};
-	}
-
-	const serverLatestPageEntry = getServerLatestPageEntry();
 	const initialLatestPages: Record<number, ExploreLatestPageState> = {
 		...memory.latestPages
 	};
-	if (serverLatestPageEntry && !initialLatestPages[serverLatestPageEntry.page]) {
-		initialLatestPages[serverLatestPageEntry.page] = serverLatestPageEntry.state;
-	}
-	const resolvedInitialLatestPage = initialLatestPages[initialLatestPage] ? initialLatestPage : 1;
+	const resolvedInitialLatestPage = initialLatestPage;
 
 	let activeTab = $state<ExploreTab>(initialTab);
-	let featuredSections: ExploreSection[] | null = $derived(
-		memory.featuredSections ?? data.exploreFeaturedSections ?? null
-	);
+	let featuredSections = $state.raw<ExploreSection[] | null>(memory.featuredSections ?? null);
 	let featuredLoading = $state(false);
 	let featuredError = $state('');
 	let latestPage = $state(resolvedInitialLatestPage);
-	let latestPages = $state<Record<number, ExploreLatestPageState>>(initialLatestPages);
+	let latestPages = $state.raw<Record<number, ExploreLatestPageState>>(initialLatestPages);
 	let latestLoading = $state(false);
 	let latestError = $state('');
 
@@ -153,9 +131,12 @@
 				hasNextPage?: boolean;
 			};
 			const pageKey = Number.isFinite(payload.page) ? (payload.page as number) : targetPage;
-			latestPages[pageKey] = {
-				items: Array.isArray(payload.items) ? payload.items : [],
-				hasNextPage: Boolean(payload.hasNextPage)
+			latestPages = {
+				...latestPages,
+				[pageKey]: {
+					items: Array.isArray(payload.items) ? payload.items : [],
+					hasNextPage: Boolean(payload.hasNextPage)
+				}
 			};
 			return true;
 		} catch (error) {

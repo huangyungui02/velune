@@ -23,50 +23,13 @@ const exploreViewState: ExploreViewState = {
 	latestPages: {}
 };
 
-function cloneSoulerItem(item: ExploreSoulerItem) {
-	return {
-		...item,
-		tags: [...item.tags]
-	};
-}
-
-function cloneFeaturedSections(sections: ExploreSection[]) {
-	return sections.map((section) => ({
-		...section,
-		soulers: section.soulers.map(cloneSoulerItem)
-	}));
-}
-
-function cloneLatestPageState(page: ExploreLatestPageState): ExploreLatestPageState {
-	return {
-		items: page.items.map(cloneSoulerItem),
-		hasNextPage: page.hasNextPage
-	};
-}
-
-function cloneLatestPages(
-	latestPages: Record<number, ExploreLatestPageState>
-): Record<number, ExploreLatestPageState> {
-	const cloned: Record<number, ExploreLatestPageState> = {};
-	for (const [key, value] of Object.entries(latestPages)) {
-		const page = Number.parseInt(key, 10);
-		if (!Number.isFinite(page) || page < 1) {
-			continue;
-		}
-		cloned[page] = cloneLatestPageState(value);
-	}
-	return cloned;
-}
-
 export function readExploreViewState() {
 	return {
 		activeTab: exploreViewState.activeTab,
-		featuredSections: exploreViewState.featuredSections
-			? cloneFeaturedSections(exploreViewState.featuredSections)
-			: null,
+		featuredSections: exploreViewState.featuredSections,
 		latestPage: exploreViewState.latestPage,
 		scrollTop: exploreViewState.scrollTop,
-		latestPages: cloneLatestPages(exploreViewState.latestPages)
+		latestPages: exploreViewState.latestPages
 	};
 }
 
@@ -76,7 +39,7 @@ export function writeExploreViewState(next: Partial<ExploreViewState>) {
 	}
 
 	if (Array.isArray(next.featuredSections)) {
-		exploreViewState.featuredSections = cloneFeaturedSections(next.featuredSections);
+		exploreViewState.featuredSections = next.featuredSections;
 	}
 
 	if (
@@ -96,6 +59,6 @@ export function writeExploreViewState(next: Partial<ExploreViewState>) {
 	}
 
 	if (next.latestPages) {
-		exploreViewState.latestPages = cloneLatestPages(next.latestPages);
+		exploreViewState.latestPages = next.latestPages;
 	}
 }

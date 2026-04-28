@@ -11,14 +11,10 @@
 		writeBookshelfViewState
 	} from '$lib/stores/bookshelf-view-state';
 	import type { BookshelfItem } from '$lib/types';
-	import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
 	const cachedBookshelf = browser ? readBookshelfViewState().items : null;
-	let bookshelf: BookshelfItem[] = $derived(cachedBookshelf ?? data.bookshelf ?? []);
-	onMount(() => {
-		writeBookshelfViewState(bookshelf);
-	});
+	let bookshelf = $state.raw<BookshelfItem[]>(cachedBookshelf ?? []);
+	let loading = $state(!cachedBookshelf);
 	let refreshing = $state(false);
 	let error = $state('');
 
@@ -33,14 +29,15 @@
 		return resolve(`/bookshelf/${item.soulerId}`);
 	}
 
-	async function refreshBookshelf() {
+	async function loadBookshelf({ refresh = false }: { refresh?: boolean } = {}) {
 		if (refreshing) {
 			return;
 		}
-		refreshing = true;
+		refreshing = refresh;
+		loading = !refresh && bookshelf.length === 0;
 		error = '';
 		try {
-			const response = await fetch('/api/bookshelf?refresh=1');
+			const response = await fetch(`/api/bookshelf${refresh ? '?refresh=1' : ''}`);
 			if (!response.ok) {
 				throw new Error('加载失败');
 			}
@@ -51,11 +48,21 @@
 			}
 		} catch (refreshError) {
 			console.error(refreshError);
-			error = '书架刷新失败，请稍后重试。';
+			error = refresh ? '书架刷新失败，请稍后重试。' : '书架加载失败，请稍后重试。';
 		} finally {
+			loading = false;
 			refreshing = false;
 		}
 	}
+
+	onMount(() => {
+		if (cachedBookshelf) {
+			writeBookshelfViewState(cachedBookshelf);
+			return;
+		}
+
+		void loadBookshelf();
+	});
 </script>
 
 <svelte:head>
@@ -71,9 +78,9 @@
 				variant="ghost"
 				size="icon-sm"
 				class="size-9 rounded-full text-muted-foreground/80 hover:text-primary"
-				onclick={refreshBookshelf}
 				disabled={refreshing}
 				aria-label="刷新书架"
+				onclick={() => void loadBookshelf({ refresh: true })}
 			>
 				<RotateCw class={refreshing ? 'size-4 animate-spin' : 'size-4'} />
 			</Button>
@@ -107,6 +114,12 @@
 		{#if error}
 			<p class="text-sm text-destructive/90">{error}</p>
 		{/if}
+	{:else if loading}
+		<div
+			class="grid min-h-[calc(100svh-14rem)] place-items-center px-2 text-sm text-muted-foreground/70 md:min-h-0 md:place-items-start md:py-8"
+		>
+			正在加载书架...
+		</div>
 	{:else}
 		<div
 			class="grid min-h-[calc(100svh-14rem)] place-items-center px-2 text-sm text-muted-foreground/70 md:min-h-0 md:place-items-start md:py-8"
