@@ -1,5 +1,7 @@
 <script lang="ts">
 	import SoulerBookCard from '$lib/components/souler/SoulerBookCard.svelte';
+	import SoulerBookCardSkeleton from '$lib/components/souler/SoulerBookCardSkeleton.svelte';
+	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import type { ExploreSection } from '$lib/types';
 
 	let {
@@ -11,6 +13,9 @@
 		loading: boolean;
 		error: string;
 	} = $props();
+
+	const sectionSkeletons = ['featured-a', 'featured-b'];
+	const bookSkeletons = ['book-a', 'book-b', 'book-c', 'book-d', 'book-e'];
 </script>
 
 {#if sections && sections.length > 0}
@@ -43,7 +48,25 @@
 		{/each}
 	</div>
 {:else if loading}
-	<div class="px-2 py-8 text-sm text-muted-foreground/70">正在加载精选...</div>
+	<div class="space-y-10" aria-label="正在加载精选">
+		{#each sectionSkeletons as sectionId (sectionId)}
+			<section class="space-y-4">
+				<div class="space-y-2 px-1">
+					<Skeleton class="h-7 w-32 rounded-full md:h-8 md:w-40" />
+					<Skeleton class="h-4 w-48 rounded-full" />
+				</div>
+				<div class="scrollbar-soft -mx-1 overflow-hidden pb-3 pl-1">
+					<div
+						class="grid min-w-max auto-cols-[minmax(7.25rem,7.75rem)] grid-flow-col gap-3 pr-4 md:auto-cols-[minmax(10rem,11.5rem)] md:gap-4"
+					>
+						{#each bookSkeletons as bookId (bookId)}
+							<SoulerBookCardSkeleton />
+						{/each}
+					</div>
+				</div>
+			</section>
+		{/each}
+	</div>
 {:else if error}
 	<p class="text-sm text-destructive/90">{error}</p>
 {:else}

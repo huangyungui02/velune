@@ -6,6 +6,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import SoulerBookCard from '$lib/components/souler/SoulerBookCard.svelte';
+	import SoulerBookCardSkeleton from '$lib/components/souler/SoulerBookCardSkeleton.svelte';
 	import {
 		readBookshelfViewState,
 		writeBookshelfViewState
@@ -17,6 +18,9 @@
 	let loading = $state(!cachedBookshelf);
 	let refreshing = $state(false);
 	let error = $state('');
+
+	const mobileSkeletonItems = Array.from({ length: 9 }, (_, index) => `mobile-${index}`);
+	const desktopSkeletonItems = Array.from({ length: 8 }, (_, index) => `desktop-${index}`);
 
 	function getBookshelfHref(item: BookshelfItem) {
 		if (item.lastSessionId && item.lastChapterId) {
@@ -115,10 +119,18 @@
 			<p class="text-sm text-destructive/90">{error}</p>
 		{/if}
 	{:else if loading}
-		<div
-			class="grid min-h-[calc(100svh-14rem)] place-items-center px-2 text-sm text-muted-foreground/70 md:min-h-0 md:place-items-start md:py-8"
-		>
-			正在加载书架...
+		<div aria-label="正在加载书架">
+			<div class="grid grid-cols-3 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-8 md:hidden">
+				{#each mobileSkeletonItems as item (item)}
+					<SoulerBookCardSkeleton class="mx-auto w-full max-w-[7.25rem] sm:max-w-[8.75rem]" />
+				{/each}
+			</div>
+
+			<div class="hidden gap-x-6 gap-y-9 md:grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+				{#each desktopSkeletonItems as item (item)}
+					<SoulerBookCardSkeleton showSubtitle />
+				{/each}
+			</div>
 		</div>
 	{:else}
 		<div

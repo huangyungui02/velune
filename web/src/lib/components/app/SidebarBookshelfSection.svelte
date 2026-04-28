@@ -7,6 +7,7 @@
 	import RotateCw from '@lucide/svelte/icons/rotate-cw';
 	import SoulerSidebarItem from '$lib/components/souler/SoulerSidebarItem.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import {
 		readBookshelfViewState,
 		writeBookshelfViewState
@@ -19,6 +20,8 @@
 	let loading = $state(false);
 	let refreshing = $state(false);
 	let error = $state('');
+
+	const rowSkeletons = ['row-a', 'row-b', 'row-c', 'row-d'];
 
 	function isActive(href: string) {
 		return page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
@@ -124,7 +127,17 @@
 					/>
 				{/each}
 			{:else if loading}
-				<p class="px-3 py-4 text-sm text-muted-foreground/60">正在加载书架...</p>
+				<div class="grid gap-2 px-1 py-1" aria-label="正在加载书架">
+					{#each rowSkeletons as row (row)}
+						<div class="flex items-center gap-3 rounded-xl px-2 py-2">
+							<Skeleton class="size-10 shrink-0 rounded-lg" />
+							<div class="min-w-0 flex-1 space-y-2">
+								<Skeleton class="h-4 w-3/4 rounded-full" />
+								<Skeleton class="h-3 w-1/2 rounded-full" />
+							</div>
+						</div>
+					{/each}
+				</div>
 			{:else if error}
 				<p class="px-3 py-4 text-sm text-destructive/80">{error}</p>
 			{:else}

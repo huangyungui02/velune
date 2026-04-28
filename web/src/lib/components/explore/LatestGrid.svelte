@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button/index.js';
 	import SoulerBookCard from '$lib/components/souler/SoulerBookCard.svelte';
+	import SoulerBookCardSkeleton from '$lib/components/souler/SoulerBookCardSkeleton.svelte';
+	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import type { ExploreSoulerItem } from '$lib/types';
 
 	let {
@@ -18,6 +20,8 @@
 		error: string;
 		onPage: (page: number) => void;
 	} = $props();
+
+	const skeletonItems = Array.from({ length: 12 }, (_, index) => `latest-${index}`);
 </script>
 
 {#if items.length > 0}
@@ -62,7 +66,22 @@
 		<p class="text-sm text-destructive/90">{error}</p>
 	{/if}
 {:else if loading}
-	<div class="px-2 py-8 text-sm text-muted-foreground/70">正在加载最新...</div>
+	<div class="space-y-7" aria-label="正在加载最新">
+		<div class="grid grid-cols-3 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-8 lg:grid-cols-4">
+			{#each skeletonItems as item (item)}
+				<SoulerBookCardSkeleton
+					class="mx-auto w-full max-w-[7.25rem] sm:max-w-[8.75rem] lg:max-w-[11.5rem]"
+				/>
+			{/each}
+		</div>
+		<div class="flex items-center justify-between border-t border-border/40 pt-2">
+			<Skeleton class="h-4 w-28 rounded-full" />
+			<div class="flex items-center gap-2">
+				<Skeleton class="h-8 w-16 rounded-xl" />
+				<Skeleton class="h-8 w-16 rounded-xl" />
+			</div>
+		</div>
+	</div>
 {:else if error}
 	<p class="text-sm text-destructive/90">{error}</p>
 {:else}
