@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { beforeNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -11,6 +12,7 @@
 		type ExploreLatestPageState,
 		type ExploreTab
 	} from '$lib/stores/explore-view-state';
+	import type { ExploreSection } from '$lib/types';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -23,7 +25,15 @@
 		return value;
 	}
 
-	const memory = readExploreViewState();
+	const memory = browser
+		? readExploreViewState()
+		: {
+				activeTab: 'featured' as ExploreTab,
+				featuredSections: null,
+				latestPage: 1,
+				scrollTop: 0,
+				latestPages: {}
+			};
 	const queryTab = page.url.searchParams.get('tab');
 	const queryPage = normalizePage(page.url.searchParams.get('page'));
 	const hasQueryTab = queryTab === 'featured' || queryTab === 'latest';
@@ -38,22 +48,34 @@
 				? memory.latestPage
 				: 1;
 
-	function getServerLatestPageState(): ExploreLatestPageState {
+	function getServerLatestPageEntry(): { page: number; state: ExploreLatestPageState } | null {
+		if (!data.exploreLatest) {
+			return null;
+		}
 		return {
-			items: data.exploreInitial.latest.items,
-			hasNextPage: data.exploreInitial.latest.hasNextPage
+			page: data.exploreLatest.page,
+			state: {
+				items: data.exploreLatest.items,
+				hasNextPage: data.exploreLatest.hasNextPage
+			}
 		};
 	}
 
+	const serverLatestPageEntry = getServerLatestPageEntry();
 	const initialLatestPages: Record<number, ExploreLatestPageState> = {
 		...memory.latestPages
 	};
-	if (!initialLatestPages[1]) {
-		initialLatestPages[1] = getServerLatestPageState();
+	if (serverLatestPageEntry && !initialLatestPages[serverLatestPageEntry.page]) {
+		initialLatestPages[serverLatestPageEntry.page] = serverLatestPageEntry.state;
 	}
 	const resolvedInitialLatestPage = initialLatestPages[initialLatestPage] ? initialLatestPage : 1;
 
 	let activeTab = $state<ExploreTab>(initialTab);
+	let featuredSections: ExploreSection[] | null = $derived(
+		memory.featuredSections ?? data.exploreFeaturedSections ?? null
+	);
+	let featuredLoading = $state(false);
+	let featuredError = $state('');
 	let latestPage = $state(resolvedInitialLatestPage);
 	let latestPages = $state<Record<number, ExploreLatestPageState>>(initialLatestPages);
 	let latestLoading = $state(false);
@@ -72,12 +94,43 @@
 
 	function persistExploreViewState() {
 		const container = getMainScrollContainer();
+		if (!browser) {
+			return;
+		}
 		writeExploreViewState({
 			activeTab,
+			featuredSections,
 			latestPage,
 			scrollTop: container?.scrollTop ?? 0,
 			latestPages
 		});
+	}
+
+	async function ensureFeaturedSections() {
+		if (featuredSections) {
+			return true;
+		}
+
+		featuredLoading = true;
+		featuredError = '';
+		try {
+			const response = await fetch('/api/explore/featured');
+			if (!response.ok) {
+				throw new Error('加载失败');
+			}
+
+			const payload = (await response.json()) as {
+				featuredSections?: ExploreSection[];
+			};
+			featuredSections = Array.isArray(payload.featuredSections) ? payload.featuredSections : [];
+			return true;
+		} catch (error) {
+			console.error(error);
+			featuredError = '精选列表加载失败，请稍后重试。';
+			return false;
+		} finally {
+			featuredLoading = false;
+		}
 	}
 
 	async function ensureLatestPage(targetPage: number) {
@@ -113,9 +166,15 @@
 		}
 	}
 
-	function onSelectTab(tab: ExploreTab) {
+	async function onSelectTab(tab: ExploreTab) {
 		activeTab = tab;
+		featuredError = '';
 		latestError = '';
+		if (tab === 'featured') {
+			await ensureFeaturedSections();
+		} else {
+			await ensureLatestPage(latestPage);
+		}
 	}
 
 	async function goToLatestPage(targetPage: number) {
@@ -138,7 +197,9 @@
 			}
 		});
 
-		if (activeTab === 'latest' && latestPage > 1 && !latestPages[latestPage]) {
+		if (activeTab === 'featured' && !featuredSections) {
+			void ensureFeaturedSections();
+		} else if (activeTab === 'latest' && !latestPages[latestPage]) {
 			void ensureLatestPage(latestPage);
 		}
 
@@ -185,9 +246,9 @@
 	</header>
 
 	{#if activeTab === 'featured'}
-		{#if data.exploreInitial.featuredSections.length > 0}
+		{#if featuredSections && featuredSections.length > 0}
 			<div class="space-y-10">
-				{#each data.exploreInitial.featuredSections as section (section.id)}
+				{#each featuredSections as section (section.id)}
 					<section class="space-y-4">
 						<div class="px-1">
 							<h2 class="font-serif text-xl leading-tight text-primary md:text-2xl">
@@ -214,6 +275,10 @@
 					</section>
 				{/each}
 			</div>
+		{:else if featuredLoading}
+			<div class="px-2 py-8 text-sm text-muted-foreground/70">正在加载精选...</div>
+		{:else if featuredError}
+			<p class="text-sm text-destructive/90">{featuredError}</p>
 		{:else}
 			<div class="px-2 py-8 text-sm text-muted-foreground/70">还没有可展示的精选分组。</div>
 		{/if}
@@ -258,6 +323,10 @@
 		{#if latestError}
 			<p class="text-sm text-destructive/90">{latestError}</p>
 		{/if}
+	{:else if latestLoading}
+		<div class="px-2 py-8 text-sm text-muted-foreground/70">正在加载最新...</div>
+	{:else if latestError}
+		<p class="text-sm text-destructive/90">{latestError}</p>
 	{:else}
 		<div class="px-2 py-8 text-sm text-muted-foreground/70">还没有可发现的人物。</div>
 	{/if}

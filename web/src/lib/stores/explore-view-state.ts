@@ -1,4 +1,4 @@
-import type { ExploreSoulerItem } from '$lib/types';
+import type { ExploreSection, ExploreSoulerItem } from '$lib/types';
 
 export type ExploreTab = 'featured' | 'latest';
 
@@ -9,6 +9,7 @@ export type ExploreLatestPageState = {
 
 type ExploreViewState = {
 	activeTab: ExploreTab;
+	featuredSections: ExploreSection[] | null;
 	latestPage: number;
 	scrollTop: number;
 	latestPages: Record<number, ExploreLatestPageState>;
@@ -16,17 +17,29 @@ type ExploreViewState = {
 
 const exploreViewState: ExploreViewState = {
 	activeTab: 'featured',
+	featuredSections: null,
 	latestPage: 1,
 	scrollTop: 0,
 	latestPages: {}
 };
 
+function cloneSoulerItem(item: ExploreSoulerItem) {
+	return {
+		...item,
+		tags: [...item.tags]
+	};
+}
+
+function cloneFeaturedSections(sections: ExploreSection[]) {
+	return sections.map((section) => ({
+		...section,
+		soulers: section.soulers.map(cloneSoulerItem)
+	}));
+}
+
 function cloneLatestPageState(page: ExploreLatestPageState): ExploreLatestPageState {
 	return {
-		items: page.items.map((item) => ({
-			...item,
-			tags: [...item.tags]
-		})),
+		items: page.items.map(cloneSoulerItem),
 		hasNextPage: page.hasNextPage
 	};
 }
@@ -48,6 +61,9 @@ function cloneLatestPages(
 export function readExploreViewState() {
 	return {
 		activeTab: exploreViewState.activeTab,
+		featuredSections: exploreViewState.featuredSections
+			? cloneFeaturedSections(exploreViewState.featuredSections)
+			: null,
 		latestPage: exploreViewState.latestPage,
 		scrollTop: exploreViewState.scrollTop,
 		latestPages: cloneLatestPages(exploreViewState.latestPages)
@@ -57,6 +73,10 @@ export function readExploreViewState() {
 export function writeExploreViewState(next: Partial<ExploreViewState>) {
 	if (next.activeTab === 'featured' || next.activeTab === 'latest') {
 		exploreViewState.activeTab = next.activeTab;
+	}
+
+	if (Array.isArray(next.featuredSections)) {
+		exploreViewState.featuredSections = cloneFeaturedSections(next.featuredSections);
 	}
 
 	if (

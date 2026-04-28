@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { afterNavigate, invalidateAll } from '$app/navigation';
+	import { browser } from '$app/environment';
+	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 	import Compass from '@lucide/svelte/icons/compass';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import LibraryBig from '@lucide/svelte/icons/library-big';
@@ -9,6 +11,10 @@
 	import RotateCw from '@lucide/svelte/icons/rotate-cw';
 	import UserRound from '@lucide/svelte/icons/user-round';
 	import SoulerSidebarItem from '$lib/components/souler/SoulerSidebarItem.svelte';
+	import {
+		readBookshelfViewState,
+		writeBookshelfViewState
+	} from '$lib/stores/bookshelf-view-state';
 	import { pushRoute } from '$lib/stores/navigation-stack';
 	import { cn } from '$lib/utils';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
@@ -18,7 +24,12 @@
 
 	let { data, children }: LayoutProps = $props();
 	let bookshelfExpanded = $state(true);
+	let sidebarBookshelf = $state.raw<BookshelfItem[] | null>(
+		browser ? readBookshelfViewState().items : null
+	);
+	let bookshelfLoading = $state(false);
 	let bookshelfRefreshing = $state(false);
+	let bookshelfError = $state('');
 	let hideMobileNav = $derived(/^\/bookshelf\/[^/]+(?:\/chapter\/[^/]+)?$/.test(page.url.pathname));
 	let mainContentPadding = $derived(
 		hideMobileNav
@@ -44,16 +55,35 @@
 		return `/bookshelf/${item.soulerId}/chapter/${item.lastChapterId}?${query.toString()}`;
 	}
 
-	async function refreshBookshelf() {
-		if (bookshelfRefreshing) {
+	async function loadSidebarBookshelf(options: { refresh?: boolean } = {}) {
+		if (bookshelfLoading || bookshelfRefreshing) {
 			return;
 		}
-		bookshelfRefreshing = true;
+		if (!options.refresh && sidebarBookshelf) {
+			return;
+		}
+		bookshelfLoading = !options.refresh;
+		bookshelfRefreshing = Boolean(options.refresh);
+		bookshelfError = '';
 		try {
-			await invalidateAll();
+			const response = await fetch(`/api/bookshelf${options.refresh ? '?refresh=1' : ''}`);
+			if (!response.ok) {
+				throw new Error('加载失败');
+			}
+			const payload = (await response.json()) as { bookshelf?: BookshelfItem[] };
+			sidebarBookshelf = Array.isArray(payload.bookshelf) ? payload.bookshelf : [];
+			writeBookshelfViewState(sidebarBookshelf);
+		} catch (error) {
+			console.error(error);
+			bookshelfError = '书架加载失败';
 		} finally {
+			bookshelfLoading = false;
 			bookshelfRefreshing = false;
 		}
+	}
+
+	async function refreshBookshelf() {
+		await loadSidebarBookshelf({ refresh: true });
 	}
 
 	pushRoute(page.url);
@@ -61,6 +91,22 @@
 		if (to?.url) {
 			pushRoute(to.url);
 		}
+	});
+
+	onMount(() => {
+		const media = window.matchMedia('(min-width: 1024px)');
+		const loadIfSidebarVisible = () => {
+			if (bookshelfExpanded && media.matches) {
+				void loadSidebarBookshelf();
+			}
+		};
+
+		loadIfSidebarVisible();
+		media.addEventListener('change', loadIfSidebarVisible);
+
+		return () => {
+			media.removeEventListener('change', loadIfSidebarVisible);
+		};
 	});
 </script>
 
@@ -94,7 +140,12 @@
 								class="h-10 flex-1 justify-start gap-2 rounded-xl px-3"
 								aria-label="切换书架展开状态"
 								aria-expanded={bookshelfExpanded}
-								onclick={() => (bookshelfExpanded = !bookshelfExpanded)}
+								onclick={() => {
+									bookshelfExpanded = !bookshelfExpanded;
+									if (bookshelfExpanded) {
+										void loadSidebarBookshelf();
+									}
+								}}
 							>
 								<LibraryBig class="size-4" />
 								<span>书架</span>
@@ -120,8 +171,8 @@
 
 						{#if bookshelfExpanded}
 							<div class="grid gap-2 pt-1">
-								{#if data.bookshelf?.length}
-									{#each data.bookshelf as item (item.id)}
+								{#if sidebarBookshelf?.length}
+									{#each sidebarBookshelf as item (item.id)}
 										<SoulerSidebarItem
 											href={getResonanceHref(item)}
 											name={item.soulerName}
@@ -130,6 +181,10 @@
 											active={page.url.pathname.startsWith(`/bookshelf/${item.soulerId}`)}
 										/>
 									{/each}
+								{:else if bookshelfLoading}
+									<p class="px-3 py-4 text-sm text-muted-foreground/60">正在加载书架...</p>
+								{:else if bookshelfError}
+									<p class="px-3 py-4 text-sm text-destructive/80">{bookshelfError}</p>
 								{:else}
 									<p class="px-3 py-4 text-sm text-muted-foreground/60">书架为空</p>
 								{/if}
@@ -148,7 +203,9 @@
 						)}
 						aria-label="账号菜单"
 					>
-						<div class="grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+						<div
+							class="grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-medium text-primary"
+						>
 							{userInitial}
 						</div>
 						<div class="min-w-0 text-left">
