@@ -29,10 +29,11 @@
 	});
 
 	$effect(() => {
-		data.souler.id;
-		requestAnimationFrame(() => {
-			scrollMainContainerToTop();
-		});
+		if (data.souler.id) {
+			requestAnimationFrame(() => {
+				scrollMainContainerToTop();
+			});
+		}
 	});
 </script>
 
@@ -43,14 +44,14 @@
 <section class="space-y-7 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pt-0">
 	<PageTopToolbar title={data.souler.name} backHref="/bookshelf" class="md:hidden" />
 
-	<header class="grid grid-cols-[7.25rem_minmax(0,1fr)] items-start gap-x-4 gap-y-4 md:grid-cols-[12rem_1fr] md:gap-6">
-		<div class="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-muted/20 shadow-sm md:max-w-[13rem]">
+	<header
+		class="grid grid-cols-[7.25rem_minmax(0,1fr)] items-start gap-x-4 gap-y-4 md:grid-cols-[12rem_1fr] md:gap-6"
+	>
+		<div
+			class="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-muted/20 shadow-sm md:max-w-[13rem]"
+		>
 			{#if data.souler.imageUrl}
-				<img
-					src={data.souler.imageUrl}
-					alt={data.souler.name}
-					class="h-full w-full object-cover"
-				/>
+				<img src={data.souler.imageUrl} alt={data.souler.name} class="h-full w-full object-cover" />
 			{:else}
 				<div class="grid h-full place-items-center text-sm text-muted-foreground/60">无图</div>
 			{/if}
@@ -58,12 +59,17 @@
 
 		<div class="py-1">
 			<div class="space-y-4">
-				<h1 class="font-serif text-xl leading-tight text-primary md:text-2xl">{data.souler.name}</h1>
+				<h1 class="font-serif text-xl leading-tight text-primary md:text-2xl">
+					{data.souler.name}
+				</h1>
 
 				{#if data.keywords.length > 0}
 					<div class="flex flex-wrap gap-2">
 						{#each data.keywords as word (word)}
-							<Badge variant="outline" class="rounded-full bg-background/50 border-border/60 px-3 py-1 font-sans text-xs font-normal text-muted-foreground">
+							<Badge
+								variant="outline"
+								class="rounded-full border-border/60 bg-background/50 px-3 py-1 font-sans text-xs font-normal text-muted-foreground"
+							>
 								{word}
 							</Badge>
 						{/each}
@@ -98,22 +104,22 @@
 				{#each data.chapters as chapter (chapter.id)}
 					<a
 						href={resolve(`/bookshelf/${data.souler.id}/chapter/${chapter.id}`)}
-						class="block group px-4 py-3 border-l-2 border-transparent hover:border-primary/40 transition"
+						class="group block border-l-2 border-transparent px-4 py-3 transition hover:border-primary/40"
 					>
 						<p class="mb-1 text-[0.72rem] tracking-[0.24em] text-muted-foreground/70">
 							{formatChapterNumber(chapter.seq)}
 						</p>
-						<h3 class="text-xl leading-7 text-foreground transition group-hover:text-primary">{chapter.title}</h3>
+						<h3 class="text-xl leading-7 text-foreground transition group-hover:text-primary">
+							{chapter.title}
+						</h3>
 						{#if chapter.subtitle}
-							<p class="text-sm leading-6 text-muted-foreground mt-2">{chapter.subtitle}</p>
+							<p class="mt-2 text-sm leading-6 text-muted-foreground">{chapter.subtitle}</p>
 						{/if}
 					</a>
 				{/each}
 			</div>
 		{:else}
-			<div class="px-4 py-8 text-sm text-muted-foreground/70">
-				当前人物还没有章节。
-			</div>
+			<div class="px-4 py-8 text-sm text-muted-foreground/70">当前人物还没有章节。</div>
 		{/if}
 	</section>
 </section>

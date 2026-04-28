@@ -48,7 +48,9 @@
 		className
 	)}
 >
-	<div class="grid grid-cols-[2.25rem_1fr_2.25rem] items-center gap-2 px-3 pb-2 pt-[max(env(safe-area-inset-top),0.4rem)]">
+	<div
+		class="grid grid-cols-[2.25rem_1fr_2.25rem] items-center gap-2 px-3 pt-[max(env(safe-area-inset-top),0.4rem)] pb-2"
+	>
 		<Button
 			type="button"
 			variant="ghost"
@@ -60,7 +62,7 @@
 			<ChevronLeft class="size-4" />
 		</Button>
 		<h1
-			class="min-w-0 overflow-x-hidden overflow-y-visible text-ellipsis whitespace-nowrap px-1 text-center font-serif text-sm leading-[1.2] text-primary/92"
+			class="min-w-0 overflow-x-hidden overflow-y-visible px-1 text-center font-serif text-sm leading-[1.2] text-ellipsis whitespace-nowrap text-primary/92"
 		>
 			{title}
 		</h1>

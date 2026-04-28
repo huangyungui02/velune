@@ -2,7 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import {
 	assertAdmin,
 	fetchDiscoverSectionCount,
-	fetchSoulerLists,
+	fetchSoulerCounts,
+	fetchSoulerListByStatus,
 	normalizeAdminTab
 } from '$lib/server/admin';
 import type { LayoutServerLoad } from './$types';
@@ -13,14 +14,23 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		redirect(303, '/bookshelf');
 	}
 
-	const lists = await fetchSoulerLists(locals);
-	const discoverSectionCount = await fetchDiscoverSectionCount(locals);
+	const activeTab = normalizeAdminTab(url.searchParams.get('tab'));
+	const [soulerCounts, discoverSectionCount, visibleSoulers] = await Promise.all([
+		fetchSoulerCounts(locals),
+		fetchDiscoverSectionCount(locals),
+		activeTab === 'unchecked'
+			? fetchSoulerListByStatus(locals, false)
+			: activeTab === 'checked'
+				? fetchSoulerListByStatus(locals, true)
+				: []
+	]);
 
 	return {
 		userEmail: adminContext.user.email ?? '',
-		activeTab: normalizeAdminTab(url.searchParams.get('tab')),
-		uncheckedSoulers: lists.unchecked,
-		checkedSoulers: lists.checked,
+		activeTab,
+		visibleSoulers,
+		uncheckedSoulerCount: soulerCounts.unchecked,
+		checkedSoulerCount: soulerCounts.checked,
 		discoverSectionCount
 	};
 };

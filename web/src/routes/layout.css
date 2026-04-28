@@ -62,7 +62,7 @@
 	}
 
 	body {
-		@apply text-foreground font-sans text-base leading-relaxed tracking-normal;
+		@apply font-sans text-base leading-relaxed tracking-normal text-foreground;
 		background-color: var(--background);
 		background-image:
 			radial-gradient(circle at 20% 5%, oklch(1 0.01 80 / 65%), transparent 36%),

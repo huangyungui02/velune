@@ -41,7 +41,7 @@
 					>
 						<Files class="size-4" />
 						待审核
-						<span class="ml-auto text-xs opacity-80">{data.uncheckedSoulers.length}</span>
+						<span class="ml-auto text-xs opacity-80">{data.uncheckedSoulerCount}</span>
 					</Button>
 					<Button
 						href="/admin?tab=checked"
@@ -51,7 +51,7 @@
 					>
 						<ClipboardCheck class="size-4" />
 						已审核
-						<span class="ml-auto text-xs opacity-80">{data.checkedSoulers.length}</span>
+						<span class="ml-auto text-xs opacity-80">{data.checkedSoulerCount}</span>
 					</Button>
 					<Button
 						href="/admin?tab=create"

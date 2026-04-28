@@ -62,10 +62,7 @@ export function resolveExploreLang(user: unknown, acceptLanguage: string | null)
 	return fromHeader ?? 'zh';
 }
 
-function buildExploreSoulerItems(
-	soulers: SoulerRow[],
-	avatarByWikiId: Map<string, string | null>
-) {
+function buildExploreSoulerItems(soulers: SoulerRow[], avatarByWikiId: Map<string, string | null>) {
 	return soulers.map((souler) => {
 		const wikiId = normalizeWikiId(souler.wiki_id);
 		return {
@@ -201,18 +198,5 @@ export async function fetchLatestSoulersPage(locals: App.Locals, page: number) {
 		page: normalizedPage,
 		items,
 		hasNextPage
-	};
-}
-
-export async function fetchExploreInitial(locals: App.Locals, exploreLang: string) {
-	const [featuredSections, latest] = await Promise.all([
-		fetchFeaturedSections(locals, exploreLang),
-		fetchLatestSoulersPage(locals, 1)
-	]);
-
-	return {
-		exploreLang,
-		featuredSections,
-		latest
 	};
 }

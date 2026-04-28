@@ -34,12 +34,8 @@
 				class="w-full"
 			>
 				<Tabs.List class="grid w-full grid-cols-2 rounded-xl bg-muted/70 p-1">
-					<Tabs.Trigger value="login" class="rounded-lg text-sm">
-						登录
-					</Tabs.Trigger>
-					<Tabs.Trigger value="signup" class="rounded-lg text-sm">
-						注册
-					</Tabs.Trigger>
+					<Tabs.Trigger value="login" class="rounded-lg text-sm">登录</Tabs.Trigger>
+					<Tabs.Trigger value="signup" class="rounded-lg text-sm">注册</Tabs.Trigger>
 				</Tabs.List>
 
 				<Tabs.Content value="login" class="mt-4">

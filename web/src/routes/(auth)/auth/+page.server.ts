@@ -61,7 +61,10 @@ export const actions: Actions = {
 			redirect(303, '/explore');
 		}
 
-		const { error: signInError } = await locals.supabase.auth.signInWithPassword({ email, password });
+		const { error: signInError } = await locals.supabase.auth.signInWithPassword({
+			email,
+			password
+		});
 		if (signInError) {
 			return fail(400, {
 				message:

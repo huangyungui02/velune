@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { getAgentApiBaseUrl } from '$lib/server/agent';
+import { clearBookshelfCache } from '$lib/server/bookshelf-cache';
 import type { RequestHandler } from './$types';
 
 type StreamRequestPayload = {
@@ -15,8 +16,8 @@ function normalizeLang(lang: string | null) {
 }
 
 export const POST: RequestHandler = async ({ request, url, locals }) => {
-	const { session } = await locals.safeGetSession();
-	if (!session) {
+	const { session, user } = await locals.safeGetSession();
+	if (!session || !user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
@@ -62,6 +63,7 @@ export const POST: RequestHandler = async ({ request, url, locals }) => {
 		return json({ error: 'Agent stream is empty' }, { status: 502 });
 	}
 
+	clearBookshelfCache(user.id);
 	return new Response(upstream.body, {
 		status: upstream.status,
 		headers: {

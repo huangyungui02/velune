@@ -47,7 +47,10 @@ export function resolveImageUrl(locals: App.Locals, rawPath: string | null) {
 	return publicUrl;
 }
 
-export async function fetchAvatarMap(locals: App.Locals, rawWikiIds: (string | null | undefined)[]) {
+export async function fetchAvatarMap(
+	locals: App.Locals,
+	rawWikiIds: (string | null | undefined)[]
+) {
 	const wikiIds = [...new Set(rawWikiIds.map(normalizeWikiId).filter(Boolean))] as string[];
 	if (wikiIds.length === 0) {
 		return new Map<string, string | null>();
@@ -69,6 +72,41 @@ export async function fetchAvatarMap(locals: App.Locals, rawWikiIds: (string | n
 	}
 
 	return avatarByWikiId;
+}
+
+export function createAvatarResolver(locals: App.Locals) {
+	const cache = new Map<string, string | null>();
+
+	return {
+		async map(rawWikiIds: (string | null | undefined)[]) {
+			const wikiIds = [...new Set(rawWikiIds.map(normalizeWikiId).filter(Boolean))] as string[];
+			const missingWikiIds = wikiIds.filter((wikiId) => !cache.has(wikiId));
+
+			if (missingWikiIds.length > 0) {
+				const resolved = await fetchAvatarMap(locals, missingWikiIds);
+				for (const wikiId of missingWikiIds) {
+					cache.set(wikiId, resolved.get(wikiId) ?? null);
+				}
+			}
+
+			const result = new Map<string, string | null>();
+			for (const wikiId of wikiIds) {
+				result.set(wikiId, cache.get(wikiId) ?? null);
+			}
+			return result;
+		},
+		async get(rawWikiId: string | null | undefined) {
+			const wikiId = normalizeWikiId(rawWikiId);
+			if (!wikiId) {
+				return null;
+			}
+			if (!cache.has(wikiId)) {
+				const resolved = await fetchAvatarMap(locals, [wikiId]);
+				cache.set(wikiId, resolved.get(wikiId) ?? null);
+			}
+			return cache.get(wikiId) ?? null;
+		}
+	};
 }
 
 export function ensureAvatarPath(wikiId: string) {

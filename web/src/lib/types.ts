@@ -9,6 +9,23 @@ export type BookshelfItem = {
 	imageUrl: string | null;
 };
 
+export type Loadable<T> =
+	| {
+			status: 'idle' | 'loading';
+			data: T | null;
+			error: '';
+	  }
+	| {
+			status: 'ready';
+			data: T;
+			error: '';
+	  }
+	| {
+			status: 'error';
+			data: T | null;
+			error: string;
+	  };
+
 export type ExploreSoulerItem = {
 	id: string;
 	name: string;

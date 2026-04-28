@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
 
 	let {
 		href,
@@ -27,7 +26,7 @@
 <a {href} class={cn('group block transition duration-300 hover:-translate-y-1', className)}>
 	<div class="gap-0 py-0 transition group-hover:opacity-90">
 		<div
-			class="relative aspect-[3/4] overflow-hidden rounded-[0.8rem] bg-muted/20 border border-border/40 shadow-sm"
+			class="relative aspect-[3/4] overflow-hidden rounded-[0.8rem] border border-border/40 bg-muted/20 shadow-sm"
 		>
 			{#if imageUrl}
 				<img
@@ -41,7 +40,9 @@
 		</div>
 
 		<div class="space-y-1.5 px-1 pt-4 pb-2.5 text-center">
-			<h2 class="truncate font-serif text-lg leading-7 text-foreground transition group-hover:text-primary">
+			<h2
+				class="truncate font-serif text-lg leading-7 text-foreground transition group-hover:text-primary"
+			>
 				{name}
 			</h2>
 			{#if subtitleText}
@@ -50,7 +51,10 @@
 			{#if tags.length > 0}
 				<div class="mt-2 flex flex-wrap justify-center gap-1.5">
 					{#each tags as tag (tag)}
-						<Badge variant="outline" class="bg-transparent border-border/50 text-muted-foreground px-2 text-[0.65rem] tracking-widest font-normal">
+						<Badge
+							variant="outline"
+							class="border-border/50 bg-transparent px-2 text-[0.65rem] font-normal tracking-widest text-muted-foreground"
+						>
 							{tag}
 						</Badge>
 					{/each}

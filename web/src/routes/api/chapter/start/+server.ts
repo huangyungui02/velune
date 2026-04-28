@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { getAgentApiBaseUrl } from '$lib/server/agent';
+import { clearBookshelfCache } from '$lib/server/bookshelf-cache';
 import type { RequestHandler } from './$types';
 
 type RequestPayload = {
@@ -13,8 +14,8 @@ function normalizeLang(lang: string | undefined) {
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	const { session } = await locals.safeGetSession();
-	if (!session) {
+	const { session, user } = await locals.safeGetSession();
+	if (!session || !user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
@@ -44,6 +45,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	});
 
 	const text = await upstream.text();
+	clearBookshelfCache(user.id);
 	return new Response(text, {
 		status: upstream.status,
 		headers: {
