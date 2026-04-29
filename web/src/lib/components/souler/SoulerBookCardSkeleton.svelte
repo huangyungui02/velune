@@ -12,7 +12,7 @@
 </script>
 
 <div class={cn('block', className)} aria-hidden="true">
-	<Skeleton class="aspect-[3/4] w-full rounded-[0.8rem]" />
+	<Skeleton class="aspect-[3/4] w-full rounded-2xl" />
 	<div class="space-y-2 px-1 pt-4 pb-2.5">
 		<Skeleton class="mx-auto h-5 w-4/5 rounded-full" />
 		{#if showSubtitle}

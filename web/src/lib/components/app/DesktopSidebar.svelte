@@ -31,7 +31,7 @@
 				href="/explore"
 				variant={isActive('/explore') ? 'default' : 'ghost'}
 				size="sm"
-				class="h-10 w-full justify-start gap-2 rounded-xl px-3"
+				class="h-10 w-full justify-start gap-2 rounded-xl px-3 transition-transform active:scale-[0.98]"
 				data-sveltekit-preload-data="tap"
 				data-sveltekit-preload-code="viewport"
 			>
@@ -48,7 +48,7 @@
 			<DropdownMenu.Trigger
 				class={cn(
 					buttonVariants({ variant: 'ghost', size: 'sm' }),
-					'h-11 w-full justify-start rounded-xl px-2.5'
+					'h-11 w-full justify-start rounded-xl px-2.5 transition-transform active:scale-[0.98]'
 				)}
 				aria-label="账号菜单"
 			>

@@ -47,7 +47,7 @@
 </script>
 
 <nav
-	class="fixed inset-x-4 bottom-4 z-30 grid grid-cols-3 gap-2 rounded-2xl border border-border/50 bg-background/80 p-2 shadow-sm backdrop-blur lg:hidden"
+	class="glass fixed inset-x-4 bottom-4 z-30 grid grid-cols-3 gap-2 rounded-2xl p-2 lg:hidden"
 	data-sveltekit-preload-code="viewport"
 >
 	{#each tabs as tab (tab.href)}
@@ -56,7 +56,7 @@
 			href={resolve(tab.href)}
 			variant={isActive(tab.href) ? 'default' : 'ghost'}
 			size="sm"
-			class="h-10 gap-2 rounded-xl"
+			class="h-10 gap-2 rounded-xl transition-transform active:scale-95"
 			onpointerdown={() => warmTab(tab.href)}
 			onclick={(event) => selectTab(event, tab.href)}
 		>
