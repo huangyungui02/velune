@@ -4,6 +4,7 @@ import {
 	parseAssistantMessage
 } from '$lib/features/chapter/assistant-content';
 import { consumeAssistantStream, type AssistantEvent } from '$lib/features/chapter/stream-events';
+import { requestBookshelfRefresh } from '$lib/stores/bookshelf-view-state';
 import type { ConversationMessage } from '$lib/types';
 
 type StartPayload = {
@@ -115,6 +116,7 @@ export class ConversationController {
 			const normalizedOptions = normalizeOptions(payload.options);
 			await this.streamAssistantContent(assistantIndex, parsedAssistant.content);
 			this.options = normalizedOptions.length > 0 ? normalizedOptions : parsedAssistant.options;
+			requestBookshelfRefresh();
 		} catch (err) {
 			if (!this.messages[assistantIndex]?.content.trim()) {
 				this.messages = [];
@@ -181,6 +183,7 @@ export class ConversationController {
 			await consumeAssistantStream(response.body, (event) => {
 				this.handleAssistantEvent(event, assistantIndex);
 			});
+			requestBookshelfRefresh();
 		} catch (err) {
 			if (!this.messages[assistantIndex].content.trim()) {
 				this.messages.pop();

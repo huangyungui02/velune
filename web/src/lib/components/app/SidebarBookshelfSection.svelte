@@ -4,19 +4,23 @@
 	import { onMount } from 'svelte';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import LibraryBig from '@lucide/svelte/icons/library-big';
-	import RotateCw from '@lucide/svelte/icons/rotate-cw';
 	import SoulerSidebarItem from '$lib/components/souler/SoulerSidebarItem.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import {
+		hasPendingBookshelfRefresh,
+		listenForBookshelfRefresh,
 		readBookshelfViewState,
 		writeBookshelfViewState
 	} from '$lib/stores/bookshelf-view-state';
 	import { cn } from '$lib/utils';
 	import type { BookshelfItem } from '$lib/types';
 
+	const cachedBookshelf = browser
+		? readBookshelfViewState()
+		: { items: null, refreshToken: 0, dataToken: 0 };
 	let expanded = $state(true);
-	let items = $state.raw<BookshelfItem[] | null>(browser ? readBookshelfViewState().items : null);
+	let items = $state.raw<BookshelfItem[] | null>(cachedBookshelf.items);
 	let loading = $state(false);
 	let refreshing = $state(false);
 	let error = $state('');
@@ -70,10 +74,17 @@
 				void loadBookshelf();
 			}
 		};
+		const refreshIfVisible = () => {
+			if (expanded && media.matches) {
+				void loadBookshelf({ refresh: true });
+			}
+		};
 
 		loadIfVisible();
+		const stopListeningForRefresh = listenForBookshelfRefresh(refreshIfVisible);
 		media.addEventListener('change', loadIfVisible);
 		return () => {
+			stopListeningForRefresh();
 			media.removeEventListener('change', loadIfVisible);
 		};
 	});
@@ -91,7 +102,7 @@
 			onclick={() => {
 				expanded = !expanded;
 				if (expanded) {
-					void loadBookshelf();
+					void loadBookshelf({ refresh: hasPendingBookshelfRefresh() });
 				}
 			}}
 		>
@@ -100,17 +111,6 @@
 			<ChevronDown
 				class={cn('ml-auto size-4 transition-transform duration-200', expanded ? 'rotate-180' : '')}
 			/>
-		</Button>
-		<Button
-			type="button"
-			variant="ghost"
-			size="icon-sm"
-			class="size-8 rounded-full text-muted-foreground/75 hover:text-primary"
-			onclick={() => loadBookshelf({ refresh: true })}
-			disabled={refreshing}
-			aria-label="刷新书架"
-		>
-			<RotateCw class={cn('size-3.5', refreshing && 'animate-spin')} />
 		</Button>
 	</div>
 

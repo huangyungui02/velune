@@ -8,14 +8,18 @@
 	import SoulerBookCard from '$lib/components/souler/SoulerBookCard.svelte';
 	import SoulerBookCardSkeleton from '$lib/components/souler/SoulerBookCardSkeleton.svelte';
 	import {
+		hasPendingBookshelfRefresh,
+		listenForBookshelfRefresh,
 		readBookshelfViewState,
 		writeBookshelfViewState
 	} from '$lib/stores/bookshelf-view-state';
 	import type { BookshelfItem } from '$lib/types';
 
-	const cachedBookshelf = browser ? readBookshelfViewState().items : null;
-	let bookshelf = $state.raw<BookshelfItem[]>(cachedBookshelf ?? []);
-	let loading = $state(!cachedBookshelf);
+	const cachedBookshelf = browser
+		? readBookshelfViewState()
+		: { items: null, refreshToken: 0, dataToken: 0 };
+	let bookshelf = $state.raw<BookshelfItem[]>(cachedBookshelf.items ?? []);
+	let loading = $state(!cachedBookshelf.items);
 	let refreshing = $state(false);
 	let error = $state('');
 
@@ -60,12 +64,19 @@
 	}
 
 	onMount(() => {
-		if (cachedBookshelf) {
-			writeBookshelfViewState(cachedBookshelf);
-			return;
+		const stopListeningForRefresh = listenForBookshelfRefresh(() => {
+			void loadBookshelf({ refresh: true });
+		});
+
+		if (cachedBookshelf.items) {
+			if (hasPendingBookshelfRefresh()) {
+				void loadBookshelf({ refresh: true });
+			}
+			return stopListeningForRefresh;
 		}
 
 		void loadBookshelf();
+		return stopListeningForRefresh;
 	});
 </script>
 
