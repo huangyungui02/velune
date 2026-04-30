@@ -26,7 +26,8 @@ CANONICAL_NAME_PROMPT: dict[Lang, str] = {
     ),
     "zh": (
         "## Task\n"
-        "将给定人物名，返回为规范人物名，以JSON格式返回\n\n"
+        "将给定人物名，返回为规范人物名，以JSON格式返回。\n"
+        "请使用大众最熟知的名字（例如：庄子而非庄周）。\n\n"
         "## Example Input\n"
         "尼采\n\n"
         "## Example Output\n"
