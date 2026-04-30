@@ -11,7 +11,6 @@ type SoulerRow = {
 type DiscoverSectionRow = {
 	id: string;
 	lang: string;
-	key: string;
 	title: string;
 	subtitle: string | null;
 	sort_order: number;
@@ -77,7 +76,7 @@ function buildExploreSoulerItems(soulers: SoulerRow[], avatarByWikiId: Map<strin
 async function fetchSectionRowsByLang(locals: App.Locals, lang: string) {
 	const { data: rows } = await locals.supabase
 		.from('discover_sections')
-		.select('id, lang, key, title, subtitle, sort_order')
+		.select('id, lang, title, subtitle, sort_order')
 		.eq('is_active', true)
 		.eq('lang', lang)
 		.order('sort_order', { ascending: true })
@@ -95,7 +94,7 @@ export async function fetchFeaturedSections(locals: App.Locals, preferredLang: s
 	if (sections.length === 0) {
 		const { data: allRows } = await locals.supabase
 			.from('discover_sections')
-			.select('id, lang, key, title, subtitle, sort_order')
+			.select('id, lang, title, subtitle, sort_order')
 			.eq('is_active', true)
 			.order('lang', { ascending: true })
 			.order('sort_order', { ascending: true })
@@ -165,7 +164,6 @@ export async function fetchFeaturedSections(locals: App.Locals, preferredLang: s
 
 			return {
 				id: section.id,
-				key: section.key?.trim() || section.id,
 				title: section.title?.trim() || '未命名分组',
 				subtitle: section.subtitle?.trim() || '',
 				soulers

@@ -19,7 +19,6 @@
 		form?.action === 'createSection' ? (form as Record<string, string | undefined>) : null
 	);
 	const sectionDraftLang = $derived(sectionForm?.lang ?? 'zh');
-	const sectionDraftKey = $derived(sectionForm?.key ?? '');
 	const sectionDraftTitle = $derived(sectionForm?.title ?? '');
 	const sectionDraftSubtitle = $derived(sectionForm?.subtitle ?? '');
 	const sectionDraftSortOrder = $derived(sectionForm?.sort_order ?? '0');
@@ -119,16 +118,6 @@
 							</select>
 						</label>
 						<label class="grid gap-1.5">
-							<span class="text-xs text-muted-foreground">key（唯一）</span>
-							<Input
-								class="h-10 rounded-xl bg-background/72 text-sm"
-								name="key"
-								placeholder="existence-and-void"
-								value={sectionDraftKey}
-								required
-							/>
-						</label>
-						<label class="grid gap-1.5">
 							<span class="text-xs text-muted-foreground">标题</span>
 							<Input
 								class="h-10 rounded-xl bg-background/72 text-sm"
@@ -177,7 +166,6 @@
 								title={section.title}
 								subtitle={section.subtitle}
 								lang={section.lang}
-								sectionKey={section.key}
 								sortOrder={section.sortOrder}
 								itemCount={section.itemCount}
 								isActive={section.isActive}

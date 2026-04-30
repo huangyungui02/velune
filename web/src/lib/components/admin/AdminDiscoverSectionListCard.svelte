@@ -8,7 +8,6 @@
 		title,
 		subtitle = '',
 		lang,
-		sectionKey,
 		sortOrder,
 		itemCount,
 		isActive
@@ -17,7 +16,6 @@
 		title: string;
 		subtitle?: string;
 		lang: string;
-		sectionKey: string;
 		sortOrder: number;
 		itemCount: number;
 		isActive: boolean;
@@ -35,7 +33,6 @@
 
 		<div class="flex flex-wrap items-center gap-2">
 			<Badge variant="outline" class="text-[0.68rem]">{lang}</Badge>
-			<Badge variant="outline" class="text-[0.68rem]">key: {sectionKey}</Badge>
 			<Badge variant="outline" class="text-[0.68rem]">#{sortOrder}</Badge>
 			<Badge variant="outline" class="text-[0.68rem]">{itemCount} 人</Badge>
 			<Badge variant={isActive ? 'secondary' : 'outline'} class="text-[0.68rem]"

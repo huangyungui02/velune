@@ -11,18 +11,18 @@
 	--card-foreground: oklch(0.25 0.015 60);
 	--popover: oklch(1 0.005 85);
 	--popover-foreground: oklch(0.25 0.015 60);
-	--primary: oklch(0.40 0.04 60);
+	--primary: oklch(0.4 0.04 60);
 	--primary-foreground: oklch(0.99 0.005 85);
 	--secondary: oklch(0.96 0.01 85);
 	--secondary-foreground: oklch(0.35 0.02 60);
 	--muted: oklch(0.95 0.008 85);
 	--muted-foreground: oklch(0.55 0.015 60);
 	--accent: oklch(0.94 0.015 80);
-	--accent-foreground: oklch(0.30 0.03 60);
-	--destructive: oklch(0.60 0.15 25);
-	--border: oklch(0.90 0.01 85);
+	--accent-foreground: oklch(0.3 0.03 60);
+	--destructive: oklch(0.6 0.15 25);
+	--border: oklch(0.9 0.01 85);
 	--input: oklch(0.91 0.01 85);
-	--ring: oklch(0.50 0.03 60);
+	--ring: oklch(0.5 0.03 60);
 	--radius: 1rem;
 }
 
@@ -81,11 +81,11 @@
 
 @layer utilities {
 	.glass {
-		@apply bg-background/60 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.02)];
+		@apply border border-white/20 bg-background/60 shadow-[0_8px_32px_0_rgba(0,0,0,0.02)] backdrop-blur-xl;
 	}
 
 	.glass-panel {
-		@apply bg-white/40 backdrop-blur-md border border-white/30 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)];
+		@apply border border-white/30 bg-white/40 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] backdrop-blur-md;
 	}
 
 	.scrollbar-soft {

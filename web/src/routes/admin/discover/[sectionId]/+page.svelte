@@ -17,9 +17,7 @@
 			>返回精选列表</Button
 		>
 		<h1 class="text-2xl leading-tight text-primary">编辑精选分组</h1>
-		<p class="text-sm text-muted-foreground">
-			{data.section.title} · {data.section.lang} · key: {data.section.key}
-		</p>
+		<p class="text-sm text-muted-foreground">{data.section.title} · {data.section.lang}</p>
 		<Separator class="mt-3" />
 	</header>
 
@@ -64,16 +62,6 @@
 						/>
 					</label>
 				</div>
-
-				<label class="grid gap-1.5">
-					<span class="text-xs text-muted-foreground">key（唯一）</span>
-					<Input
-						class="h-10 rounded-xl bg-background/72 text-sm"
-						name="key"
-						value={data.section.key}
-						required
-					/>
-				</label>
 
 				<label class="grid gap-1.5">
 					<span class="text-xs text-muted-foreground">标题</span>

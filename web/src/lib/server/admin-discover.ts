@@ -17,7 +17,6 @@ import type {
 type DiscoverSectionRow = {
 	id: string;
 	lang: string;
-	key: string;
 	title: string;
 	subtitle: string | null;
 	sort_order: number;
@@ -65,7 +64,7 @@ export async function fetchDiscoverSectionCount(locals: App.Locals) {
 export async function fetchDiscoverSections(locals: App.Locals) {
 	const { data: sectionsRaw } = await locals.supabase
 		.from('discover_sections')
-		.select('id, lang, key, title, subtitle, sort_order, is_active, updated_at')
+		.select('id, lang, title, subtitle, sort_order, is_active, updated_at')
 		.order('lang', { ascending: true })
 		.order('sort_order', { ascending: true })
 		.order('updated_at', { ascending: false });
@@ -92,7 +91,6 @@ export async function fetchDiscoverSections(locals: App.Locals) {
 		(section): AdminDiscoverSectionListItem => ({
 			id: section.id,
 			lang: section.lang?.trim() || 'zh',
-			key: section.key?.trim() || '',
 			title: section.title?.trim() || '未命名分组',
 			subtitle: section.subtitle?.trim() || '',
 			sortOrder: Number(section.sort_order ?? 0),
@@ -106,7 +104,7 @@ export async function fetchDiscoverSections(locals: App.Locals) {
 export async function fetchDiscoverSectionDetail(locals: App.Locals, sectionId: string) {
 	const { data: sectionRaw } = await locals.supabase
 		.from('discover_sections')
-		.select('id, lang, key, title, subtitle, sort_order, is_active')
+		.select('id, lang, title, subtitle, sort_order, is_active')
 		.eq('id', sectionId)
 		.maybeSingle();
 
@@ -174,7 +172,6 @@ export async function fetchDiscoverSectionDetail(locals: App.Locals, sectionId: 
 	return {
 		id: section.id,
 		lang: section.lang?.trim() || 'zh',
-		key: section.key?.trim() || '',
 		title: section.title?.trim() || '',
 		subtitle: section.subtitle?.trim() || '',
 		sortOrder: Number(section.sort_order ?? 0),
@@ -191,7 +188,6 @@ export async function createSection(
 	AdminActionResult<{
 		action: 'createSection';
 		lang?: string;
-		key?: string;
 		title?: string;
 		subtitle?: string;
 		sort_order?: string;
@@ -202,7 +198,6 @@ export async function createSection(
 	const draft = {
 		action: 'createSection' as const,
 		lang: parsed.lang,
-		key: parsed.key,
 		title: parsed.title,
 		subtitle: parsed.subtitle,
 		sort_order: parsed.sortOrderRaw
@@ -210,13 +205,6 @@ export async function createSection(
 
 	if (!parsed.title) {
 		return { ok: false, status: 400, data: { ...draft, message: '请输入分组标题。' } };
-	}
-	if (!parsed.key) {
-		return {
-			ok: false,
-			status: 400,
-			data: { ...draft, message: '请输入分组 key（英文/数字/连字符）。' }
-		};
 	}
 	if (!Number.isFinite(parsed.sortOrder)) {
 		return { ok: false, status: 400, data: { ...draft, message: 'sort_order 必须是数字。' } };
@@ -226,7 +214,6 @@ export async function createSection(
 		.from('discover_sections')
 		.insert({
 			lang: parsed.lang,
-			key: parsed.key,
 			title: parsed.title,
 			subtitle: parsed.subtitle || null,
 			sort_order: Math.floor(parsed.sortOrder),
@@ -265,17 +252,6 @@ export async function saveSection(
 			data: { action: 'saveSection', message: '请输入分组标题。', sectionId: parsed.sectionId }
 		};
 	}
-	if (!parsed.key) {
-		return {
-			ok: false,
-			status: 400,
-			data: {
-				action: 'saveSection',
-				message: 'key 仅支持英文、数字和连字符。',
-				sectionId: parsed.sectionId
-			}
-		};
-	}
 	if (parsed.sortOrder === null) {
 		return {
 			ok: false,
@@ -292,7 +268,6 @@ export async function saveSection(
 		.from('discover_sections')
 		.update({
 			lang: parsed.lang,
-			key: parsed.key,
 			title: parsed.title,
 			subtitle: parsed.subtitle || null,
 			sort_order: parsed.sortOrder,

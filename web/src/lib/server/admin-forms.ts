@@ -2,7 +2,6 @@ import {
 	clampWeight,
 	normalizeAdminTab,
 	normalizeLang,
-	normalizeSectionKey,
 	normalizeText,
 	type AdminTab
 } from '$lib/server/admin-common';
@@ -107,7 +106,6 @@ export function parseCreateSectionForm(formData: FormData) {
 	const sortOrderRaw = normalizeText(formData.get('sort_order'));
 	return {
 		lang: normalizeLang(formData.get('lang')),
-		key: normalizeSectionKey(formData.get('key')),
 		title: normalizeText(formData.get('title')),
 		subtitle: normalizeText(formData.get('subtitle')),
 		sortOrderRaw,
@@ -121,7 +119,6 @@ export function parseSaveSectionForm(formData: FormData) {
 		sectionId: normalizeText(formData.get('section_id')),
 		tab: normalizeAdminTab(normalizeText(formData.get('tab'))),
 		lang: normalizeLang(formData.get('lang')),
-		key: normalizeSectionKey(formData.get('key')),
 		title: normalizeText(formData.get('title')),
 		subtitle: normalizeText(formData.get('subtitle')),
 		sortOrderRaw,

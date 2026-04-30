@@ -26,7 +26,7 @@
 <a {href} class={cn('group block transition duration-300 hover:-translate-y-1', className)}>
 	<div class="gap-0 py-0 transition group-hover:opacity-90">
 		<div
-			class="relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/20 bg-muted/30 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-white/40"
+			class="relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/20 bg-muted/30 shadow-sm transition-all duration-300 group-hover:border-white/40 group-hover:shadow-md"
 		>
 			{#if imageUrl}
 				<img

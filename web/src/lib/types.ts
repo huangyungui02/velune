@@ -35,7 +35,6 @@ export type ExploreSoulerItem = {
 
 export type ExploreSection = {
 	id: string;
-	key: string;
 	title: string;
 	subtitle: string;
 	soulers: ExploreSoulerItem[];
@@ -86,7 +85,6 @@ export type AdminSoulerDetail = {
 export type AdminDiscoverSectionListItem = {
 	id: string;
 	lang: string;
-	key: string;
 	title: string;
 	subtitle: string;
 	sortOrder: number;
@@ -113,7 +111,6 @@ export type AdminDiscoverSectionSoulerOption = {
 export type AdminDiscoverSectionDetail = {
 	id: string;
 	lang: string;
-	key: string;
 	title: string;
 	subtitle: string;
 	sortOrder: number;

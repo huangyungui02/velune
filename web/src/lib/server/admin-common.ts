@@ -46,17 +46,6 @@ export function normalizeAdminTab(value: string | null): AdminTab {
 	return 'unchecked';
 }
 
-export function normalizeSectionKey(value: FormDataEntryValue | null) {
-	const normalized = normalizeText(value)
-		.toLowerCase()
-		.replace(/[\s_]+/g, '-')
-		.replace(/[^a-z0-9-]/g, '-')
-		.replace(/-+/g, '-')
-		.replace(/^-+|-+$/g, '');
-
-	return normalized.slice(0, 64);
-}
-
 export function clampWeight(value: number) {
 	if (!Number.isFinite(value)) {
 		return 0.5;
