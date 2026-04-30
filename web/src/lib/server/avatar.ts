@@ -1,6 +1,7 @@
 type AvatarRow = {
 	wiki_id: string;
 	image_path: string | null;
+	updated_at: string | null;
 };
 
 const AVATAR_BUCKET = 'avatars';
@@ -23,7 +24,21 @@ export function normalizeImagePath(rawPath: string | null) {
 	return value;
 }
 
-export function resolveImageUrl(locals: App.Locals, rawPath: string | null) {
+function versionedUrl(url: string, version: string | null | undefined) {
+	const value = version?.trim();
+	if (!value) {
+		return url;
+	}
+
+	const separator = url.includes('?') ? '&' : '?';
+	return `${url}${separator}v=${encodeURIComponent(value)}`;
+}
+
+export function resolveImageUrl(
+	locals: App.Locals,
+	rawPath: string | null,
+	version?: string | null
+) {
 	const imagePath = normalizeImagePath(rawPath);
 	if (!imagePath) {
 		return null;
@@ -35,7 +50,7 @@ export function resolveImageUrl(locals: App.Locals, rawPath: string | null) {
 		imagePath.startsWith('https://') ||
 		imagePath.startsWith('/')
 	) {
-		return imagePath;
+		return versionedUrl(imagePath, version);
 	}
 
 	const { data } = locals.supabase.storage.from(AVATAR_BUCKET).getPublicUrl(imagePath);
@@ -44,7 +59,7 @@ export function resolveImageUrl(locals: App.Locals, rawPath: string | null) {
 		return null;
 	}
 
-	return publicUrl;
+	return versionedUrl(publicUrl, version);
 }
 
 export async function fetchAvatarMap(
@@ -58,7 +73,7 @@ export async function fetchAvatarMap(
 
 	const { data: avatarRowsRaw } = await locals.supabase
 		.from('souler_avatars')
-		.select('wiki_id, image_path')
+		.select('wiki_id, image_path, updated_at')
 		.in('wiki_id', wikiIds);
 
 	const avatarByWikiId = new Map<string, string | null>();
@@ -68,7 +83,7 @@ export async function fetchAvatarMap(
 			continue;
 		}
 
-		avatarByWikiId.set(wikiId, resolveImageUrl(locals, row.image_path));
+		avatarByWikiId.set(wikiId, resolveImageUrl(locals, row.image_path, row.updated_at));
 	}
 
 	return avatarByWikiId;
