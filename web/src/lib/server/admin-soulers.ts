@@ -323,6 +323,7 @@ export async function saveSouler(
 		.from('soulers')
 		.update({
 			name: parsed.name,
+			canonical_name: parsed.canonicalName || null,
 			bio: parsed.bio,
 			wiki_id: parsed.wikidata || null,
 			checked: parsed.checked

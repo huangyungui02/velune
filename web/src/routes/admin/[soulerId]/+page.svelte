@@ -124,6 +124,16 @@
 						</div>
 
 						<label class="grid gap-1.5">
+							<span class="text-xs text-muted-foreground">Canonical name</span>
+							<Input
+								class="h-10 rounded-xl bg-background/72 text-sm"
+								name="canonical_name"
+								value={data.souler.canonicalName}
+								placeholder="用于搜索与去重"
+							/>
+						</label>
+
+						<label class="grid gap-1.5">
 							<span class="text-xs text-muted-foreground">Wikidata</span>
 							<Input
 								class="h-10 rounded-xl bg-background/72 text-sm"
