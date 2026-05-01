@@ -53,6 +53,12 @@ type SoulerOptionRow = {
 	checked: boolean;
 };
 
+const candidateSearchLimit = 12;
+
+function escapeSearchPattern(value: string) {
+	return value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+}
+
 export async function fetchDiscoverSectionCount(locals: App.Locals) {
 	const { count } = await locals.supabase
 		.from('discover_sections')
@@ -124,20 +130,8 @@ export async function fetchDiscoverSectionDetail(locals: App.Locals, sectionId: 
 		.map((item) => (Array.isArray(item.soulers) ? item.soulers[0] : item.soulers))
 		.filter(Boolean) as SoulerOptionRow[];
 
-	const includedSoulerIds = new Set(itemSoulerRows.map((item) => item.id));
-	const { data: candidatesRaw } = await locals.supabase
-		.from('soulers')
-		.select('id, name, lang, wiki_id, checked')
-		.eq('lang', section.lang)
-		.eq('checked', true)
-		.order('name', { ascending: true });
-
-	const candidateRows = (candidatesRaw ?? []) as SoulerOptionRow[];
 	const avatarResolver = createAvatarResolver(locals);
-	const avatarByWikiId = await avatarResolver.map([
-		...itemSoulerRows.map((row) => row.wiki_id),
-		...candidateRows.map((row) => row.wiki_id)
-	]);
+	const avatarByWikiId = await avatarResolver.map(itemSoulerRows.map((row) => row.wiki_id));
 
 	const items = itemRows
 		.map((item) => {
@@ -157,18 +151,6 @@ export async function fetchDiscoverSectionDetail(locals: App.Locals, sectionId: 
 		})
 		.filter(Boolean) as AdminDiscoverSectionDetail['items'];
 
-	const availableSoulers = candidateRows
-		.filter((row) => !includedSoulerIds.has(row.id))
-		.map((row): AdminDiscoverSectionSoulerOption => {
-			const wikiId = normalizeWikiId(row.wiki_id);
-			return {
-				id: row.id,
-				name: row.name?.trim() || '未命名人物',
-				lang: row.lang?.trim() || section.lang?.trim() || 'zh',
-				imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null
-			};
-		});
-
 	return {
 		id: section.id,
 		lang: section.lang?.trim() || 'zh',
@@ -177,8 +159,69 @@ export async function fetchDiscoverSectionDetail(locals: App.Locals, sectionId: 
 		sortOrder: Number(section.sort_order ?? 0),
 		isActive: Boolean(section.is_active),
 		items,
-		availableSoulers
+		availableSoulers: []
 	} as AdminDiscoverSectionDetail;
+}
+
+export async function searchDiscoverSectionCandidates(
+	locals: App.Locals,
+	sectionId: string,
+	query: string
+) {
+	const normalizedQuery = query.trim();
+	if (normalizedQuery.length === 0) {
+		return [] satisfies AdminDiscoverSectionSoulerOption[];
+	}
+
+	const { data: sectionRaw } = await locals.supabase
+		.from('discover_sections')
+		.select('id, lang')
+		.eq('id', sectionId)
+		.maybeSingle();
+
+	if (!sectionRaw) {
+		return null;
+	}
+
+	const section = sectionRaw as Pick<DiscoverSectionRow, 'id' | 'lang'>;
+	const { data: itemRowsRaw } = await locals.supabase
+		.from('discover_section_items')
+		.select('souler_id')
+		.eq('section_id', sectionId);
+	const includedSoulerIds = new Set(
+		((itemRowsRaw ?? []) as { souler_id: string | null }[])
+			.map((row) => row.souler_id?.trim())
+			.filter(Boolean) as string[]
+	);
+
+	const pattern = `%${escapeSearchPattern(normalizedQuery)}%`;
+	let queryBuilder = locals.supabase
+		.from('soulers')
+		.select('id, name, lang, wiki_id, checked')
+		.eq('lang', section.lang)
+		.eq('checked', true)
+		.ilike('name', pattern)
+		.order('name', { ascending: true })
+		.limit(candidateSearchLimit);
+
+	if (includedSoulerIds.size > 0) {
+		queryBuilder = queryBuilder.not('id', 'in', `(${Array.from(includedSoulerIds).join(',')})`);
+	}
+
+	const { data: candidatesRaw } = await queryBuilder;
+	const candidateRows = (candidatesRaw ?? []) as SoulerOptionRow[];
+	const avatarResolver = createAvatarResolver(locals);
+	const avatarByWikiId = await avatarResolver.map(candidateRows.map((row) => row.wiki_id));
+
+	return candidateRows.map((row): AdminDiscoverSectionSoulerOption => {
+		const wikiId = normalizeWikiId(row.wiki_id);
+		return {
+			id: row.id,
+			name: row.name?.trim() || '未命名人物',
+			lang: row.lang?.trim() || section.lang?.trim() || 'zh',
+			imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null
+		};
+	});
 }
 
 export async function createSection(

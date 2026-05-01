@@ -18,21 +18,8 @@ type DiscoverSectionRow = {
 
 type DiscoverSectionItemRow = {
 	section_id: string;
+	souler_id: string;
 	sort_order: number;
-	soulers:
-		| {
-				id: string;
-				name: string;
-				wiki_id: string | null;
-				checked: boolean;
-		  }[]
-		| {
-				id: string;
-				name: string;
-				wiki_id: string | null;
-				checked: boolean;
-		  }
-		| null;
 };
 
 const LATEST_PAGE_SIZE = 20;
@@ -116,42 +103,38 @@ export async function fetchFeaturedSections(locals: App.Locals, preferredLang: s
 
 	const { data: itemRowsRaw } = await locals.supabase
 		.from('discover_section_items')
-		.select('section_id, sort_order, soulers!inner(id, name, wiki_id, checked)')
+		.select('section_id, souler_id, sort_order')
 		.in('section_id', sectionIds)
-		.eq('soulers.checked', true)
 		.order('sort_order', { ascending: true });
 
 	const itemRows = (itemRowsRaw ?? []) as DiscoverSectionItemRow[];
-	const orderedSoulerRows: SoulerRow[] = [];
-	for (const item of itemRows) {
-		const souler = Array.isArray(item.soulers) ? item.soulers[0] : item.soulers;
-		if (!souler) {
-			continue;
-		}
-		orderedSoulerRows.push({
-			id: souler.id,
-			name: souler.name,
-			wiki_id: souler.wiki_id,
-			updated_at: ''
-		});
+	const soulerIds = [...new Set(itemRows.map((item) => item.souler_id).filter(Boolean))];
+	if (soulerIds.length === 0) {
+		return [] satisfies ExploreSection[];
 	}
 
+	const { data: soulerRowsRaw } = await locals.supabase
+		.from('soulers')
+		.select('id, name, wiki_id, updated_at')
+		.in('id', soulerIds)
+		.eq('checked', true);
+
+	const soulerRows = (soulerRowsRaw ?? []) as SoulerRow[];
 	const avatarByWikiId = await fetchAvatarMap(
 		locals,
-		orderedSoulerRows.map((souler) => souler.wiki_id)
+		soulerRows.map((souler) => souler.wiki_id)
 	);
 	const soulerById = new Map<string, ExploreSoulerItem>(
-		buildExploreSoulerItems(orderedSoulerRows, avatarByWikiId).map((souler) => [souler.id, souler])
+		buildExploreSoulerItems(soulerRows, avatarByWikiId).map((souler) => [souler.id, souler])
 	);
 	const soulerIdsBySectionId = new Map<string, string[]>();
 
 	for (const item of itemRows) {
-		const souler = Array.isArray(item.soulers) ? item.soulers[0] : item.soulers;
-		if (!souler) {
+		if (!soulerById.has(item.souler_id)) {
 			continue;
 		}
 		const list = soulerIdsBySectionId.get(item.section_id) ?? [];
-		list.push(souler.id);
+		list.push(item.souler_id);
 		soulerIdsBySectionId.set(item.section_id, list);
 	}
 

@@ -1,14 +1,95 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import type { AdminDiscoverSectionSoulerOption } from '$lib/types';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 	const backHref = $derived('/admin?tab=sections');
+	let candidateQuery = $state('');
+	let candidateResults = $state.raw<AdminDiscoverSectionSoulerOption[]>([]);
+	let candidateStatus = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
+	let candidateError = $state('');
+	let selectedSoulerId = $state('');
+	let searchTimer: ReturnType<typeof setTimeout> | null = null;
+	let searchAbort: AbortController | null = null;
+
+	const selectedSouler = $derived(
+		candidateResults.find((souler) => souler.id === selectedSoulerId) ?? null
+	);
+
+	function resetCandidateSearch() {
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+			searchTimer = null;
+		}
+		searchAbort?.abort();
+		searchAbort = null;
+		candidateResults = [];
+		candidateStatus = 'idle';
+		candidateError = '';
+		selectedSoulerId = '';
+	}
+
+	function queueCandidateSearch() {
+		selectedSoulerId = '';
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+
+		const query = candidateQuery.trim();
+		if (!query) {
+			resetCandidateSearch();
+			return;
+		}
+
+		candidateStatus = 'loading';
+		candidateError = '';
+		searchTimer = setTimeout(() => {
+			void searchCandidates(query);
+		}, 220);
+	}
+
+	async function searchCandidates(query: string) {
+		searchAbort?.abort();
+		searchAbort = new AbortController();
+
+		try {
+			const response = await fetch(
+				`/admin/discover/${encodeURIComponent(data.section.id)}/candidates?q=${encodeURIComponent(query)}`,
+				{ signal: searchAbort.signal }
+			);
+			if (!response.ok) {
+				throw new Error('搜索人物失败。');
+			}
+
+			const payload = (await response.json()) as {
+				soulers?: AdminDiscoverSectionSoulerOption[];
+			};
+			if (candidateQuery.trim() !== query) {
+				return;
+			}
+
+			candidateResults = payload.soulers ?? [];
+			candidateStatus = 'ready';
+		} catch (error) {
+			if (error instanceof DOMException && error.name === 'AbortError') {
+				return;
+			}
+			candidateResults = [];
+			candidateStatus = 'error';
+			candidateError = error instanceof Error ? error.message : '搜索人物失败。';
+		}
+	}
+
+	onDestroy(() => {
+		resetCandidateSearch();
+	});
 </script>
 
 <section class="space-y-5">
@@ -184,25 +265,82 @@
 	<Card.Root class="rounded-2xl bg-background/52 py-4 ring-1 ring-border/70">
 		<Card.Content class="space-y-3 px-4">
 			<h2 class="text-xl text-primary">加入人物</h2>
-			{#if data.section.availableSoulers.length > 0}
-				<form method="POST" class="grid gap-3 md:grid-cols-[1fr_auto]">
-					<input type="hidden" name="section_id" value={data.section.id} />
-					<input type="hidden" name="tab" value="sections" />
-					<select
-						name="souler_id"
-						class="h-10 rounded-xl border border-input bg-background/72 px-3 text-sm outline-none focus:border-primary/60"
+			<form method="POST" class="grid gap-3">
+				<input type="hidden" name="section_id" value={data.section.id} />
+				<input type="hidden" name="tab" value="sections" />
+				<input type="hidden" name="souler_id" value={selectedSoulerId} />
+
+				<div class="grid gap-2 md:grid-cols-[1fr_auto]">
+					<Input
+						type="search"
+						class="h-10 rounded-xl bg-background/72 text-sm"
+						placeholder="搜索已审核人物"
+						bind:value={candidateQuery}
+						oninput={queueCandidateSearch}
+					/>
+					<Button
+						type="submit"
+						class="h-10 rounded-xl px-4 text-sm"
+						formaction="?/addItem"
+						disabled={!selectedSoulerId}
 					>
-						{#each data.section.availableSoulers as souler (souler.id)}
-							<option value={souler.id}>{souler.name} · {souler.lang}</option>
-						{/each}
-					</select>
-					<Button type="submit" class="h-10 rounded-xl px-4 text-sm" formaction="?/addItem">
 						加入分组
 					</Button>
-				</form>
-			{:else}
-				<p class="text-sm text-muted-foreground">该语言下没有可加入的已审核人物。</p>
-			{/if}
+				</div>
+
+				{#if selectedSouler}
+					<div class="rounded-xl bg-primary/8 px-3 py-2 text-sm text-primary">
+						已选择：{selectedSouler.name} · {selectedSouler.lang}
+					</div>
+				{/if}
+
+				{#if candidateStatus === 'loading'}
+					<p class="text-sm text-muted-foreground">正在搜索…</p>
+				{:else if candidateStatus === 'error'}
+					<p class="text-sm text-destructive">{candidateError}</p>
+				{:else if candidateStatus === 'ready' && candidateResults.length === 0}
+					<p class="text-sm text-muted-foreground">没有匹配的可加入人物。</p>
+				{:else if candidateResults.length > 0}
+					<div class="grid gap-2">
+						{#each candidateResults as souler (souler.id)}
+							<button
+								type="button"
+								class={[
+									'grid grid-cols-[2.5rem_1fr] items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors',
+									selectedSoulerId === souler.id
+										? 'border-primary/40 bg-primary/8'
+										: 'border-border/70 bg-card/70 hover:bg-muted/45'
+								]}
+								onclick={() => {
+									selectedSoulerId = souler.id;
+								}}
+							>
+								<div
+									class="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted/30 ring-1 ring-border/65"
+								>
+									{#if souler.imageUrl}
+										<img
+											src={souler.imageUrl}
+											alt={souler.name}
+											class="h-full w-full object-cover"
+										/>
+									{:else}
+										<div class="grid h-full place-items-center text-[9px] text-muted-foreground">
+											无图
+										</div>
+									{/if}
+								</div>
+								<div class="min-w-0">
+									<p class="line-clamp-1 text-sm">{souler.name}</p>
+									<p class="text-xs text-muted-foreground">{souler.lang}</p>
+								</div>
+							</button>
+						{/each}
+					</div>
+				{:else}
+					<p class="text-sm text-muted-foreground">输入人物名称后搜索。</p>
+				{/if}
+			</form>
 		</Card.Content>
 	</Card.Root>
 
