@@ -1,4 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS moddatetime schema extensions;
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
 
 -- Create a table called soulers
 CREATE TABLE soulers (
@@ -17,6 +18,11 @@ CREATE INDEX IF NOT EXISTS idx_soulers_name ON soulers (name);
 CREATE INDEX IF NOT EXISTS idx_soulers_canonical_name ON soulers (canonical_name);
 CREATE INDEX IF NOT EXISTS idx_soulers_canonical_name_lang
     ON soulers (canonical_name, lang);
+CREATE INDEX IF NOT EXISTS idx_soulers_checked_canonical_name_trgm
+    ON public.soulers
+    USING gin (canonical_name gin_trgm_ops)
+    WHERE checked = true
+        AND canonical_name IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_soulers_lang ON soulers (lang);
 CREATE INDEX IF NOT EXISTS idx_soulers_wiki_id ON soulers (wiki_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_soulers_wiki_id_lang_unique

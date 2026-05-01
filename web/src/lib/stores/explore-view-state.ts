@@ -7,12 +7,18 @@ export type ExploreLatestPageState = {
 	hasNextPage: boolean;
 };
 
+export type ExploreSearchState = {
+	items: ExploreSoulerItem[];
+};
+
 type ExploreViewState = {
 	activeTab: ExploreTab;
 	featuredSections: ExploreSection[] | null;
 	latestPage: number;
 	scrollTop: number;
 	latestPages: Record<number, ExploreLatestPageState>;
+	searchQuery: string;
+	searchResults: Record<string, ExploreSearchState>;
 };
 
 const exploreViewState: ExploreViewState = {
@@ -20,7 +26,9 @@ const exploreViewState: ExploreViewState = {
 	featuredSections: null,
 	latestPage: 1,
 	scrollTop: 0,
-	latestPages: {}
+	latestPages: {},
+	searchQuery: '',
+	searchResults: {}
 };
 
 export function readExploreViewState() {
@@ -29,7 +37,9 @@ export function readExploreViewState() {
 		featuredSections: exploreViewState.featuredSections,
 		latestPage: exploreViewState.latestPage,
 		scrollTop: exploreViewState.scrollTop,
-		latestPages: exploreViewState.latestPages
+		latestPages: exploreViewState.latestPages,
+		searchQuery: exploreViewState.searchQuery,
+		searchResults: exploreViewState.searchResults
 	};
 }
 
@@ -60,5 +70,13 @@ export function writeExploreViewState(next: Partial<ExploreViewState>) {
 
 	if (next.latestPages) {
 		exploreViewState.latestPages = next.latestPages;
+	}
+
+	if (typeof next.searchQuery === 'string') {
+		exploreViewState.searchQuery = next.searchQuery;
+	}
+
+	if (next.searchResults) {
+		exploreViewState.searchResults = next.searchResults;
 	}
 }

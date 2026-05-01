@@ -8,6 +8,7 @@ import {
 	parseSortOrder
 } from '$lib/server/admin-forms';
 import { createAvatarResolver, normalizeWikiId } from '$lib/server/avatar';
+import { searchCheckedSoulers } from '$lib/server/souler-search';
 import type {
 	AdminDiscoverSectionDetail,
 	AdminDiscoverSectionListItem,
@@ -54,10 +55,6 @@ type SoulerOptionRow = {
 };
 
 const candidateSearchLimit = 12;
-
-function escapeSearchPattern(value: string) {
-	return value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
-}
 
 export async function fetchDiscoverSectionCount(locals: App.Locals) {
 	const { count } = await locals.supabase
@@ -194,32 +191,19 @@ export async function searchDiscoverSectionCandidates(
 			.filter(Boolean) as string[]
 	);
 
-	const pattern = `%${escapeSearchPattern(normalizedQuery)}%`;
-	let queryBuilder = locals.supabase
-		.from('soulers')
-		.select('id, name, lang, wiki_id, checked')
-		.eq('lang', section.lang)
-		.eq('checked', true)
-		.ilike('name', pattern)
-		.order('name', { ascending: true })
-		.limit(candidateSearchLimit);
+	const candidates = await searchCheckedSoulers(locals, {
+		query: normalizedQuery,
+		lang: section.lang,
+		excludeIds: includedSoulerIds,
+		limit: candidateSearchLimit
+	});
 
-	if (includedSoulerIds.size > 0) {
-		queryBuilder = queryBuilder.not('id', 'in', `(${Array.from(includedSoulerIds).join(',')})`);
-	}
-
-	const { data: candidatesRaw } = await queryBuilder;
-	const candidateRows = (candidatesRaw ?? []) as SoulerOptionRow[];
-	const avatarResolver = createAvatarResolver(locals);
-	const avatarByWikiId = await avatarResolver.map(candidateRows.map((row) => row.wiki_id));
-
-	return candidateRows.map((row): AdminDiscoverSectionSoulerOption => {
-		const wikiId = normalizeWikiId(row.wiki_id);
+	return candidates.map((row): AdminDiscoverSectionSoulerOption => {
 		return {
 			id: row.id,
-			name: row.name?.trim() || '未命名人物',
-			lang: row.lang?.trim() || section.lang?.trim() || 'zh',
-			imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null
+			name: row.name,
+			lang: row.lang || section.lang?.trim() || 'zh',
+			imageUrl: row.imageUrl
 		};
 	});
 }
