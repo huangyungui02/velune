@@ -9,7 +9,6 @@
 	import LatestGrid from '$lib/components/explore/LatestGrid.svelte';
 	import SearchResults from '$lib/components/explore/SearchResults.svelte';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
 	import {
 		readExploreViewState,
 		writeExploreViewState,
@@ -320,7 +319,7 @@
 </script>
 
 <svelte:head>
-	<title>Velune · 发现</title>
+	<title>Velune Folio · 发现</title>
 </svelte:head>
 
 <section class="space-y-8">
@@ -341,7 +340,6 @@
 				oninput={onSearchInput}
 			/>
 		</div>
-		<Separator class="mt-3" />
 	</header>
 
 	{#if normalizedSearchQuery}

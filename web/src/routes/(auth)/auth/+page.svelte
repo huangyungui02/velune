@@ -13,7 +13,7 @@
 </script>
 
 <svelte:head>
-	<title>Velune · 登录</title>
+	<title>Velune Folio · 登录</title>
 </svelte:head>
 
 <main class="mx-auto grid min-h-dvh w-full max-w-6xl place-items-center p-6">
@@ -21,7 +21,7 @@
 		class="w-full max-w-md rounded-3xl bg-card/88 py-7 shadow-[0_18px_40px_-28px_oklch(0.2_0.02_40_/_35%)] ring-1 ring-border/65 backdrop-blur-sm"
 	>
 		<Card.Header class="space-y-2 px-7">
-			<p class="font-serif text-2xl text-primary">Velune</p>
+			<p class="font-serif text-2xl text-primary">Velune Folio</p>
 			<Card.Description class="text-sm">用邮箱密码注册或登录</Card.Description>
 		</Card.Header>
 

@@ -38,7 +38,7 @@
 </script>
 
 <svelte:head>
-	<title>Velune · {data.souler.name}</title>
+	<title>Velune Folio · {data.souler.name}</title>
 </svelte:head>
 
 <section class="space-y-7 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pt-0">

@@ -22,7 +22,7 @@
 
 <aside class="hidden h-full min-h-0 flex-col border-r border-border/40 pt-10 lg:flex">
 	<div class="px-6 pb-4">
-		<p class="font-serif text-2xl leading-none text-primary">Velune</p>
+		<p class="font-serif text-2xl leading-none text-primary">Velune Folio</p>
 	</div>
 
 	<div class="scrollbar-soft min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">

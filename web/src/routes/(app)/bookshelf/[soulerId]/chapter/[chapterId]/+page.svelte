@@ -9,7 +9,7 @@
 </script>
 
 <svelte:head>
-	<title>Velune · {data.chapter.title}</title>
+	<title>Velune Folio · {data.chapter.title}</title>
 </svelte:head>
 
 {#key conversationKey}

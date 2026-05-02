@@ -14,7 +14,7 @@
 </script>
 
 <svelte:head>
-	<title>Velune · 我的</title>
+	<title>Velune Folio · 我的</title>
 </svelte:head>
 
 <section class="mx-auto flex min-h-[72dvh] w-full max-w-xl flex-col">

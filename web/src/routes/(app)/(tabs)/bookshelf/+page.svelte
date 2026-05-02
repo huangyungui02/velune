@@ -81,7 +81,7 @@
 </script>
 
 <svelte:head>
-	<title>Velune · 书架</title>
+	<title>Velune Folio · 书架</title>
 </svelte:head>
 
 <section class="space-y-8">
