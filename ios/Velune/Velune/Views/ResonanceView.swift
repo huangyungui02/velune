@@ -162,32 +162,13 @@ struct ResonanceView: View {
 
     private var resonanceList: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 8) {
+            LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(displayedResonances) { resonance in
                     Button {
                         dismissSearch()
                         openResonance(resonance)
                     } label: {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(resonance.soulerName)
-                                .lineLimit(1)
-                                .font(.body.weight(.medium))
-                                .fontDesign(.serif)
-
-                            if !resonance.lastSessionTitle.isEmpty {
-                                Text(resonance.lastSessionTitle)
-                                    .lineLimit(1)
-                                    .font(.footnote)
-                                    .foregroundStyle(UITheme.secondaryText)
-                                    .fontDesign(.serif)
-                            }
-                        }
-                        .foregroundStyle(UITheme.primaryText)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(.rect)
-                        .glassEffect(in: .rect(cornerRadius: 18))
+                        ResonanceRow(resonance: resonance)
                     }
                     .buttonStyle(.plain)
                 }
@@ -210,7 +191,8 @@ struct ResonanceView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.top, 4)
+            .padding(.bottom, 12)
         }
         .refreshable {
             await loadResonances()
@@ -261,6 +243,7 @@ struct ResonanceView: View {
 
         let hasLocalCache = loadLocalResonances(userId: userId)
         await syncResonances(userId: userId, hasLocalCache: hasLocalCache)
+        await refreshResonanceAvatars(userId: userId)
     }
 
     @MainActor
@@ -390,6 +373,18 @@ struct ResonanceView: View {
         }
     }
 
+    @MainActor
+    private func refreshResonanceAvatars(userId: String) async {
+        do {
+            let hasChanges = try await Resonance.refreshCachedAvatarURLs(userId: userId, context: context)
+            if hasChanges {
+                resonances = try Resonance.fetchCached(userId: userId, context: context)
+            }
+        } catch {
+            // Avatars are decorative here; keep the resonance list available if they fail to refresh.
+        }
+    }
+
     private func openResonance(_ resonance: Resonance) {
         if let sessionId = resonance.lastSessionId {
             activeSession = ChatSession(
@@ -410,5 +405,109 @@ struct ResonanceView: View {
 
     private func dismissSearch() {
         isSearchFocused = false
+    }
+}
+
+private struct ResonanceRow: View {
+    let resonance: Resonance
+
+    private var lastSessionTitle: String {
+        resonance.lastSessionTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            SoulerAvatar(
+                name: resonance.soulerName,
+                id: resonance.soulerId,
+                imageURLString: resonance.soulerAvatarURL
+            )
+
+            Text(resonance.soulerName)
+                .lineLimit(1)
+                .font(.body.weight(.medium))
+                .fontDesign(.serif)
+                .foregroundStyle(UITheme.primaryText)
+
+            Spacer(minLength: 18)
+
+            Text(lastSessionTitle)
+                .lineLimit(1)
+                .font(.footnote)
+                .fontDesign(.serif)
+                .foregroundStyle(UITheme.secondaryText)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 150, alignment: .trailing)
+        }
+        .padding(.horizontal, 2)
+        .padding(.vertical, 13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(.rect)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(.white.opacity(0.08))
+                .frame(height: 0.5)
+                .padding(.leading, 58)
+        }
+    }
+}
+
+private struct SoulerAvatar: View {
+    let name: String
+    let id: UUID
+    let imageURLString: String?
+
+    private var initial: String {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedName.isEmpty ? "?" : String(trimmedName.prefix(1))
+    }
+
+    private var hue: Double {
+        let total = id.uuidString.unicodeScalars.reduce(0) { $0 + Int($1.value) }
+        return Double(total % 360) / 360
+    }
+
+    var body: some View {
+        ZStack {
+            fallbackAvatar
+
+            if let imageURLString,
+               let imageURL = URL(string: imageURLString) {
+                AsyncImage(url: imageURL) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    }
+                }
+            }
+
+            Circle()
+                .stroke(.white.opacity(0.18), lineWidth: 0.7)
+        }
+        .frame(width: 44, height: 44)
+        .clipShape(.circle)
+        .accessibilityHidden(true)
+    }
+
+    private var fallbackAvatar: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(hue: hue, saturation: 0.26, brightness: 0.78).opacity(0.34),
+                            Color(hue: hue, saturation: 0.16, brightness: 0.98).opacity(0.16)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            Text(initial)
+                .font(.callout.weight(.semibold))
+                .fontDesign(.serif)
+                .foregroundStyle(UITheme.primaryText.opacity(0.9))
+        }
     }
 }
