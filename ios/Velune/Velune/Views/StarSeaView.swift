@@ -3,21 +3,16 @@ import SwiftData
 import SwiftUI
 
 struct StarSeaView: View {
-    private enum StarSeaStage: Equatable {
-        case verse
-        case matching
-    }
-
     @Environment(\.modelContext) private var context
     @State private var text = ""
-    @State private var isPresented = false
-    @State private var stage: StarSeaStage = .verse
+    @State private var isMatchingPresented = false
     @State private var manager = MatchingManager.shared
     @State private var showError = false
     @State private var showPaywall = false
     @State private var shouldRecoverToVerseAfterError = false
     @State private var currentPage: CardID? = .glimmer
     @State private var chatRoute: EchoChatRoute?
+    @FocusState private var isComposerFocused: Bool
     @Binding var composeRequestID: Int
 
     init(composeRequestID: Binding<Int> = .constant(0)) {
@@ -27,12 +22,16 @@ struct StarSeaView: View {
     var body: some View {
         NavigationStack {
             mainContent
-                .toolbar {
-                    matchingToolbarContent
-                }
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar(isPresented ? .hidden : .visible, for: .navigationBar)
-                .toolbar(isPresented ? .hidden : .visible, for: .bottomBar)
+                .navigationDestination(isPresented: $isMatchingPresented) {
+                    MatchingView(
+                        manager: manager,
+                        currentPage: $currentPage,
+                        chatRoute: $chatRoute,
+                        onClose: closeCurrentGlimmer
+                    )
+                    .toolbar(.hidden, for: .tabBar)
+                }
                 .navigationDestination(item: $chatRoute) { route in
                     ChatView(
                         sessionId: route.sessionId,
@@ -42,17 +41,14 @@ struct StarSeaView: View {
                         soulerName: route.soulerName,
                         focusComposerOnAppear: true
                     )
+                    .toolbar(.hidden, for: .tabBar)
                 }
-        }
-        .fullScreenCover(isPresented: $isPresented) {
-            ComposeView(text: $text, onSend: send)
-                .presentationBackground(.clear)
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
         .onChange(of: manager.errorMessage) { _, newValue in
-            if stage == .matching, newValue != nil {
+            if isMatchingPresented, newValue != nil {
                 shouldRecoverToVerseAfterError = true
             }
             showError = newValue != nil
@@ -64,9 +60,10 @@ struct StarSeaView: View {
         }
         .onChange(of: composeRequestID) { _, _ in
             if manager.isMatching {
-                stage = .matching
+                isMatchingPresented = true
             } else {
-                isPresented = true
+                isMatchingPresented = false
+                isComposerFocused = true
             }
         }
         .alert("matching.error.title", isPresented: $showError) {
@@ -90,24 +87,68 @@ struct StarSeaView: View {
     private var mainContent: some View {
         ZStack {
             StarryBackgroundView()
-
-            if stage == .matching {
-                matchingContent
-            } else {
-                VStack {
-                    Spacer()
-
-                    VerseView(textKey: "starsea.hero.verse")
-
-                    Spacer()
-
-                    magicButtonView
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    isComposerFocused = false
                 }
-                .opacity(isPresented ? 0 : 1)
-                .animation(.easeInOut(duration: 0.2), value: isPresented)
+
+            VStack(spacing: 0) {
+                Spacer(minLength: 96)
+
+                CentralGlimmerComposer(
+                    text: $text,
+                    isFocused: $isComposerFocused,
+                    onSend: send
+                )
+                .padding(.horizontal, 24)
+
+                Spacer(minLength: 140)
             }
+            .transition(.opacity)
         }
     }
+
+    // MARK: - Actions
+
+    private func send() {
+        let input = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !input.isEmpty else { return }
+
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        isComposerFocused = false
+
+        manager.startMatching(text: input, context: context)
+        text = ""
+        currentPage = .glimmer
+
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            isMatchingPresented = true
+        }
+    }
+
+    private func closeCurrentGlimmer() {
+        resetToVerse()
+    }
+
+    private func recoverToVerseAfterError() {
+        resetToVerse()
+        shouldRecoverToVerseAfterError = false
+    }
+
+    private func resetToVerse() {
+        manager.reset()
+        isMatchingPresented = false
+        currentPage = .glimmer
+    }
+}
+
+// MARK: - Matching View
+
+private struct MatchingView: View {
+    let manager: MatchingManager
+    @Binding var currentPage: CardID?
+    @Binding var chatRoute: EchoChatRoute?
+    let onClose: () -> Void
 
     private var echoes: [Echo] {
         (manager.currentGlimmer?.echoes ?? [])
@@ -132,120 +173,25 @@ struct StarSeaView: View {
     }
 
     private var shouldShowChatButton: Bool {
-        stage == .matching && activeEchoChatRoute != nil
-    }
-
-    private var shouldShowMatchingToolbar: Bool {
-        stage == .matching
+        activeEchoChatRoute != nil
     }
 
     private var shouldShowListeningChip: Bool {
-        shouldShowMatchingToolbar && manager.isMatching && !hasEchoes
+        manager.isMatching && !hasEchoes
     }
 
-    @ToolbarContentBuilder
-    private var matchingToolbarContent: some ToolbarContent {
-        if shouldShowMatchingToolbar {
-            if hasEchoes {
-                ToolbarItem(placement: .bottomBar) {
-                    closeButton
-                }
-
-                ToolbarSpacer(placement: .bottomBar)
-
-                ToolbarItem(placement: .bottomBar) {
-                    if shouldShowChatButton {
-                        chatButton
-                    }
-                }
-
-                ToolbarItem(placement: .status) {
-                    CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage, isMatching: manager.isMatching)
-                }
-            }
+    var body: some View {
+        ZStack {
+            StarryBackgroundView()
+            matchingContent
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            matchingToolbarContent
         }
     }
 
-    private var magicButtonView: some View {
-        Group {
-            if text.isEmpty {
-                HStack(spacing: 12) {
-                    Image(systemName: "sparkles")
-
-                    Text("starsea.prompt.glimmerWithin")
-                        .foregroundStyle(UITheme.primaryText)
-                        .font(.body)
-                        .fontDesign(.serif)
-                }
-                .padding()
-                .glassEffect(in: .capsule)
-            } else {
-                draftPreviewField
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .glassEffect(in: .rect(cornerRadius: 24))
-                    .contentShape(.rect)
-                    .highPriorityGesture(
-                        TapGesture().onEnded {
-                            isPresented = true
-                        }
-                    )
-                    .padding(.horizontal)
-            }
-        }
-        .onTapGesture {
-            if manager.isMatching {
-                stage = .matching
-            } else {
-                isPresented = true
-            }
-        }
-    }
-
-    private var draftPreviewField: some View {
-        TextField("", text: .constant(text), axis: .vertical)
-            .font(.body)
-            .fontDesign(.serif)
-            .lineLimit(1 ... 5)
-            .foregroundStyle(UITheme.primaryText)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .textFieldStyle(.plain)
-    }
-
-    // MARK: - Actions
-
-    private func send() {
-        let input = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !input.isEmpty else { return }
-
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-
-        manager.startMatching(text: input, context: context)
-        text = ""
-        currentPage = .glimmer
-
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-            stage = .matching
-        }
-    }
-
-    private func closeCurrentGlimmer() {
-        resetToVerse()
-    }
-
-    private func recoverToVerseAfterError() {
-        resetToVerse()
-        shouldRecoverToVerseAfterError = false
-    }
-
-    private func resetToVerse() {
-        manager.reset()
-        stage = .verse
-        currentPage = .glimmer
-    }
-}
-
-extension StarSeaView {
     private var matchingContent: some View {
         VStack(spacing: 16) {
             CardPagerView(
@@ -274,9 +220,28 @@ extension StarSeaView {
         .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
     }
 
+    @ToolbarContentBuilder
+    private var matchingToolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            closeButton
+        }
+
+        if hasEchoes {
+            ToolbarItem(placement: .bottomBar) {
+                if shouldShowChatButton {
+                    chatButton
+                }
+            }
+
+            ToolbarItem(placement: .status) {
+                CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage, isMatching: manager.isMatching)
+            }
+        }
+    }
+
     private var closeButton: some View {
-        Button(role: .cancel, action: closeCurrentGlimmer) {
-            Image(systemName: "chevron.down")
+        Button(role: .cancel, action: onClose) {
+            Image(systemName: "chevron.left")
                 .font(.body.weight(.medium))
                 .foregroundStyle(UITheme.secondaryText)
                 .padding(8)
@@ -296,91 +261,62 @@ extension StarSeaView {
     }
 }
 
-// MARK: - Verse View
+// MARK: - Central Composer
 
-private struct VerseView: View {
-    let textKey: LocalizedStringKey
-
-    var body: some View {
-        VStack {
-            Spacer()
-
-            Text(textKey)
-                .padding(20)
-                .font(.title2)
-                .fontDesign(.serif)
-                .multilineTextAlignment(.center)
-                .lineSpacing(14)
-                .tracking(3)
-                .foregroundStyle(UITheme.primaryText.opacity(0.85))
-                .shadow(color: .white.opacity(0.12), radius: 16)
-                .shadow(color: .white.opacity(0.06), radius: 32)
-
-            Spacer()
-        }
-    }
-}
-
-// MARK: - Compose View
-
-private struct ComposeView: View {
-    @Environment(\.dismiss) private var dismiss
+private struct CentralGlimmerComposer: View {
     @Binding var text: String
+    var isFocused: FocusState<Bool>.Binding
     let onSend: () -> Void
 
-    @FocusState private var isFocused: Bool
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                TextField("starsea.prompt.glimmerWithin", text: $text, axis: .vertical)
-                    .focused($isFocused)
-                    .font(.body)
-                    .fontDesign(.serif)
-                    .lineSpacing(6)
-                    .padding(24)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Spacer()
-                    .contentShape(.rect)
-                    .onTapGesture(perform: dismissKeyboard)
-            }
-            .background(.clear)
-            .navigationTitle("glimmer.title")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        dismissKeyboard()
-                        dismiss()
-                    } label: {
-                        Image(systemName: "chevron.down")
-                            .font(.body.weight(.medium))
-                    }
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        dismissKeyboard()
-                        onSend()
-                        dismiss()
-                    } label: {
-                        Image(systemName: "arrow.up")
-                            .font(.body.weight(.medium))
-                    }
-                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
-        }
-        .background(.black.opacity(0.4))
-        .onAppear {
-            isFocused = true
-        }
+    private var canSend: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private func dismissKeyboard() {
-        isFocused = false
+    var body: some View {
+        ZStack(alignment: .leading) {
+            if text.isEmpty {
+                HStack(spacing: 8) {
+                    Text("starsea.prompt.glimmerWithin")
+
+                    Image(systemName: "arrow.right")
+                        .font(.callout.weight(.medium))
+                }
+                .font(.title3)
+                .fontDesign(.serif)
+                .foregroundStyle(UITheme.primaryText.opacity(0.42))
+                .allowsHitTesting(false)
+                .transition(.opacity)
+            }
+
+            TextField("", text: $text)
+                .focused(isFocused)
+                .font(.title3)
+                .fontDesign(.serif)
+                .foregroundStyle(UITheme.primaryText)
+                .tint(UITheme.primaryText)
+                .submitLabel(.send)
+                .textFieldStyle(.plain)
+                .onSubmit {
+                    if canSend {
+                        onSend()
+                    }
+                }
+                .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
+        }
+        .padding(.horizontal, 22)
+        .padding(.vertical, 18)
+        .background {
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(Color.white.opacity(isFocused.wrappedValue ? 0.035 : 0))
+                .shadow(
+                    color: .white.opacity(isFocused.wrappedValue ? 0.035 : 0),
+                    radius: 30,
+                    x: 0,
+                    y: 0
+                )
+            }
+        .frame(maxWidth: 520, alignment: .leading)
+        .animation(.easeInOut(duration: 0.22), value: isFocused.wrappedValue)
+        .animation(.easeInOut(duration: 0.18), value: text.isEmpty)
     }
 }
