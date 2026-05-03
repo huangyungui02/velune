@@ -58,6 +58,11 @@
 "common.loading" = "Loading…";
 "common.search" = "Search";
 
+"app.tab.starsea" = "Star Sea";
+"app.tab.resonance" = "Resonance";
+"app.tab.map" = "Map";
+"app.tab.profile" = "Me";
+
 "sign.appName" = "Velune";
 "sign.slogan" = "Explore inward,\nreach the depths of the cosmos.";
 "sign.action.skip" = "Skip for now";
@@ -67,8 +72,8 @@
 
 "anonymous.restricted.profile.title" = "Unlock Hearthaven";
 "anonymous.restricted.profile.description" = "Sign in to view, keep, and revisit your glimmers.";
-"anonymous.restricted.sidebar.title" = "Open Resonance Threads";
-"anonymous.restricted.sidebar.description" = "Sign in to browse resonances and return to each conversation.";
+"anonymous.restricted.resonance.title" = "Open Resonance Threads";
+"anonymous.restricted.resonance.description" = "Sign in to browse resonances and return to each conversation.";
 
 "profile.empty.noGlimmers" = "No glimmers yet";
 "profile.empty.noGlimmers.subtitle" = "Write your first glimmer, and listen for the first echo.";

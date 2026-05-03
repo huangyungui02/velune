@@ -58,6 +58,11 @@
 "common.loading" = "加载中…";
 "common.search" = "搜索";
 
+"app.tab.starsea" = "星海";
+"app.tab.resonance" = "共鸣";
+"app.tab.map" = "地图";
+"app.tab.profile" = "我的";
+
 "sign.appName" = "微澜";
 "sign.slogan" = "向内探索，\n抵达宇宙深处";
 "sign.action.skip" = "暂时跳过";
@@ -67,8 +72,8 @@
 
 "anonymous.restricted.profile.title" = "登录后开启心舍";
 "anonymous.restricted.profile.description" = "登录后，可查看、保存并回望你的心澜。";
-"anonymous.restricted.sidebar.title" = "登录后开启共鸣";
-"anonymous.restricted.sidebar.description" = "登录后，可浏览共鸣并回到每段会话。";
+"anonymous.restricted.resonance.title" = "登录后开启共鸣";
+"anonymous.restricted.resonance.description" = "登录后，可浏览共鸣并回到每段会话。";
 
 "profile.empty.noGlimmers" = "暂无心澜";
 "profile.empty.noGlimmers.subtitle" = "写下第一道心澜，静候第一声回响。";

@@ -11,70 +11,38 @@ struct StarSeaView: View {
     @Environment(\.modelContext) private var context
     @State private var text = ""
     @State private var isPresented = false
-    @State private var sidebarNavigation = SidebarNavigationState()
     @State private var stage: StarSeaStage = .verse
     @State private var manager = MatchingManager.shared
     @State private var showError = false
     @State private var showPaywall = false
     @State private var shouldRecoverToVerseAfterError = false
     @State private var currentPage: CardID? = .glimmer
-    @State private var isShowingProfile = false
     @State private var chatRoute: EchoChatRoute?
+    @Binding var composeRequestID: Int
+
+    init(composeRequestID: Binding<Int> = .constant(0)) {
+        _composeRequestID = composeRequestID
+    }
 
     var body: some View {
-        SidebarContainer(
-            sidebarNavigation: $sidebarNavigation,
-            isSidebarEnabled: isSidebarEnabled,
-            onOpenGlimmerComposer: openGlimmerComposerFromSidebar
-        ) {
-            NavigationStack {
-                mainContent
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button {
-                                withAnimation(.easeInOut(duration: 0.22)) {
-                                    sidebarNavigation.isSidebarPresented.toggle()
-                                }
-                            } label: {
-                                Image(systemName: "line.3.horizontal")
-                            }
-                        }
-                        profileToolbarItem
-                        matchingToolbarContent
-                    }
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar(isPresented ? .hidden : .visible, for: .navigationBar)
-                    .toolbar(isPresented ? .hidden : .visible, for: .bottomBar)
-                    .navigationDestination(isPresented: $isShowingProfile) {
-                        ProfileView(onOpenGlimmerComposer: openGlimmerComposerFromProfile)
-                    }
-                    .navigationDestination(item: $sidebarNavigation.activeSession) { session in
-                        ChatView(
-                            sessionId: session.id,
-                            soulerId: session.soulerId,
-                            soulerName: session.soulerName,
-                            focusComposerOnAppear: false
-                        )
-                    }
-                    .navigationDestination(item: $sidebarNavigation.activeDraftChat) { draftTarget in
-                        ChatView(
-                            sessionId: nil,
-                            soulerId: draftTarget.soulerId,
-                            soulerName: draftTarget.soulerName,
-                            focusComposerOnAppear: false
-                        )
-                    }
-                    .navigationDestination(item: $chatRoute) { route in
-                        ChatView(
-                            sessionId: route.sessionId,
-                            echoId: route.sessionId == nil ? route.echoId : nil,
-                            draftPrelude: route.draftPrelude,
-                            soulerId: route.soulerId,
-                            soulerName: route.soulerName,
-                            focusComposerOnAppear: true
-                        )
-                    }
-            }
+        NavigationStack {
+            mainContent
+                .toolbar {
+                    matchingToolbarContent
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar(isPresented ? .hidden : .visible, for: .navigationBar)
+                .toolbar(isPresented ? .hidden : .visible, for: .bottomBar)
+                .navigationDestination(item: $chatRoute) { route in
+                    ChatView(
+                        sessionId: route.sessionId,
+                        echoId: route.sessionId == nil ? route.echoId : nil,
+                        draftPrelude: route.draftPrelude,
+                        soulerId: route.soulerId,
+                        soulerName: route.soulerName,
+                        focusComposerOnAppear: true
+                    )
+                }
         }
         .fullScreenCover(isPresented: $isPresented) {
             ComposeView(text: $text, onSend: send)
@@ -94,11 +62,11 @@ struct StarSeaView: View {
                 recoverToVerseAfterError()
             }
         }
-        .onChange(of: isShowingProfile) { _, isShowing in
-            if isShowing {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    sidebarNavigation.isSidebarPresented = false
-                }
+        .onChange(of: composeRequestID) { _, _ in
+            if manager.isMatching {
+                stage = .matching
+            } else {
+                isPresented = true
             }
         }
         .alert("matching.error.title", isPresented: $showError) {
@@ -171,23 +139,8 @@ struct StarSeaView: View {
         stage == .matching
     }
 
-    private var isSidebarEnabled: Bool {
-        sidebarNavigation.isStarSeaDestination && chatRoute == nil && !isShowingProfile
-    }
-
     private var shouldShowListeningChip: Bool {
         shouldShowMatchingToolbar && manager.isMatching && !hasEchoes
-    }
-
-    @ToolbarContentBuilder
-    private var profileToolbarItem: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                isShowingProfile = true
-            } label: {
-                Image(systemName: "person.crop.circle")
-            }
-        }
     }
 
     @ToolbarContentBuilder
@@ -283,17 +236,6 @@ struct StarSeaView: View {
     private func recoverToVerseAfterError() {
         resetToVerse()
         shouldRecoverToVerseAfterError = false
-    }
-
-    private func openGlimmerComposerFromSidebar() {
-        isPresented = true
-    }
-
-    private func openGlimmerComposerFromProfile() {
-        isShowingProfile = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-            isPresented = true
-        }
     }
 
     private func resetToVerse() {
