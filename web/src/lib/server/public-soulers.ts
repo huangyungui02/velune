@@ -40,7 +40,13 @@ type SessionRow = {
 	chapter_id: string | null;
 };
 
+type ChapterSessionRow = {
+	id: string;
+	chapter_id: string | null;
+};
+
 export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: string) {
+	const { user } = await locals.safeGetSession();
 	const { data: soulerRaw, error } = await locals.supabase
 		.from('soulers')
 		.select('id, name, bio, wiki_id')
@@ -76,6 +82,26 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 		})
 		.filter(Boolean);
 
+	const chapters = (chaptersRaw ?? []) as ChapterRow[];
+	const chapterIds = chapters.map((chapter) => chapter.id);
+	const sessionByChapterId = new Map<string, string>();
+
+	if (user && chapterIds.length > 0) {
+		const { data: sessionRaw } = await locals.supabase
+			.from('sessions')
+			.select('id, chapter_id')
+			.eq('user_id', user.id)
+			.eq('souler_id', soulerId)
+			.in('chapter_id', chapterIds)
+			.order('updated_at', { ascending: false });
+
+		for (const session of (sessionRaw ?? []) as ChapterSessionRow[]) {
+			if (session.chapter_id && !sessionByChapterId.has(session.chapter_id)) {
+				sessionByChapterId.set(session.chapter_id, session.id);
+			}
+		}
+	}
+
 	return {
 		souler: {
 			id: souler.id,
@@ -84,7 +110,10 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 			imageUrl: await avatarResolver.get(wikiId)
 		},
 		keywords,
-		chapters: (chaptersRaw ?? []) as ChapterRow[]
+		chapters: chapters.map((chapter) => ({
+			...chapter,
+			sessionId: sessionByChapterId.get(chapter.id) ?? null
+		}))
 	};
 }
 

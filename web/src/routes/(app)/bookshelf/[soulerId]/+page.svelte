@@ -24,6 +24,16 @@
 		return String(Math.trunc(value)).padStart(2, '0');
 	}
 
+	function chapterHref(chapter: (typeof data.chapters)[number]) {
+		const path = resolve(`/bookshelf/${data.souler.id}/chapter/${chapter.id}`);
+		if (!chapter.sessionId) {
+			return path;
+		}
+
+		const query = new URLSearchParams({ session: chapter.sessionId });
+		return `${path}?${query.toString()}`;
+	}
+
 	onMount(() => {
 		scrollMainContainerToTop();
 	});
@@ -103,7 +113,7 @@
 			<div class="grid gap-3 pt-4">
 				{#each data.chapters as chapter (chapter.id)}
 					<a
-						href={resolve(`/bookshelf/${data.souler.id}/chapter/${chapter.id}`)}
+						href={chapterHref(chapter)}
 						class="group block border-l-2 border-transparent px-4 py-3 transition hover:border-primary/40"
 					>
 						<p class="mb-1 text-[0.72rem] tracking-[0.24em] text-muted-foreground/70">

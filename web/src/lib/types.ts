@@ -45,6 +45,7 @@ export type SoulerChapter = {
 	seq: number;
 	title: string;
 	subtitle: string;
+	sessionId?: string | null;
 };
 
 export type AdminSoulerKeyword = {
