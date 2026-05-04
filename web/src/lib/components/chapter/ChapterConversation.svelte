@@ -25,12 +25,46 @@
 
 	let messageContainer = $state<HTMLElement | null>(null);
 	let selectedHistoryId = $state<string | null>(null);
+	let historyPanelHidden = $state(false);
+	let shouldFollowMessages = $state(false);
+	let programmaticScrollUntil = 0;
 
 	function scrollToLatestMessage(behavior: ScrollBehavior = 'auto') {
-		if (!messageContainer?.lastElementChild) {
+		if (!shouldFollowMessages || !messageContainer?.lastElementChild) {
 			return;
 		}
+
+		programmaticScrollUntil = Date.now() + 1200;
 		messageContainer.lastElementChild.scrollIntoView({ behavior, block: 'start' });
+	}
+
+	function getMainScrollContainer() {
+		return messageContainer?.closest<HTMLElement>('[data-main-scroll-container]') ?? null;
+	}
+
+	function eventStartedInMainScroll(event: Event) {
+		const container = getMainScrollContainer();
+		if (!container) {
+			return false;
+		}
+
+		return event.composedPath().includes(container);
+	}
+
+	function pauseMessageFollowing(event?: Event) {
+		if (event && !eventStartedInMainScroll(event)) {
+			return;
+		}
+
+		shouldFollowMessages = false;
+	}
+
+	function handleMainScroll(event: Event) {
+		if (!controller.isLoading || Date.now() <= programmaticScrollUntil) {
+			return;
+		}
+
+		pauseMessageFollowing(event);
 	}
 
 	function toHistoryDate(value: string) {
@@ -75,6 +109,7 @@
 			return;
 		}
 
+		historyPanelHidden = true;
 		const path = resolve(`/bookshelf/${souler.id}/chapter/${chapter.id}`);
 		const query = new URLSearchParams({ session: selectedHistoryId });
 		goto(`${path}?${query.toString()}`);
@@ -82,6 +117,23 @@
 
 	function clearHistorySelection() {
 		selectedHistoryId = null;
+	}
+
+	function startNewChapter() {
+		historyPanelHidden = true;
+		selectedHistoryId = null;
+		shouldFollowMessages = true;
+		void controller.startChapter();
+	}
+
+	function selectOption(option: string) {
+		shouldFollowMessages = true;
+		void controller.sendMessage(option);
+	}
+
+	function sendMessage() {
+		shouldFollowMessages = true;
+		void controller.sendMessage();
 	}
 
 	const controller = untrack(
@@ -97,9 +149,21 @@
 				}
 			})
 	);
+	let showHistoryRecords = $derived(
+		!historyPanelHidden &&
+			!controller.sessionId &&
+			!controller.isLoading &&
+			controller.messages.length === 0 &&
+			chapterHistories.length > 0
+	);
 </script>
 
-<svelte:window onclick={clearHistorySelection} />
+<svelte:window
+	onclick={clearHistorySelection}
+	onwheel={pauseMessageFollowing}
+	ontouchmove={pauseMessageFollowing}
+	onscroll={handleMainScroll}
+/>
 
 <div
 	class="pt-[calc(env(safe-area-inset-top)+3.4rem)] pb-[calc(env(safe-area-inset-bottom)+3.8rem)] md:pt-2 md:pb-[4.5rem]"
@@ -107,7 +171,7 @@
 	<ChapterHeader title={chapter.title} subtitle={chapter.subtitle} soulerId={souler.id} />
 
 	<div class="space-y-5">
-		{#if !controller.sessionId && chapterHistories.length > 0}
+		{#if showHistoryRecords}
 			<section class="px-5 pt-2 md:px-4">
 				<p class="pb-5 font-sans text-[0.78rem] tracking-[0.18em] text-muted-foreground/58">
 					阅读记录
@@ -160,7 +224,7 @@
 			sessionId={controller.sessionId}
 			options={controller.options}
 			isLoading={controller.isLoading}
-			onSelect={(option) => controller.sendMessage(option)}
+			onSelect={selectOption}
 		/>
 	</div>
 </div>
@@ -170,7 +234,7 @@
 	isLoading={controller.isLoading}
 	canContinue={Boolean(selectedHistoryId)}
 	bind:inputValue={controller.inputValue}
-	onStart={() => controller.startChapter()}
+	onStart={startNewChapter}
 	onContinue={chapterHistories.length > 0 ? continueHistory : undefined}
-	onSend={() => controller.sendMessage()}
+	onSend={sendMessage}
 />

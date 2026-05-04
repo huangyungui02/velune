@@ -22,15 +22,21 @@
 		</p>
 	{/if}
 
-	{#each messages as message, index (`${message.role}-${index}`)}
+	{#each messages as message, index (message.id ?? `${message.role}-${index}`)}
 		{#if message.role === 'assistant'}
 			<article class="w-full px-1 text-[1.1rem] leading-8 text-foreground md:px-2">
-				<div class="markdown-content">
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html renderAssistantMarkdown(
-						message.content || (isLoading && index === messages.length - 1 ? '...' : '')
-					)}
-				</div>
+				{#if !message.content && isLoading && index === messages.length - 1}
+					<span class="typing-ellipsis" aria-label="生成中">
+						<span></span>
+						<span></span>
+						<span></span>
+					</span>
+				{:else}
+					<div class="markdown-content">
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html renderAssistantMarkdown(message.content)}
+					</div>
+				{/if}
 			</article>
 		{:else}
 			<div class="flex justify-end">
@@ -101,5 +107,44 @@
 		border-left: 2px solid oklch(0.86 0.01 82);
 		padding-left: 0.7rem;
 		color: oklch(0.48 0.02 80);
+	}
+
+	.typing-ellipsis {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.22rem;
+		min-height: 2rem;
+		padding-left: 0.08rem;
+		color: oklch(0.48 0.02 80 / 0.72);
+	}
+
+	.typing-ellipsis span {
+		width: 0.32rem;
+		height: 0.32rem;
+		border-radius: 999px;
+		background: currentColor;
+		animation: typing-pulse 1.1s ease-in-out infinite;
+	}
+
+	.typing-ellipsis span:nth-child(2) {
+		animation-delay: 0.15s;
+	}
+
+	.typing-ellipsis span:nth-child(3) {
+		animation-delay: 0.3s;
+	}
+
+	@keyframes typing-pulse {
+		0%,
+		80%,
+		100% {
+			opacity: 0.28;
+			transform: translateY(0);
+		}
+
+		40% {
+			opacity: 0.9;
+			transform: translateY(-0.12rem);
+		}
 	}
 </style>

@@ -30,6 +30,8 @@ export class ConversationController {
 	private soulerName: string;
 	private chapterId: string;
 	private onMessagesChanged?: () => void;
+	private messageSequence = 0;
+	private activeRunId = 0;
 
 	sessionId = $state<string | null>(null);
 	inputValue = $state('');
@@ -45,8 +47,17 @@ export class ConversationController {
 		this.onMessagesChanged = options.onMessagesChanged;
 		this.sessionId = options.initialSessionId;
 		const hydrated = hydrateConversation(options.initialMessages);
-		this.messages = hydrated.messages;
+		this.messages = hydrated.messages.map((message) => this.createMessage(message.role, message.content));
 		this.options = hydrated.options;
+	}
+
+	private createMessage(role: ConversationMessage['role'], content: string): ConversationMessage {
+		this.messageSequence += 1;
+		return {
+			id: `${role}-${Date.now().toString(36)}-${this.messageSequence}`,
+			role,
+			content
+		};
 	}
 
 	private markMessagesChanged() {
@@ -86,10 +97,12 @@ export class ConversationController {
 			return;
 		}
 
+		const runId = this.activeRunId + 1;
+		this.activeRunId = runId;
 		this.isLoading = true;
 		this.errorMessage = '';
 		this.options = [];
-		this.messages = [{ role: 'assistant', content: '' }];
+		this.messages = [this.createMessage('assistant', '')];
 		this.markMessagesChanged();
 		const assistantIndex = 0;
 
@@ -107,6 +120,9 @@ export class ConversationController {
 			});
 
 			const payload = (await response.json()) as StartPayload;
+			if (runId !== this.activeRunId) {
+				return;
+			}
 			if (!response.ok) {
 				throw new Error(payload.error || '章节启动失败');
 			}
@@ -114,7 +130,10 @@ export class ConversationController {
 			this.sessionId = payload.session_id;
 			const parsedAssistant = parseAssistantMessage(payload.assistant_message.content);
 			const normalizedOptions = normalizeOptions(payload.options);
-			await this.streamAssistantContent(assistantIndex, parsedAssistant.content);
+			await this.streamAssistantContent(assistantIndex, parsedAssistant.content, runId);
+			if (runId !== this.activeRunId) {
+				return;
+			}
 			this.options = normalizedOptions.length > 0 ? normalizedOptions : parsedAssistant.options;
 			requestBookshelfRefresh();
 		} catch (err) {
@@ -124,17 +143,22 @@ export class ConversationController {
 			}
 			this.errorMessage = err instanceof Error ? err.message : '章节启动失败';
 		} finally {
-			this.isLoading = false;
+			if (runId === this.activeRunId) {
+				this.isLoading = false;
+			}
 		}
 	}
 
-	async streamAssistantContent(assistantIndex: number, fullContent: string) {
+	async streamAssistantContent(assistantIndex: number, fullContent: string, runId: number) {
 		const chunks = Array.from(fullContent);
 		if (chunks.length === 0) {
 			return;
 		}
 
 		for (let cursor = 0; cursor < chunks.length; ) {
+			if (runId !== this.activeRunId) {
+				return;
+			}
 			const remaining = chunks.length - cursor;
 			const step = remaining > 420 ? 12 : remaining > 220 ? 8 : remaining > 90 ? 5 : 3;
 			const nextCursor = Math.min(cursor + step, chunks.length);
@@ -150,14 +174,16 @@ export class ConversationController {
 			return;
 		}
 
+		const runId = this.activeRunId + 1;
+		this.activeRunId = runId;
 		const previousOptions = this.options;
 		this.inputValue = '';
 		this.errorMessage = '';
 		this.options = [];
 		this.isLoading = true;
 
-		this.messages.push({ role: 'user', content });
-		this.messages.push({ role: 'assistant', content: '' });
+		this.messages.push(this.createMessage('user', content));
+		this.messages.push(this.createMessage('assistant', ''));
 		this.markMessagesChanged();
 		const assistantIndex = this.messages.length - 1;
 
@@ -181,8 +207,14 @@ export class ConversationController {
 			}
 
 			await consumeAssistantStream(response.body, (event) => {
+				if (runId !== this.activeRunId) {
+					return;
+				}
 				this.handleAssistantEvent(event, assistantIndex);
 			});
+			if (runId !== this.activeRunId) {
+				return;
+			}
 			requestBookshelfRefresh();
 		} catch (err) {
 			if (!this.messages[assistantIndex].content.trim()) {
@@ -194,7 +226,9 @@ export class ConversationController {
 			}
 			this.errorMessage = err instanceof Error ? err.message : '消息发送失败';
 		} finally {
-			this.isLoading = false;
+			if (runId === this.activeRunId) {
+				this.isLoading = false;
+			}
 		}
 	}
 }

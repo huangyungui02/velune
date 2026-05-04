@@ -122,6 +122,7 @@ export type AdminDiscoverSectionDetail = {
 };
 
 export type ConversationMessage = {
+	id?: string;
 	role: 'assistant' | 'user';
 	content: string;
 };
