@@ -17,7 +17,7 @@
 
 <PageTopToolbar {title} backHref="/bookshelf" class="md:hidden">
 	<Button
-		href={resolve(`/bookshelf/${soulerId}`)}
+		href={resolve(`/bookshelf/${soulerId}/profile`)}
 		variant="ghost"
 		size="icon-sm"
 		class="size-9 rounded-full text-muted-foreground/80 hover:text-primary"

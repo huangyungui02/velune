@@ -46,6 +46,7 @@ export type SoulerChapter = {
 	title: string;
 	subtitle: string;
 	sessionId?: string | null;
+	latestHistory?: ChapterHistoryItem | null;
 };
 
 export type AdminSoulerKeyword = {

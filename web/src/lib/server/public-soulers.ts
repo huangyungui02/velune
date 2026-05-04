@@ -48,11 +48,6 @@ type HistoryMessageRow = {
 	session_id: string | null;
 };
 
-type ChapterSessionRow = {
-	id: string;
-	chapter_id: string | null;
-};
-
 export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: string) {
 	const { user } = await locals.safeGetSession();
 	const { data: soulerRaw, error } = await locals.supabase
@@ -93,20 +88,56 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 	const chapters = (chaptersRaw ?? []) as ChapterRow[];
 	const chapterIds = chapters.map((chapter) => chapter.id);
 	const sessionByChapterId = new Map<string, string>();
+	const latestHistoryByChapterId = new Map<string, ChapterHistoryItem>();
 
 	if (user && chapterIds.length > 0) {
 		const { data: sessionRaw } = await locals.supabase
 			.from('sessions')
-			.select('id, chapter_id')
+			.select('id, souler_id, chapter_id, updated_at')
 			.eq('user_id', user.id)
 			.eq('souler_id', soulerId)
 			.in('chapter_id', chapterIds)
 			.order('updated_at', { ascending: false });
 
-		for (const session of (sessionRaw ?? []) as ChapterSessionRow[]) {
+		const latestSessions: HistorySessionRow[] = [];
+		for (const session of (sessionRaw ?? []) as HistorySessionRow[]) {
 			if (session.chapter_id && !sessionByChapterId.has(session.chapter_id)) {
 				sessionByChapterId.set(session.chapter_id, session.id);
+				latestSessions.push(session);
 			}
+		}
+
+		const latestSessionIds = latestSessions.map((session) => session.id);
+		const messageCountBySessionId = new Map<string, number>();
+		if (latestSessionIds.length > 0) {
+			const { data: messageRows } = await locals.supabase
+				.from('messages')
+				.select('session_id')
+				.eq('user_id', user.id)
+				.in('session_id', latestSessionIds);
+
+			for (const message of (messageRows ?? []) as HistoryMessageRow[]) {
+				if (!message.session_id) {
+					continue;
+				}
+
+				messageCountBySessionId.set(
+					message.session_id,
+					(messageCountBySessionId.get(message.session_id) ?? 0) + 1
+				);
+			}
+		}
+
+		for (const session of latestSessions) {
+			if (!session.chapter_id) {
+				continue;
+			}
+
+			latestHistoryByChapterId.set(session.chapter_id, {
+				id: session.id,
+				updatedAt: session.updated_at,
+				messageCount: messageCountBySessionId.get(session.id) ?? 0
+			});
 		}
 	}
 
@@ -120,7 +151,8 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 		keywords,
 		chapters: chapters.map((chapter) => ({
 			...chapter,
-			sessionId: sessionByChapterId.get(chapter.id) ?? null
+			sessionId: sessionByChapterId.get(chapter.id) ?? null,
+			latestHistory: latestHistoryByChapterId.get(chapter.id) ?? null
 		}))
 	};
 }

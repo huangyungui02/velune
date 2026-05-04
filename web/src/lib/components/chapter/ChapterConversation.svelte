@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import Clock3 from '@lucide/svelte/icons/clock-3';
-	import MessageCircle from '@lucide/svelte/icons/message-circle';
 	import { tick, untrack } from 'svelte';
 	import ChapterHeader from '$lib/components/chapter/ChapterHeader.svelte';
 	import ConversationComposer from '$lib/components/chapter/ConversationComposer.svelte';
@@ -35,18 +33,41 @@
 		messageContainer.lastElementChild.scrollIntoView({ behavior, block: 'start' });
 	}
 
-	function formatHistoryTime(value: string) {
+	function toHistoryDate(value: string) {
 		const date = new Date(value);
 		if (Number.isNaN(date.getTime())) {
+			return null;
+		}
+
+		return date;
+	}
+
+	function formatHistoryDate(value: string) {
+		const date = toHistoryDate(value);
+		if (!date) {
 			return '时间未知';
 		}
 
 		return new Intl.DateTimeFormat('zh-CN', {
+			year: 'numeric',
 			month: 'long',
 			day: 'numeric',
 			hour: '2-digit',
 			minute: '2-digit'
 		}).format(date);
+	}
+
+	function formatHistoryCount(count: number) {
+		return `${count} 条消息`;
+	}
+
+	function formatHistoryLabel(history: ChapterHistoryItem) {
+		const date = toHistoryDate(history.updatedAt);
+		if (!date) {
+			return `时间未知，${formatHistoryCount(history.messageCount)}`;
+		}
+
+		return `${formatHistoryDate(history.updatedAt)}，${formatHistoryCount(history.messageCount)}`;
 	}
 
 	function continueHistory() {
@@ -87,41 +108,32 @@
 
 	<div class="space-y-5">
 		{#if !controller.sessionId && chapterHistories.length > 0}
-			<section class="px-2 md:px-4">
-				<p class="px-1 pb-2 font-sans text-xs tracking-[0.18em] text-muted-foreground/70">
+			<section class="px-5 pt-2 md:px-4">
+				<p class="pb-5 font-sans text-[0.78rem] tracking-[0.18em] text-muted-foreground/58">
 					阅读记录
 				</p>
-				<div class="divide-y divide-border/60">
+				<div class="space-y-1">
 					{#each chapterHistories as history (history.id)}
 						<button
 							type="button"
 							class={[
-								'flex w-full items-center gap-4 px-1 py-3 text-left transition',
+								'flex min-h-12 w-full items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left transition-colors',
 								selectedHistoryId === history.id
-									? 'bg-muted/35 text-primary'
-									: 'text-foreground hover:bg-muted/25'
+									? 'bg-primary/8 text-primary'
+									: 'text-muted-foreground hover:bg-muted/24 hover:text-foreground'
 							]}
-							aria-label={`${formatHistoryTime(history.updatedAt)}，${history.messageCount} 条消息`}
+							aria-label={formatHistoryLabel(history)}
 							aria-pressed={selectedHistoryId === history.id}
 							onclick={(event) => {
 								event.stopPropagation();
 								selectedHistoryId = selectedHistoryId === history.id ? null : history.id;
 							}}
 						>
-							<span
-								class={[
-									'flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm',
-									selectedHistoryId === history.id ? 'text-primary' : 'text-muted-foreground'
-								]}
-							>
-								<span class="inline-flex items-center gap-1.5">
-									<Clock3 class="size-3.5" />
-									{formatHistoryTime(history.updatedAt)}
-								</span>
-								<span class="inline-flex items-center gap-1.5">
-									<MessageCircle class="size-3.5" />
-									{history.messageCount} 条消息
-								</span>
+							<span class="min-w-0 font-sans text-[0.98rem] leading-none tabular-nums">
+								{formatHistoryDate(history.updatedAt)}
+							</span>
+							<span class="shrink-0 font-sans text-sm text-current/62">
+								{formatHistoryCount(history.messageCount)}
 							</span>
 						</button>
 					{/each}

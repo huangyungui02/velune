@@ -27,13 +27,6 @@
 	const desktopSkeletonItems = Array.from({ length: 8 }, (_, index) => `desktop-${index}`);
 
 	function getBookshelfHref(item: BookshelfItem) {
-		if (item.lastSessionId && item.lastChapterId) {
-			return `${resolve(`/bookshelf/${item.soulerId}/chapter/${item.lastChapterId}`)}?${new URLSearchParams(
-				{
-					session: item.lastSessionId
-				}
-			).toString()}`;
-		}
 		return resolve(`/bookshelf/${item.soulerId}`);
 	}
 

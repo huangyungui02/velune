@@ -7,7 +7,9 @@
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
-	let hideMobileNav = $derived(/^\/bookshelf\/[^/]+(?:\/chapter\/[^/]+)?$/.test(page.url.pathname));
+	let hideMobileNav = $derived(
+		/^\/bookshelf\/[^/]+(?:\/(?:chapter\/[^/]+|profile))?$/.test(page.url.pathname)
+	);
 	let mainContentPadding = $derived(
 		hideMobileNav
 			? 'p-6 pb-4 md:p-10 md:pb-10 lg:p-12 lg:pb-12'

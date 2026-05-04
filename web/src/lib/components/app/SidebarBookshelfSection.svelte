@@ -32,11 +32,7 @@
 	}
 
 	function getResonanceHref(item: BookshelfItem) {
-		if (!item.lastSessionId || !item.lastChapterId) {
-			return `/bookshelf/${item.soulerId}`;
-		}
-		const query = new URLSearchParams({ session: item.lastSessionId });
-		return `/bookshelf/${item.soulerId}/chapter/${item.lastChapterId}?${query.toString()}`;
+		return `/bookshelf/${item.soulerId}`;
 	}
 
 	async function loadBookshelf(options: { refresh?: boolean } = {}) {
