@@ -18,5 +18,6 @@
 		chapter={data.chapter}
 		initialSessionId={data.initialSessionId}
 		initialMessages={data.initialMessages}
+		chapterHistories={data.chapterHistories}
 	/>
 {/key}

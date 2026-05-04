@@ -5,16 +5,18 @@
 	let {
 		messages,
 		isLoading,
+		showEmptyState = true,
 		container = $bindable<HTMLElement | null>(null)
 	}: {
 		messages: ConversationMessage[];
 		isLoading: boolean;
+		showEmptyState?: boolean;
 		container: HTMLElement | null;
 	} = $props();
 </script>
 
 <div class="space-y-5 px-2 md:px-4" bind:this={container}>
-	{#if messages.length === 0}
+	{#if showEmptyState && messages.length === 0}
 		<p class="py-8 text-center font-sans text-sm tracking-widest text-muted-foreground/60">
 			-- 叙述由此展开 --
 		</p>

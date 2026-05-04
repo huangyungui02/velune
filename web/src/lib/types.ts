@@ -124,3 +124,9 @@ export type ConversationMessage = {
 	role: 'assistant' | 'user';
 	content: string;
 };
+
+export type ChapterHistoryItem = {
+	id: string;
+	updatedAt: string;
+	messageCount: number;
+};

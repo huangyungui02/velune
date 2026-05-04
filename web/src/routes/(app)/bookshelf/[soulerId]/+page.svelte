@@ -25,13 +25,7 @@
 	}
 
 	function chapterHref(chapter: (typeof data.chapters)[number]) {
-		const path = resolve(`/bookshelf/${data.souler.id}/chapter/${chapter.id}`);
-		if (!chapter.sessionId) {
-			return path;
-		}
-
-		const query = new URLSearchParams({ session: chapter.sessionId });
-		return `${path}?${query.toString()}`;
+		return resolve(`/bookshelf/${data.souler.id}/chapter/${chapter.id}`);
 	}
 
 	onMount(() => {

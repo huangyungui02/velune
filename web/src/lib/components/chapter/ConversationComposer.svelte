@@ -6,14 +6,18 @@
 	let {
 		sessionId,
 		isLoading,
+		canContinue = false,
 		inputValue = $bindable(''),
 		onStart,
+		onContinue,
 		onSend
 	}: {
 		sessionId: string | null;
 		isLoading: boolean;
+		canContinue?: boolean;
 		inputValue: string;
 		onStart: () => void;
+		onContinue?: () => void;
 		onSend: () => void;
 	} = $props();
 </script>
@@ -23,14 +27,24 @@
 >
 	<div class="pointer-events-auto mx-auto mb-2 w-full max-w-3xl px-3 md:px-6">
 		{#if !sessionId}
-			<div class="flex justify-center py-1">
+			<div class="flex justify-center gap-2 py-1">
 				<Button
 					class="h-11 rounded-full bg-primary px-8 font-sans text-sm tracking-widest text-primary-foreground shadow-sm hover:bg-primary/92"
 					onclick={onStart}
 					disabled={isLoading}
 				>
-					{isLoading ? '启动中...' : '开始阅读'}
+					{isLoading ? '启动中...' : '新的开始'}
 				</Button>
+				{#if onContinue}
+					<Button
+						variant="outline"
+						class="h-11 rounded-full border-border bg-background px-8 font-sans text-sm tracking-widest shadow-none hover:bg-muted"
+						onclick={onContinue}
+						disabled={isLoading || !canContinue}
+					>
+						继续阅读
+					</Button>
+				{/if}
 			</div>
 		{:else}
 			<div

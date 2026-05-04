@@ -1,5 +1,5 @@
 import { createAvatarResolver, normalizeWikiId } from '$lib/server/avatar';
-import type { ConversationMessage, SoulerChapter } from '$lib/types';
+import type { ChapterHistoryItem, ConversationMessage, SoulerChapter } from '$lib/types';
 
 type PublicSoulerRow = {
 	id: string;
@@ -38,6 +38,14 @@ type SessionRow = {
 	id: string;
 	souler_id: string;
 	chapter_id: string | null;
+};
+
+type HistorySessionRow = SessionRow & {
+	updated_at: string;
+};
+
+type HistoryMessageRow = {
+	session_id: string | null;
 };
 
 type ChapterSessionRow = {
@@ -140,6 +148,8 @@ export async function fetchChapterConversation(
 
 	let initialSessionId: string | null = null;
 	let initialMessages: ConversationMessage[] = [];
+	let chapterHistories: ChapterHistoryItem[] = [];
+	const { user } = await locals.safeGetSession();
 
 	if (routeSessionId) {
 		const { data: sessionRaw } = await locals.supabase
@@ -164,10 +174,50 @@ export async function fetchChapterConversation(
 		}
 	}
 
+	if (user && !initialSessionId) {
+		const { data: sessionRows } = await locals.supabase
+			.from('sessions')
+			.select('id, souler_id, chapter_id, updated_at')
+			.eq('user_id', user.id)
+			.eq('souler_id', soulerId)
+			.eq('chapter_id', chapterId)
+			.order('updated_at', { ascending: false });
+
+		const sessions = (sessionRows ?? []) as HistorySessionRow[];
+		const sessionIds = sessions.map((session) => session.id);
+
+		if (sessionIds.length > 0) {
+			const { data: messageRows } = await locals.supabase
+				.from('messages')
+				.select('session_id')
+				.eq('user_id', user.id)
+				.in('session_id', sessionIds);
+
+			const messageCountBySessionId = new Map<string, number>();
+			for (const message of (messageRows ?? []) as HistoryMessageRow[]) {
+				if (!message.session_id) {
+					continue;
+				}
+
+				messageCountBySessionId.set(
+					message.session_id,
+					(messageCountBySessionId.get(message.session_id) ?? 0) + 1
+				);
+			}
+
+			chapterHistories = sessions.map((session) => ({
+				id: session.id,
+				updatedAt: session.updated_at,
+				messageCount: messageCountBySessionId.get(session.id) ?? 0
+			}));
+		}
+	}
+
 	return {
 		souler: soulerRaw as ConversationSoulerRow,
 		chapter: chapterRaw as ConversationChapterRow,
 		initialSessionId,
-		initialMessages
+		initialMessages,
+		chapterHistories
 	};
 }
