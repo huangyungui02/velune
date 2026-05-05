@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import UserRound from '@lucide/svelte/icons/user-round';
+	import PageBackToolbar from '$lib/components/ui/page-back-toolbar.svelte';
 	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 
@@ -15,7 +16,7 @@
 	} = $props();
 </script>
 
-<PageTopToolbar {title} backHref="/bookshelf" class="md:hidden">
+<PageTopToolbar {title} backHref={`/bookshelf/${soulerId}`} class="md:hidden">
 	<Button
 		href={resolve(`/bookshelf/${soulerId}/profile`)}
 		variant="ghost"
@@ -26,6 +27,17 @@
 		<UserRound class="size-4" />
 	</Button>
 </PageTopToolbar>
+<PageBackToolbar {title} backHref={`/bookshelf/${soulerId}`}>
+	<Button
+		href={resolve(`/bookshelf/${soulerId}/profile`)}
+		variant="ghost"
+		size="icon-sm"
+		class="size-9 rounded-full text-muted-foreground/80 hover:text-primary"
+		aria-label="人物详情"
+	>
+		<UserRound class="size-4" />
+	</Button>
+</PageBackToolbar>
 
 <header class="mb-6 hidden md:block">
 	<h1 class="font-serif text-xl leading-tight text-primary md:text-2xl">{title}</h1>

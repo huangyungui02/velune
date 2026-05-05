@@ -3,12 +3,13 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import PageBackToolbar from '$lib/components/ui/page-back-toolbar.svelte';
 	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	const exploreHref = $derived(resolve('/explore'));
+	const exploreHref = '/explore';
 
 	function scrollMainContainerToTop() {
 		if (typeof document === 'undefined') {
@@ -46,6 +47,7 @@
 
 <section class="mx-auto max-w-5xl space-y-10 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pt-0">
 	<PageTopToolbar title={data.souler.name} backHref={exploreHref} class="md:hidden" />
+	<PageBackToolbar title={data.souler.name} backHref={exploreHref} />
 
 	<header class="hidden max-w-3xl md:block">
 		<p class="mb-2 font-sans text-[0.72rem] tracking-[0.24em] text-muted-foreground/64">

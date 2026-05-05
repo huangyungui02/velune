@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import PageBackToolbar from '$lib/components/ui/page-back-toolbar.svelte';
 	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 
-	const chaptersHref = $derived(resolve(`/bookshelf/${data.souler.id}`));
+	const chaptersHref = $derived(`/bookshelf/${data.souler.id}`);
 </script>
 
 <svelte:head>
@@ -16,6 +16,7 @@
 
 <section class="space-y-8 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pt-0">
 	<PageTopToolbar title={data.souler.name} backHref={chaptersHref} class="md:hidden" />
+	<PageBackToolbar title={data.souler.name} backHref={chaptersHref} />
 
 	<header class="hidden md:block">
 		<p class="mb-2 font-sans text-[0.72rem] tracking-[0.24em] text-muted-foreground/64">
@@ -26,10 +27,10 @@
 	</header>
 
 	<div
-		class="grid grid-cols-[7.25rem_minmax(0,1fr)] items-start gap-x-4 gap-y-5 md:grid-cols-[12rem_minmax(0,32rem)] md:gap-7"
+		class="grid grid-cols-[7.25rem_minmax(0,1fr)] items-start gap-x-4 gap-y-5 md:grid-cols-[12rem_minmax(0,38rem)] md:gap-x-7 md:gap-y-4"
 	>
 		<div
-			class="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-muted/20 shadow-sm md:max-w-[13rem]"
+			class="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-muted/20 shadow-sm md:row-span-2 md:max-w-[13rem] md:rounded-xl"
 		>
 			{#if data.souler.imageUrl}
 				<img src={data.souler.imageUrl} alt={data.souler.name} class="h-full w-full object-cover" />
@@ -57,7 +58,7 @@
 			{/if}
 		</div>
 
-		<p class="col-span-2 text-sm leading-8 text-foreground/80 md:col-start-2 md:col-end-3">
+		<p class="col-span-2 text-sm leading-8 text-foreground/80 md:col-span-1 md:col-start-2 md:col-end-3 md:max-w-[64ch]">
 			{#if data.souler.bio}
 				{data.souler.bio}
 			{:else}

@@ -5,7 +5,6 @@
 	import UserRound from '@lucide/svelte/icons/user-round';
 	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -24,10 +23,6 @@
 			return '00';
 		}
 		return String(Math.trunc(value)).padStart(2, '0');
-	}
-
-	function chapterHref(chapter: (typeof data.chapters)[number]) {
-		return resolve(`/bookshelf/${data.souler.id}/chapter/${chapter.id}`);
 	}
 
 	function profileHref() {
@@ -65,20 +60,15 @@
 </svelte:head>
 
 <section class="space-y-6 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pt-0">
-	<PageTopToolbar title={data.souler.name} backHref="/bookshelf" class="md:hidden">
-		<Button
-			href={profileHref()}
-			variant="ghost"
-			size="icon-sm"
-			class="size-9 rounded-full text-muted-foreground/80 hover:text-primary"
-			aria-label="人物简介"
+	<header
+		class="fixed inset-x-0 top-0 z-40 grid grid-cols-[2.25rem_1fr_2.25rem] items-center gap-2 border-b border-border/35 bg-background/70 px-3 pt-[max(env(safe-area-inset-top),0.4rem)] pb-2 md:hidden"
+	>
+		<span class="size-9" aria-hidden="true"></span>
+		<h1
+			class="min-w-0 overflow-x-hidden overflow-y-visible px-1 text-center font-serif text-sm leading-[1.2] text-ellipsis whitespace-nowrap text-primary/92"
 		>
-			<UserRound class="size-4" />
-		</Button>
-	</PageTopToolbar>
-
-	<header class="hidden items-start justify-between gap-6 md:flex">
-		<h1 class="font-serif text-2xl leading-tight text-primary">{data.souler.name}</h1>
+			{data.souler.name}
+		</h1>
 		<Button
 			href={profileHref()}
 			variant="ghost"
@@ -90,12 +80,16 @@
 		</Button>
 	</header>
 
+	<header class="hidden md:block">
+		<h1 class="font-serif text-2xl leading-tight text-primary">{data.souler.name}</h1>
+	</header>
+
 	<section>
 		{#if data.chapters.length}
 			<div class="divide-y divide-border/45">
 				{#each data.chapters as chapter (chapter.id)}
 					<a
-						href={chapterHref(chapter)}
+						href={resolve(`/bookshelf/${data.souler.id}/chapter/${chapter.id}`)}
 						class="group flex min-h-24 flex-col gap-3 px-1 py-5 transition-colors hover:bg-muted/18 md:flex-row md:items-center md:justify-between md:gap-8 md:px-3"
 					>
 						<div class="min-w-0">

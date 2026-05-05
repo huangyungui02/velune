@@ -13,10 +13,7 @@
 	const developerContactUrl = 'https://xhslink.com/m/6RghZ8ot2N0';
 
 	function isActive(href: string) {
-		return (
-			page.url.pathname === href ||
-			(href !== '/explore' && page.url.pathname.startsWith(`${href}/`))
-		);
+		return page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
 	}
 </script>
 
