@@ -47,7 +47,9 @@ export class ConversationController {
 		this.onMessagesChanged = options.onMessagesChanged;
 		this.sessionId = options.initialSessionId;
 		const hydrated = hydrateConversation(options.initialMessages);
-		this.messages = hydrated.messages.map((message) => this.createMessage(message.role, message.content));
+		this.messages = hydrated.messages.map((message) =>
+			this.createMessage(message.role, message.content)
+		);
 		this.options = hydrated.options;
 	}
 

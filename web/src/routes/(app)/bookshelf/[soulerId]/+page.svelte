@@ -80,8 +80,19 @@
 		</Button>
 	</header>
 
-	<header class="hidden md:block">
+	<header class="hidden md:flex md:items-center md:justify-between">
 		<h1 class="font-serif text-2xl leading-tight text-primary">{data.souler.name}</h1>
+		<a
+			href={profileHref()}
+			class="group flex items-center gap-1.5 text-[0.8rem] text-muted-foreground/50 transition-colors hover:text-primary"
+			aria-label="查看资料"
+		>
+			<span class="tracking-[0.15em]">查看资料</span>
+			<UserRound
+				class="size-3.5 transition-transform group-hover:translate-x-0.5"
+				strokeWidth={1.5}
+			/>
+		</a>
 	</header>
 
 	<section>
@@ -96,7 +107,9 @@
 							<p class="mb-2 text-[0.72rem] tracking-[0.24em] text-muted-foreground/70">
 								{formatChapterNumber(chapter.seq)}
 							</p>
-							<h3 class="text-xl leading-7 text-foreground transition-colors group-hover:text-primary">
+							<h3
+								class="text-xl leading-7 text-foreground transition-colors group-hover:text-primary"
+							>
 								{chapter.title}
 							</h3>
 							{#if chapter.subtitle}

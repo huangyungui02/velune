@@ -49,39 +49,51 @@
 	<PageTopToolbar title={data.souler.name} backHref={exploreHref} class="md:hidden" />
 	<PageBackToolbar title={data.souler.name} backHref={exploreHref} />
 
-	<header class="hidden max-w-3xl md:block">
-		<p class="mb-2 font-sans text-[0.72rem] tracking-[0.24em] text-muted-foreground/64">
-			人物资料
-		</p>
-		<h1 class="font-serif text-2xl leading-tight text-primary">{data.souler.name}</h1>
+	<header class="hidden max-w-3xl md:mb-4 md:block">
+		<p class="mb-2 font-sans text-[0.72rem] tracking-[0.24em] text-muted-foreground/64">人物资料</p>
 		<Separator class="mt-5" />
 	</header>
 
 	<section
-		class="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-6 md:grid-cols-[11rem_minmax(0,42rem)] md:gap-x-8"
+		class="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-6 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-x-12"
 		aria-label="人物资料"
 	>
-		<div
-			class="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-muted/20 shadow-sm md:row-span-2 md:rounded-xl"
-		>
-			{#if data.souler.imageUrl}
-				<img src={data.souler.imageUrl} alt={data.souler.name} class="h-full w-full object-cover" />
-			{:else}
-				<div class="grid h-full place-items-center text-sm text-muted-foreground/60">无图</div>
-			{/if}
+		<!-- Left Column: Avatar + Name + Tags (Desktop) -->
+		<div class="col-span-1 flex flex-col gap-6 md:col-span-1 md:items-center">
+			<div
+				class="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-muted/20 shadow-sm md:rounded-xl"
+			>
+				{#if data.souler.imageUrl}
+					<img
+						src={data.souler.imageUrl}
+						alt={data.souler.name}
+						class="h-full w-full object-cover"
+					/>
+				{:else}
+					<div class="grid h-full place-items-center text-sm text-muted-foreground/60">无图</div>
+				{/if}
+			</div>
+
+			<!-- Desktop Name -->
+			<div class="hidden md:flex md:flex-col md:items-center">
+				<h1 class="font-serif text-2xl leading-tight text-primary">
+					{data.souler.name}
+				</h1>
+			</div>
 		</div>
 
-		<div class="min-w-0 space-y-3 pt-1 md:space-y-0">
-			<h2 class="font-serif text-2xl leading-tight text-primary md:hidden">
+		<!-- Mobile Name & Tags (Right of avatar) -->
+		<div class="min-w-0 space-y-3 pt-1 md:hidden">
+			<h1 class="font-serif text-2xl leading-tight text-primary">
 				{data.souler.name}
-			</h2>
+			</h1>
 
 			{#if data.keywords.length > 0}
 				<div class="flex flex-wrap gap-2">
 					{#each data.keywords as word (word)}
 						<Badge
 							variant="outline"
-							class="rounded-full border-border/60 bg-background/50 px-2.5 py-0.5 font-sans text-xs font-normal text-muted-foreground md:px-3 md:py-1"
+							class="rounded-full border-border/60 bg-background/50 px-2.5 py-0.5 font-sans text-xs font-normal text-muted-foreground"
 						>
 							{word}
 						</Badge>
@@ -90,15 +102,34 @@
 			{/if}
 		</div>
 
-		<p
-			class="col-span-2 text-[0.95rem] leading-7 text-foreground/80 md:col-span-1 md:col-start-2 md:max-w-[64ch] md:text-sm md:leading-8"
+		<!-- Right Column: Bio & Tags -->
+		<div
+			class="col-span-2 space-y-4 md:col-span-1 md:col-start-2 md:row-start-1 md:space-y-6 md:pt-1"
 		>
-			{#if data.souler.bio}
-				{data.souler.bio}
-			{:else}
-				暂无简介。
+			<p
+				class="text-[0.95rem] leading-7 text-foreground/80 md:max-w-[64ch] md:text-[0.95rem] md:leading-8"
+			>
+				{#if data.souler.bio}
+					{data.souler.bio}
+				{:else}
+					暂无简介。
+				{/if}
+			</p>
+
+			<!-- Desktop Tags (Below bio) -->
+			{#if data.keywords.length > 0}
+				<div class="hidden md:flex md:flex-wrap md:gap-2">
+					{#each data.keywords as word (word)}
+						<Badge
+							variant="outline"
+							class="rounded-full border-border/60 bg-background/50 px-3 py-1 font-sans text-xs font-normal text-muted-foreground"
+						>
+							{word}
+						</Badge>
+					{/each}
+				</div>
 			{/if}
-		</p>
+		</div>
 	</section>
 
 	<section class="max-w-3xl border-t border-border/45 pt-4" aria-label="章节">
@@ -112,7 +143,9 @@
 						<p class="mb-2 text-[0.72rem] tracking-[0.24em] text-muted-foreground/70">
 							{formatChapterNumber(chapter.seq)}
 						</p>
-						<h3 class="text-xl leading-7 text-foreground transition-colors group-hover:text-primary">
+						<h3
+							class="text-xl leading-7 text-foreground transition-colors group-hover:text-primary"
+						>
 							{chapter.title}
 						</h3>
 						{#if chapter.subtitle}

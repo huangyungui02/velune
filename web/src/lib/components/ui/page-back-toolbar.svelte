@@ -3,7 +3,6 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
-	import { Button } from '$lib/components/ui/button/index.js';
 	import { hasPreviousRoute } from '$lib/stores/navigation-stack';
 	import { cn } from '$lib/utils.js';
 	import type { Snippet } from 'svelte';
@@ -46,24 +45,37 @@
 
 <nav
 	class={cn(
-		'hidden md:sticky md:top-0 md:z-30 md:-mx-1 md:mb-8 md:flex md:h-10 md:items-center md:justify-between md:border-b md:border-border/20 md:bg-background md:px-1',
+		'hidden md:sticky md:top-0 md:z-30 md:-mx-2 md:mb-8 md:flex md:h-16 md:items-center md:justify-between md:bg-background/80 md:px-2 md:backdrop-blur-md',
 		className
 	)}
 	aria-label={backLabel}
 >
-	<Button
-		type="button"
-		variant="ghost"
-		size="icon-sm"
-		class="size-8 rounded-full text-muted-foreground/70 hover:bg-transparent hover:text-primary"
-		aria-label={backLabel}
-		onclick={handleBack}
-	>
-		<ChevronLeft class="size-4" />
-		<span class="sr-only">{title}</span>
-	</Button>
+	<div class="flex items-center gap-6">
+		<button
+			type="button"
+			class="group flex h-8 items-center gap-1.5 pr-2 text-[0.8rem] text-muted-foreground/60 transition-all hover:text-primary"
+			aria-label={backLabel}
+			onclick={handleBack}
+		>
+			<ChevronLeft
+				class="size-4 transition-transform group-hover:-translate-x-0.5"
+				strokeWidth={1.5}
+			/>
+			<span class="tracking-widest">{backLabel}</span>
+		</button>
+
+		{#if title}
+			<span
+				class="hidden max-w-[200px] truncate text-[0.75rem] tracking-[0.2em] text-muted-foreground/40 md:block"
+			>
+				{title}
+			</span>
+		{/if}
+	</div>
 
 	{#if children}
-		{@render children()}
+		<div class="flex items-center gap-4">
+			{@render children()}
+		</div>
 	{/if}
 </nav>

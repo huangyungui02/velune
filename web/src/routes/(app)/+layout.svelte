@@ -18,7 +18,9 @@
 			? 'p-6 pb-4 md:p-10 md:pb-10 lg:p-12 lg:pb-12'
 			: 'p-6 pb-32 md:p-10 md:pb-12 lg:p-12'
 	);
-	let showSoulerDetailSkeleton = $derived(/^\/explore\/[^/]+$/.test(navigating.to?.url.pathname ?? ''));
+	let showSoulerDetailSkeleton = $derived(
+		/^\/explore\/[^/]+$/.test(navigating.to?.url.pathname ?? '')
+	);
 	const userEmail = $derived(data.user?.email ?? '');
 
 	pushRoute(page.url);

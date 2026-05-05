@@ -30,9 +30,7 @@
 	<section
 		class="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-6 md:grid-cols-[11rem_minmax(0,42rem)] md:gap-x-8"
 	>
-		<Skeleton
-			class="aspect-[3/4] w-full rounded-2xl bg-muted/45 md:row-span-2 md:rounded-xl"
-		/>
+		<Skeleton class="aspect-[3/4] w-full rounded-2xl bg-muted/45 md:row-span-2 md:rounded-xl" />
 
 		<div class="min-w-0 space-y-4 pt-1">
 			<Skeleton class="h-7 w-24 rounded-full md:hidden" />
@@ -45,7 +43,9 @@
 
 		<div class="col-span-2 space-y-3 md:col-span-1 md:col-start-2 md:max-w-[64ch]">
 			{#each paragraphSkeletons as item, index (item)}
-				<Skeleton class={['h-4 rounded-full', index === paragraphSkeletons.length - 1 ? 'w-3/5' : 'w-full']} />
+				<Skeleton
+					class={['h-4 rounded-full', index === paragraphSkeletons.length - 1 ? 'w-3/5' : 'w-full']}
+				/>
 			{/each}
 		</div>
 	</section>
