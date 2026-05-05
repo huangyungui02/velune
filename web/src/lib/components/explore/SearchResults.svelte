@@ -40,7 +40,7 @@
 			{#each items as souler (souler.id)}
 				<SoulerBookCard
 					class="mx-auto w-full max-w-[7.25rem] sm:max-w-[8.75rem] lg:max-w-[11.5rem]"
-					href={`/bookshelf/${souler.id}`}
+					href={`/explore/${souler.id}`}
 					name={souler.name}
 					imageUrl={souler.imageUrl}
 				/>

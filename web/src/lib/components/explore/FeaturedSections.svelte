@@ -37,7 +37,7 @@
 					>
 						{#each section.soulers as souler (souler.id)}
 							<SoulerBookCard
-								href={`/bookshelf/${souler.id}`}
+								href={`/explore/${souler.id}`}
 								name={souler.name}
 								imageUrl={souler.imageUrl}
 							/>
