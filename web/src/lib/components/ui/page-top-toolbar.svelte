@@ -35,16 +35,14 @@
 	<div
 		class="grid grid-cols-[2.25rem_1fr_2.25rem] items-center gap-2 px-3 pt-[max(env(safe-area-inset-top),0.4rem)] pb-2"
 	>
-		<Button
+		<button
 			type="button"
-			variant="ghost"
-			size="icon-sm"
-			class="size-9 rounded-full text-muted-foreground/75 hover:text-primary"
+			class="flex size-9 items-center justify-center rounded-full text-muted-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground"
 			aria-label={backLabel}
 			onclick={handleBack}
 		>
-			<ChevronLeft class="size-4" />
-		</Button>
+			<ChevronLeft class="size-5 text-foreground/70" strokeWidth={2} />
+		</button>
 		<h1
 			class="min-w-0 overflow-x-hidden overflow-y-visible px-1 text-center font-serif text-sm leading-[1.2] text-ellipsis whitespace-nowrap text-primary/92"
 		>

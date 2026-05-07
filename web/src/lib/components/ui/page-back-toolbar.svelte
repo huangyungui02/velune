@@ -27,36 +27,27 @@
 
 <nav
 	class={cn(
-		'hidden md:sticky md:top-0 md:z-30 md:-mx-10 lg:-mx-12 md:!-mt-10 lg:!-mt-12 md:mb-8 md:flex md:h-16 md:items-center md:justify-between md:bg-background md:border-b md:border-border/40 md:px-10 lg:px-12',
+		'hidden md:sticky md:top-4 md:z-30 md:!-mt-6 lg:!-mt-8 md:mb-8 md:flex md:h-12 md:items-center md:justify-between',
 		className
 	)}
 	aria-label={backLabel}
 >
-	<div class="flex items-center gap-6">
+	<div class="flex items-center">
 		<button
 			type="button"
-			class="group flex h-8 items-center gap-1.5 pr-2 text-[0.8rem] text-muted-foreground/60 transition-all hover:text-primary"
+			class="group flex size-10 items-center justify-center rounded-full bg-background/50 backdrop-blur-xl border border-foreground/5 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] transition-all duration-300 hover:scale-105 hover:bg-background/70 active:scale-95"
 			aria-label={backLabel}
 			onclick={handleBack}
 		>
 			<ChevronLeft
-				class="size-4 transition-transform group-hover:-translate-x-0.5"
-				strokeWidth={1.5}
+				class="size-5 text-foreground/70 transition-transform group-hover:-translate-x-0.5"
+				strokeWidth={2}
 			/>
-			<span class="tracking-widest">{backLabel}</span>
 		</button>
-
-		{#if title}
-			<span
-				class="hidden max-w-[200px] truncate text-[0.75rem] tracking-[0.2em] text-muted-foreground/40 md:block"
-			>
-				{title}
-			</span>
-		{/if}
 	</div>
 
 	{#if children}
-		<div class="flex items-center gap-4">
+		<div class="flex items-center gap-4 text-muted-foreground/70 transition-colors">
 			{@render children()}
 		</div>
 	{/if}
