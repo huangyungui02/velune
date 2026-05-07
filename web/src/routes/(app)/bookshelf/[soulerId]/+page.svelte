@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { afterNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Clock from '@lucide/svelte/icons/clock';
 	import UserRound from '@lucide/svelte/icons/user-round';
@@ -48,11 +47,6 @@
 		scrollMainContainerToTop();
 	});
 
-	afterNavigate(() => {
-		requestAnimationFrame(() => {
-			scrollMainContainerToTop();
-		});
-	});
 </script>
 
 <svelte:head>

@@ -1,12 +1,12 @@
-import { error } from '@sveltejs/kit';
+import { error, json } from '@sveltejs/kit';
 import { fetchPublicSoulerDetail } from '$lib/server/public-soulers';
-import type { PageServerLoad } from './$types';
+import type { RequestHandler } from './$types';
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const GET: RequestHandler = async ({ locals, params }) => {
 	const detail = await fetchPublicSoulerDetail(locals, params.soulerId);
 	if (!detail) {
 		error(404, '人物不存在');
 	}
 
-	return detail;
+	return json(detail);
 };

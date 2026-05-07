@@ -49,6 +49,17 @@ export type SoulerChapter = {
 	latestHistory?: ChapterHistoryItem | null;
 };
 
+export type PublicSoulerDetail = {
+	souler: {
+		id: string;
+		name: string;
+		bio: string;
+		imageUrl: string | null;
+	};
+	keywords: string[];
+	chapters: SoulerChapter[];
+};
+
 export type AdminSoulerKeyword = {
 	word: string;
 	weight: number;

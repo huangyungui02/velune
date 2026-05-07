@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { afterNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
@@ -34,11 +33,6 @@
 		scrollMainContainerToTop();
 	});
 
-	afterNavigate(() => {
-		requestAnimationFrame(() => {
-			scrollMainContainerToTop();
-		});
-	});
 </script>
 
 <svelte:head>

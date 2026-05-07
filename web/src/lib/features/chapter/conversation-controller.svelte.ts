@@ -5,6 +5,7 @@ import {
 } from '$lib/features/chapter/assistant-content';
 import { consumeAssistantStream, type AssistantEvent } from '$lib/features/chapter/stream-events';
 import { requestBookshelfRefresh } from '$lib/stores/bookshelf-view-state';
+import { touchSoulerChapterHistory } from '$lib/stores/souler-detail-cache';
 import type { ConversationMessage } from '$lib/types';
 
 type StartPayload = {
@@ -64,6 +65,20 @@ export class ConversationController {
 
 	private markMessagesChanged() {
 		this.onMessagesChanged?.();
+	}
+
+	private touchChapterHistory() {
+		if (!this.sessionId) {
+			return;
+		}
+
+		touchSoulerChapterHistory(
+			this.soulerId,
+			this.chapterId,
+			this.sessionId,
+			this.messages.length
+		);
+		requestBookshelfRefresh();
 	}
 
 	private appendAssistantDelta(assistantIndex: number, delta: string) {
@@ -137,7 +152,7 @@ export class ConversationController {
 				return;
 			}
 			this.options = normalizedOptions.length > 0 ? normalizedOptions : parsedAssistant.options;
-			requestBookshelfRefresh();
+			this.touchChapterHistory();
 		} catch (err) {
 			if (!this.messages[assistantIndex]?.content.trim()) {
 				this.messages = [];
@@ -217,7 +232,7 @@ export class ConversationController {
 			if (runId !== this.activeRunId) {
 				return;
 			}
-			requestBookshelfRefresh();
+			this.touchChapterHistory();
 		} catch (err) {
 			if (!this.messages[assistantIndex].content.trim()) {
 				this.messages.pop();

@@ -1,13 +1,19 @@
 <script lang="ts">
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, disableScrollHandling } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import DesktopSidebar from '$lib/components/app/DesktopSidebar.svelte';
 	import MobileTabNav from '$lib/components/app/MobileTabNav.svelte';
 	import SoulerDetailPageSkeleton from '$lib/components/souler/SoulerDetailPageSkeleton.svelte';
 	import { pushRoute } from '$lib/stores/navigation-stack';
+	import type { Snapshot } from './$types';
 	import type { LayoutProps } from './$types';
 
+	type AppLayoutSnapshot = {
+		mainScrollTop: number;
+	};
+
 	let { data, children }: LayoutProps = $props();
+	let mainScrollContainer = $state<HTMLElement | null>(null);
 	let activePath = $derived(navigating.to?.url.pathname ?? page.url.pathname);
 	let hideMobileNav = $derived(
 		/^\/bookshelf\/[^/]+(?:\/(?:chapter\/[^/]+|profile))?$/.test(activePath) ||
@@ -25,10 +31,24 @@
 
 	pushRoute(page.url);
 	afterNavigate(({ to }) => {
+		disableScrollHandling();
 		if (to?.url) {
 			pushRoute(to.url);
 		}
 	});
+
+	function restoreMainScroll(top: number) {
+		mainScrollContainer?.scrollTo({ top, behavior: 'auto' });
+	}
+
+	export const snapshot = {
+		capture: () => ({
+			mainScrollTop: mainScrollContainer?.scrollTop ?? 0
+		}),
+		restore: (value) => {
+			restoreMainScroll(value.mainScrollTop);
+		}
+	} satisfies Snapshot<AppLayoutSnapshot>;
 </script>
 
 <div class="h-dvh w-full overflow-hidden">
@@ -37,6 +57,7 @@
 
 		<main class="relative h-full min-h-0 min-w-0">
 			<div
+				bind:this={mainScrollContainer}
 				class="scrollbar-soft h-full min-h-0 w-full overflow-y-auto overscroll-contain"
 				data-main-scroll-container
 			>
