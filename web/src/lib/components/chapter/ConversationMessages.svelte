@@ -15,7 +15,7 @@
 	} = $props();
 </script>
 
-<div class="space-y-5 px-2 md:px-4" bind:this={container}>
+<div class="w-full space-y-5 px-2 md:px-4" bind:this={container}>
 	{#if showEmptyState && messages.length === 0}
 		<p class="py-8 text-center font-sans text-sm tracking-widest text-muted-foreground/60">
 			-- 叙述由此展开 --
@@ -39,9 +39,10 @@
 				{/if}
 			</article>
 		{:else}
-			<div class="flex justify-end">
+			<div class="flex w-full justify-end">
 				<div
-					class="max-w-[92%] rounded-2xl rounded-tr-sm border border-primary/10 bg-primary/5 px-4 py-3 text-[1.05rem] leading-7 text-primary"
+					data-conversation-user-message
+					class="max-w-[92%] shrink-0 rounded-2xl rounded-tr-sm border border-primary/10 bg-primary/5 px-4 py-3 text-[1.05rem] leading-7 break-words whitespace-pre-wrap text-primary"
 				>
 					{message.content}
 				</div>

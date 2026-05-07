@@ -6,6 +6,12 @@
 	import ConversationComposer from '$lib/components/chapter/ConversationComposer.svelte';
 	import ConversationMessages from '$lib/components/chapter/ConversationMessages.svelte';
 	import ConversationOptions from '$lib/components/chapter/ConversationOptions.svelte';
+	import ConversationShareMenu from '$lib/components/chapter/ConversationShareMenu.svelte';
+	import {
+		copyConversationToClipboard,
+		exportConversationImage,
+		hasShareableMessages
+	} from '$lib/features/chapter/conversation-share';
 	import { ConversationController } from '$lib/features/chapter/conversation-controller.svelte';
 	import type { ChapterHistoryItem, ConversationMessage } from '$lib/types';
 
@@ -27,7 +33,9 @@
 	let selectedHistoryId = $state<string | null>(null);
 	let historyPanelHidden = $state(false);
 	let shouldFollowMessages = $state(false);
+	let copied = $state(false);
 	let programmaticScrollUntil = 0;
+	let copiedTimer: ReturnType<typeof setTimeout> | null = null;
 
 	function scrollToLatestMessage(behavior: ScrollBehavior = 'auto') {
 		if (!shouldFollowMessages || !messageContainer?.lastElementChild) {
@@ -104,6 +112,32 @@
 		return `${formatHistoryDate(history.updatedAt)}，${formatHistoryCount(history.messageCount)}`;
 	}
 
+	async function copyConversation() {
+		await copyConversationToClipboard({ chapter, messages: controller.messages });
+
+		copied = true;
+		if (copiedTimer) {
+			clearTimeout(copiedTimer);
+		}
+		copiedTimer = setTimeout(() => {
+			copied = false;
+			copiedTimer = null;
+		}, 1400);
+	}
+
+	async function exportImage() {
+		if (!messageContainer) {
+			return;
+		}
+
+		try {
+			await exportConversationImage({ chapter, source: messageContainer });
+		} catch (error) {
+			console.error('Failed to export conversation image', error);
+			window.alert('导出图片失败，请稍后再试');
+		}
+	}
+
 	function continueHistory() {
 		if (!selectedHistoryId) {
 			return;
@@ -156,6 +190,7 @@
 			controller.messages.length === 0 &&
 			chapterHistories.length > 0
 	);
+	let canExport = $derived(hasShareableMessages(controller.messages));
 </script>
 
 <svelte:window
@@ -168,7 +203,14 @@
 <div
 	class="pt-[calc(env(safe-area-inset-top)+3.4rem)] pb-[calc(env(safe-area-inset-bottom)+3.8rem)] md:pt-2 md:pb-[4.5rem]"
 >
-	<ChapterHeader title={chapter.title} subtitle={chapter.subtitle} soulerId={souler.id} />
+	<ChapterHeader title={chapter.title} subtitle={chapter.subtitle} soulerId={souler.id}>
+		<ConversationShareMenu
+			disabled={!canExport}
+			{copied}
+			onCopy={copyConversation}
+			onExportImage={exportImage}
+		/>
+	</ChapterHeader>
 
 	<div class="space-y-5">
 		{#if showHistoryRecords}

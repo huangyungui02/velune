@@ -1,42 +1,30 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import UserRound from '@lucide/svelte/icons/user-round';
 	import PageBackToolbar from '$lib/components/ui/page-back-toolbar.svelte';
 	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import type { Snippet } from 'svelte';
 
 	let {
 		title,
 		subtitle,
-		soulerId
+		soulerId,
+		children
 	}: {
 		title: string;
 		subtitle?: string | null;
 		soulerId: string;
+		children?: Snippet;
 	} = $props();
 </script>
 
 <PageTopToolbar {title} backHref={`/bookshelf/${soulerId}`} class="md:hidden">
-	<Button
-		href={resolve(`/bookshelf/${soulerId}/profile`)}
-		variant="ghost"
-		size="icon-sm"
-		class="size-9 rounded-full text-muted-foreground/80 hover:text-primary"
-		aria-label="人物详情"
-	>
-		<UserRound class="size-4" />
-	</Button>
+	{#if children}
+		{@render children()}
+	{/if}
 </PageTopToolbar>
 <PageBackToolbar {title} backHref={`/bookshelf/${soulerId}`}>
-	<Button
-		href={resolve(`/bookshelf/${soulerId}/profile`)}
-		variant="ghost"
-		size="icon-sm"
-		class="size-9 rounded-full text-muted-foreground/80 hover:text-primary"
-		aria-label="人物详情"
-	>
-		<UserRound class="size-4" />
-	</Button>
+	{#if children}
+		{@render children()}
+	{/if}
 </PageBackToolbar>
 
 <header class="mb-6 hidden md:block">
