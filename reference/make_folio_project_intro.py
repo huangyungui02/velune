@@ -311,7 +311,7 @@ def add_summary(c: canvas.Canvas) -> None:
     url = c.beginText(100, 110)
     url.setFont("Helvetica", 15)
     url.setCharSpace(0.45)
-    url.textLine("https://folio.echoverse.com")
+    url.textLine("https://folio.echoversa.com")
     c.drawText(url)
     footer(c, 7)
 
