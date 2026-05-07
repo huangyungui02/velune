@@ -21,11 +21,7 @@
 		</div>
 	</header>
 
-	<header class="hidden max-w-3xl md:block">
-		<Skeleton class="mb-3 h-3 w-20 rounded-full" />
-		<Skeleton class="h-8 w-32 rounded-full" />
-		<div class="mt-5 h-px bg-border/45"></div>
-	</header>
+
 
 	<section
 		class="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-6 md:grid-cols-[11rem_minmax(0,42rem)] md:gap-x-8"

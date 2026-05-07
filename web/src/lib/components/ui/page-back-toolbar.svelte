@@ -27,7 +27,7 @@
 
 <nav
 	class={cn(
-		'hidden md:sticky md:top-0 md:z-30 md:-mx-2 md:mb-8 md:flex md:h-16 md:items-center md:justify-between md:bg-background/80 md:px-2 md:backdrop-blur-md',
+		'hidden md:sticky md:top-0 md:z-30 md:-mx-10 lg:-mx-12 md:!-mt-10 lg:!-mt-12 md:mb-8 md:flex md:h-16 md:items-center md:justify-between md:bg-background md:border-b md:border-border/40 md:px-10 lg:px-12',
 		className
 	)}
 	aria-label={backLabel}

@@ -18,10 +18,7 @@
 	<PageTopToolbar title={data.souler.name} backHref={chaptersHref} class="md:hidden" />
 	<PageBackToolbar title={data.souler.name} backHref={chaptersHref} />
 
-	<header class="hidden md:block">
-		<p class="mb-2 font-sans text-[0.72rem] tracking-[0.24em] text-muted-foreground/64">人物简介</p>
-		<Separator class="mt-5" />
-	</header>
+
 
 	<div
 		class="grid grid-cols-[7.25rem_minmax(0,1fr)] items-start gap-x-4 gap-y-5 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-x-12"

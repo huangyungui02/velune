@@ -43,10 +43,7 @@
 	<PageTopToolbar title={data.souler.name} backHref={exploreHref} class="md:hidden" />
 	<PageBackToolbar title={data.souler.name} backHref={exploreHref} />
 
-	<header class="hidden max-w-3xl md:mb-4 md:block">
-		<p class="mb-2 font-sans text-[0.72rem] tracking-[0.24em] text-muted-foreground/64">人物资料</p>
-		<Separator class="mt-5" />
-	</header>
+
 
 	<section
 		class="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-6 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-x-12"
