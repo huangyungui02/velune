@@ -2,6 +2,8 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import MessageCircle from '@lucide/svelte/icons/message-circle';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
+	import DeleteAccountAlert from '$lib/components/app/DeleteAccountAlert.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import type { PageProps } from './$types';
@@ -35,18 +37,6 @@
 					<p class="text-xs text-muted-foreground">当前邮箱</p>
 					<p class="truncate text-sm text-foreground">{email}</p>
 				</div>
-				<form method="POST" class="shrink-0">
-					<Button
-						type="submit"
-						variant="ghost"
-						size="icon-sm"
-						class="text-destructive hover:bg-destructive/10 hover:text-destructive"
-						aria-label="退出登录"
-						title="退出登录"
-					>
-						<LogOut class="size-4" />
-					</Button>
-				</form>
 			</div>
 		</article>
 
@@ -69,5 +59,34 @@
 				class="size-4 text-muted-foreground/70 transition group-hover:translate-x-0.5 group-hover:text-foreground/80"
 			/>
 		</a>
+
+		<DeleteAccountAlert
+			triggerClass="h-auto w-full justify-start gap-3 rounded-2xl border border-border/45 bg-background/80 px-4 py-3.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+		>
+			<div
+				class="grid size-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive"
+			>
+				<Trash2 class="size-4" />
+			</div>
+			<div class="min-w-0 flex-1 text-left">
+				<p class="text-sm">注销账号</p>
+				<p class="text-xs text-destructive/70">删除当前账号与相关数据</p>
+			</div>
+			<ChevronRight class="size-4 text-destructive/60" />
+		</DeleteAccountAlert>
+	</div>
+
+	<div class="mt-auto pt-8">
+		<form method="POST">
+			<Button
+				type="submit"
+				variant="ghost"
+				size="sm"
+				class="h-11 w-full gap-2 rounded-2xl text-destructive hover:bg-destructive/10 hover:text-destructive"
+			>
+				<LogOut class="size-4" />
+				退出登录
+			</Button>
+		</form>
 	</div>
 </section>

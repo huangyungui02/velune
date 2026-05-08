@@ -3,6 +3,8 @@
 	import Compass from '@lucide/svelte/icons/compass';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import MessageCircle from '@lucide/svelte/icons/message-circle';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
+	import DeleteAccountAlert from '$lib/components/app/DeleteAccountAlert.svelte';
 	import SidebarBookshelfSection from '$lib/components/app/SidebarBookshelfSection.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
@@ -81,6 +83,13 @@
 						退出登录
 					</Button>
 				</form>
+				<DropdownMenu.Separator />
+				<DeleteAccountAlert
+					triggerClass="h-8 w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+				>
+					<Trash2 class="size-3.5" />
+					注销账号
+				</DeleteAccountAlert>
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
 	</div>
