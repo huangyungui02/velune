@@ -1,18 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Compass from '@lucide/svelte/icons/compass';
-	import LogOut from '@lucide/svelte/icons/log-out';
-	import MessageCircle from '@lucide/svelte/icons/message-circle';
-	import Trash2 from '@lucide/svelte/icons/trash-2';
-	import DeleteAccountAlert from '$lib/components/app/DeleteAccountAlert.svelte';
+	import AccountPanel from '$lib/components/app/AccountPanel.svelte';
 	import SidebarBookshelfSection from '$lib/components/app/SidebarBookshelfSection.svelte';
-	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { cn } from '$lib/utils';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 
 	let { userEmail }: { userEmail: string } = $props();
 	const userInitial = $derived((userEmail.trim().charAt(0) || 'V').toUpperCase());
-	const developerContactUrl = 'https://xhslink.com/m/6RghZ8ot2N0';
 
 	function isActive(href: string) {
 		return page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
@@ -43,12 +38,9 @@
 	</div>
 
 	<div class="border-t border-border/40 px-5 pt-4 pb-4">
-		<DropdownMenu.Root>
-			<DropdownMenu.Trigger
-				class={cn(
-					buttonVariants({ variant: 'ghost', size: 'sm' }),
-					'h-11 w-full justify-start rounded-xl px-2.5 transition-transform active:scale-[0.98]'
-				)}
+		<Dialog.Root>
+			<Dialog.Trigger
+				class="inline-flex h-11 w-full items-center justify-start gap-1 rounded-xl border border-transparent bg-clip-padding px-2.5 text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-[0.98] aria-expanded:bg-muted aria-expanded:text-foreground"
 				aria-label="账号菜单"
 			>
 				<div
@@ -59,38 +51,14 @@
 				<div class="min-w-0 text-left">
 					<p class="truncate text-xs text-muted-foreground">{userEmail}</p>
 				</div>
-			</DropdownMenu.Trigger>
-			<DropdownMenu.Content align="end" class="w-40">
-				<Button
-					href={developerContactUrl}
-					target="_blank"
-					rel="noreferrer"
-					variant="ghost"
-					size="sm"
-					class="mb-1 h-8 w-full justify-start gap-2"
-				>
-					<MessageCircle class="size-3.5" />
-					联系开发者
-				</Button>
-				<form method="POST" action="/logout">
-					<Button
-						type="submit"
-						variant="ghost"
-						size="sm"
-						class="h-8 w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-					>
-						<LogOut class="size-3.5" />
-						退出登录
-					</Button>
-				</form>
-				<DropdownMenu.Separator />
-				<DeleteAccountAlert
-					triggerClass="h-8 w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-				>
-					<Trash2 class="size-3.5" />
-					注销账号
-				</DeleteAccountAlert>
-			</DropdownMenu.Content>
-		</DropdownMenu.Root>
+			</Dialog.Trigger>
+
+			<Dialog.Content class="max-w-md">
+				<Dialog.Header>
+					<Dialog.Title class="text-primary">我的</Dialog.Title>
+				</Dialog.Header>
+				<AccountPanel email={userEmail} logoutAction="/logout" />
+			</Dialog.Content>
+		</Dialog.Root>
 	</div>
 </aside>
