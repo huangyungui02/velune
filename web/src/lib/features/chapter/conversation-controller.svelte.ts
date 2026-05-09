@@ -4,6 +4,7 @@ import {
 	parseAssistantMessage
 } from '$lib/features/chapter/assistant-content';
 import { consumeAssistantStream, type AssistantEvent } from '$lib/features/chapter/stream-events';
+import { getAiReplyLength } from '$lib/stores/ai-reply-preference.svelte';
 import { requestBookshelfRefresh } from '$lib/stores/bookshelf-view-state';
 import { touchSoulerChapterHistory } from '$lib/stores/souler-detail-cache';
 import type { ConversationMessage } from '$lib/types';
@@ -132,7 +133,8 @@ export class ConversationController {
 				body: JSON.stringify({
 					lang: 'zh',
 					soulerId: this.soulerId,
-					chapterId: this.chapterId
+					chapterId: this.chapterId,
+					replyLength: getAiReplyLength()
 				})
 			});
 
@@ -214,6 +216,7 @@ export class ConversationController {
 					sessionId: this.sessionId,
 					soulerId: this.soulerId,
 					soulerName: this.soulerName,
+					replyLength: getAiReplyLength(),
 					content
 				})
 			});

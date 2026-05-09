@@ -9,6 +9,7 @@ from app.chat.chapters.reply import (
     CHAPTER_JSON_OPEN_MARKER,
     build_chapter_system_prompt,
 )
+from app.chat.preferences import ReplyLength, apply_reply_length_prompt
 from app.config import get_settings
 from app.shared import Lang, sanitize_title
 from app.llm import complete_text
@@ -44,15 +45,20 @@ def build_system_prompt(
     name: str,
     lang: Lang,
     chapter: ChapterContext | None = None,
+    reply_length: ReplyLength = "standard",
 ) -> str:
     if chapter:
-        return build_chapter_system_prompt(name, chapter, lang)
+        return apply_reply_length_prompt(
+            build_chapter_system_prompt(name, chapter, lang),
+            lang,
+            reply_length,
+        )
 
     template: dict[Lang, str] = {
         "zh": "请以{name}的思想和风格与用户进行深度对话",
         "en": "Please have a deep conversation with the user in the thought and style of {name}.",
     }
-    return template[lang].format(name=name)
+    return apply_reply_length_prompt(template[lang].format(name=name), lang, reply_length)
 
 
 def consume_chapter_stream_delta(
@@ -169,6 +175,7 @@ def build_prompt_messages(
     history: list[MessageRow],
     content: str,
     lang: Lang,
+    reply_length: ReplyLength = "standard",
 ) -> list[dict[str, str]]:
     prompt_messages: list[dict[str, str]] = [
         {
@@ -177,6 +184,7 @@ def build_prompt_messages(
                 session["souler"]["name"],
                 lang,
                 session.get("chapter"),
+                reply_length,
             ),
         }
     ]

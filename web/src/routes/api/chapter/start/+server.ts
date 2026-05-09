@@ -7,10 +7,15 @@ type RequestPayload = {
 	lang?: string;
 	soulerId?: string;
 	chapterId?: string;
+	replyLength?: string;
 };
 
 function normalizeLang(lang: string | undefined) {
 	return lang === 'en' ? 'en' : 'zh';
+}
+
+function normalizeReplyLength(replyLength: string | undefined) {
+	return replyLength === 'concise' ? 'concise' : 'standard';
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -41,7 +46,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			accept: 'application/json',
 			'content-type': 'application/json'
 		},
-		body: '{}'
+		body: JSON.stringify({
+			replyLength: normalizeReplyLength(payload.replyLength)
+		})
 	});
 
 	const text = await upstream.text();

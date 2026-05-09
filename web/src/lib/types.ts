@@ -138,6 +138,8 @@ export type ConversationMessage = {
 	content: string;
 };
 
+export type AiReplyLength = 'concise' | 'standard';
+
 export type ChapterHistoryItem = {
 	id: string;
 	updatedAt: string;

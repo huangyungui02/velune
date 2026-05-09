@@ -9,6 +9,7 @@ from app.config import get_settings
 from app.shared import Lang
 from app.errors import error_log_payload
 from app.llm import complete_text
+from app.chat.preferences import ReplyLength
 from app.billing import (
     CHAT_STARDUST_COST,
     consume_stardust_if_enabled,
@@ -38,6 +39,7 @@ async def start_chapter_session(
     souler_id: UUID,
     chapter_id: UUID,
     lang: Lang,
+    reply_length: ReplyLength = "standard",
 ) -> dict[str, object]:
     await consume_stardust_if_enabled(user_id, CHAT_STARDUST_COST)
 
@@ -63,6 +65,7 @@ async def start_chapter_session(
                 souler_name=souler["name"],
                 chapter=chapter,
                 lang=lang,
+                reply_length=reply_length,
             ),
             model=CHAPTER_SESSION_MODEL,
             temperature=settings.CHAT_TEMPERATURE,

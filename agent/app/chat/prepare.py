@@ -35,6 +35,7 @@ from .shared import (
     build_prompt_messages,
     run_blocking,
 )
+from .preferences import normalize_reply_length
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,7 @@ async def prepare_chat_request(
     content = str(body.get("content", "")).strip()
     if not content:
         raise ValueError("Missing content")
+    reply_length = normalize_reply_length(body.get("replyLength"))
 
     await consume_stardust_if_enabled(
         user_id,
@@ -242,7 +244,7 @@ async def prepare_chat_request(
         )
         log_stage("user_message_inserted")
 
-        prompt_messages = build_prompt_messages(session, history, content, lang)
+        prompt_messages = build_prompt_messages(session, history, content, lang, reply_length)
         log_stage("prompt_ready")
         return PreparedChat(
             user_id=user_id,

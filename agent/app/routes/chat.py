@@ -8,6 +8,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from app.chat.preferences import normalize_reply_length
 from app.shared import Lang, normalize_lang
 from app.errors import CreditLimitError, UnauthorizedError, error_log_payload, error_message
 from app.chat import handle_chat
@@ -52,11 +53,19 @@ async def start_chapter_session_route(
         return JSONResponse({"error": error_message(error)}, status_code=400)
 
     try:
+        try:
+            body = await request.json()
+        except Exception:  # noqa: BLE001
+            body = {}
+        if not isinstance(body, dict):
+            body = {}
+        reply_length = normalize_reply_length(body.get("replyLength"))
         payload = await start_chapter_session(
             user_id=user_id,
             souler_id=souler_id,
             chapter_id=chapter_id,
             lang=lang,
+            reply_length=reply_length,
         )
         return JSONResponse(payload, status_code=200)
     except CreditLimitError as error:

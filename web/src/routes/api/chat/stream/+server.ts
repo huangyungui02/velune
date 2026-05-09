@@ -8,11 +8,16 @@ type StreamRequestPayload = {
 	echoId?: string;
 	soulerId?: string;
 	soulerName?: string;
+	replyLength?: string;
 	content?: string;
 };
 
 function normalizeLang(lang: string | null) {
 	return lang === 'en' ? 'en' : 'zh';
+}
+
+function normalizeReplyLength(replyLength: string | undefined) {
+	return replyLength === 'concise' ? 'concise' : 'standard';
 }
 
 export const POST: RequestHandler = async ({ request, url, locals }) => {
@@ -35,6 +40,7 @@ export const POST: RequestHandler = async ({ request, url, locals }) => {
 		echoId: body?.echoId?.trim() || undefined,
 		soulerId,
 		soulerName,
+		replyLength: normalizeReplyLength(body?.replyLength),
 		content
 	};
 
