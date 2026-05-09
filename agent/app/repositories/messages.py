@@ -4,6 +4,8 @@ from postgrest.types import ReturnMethod
 from ._client import first_row, supabase
 from .types import MessageRow, Role
 
+CHAT_HISTORY_LIMIT = 30
+
 
 def get_recent_messages(user_id: str, session_id: str) -> list[MessageRow]:
     response = (
@@ -12,7 +14,7 @@ def get_recent_messages(user_id: str, session_id: str) -> list[MessageRow]:
         .eq("user_id", user_id)
         .eq("session_id", session_id)
         .order("created_at", desc=True)
-        .limit(20)
+        .limit(CHAT_HISTORY_LIMIT)
         .execute()
     )
 
