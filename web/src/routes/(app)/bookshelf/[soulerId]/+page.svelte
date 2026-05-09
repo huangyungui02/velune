@@ -4,6 +4,7 @@
 	import UserRound from '@lucide/svelte/icons/user-round';
 	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -22,10 +23,6 @@
 			return '00';
 		}
 		return String(Math.trunc(value)).padStart(2, '0');
-	}
-
-	function profileHref() {
-		return resolve(`/bookshelf/${data.souler.id}/profile`);
 	}
 
 	function formatHistoryDate(value: string) {
@@ -54,30 +51,22 @@
 </svelte:head>
 
 <section class="space-y-6 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pt-0">
-	<header
-		class="fixed inset-x-0 top-0 z-40 grid grid-cols-[2.25rem_1fr_2.25rem] items-center gap-2 border-b border-border/35 bg-background/70 px-3 pt-[max(env(safe-area-inset-top),0.4rem)] pb-2 md:hidden"
-	>
-		<span class="size-9" aria-hidden="true"></span>
-		<h1
-			class="min-w-0 overflow-x-hidden overflow-y-visible px-1 text-center font-serif text-sm leading-[1.2] text-ellipsis whitespace-nowrap text-primary/92"
-		>
-			{data.souler.name}
-		</h1>
+	<PageTopToolbar title={data.souler.name} backHref="/bookshelf" class="md:hidden">
 		<Button
-			href={profileHref()}
+			href={resolve(`/bookshelf/${data.souler.id}/profile`)}
 			variant="ghost"
 			size="icon-sm"
-			class="size-9 rounded-full text-muted-foreground/80 hover:text-primary"
+			class="size-9 rounded-full text-muted-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground"
 			aria-label="人物简介"
 		>
-			<UserRound class="size-4" />
+			<UserRound class="size-5 text-foreground/70" strokeWidth={2} />
 		</Button>
-	</header>
+	</PageTopToolbar>
 
 	<header class="hidden md:flex md:items-center md:justify-between">
 		<h1 class="font-serif text-2xl leading-tight text-primary">{data.souler.name}</h1>
 		<a
-			href={profileHref()}
+			href={resolve(`/bookshelf/${data.souler.id}/profile`)}
 			class="group flex items-center gap-1.5 text-[0.8rem] text-muted-foreground/50 transition-colors hover:text-primary"
 			aria-label="查看资料"
 		>
