@@ -41,7 +41,6 @@
 					{emailInitial}
 				</div>
 				<div class="min-w-0 flex-1">
-					<p class="text-xs text-muted-foreground">当前邮箱</p>
 					<p class="truncate text-sm text-foreground">{email}</p>
 				</div>
 			</div>
@@ -56,7 +55,6 @@
 				</div>
 				<div class="min-w-0 flex-1">
 					<p class="text-sm text-foreground">AI 回复长度</p>
-					<p class="text-xs text-muted-foreground">控制对话中 AI 回应的篇幅</p>
 				</div>
 				<div class="grid grid-cols-2 rounded-full border border-border/60 bg-muted/35 p-0.5">
 					{#each replyLengthOptions as option (option.value)}
@@ -91,7 +89,6 @@
 			</div>
 			<div class="min-w-0 flex-1">
 				<p class="text-sm text-foreground">联系开发者</p>
-				<p class="text-xs text-muted-foreground">问题、反馈、交流等，联系开发者</p>
 			</div>
 			<ChevronRight
 				class="size-4 text-muted-foreground/70 transition group-hover:translate-x-0.5 group-hover:text-foreground/80"
@@ -108,7 +105,6 @@
 			</div>
 			<div class="min-w-0 flex-1 text-left">
 				<p class="text-sm">注销账号</p>
-				<p class="text-xs text-destructive/70">删除当前账号与相关数据</p>
 			</div>
 			<ChevronRight class="size-4 text-destructive/60" />
 		</DeleteAccountAlert>
