@@ -3,31 +3,41 @@ import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.supabase = createSupabaseServerClient(event);
-	event.locals.safeGetSession = async () => {
-		const {
-			data: { session }
-		} = await event.locals.supabase.auth.getSession();
+	const sessionPromise = event.locals.supabase.auth.getSession();
+	let safeSessionPromise: ReturnType<typeof event.locals.safeGetSession> | undefined;
 
-		if (!session) {
-			return { session: null, user: null };
-		}
+	event.locals.safeGetSession = () => {
+		safeSessionPromise ??= (async () => {
+			const {
+				data: { session },
+				error: sessionError
+			} = await sessionPromise;
 
-		const {
-			data: { user },
-			error
-		} = await event.locals.supabase.auth.getUser();
+			if (sessionError || !session) {
+				return { session: null, user: null };
+			}
 
-		if (error || !user) {
-			return { session: null, user: null };
-		}
+			const {
+				data: { user },
+				error
+			} = await event.locals.supabase.auth.getUser();
 
-		return {
-			session: {
-				access_token: session.access_token
-			},
-			user
-		};
+			if (error || !user) {
+				return { session: null, user: null };
+			}
+
+			return {
+				session: {
+					access_token: session.access_token
+				},
+				user
+			};
+		})();
+
+		return safeSessionPromise;
 	};
+
+	await sessionPromise;
 
 	return resolve(event, {
 		filterSerializedResponseHeaders: (name) => {
