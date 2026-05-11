@@ -1,8 +1,20 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-function normalizeCredential(value: FormDataEntryValue | null) {
-	return typeof value === 'string' ? value.trim() : '';
+function normalizeEmail(value: FormDataEntryValue | null) {
+	return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+function readPassword(value: FormDataEntryValue | null) {
+	return typeof value === 'string' ? value : '';
+}
+
+function logAuthError(action: 'login' | 'signup', error: { status?: number; code?: string; message: string }) {
+	console.error(`auth ${action} failed`, {
+		status: error.status,
+		code: error.code,
+		message: error.message
+	});
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -15,8 +27,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	login: async ({ request, locals }) => {
 		const formData = await request.formData();
-		const email = normalizeCredential(formData.get('email'));
-		const password = normalizeCredential(formData.get('password'));
+		const email = normalizeEmail(formData.get('email'));
+		const password = readPassword(formData.get('password'));
 
 		if (!email || !password) {
 			return fail(400, { message: '请输入邮箱和密码。', email, mode: 'login' });
@@ -25,6 +37,7 @@ export const actions: Actions = {
 		const { error } = await locals.supabase.auth.signInWithPassword({ email, password });
 
 		if (error) {
+			logAuthError('login', error);
 			return fail(400, { message: error.message, email, mode: 'login' });
 		}
 
@@ -32,9 +45,9 @@ export const actions: Actions = {
 	},
 	signup: async ({ request, locals }) => {
 		const formData = await request.formData();
-		const email = normalizeCredential(formData.get('email'));
-		const password = normalizeCredential(formData.get('password'));
-		const passwordConfirm = normalizeCredential(formData.get('passwordConfirm'));
+		const email = normalizeEmail(formData.get('email'));
+		const password = readPassword(formData.get('password'));
+		const passwordConfirm = readPassword(formData.get('passwordConfirm'));
 
 		if (!email || !password || !passwordConfirm) {
 			return fail(400, { message: '请填写邮箱、密码和重复密码。', email, mode: 'signup' });
@@ -54,6 +67,7 @@ export const actions: Actions = {
 		});
 
 		if (error) {
+			logAuthError('signup', error);
 			return fail(400, { message: error.message, email, mode: 'signup' });
 		}
 
@@ -66,6 +80,7 @@ export const actions: Actions = {
 			password
 		});
 		if (signInError) {
+			logAuthError('login', signInError);
 			return fail(400, {
 				message:
 					'当前 Supabase 项目仍开启了邮箱确认。请在 Supabase Auth 设置里关闭 Confirm email，才能实现注册后直接登录。',
