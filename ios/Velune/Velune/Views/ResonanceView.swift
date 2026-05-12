@@ -28,6 +28,10 @@ struct ResonanceView: View {
         authManager.currentUserId?.uuidString
     }
 
+    private var isChatPresented: Bool {
+        activeSession != nil || activeDraftChat != nil
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -62,6 +66,7 @@ struct ResonanceView: View {
                 )
             }
         }
+        .toolbar(isChatPresented ? .hidden : .visible, for: .tabBar)
         .task(id: authManager.currentUserId) {
             if authManager.isAnonymous || authManager.currentUserId == nil {
                 resetResonanceState()
