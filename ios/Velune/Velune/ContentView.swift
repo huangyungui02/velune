@@ -4,7 +4,6 @@ struct ContentView: View {
     private enum AppTab: Hashable {
         case starSea
         case resonance
-        case map
         case profile
     }
 
@@ -24,12 +23,6 @@ struct ContentView: View {
                     Label("app.tab.resonance", systemImage: "bubble.left.and.bubble.right")
                 }
                 .tag(AppTab.resonance)
-
-            MapView()
-                .tabItem {
-                    Label("app.tab.map", systemImage: "map")
-                }
-                .tag(AppTab.map)
 
             NavigationStack {
                 ProfileView(onOpenGlimmerComposer: openGlimmerComposer)

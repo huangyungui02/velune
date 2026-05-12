@@ -243,7 +243,6 @@ struct ResonanceView: View {
 
         let hasLocalCache = loadLocalResonances(userId: userId)
         await syncResonances(userId: userId, hasLocalCache: hasLocalCache)
-        await refreshResonanceAvatars(userId: userId)
     }
 
     @MainActor
@@ -373,18 +372,6 @@ struct ResonanceView: View {
         }
     }
 
-    @MainActor
-    private func refreshResonanceAvatars(userId: String) async {
-        do {
-            let hasChanges = try await Resonance.refreshCachedAvatarURLs(userId: userId, context: context)
-            if hasChanges {
-                resonances = try Resonance.fetchCached(userId: userId, context: context)
-            }
-        } catch {
-            // Avatars are decorative here; keep the resonance list available if they fail to refresh.
-        }
-    }
-
     private func openResonance(_ resonance: Resonance) {
         if let sessionId = resonance.lastSessionId {
             activeSession = ChatSession(
@@ -419,8 +406,7 @@ private struct ResonanceRow: View {
         HStack(spacing: 14) {
             SoulerAvatar(
                 name: resonance.soulerName,
-                id: resonance.soulerId,
-                imageURLString: resonance.soulerAvatarURL
+                id: resonance.soulerId
             )
 
             Text(resonance.soulerName)
@@ -455,7 +441,6 @@ private struct ResonanceRow: View {
 private struct SoulerAvatar: View {
     let name: String
     let id: UUID
-    let imageURLString: String?
 
     private var initial: String {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -468,29 +453,6 @@ private struct SoulerAvatar: View {
     }
 
     var body: some View {
-        ZStack {
-            fallbackAvatar
-
-            if let imageURLString,
-               let imageURL = URL(string: imageURLString) {
-                AsyncImage(url: imageURL) { phase in
-                    if let image = phase.image {
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    }
-                }
-            }
-
-            Circle()
-                .stroke(.white.opacity(0.18), lineWidth: 0.7)
-        }
-        .frame(width: 44, height: 44)
-        .clipShape(.circle)
-        .accessibilityHidden(true)
-    }
-
-    private var fallbackAvatar: some View {
         ZStack {
             Circle()
                 .fill(
@@ -508,6 +470,12 @@ private struct SoulerAvatar: View {
                 .font(.callout.weight(.semibold))
                 .fontDesign(.serif)
                 .foregroundStyle(UITheme.primaryText.opacity(0.9))
+
+            Circle()
+                .stroke(.white.opacity(0.18), lineWidth: 0.7)
         }
+        .frame(width: 44, height: 44)
+        .clipShape(.circle)
+        .accessibilityHidden(true)
     }
 }
