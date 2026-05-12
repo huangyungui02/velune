@@ -104,9 +104,13 @@ struct StarSeaView: View {
 
                 ZStack {
                     if hasDraft {
-                        DraftGlimmerCard(content: text) {
+                        Button {
                             presentComposer()
+                        } label: {
+                            GlimmerCardView(content: text)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
                         .transition(.opacity.combined(with: .scale(scale: 0.98)))
                     } else {
                         HeroVerse()
@@ -142,6 +146,10 @@ struct StarSeaView: View {
         !text.isEmpty
     }
 
+    private var canSendDraft: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     @ToolbarContentBuilder
     private var draftToolbarContent: some ToolbarContent {
         if hasDraft {
@@ -149,12 +157,17 @@ struct StarSeaView: View {
                 Button(role: .destructive, action: clearComposer) {
                     Image(systemName: "xmark")
                         .font(.body.weight(.medium))
-                        .foregroundStyle(UITheme.primaryText)
-                        .frame(width: 36, height: 36)
-                        .contentShape(Circle())
                 }
-                .buttonStyle(.plain)
                 .accessibilityLabel(Text("common.clear"))
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: send) {
+                    Image(systemName: "arrow.up")
+                        .font(.body.weight(.semibold))
+                }
+                .disabled(!canSendDraft)
+                .accessibilityLabel(Text("common.submit"))
             }
         }
     }
@@ -243,21 +256,6 @@ private struct FloatingWriteButton: View {
                         .strokeBorder(.white.opacity(0.28), lineWidth: 0.5)
                 )
                 .shadow(color: .black.opacity(0.18), radius: 14, x: 0, y: 8)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
-    }
-}
-
-// MARK: - Draft Glimmer
-
-private struct DraftGlimmerCard: View {
-    let content: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            GlimmerCardView(content: content)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
@@ -386,7 +384,6 @@ private struct MatchingView: View {
 // MARK: - Full Screen Composer
 
 private struct StarSeaComposerCover: View {
-    @Environment(\.colorScheme) private var colorScheme
     @Binding var text: String
     let onDismiss: () -> Void
     let onSend: () -> Void
@@ -467,11 +464,7 @@ private struct StarSeaComposerCover: View {
         Button(action: onDismiss) {
             Image(systemName: "chevron.down")
                 .font(.body.weight(.medium))
-                .foregroundStyle(UITheme.primaryText)
-                .frame(width: 36, height: 36)
-                .contentShape(Circle())
         }
-        .buttonStyle(.plain)
         .accessibilityLabel(Text("common.cancel"))
     }
 
@@ -479,14 +472,8 @@ private struct StarSeaComposerCover: View {
         Button(action: onSend) {
             Image(systemName: "arrow.up")
                 .font(.body.weight(.semibold))
-                .foregroundStyle(UITheme.primaryActionForeground(for: colorScheme))
-                .frame(width: 36, height: 36)
-                .background(UITheme.primaryActionBackground(for: colorScheme), in: Circle())
-                .contentShape(Circle())
         }
-        .buttonStyle(.plain)
         .disabled(!canSend)
-        .opacity(canSend ? 1 : 0.45)
         .accessibilityLabel(Text("common.submit"))
     }
 }
