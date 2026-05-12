@@ -12,8 +12,7 @@ struct StarSeaView: View {
     @State private var shouldRecoverToVerseAfterError = false
     @State private var currentPage: CardID? = .glimmer
     @State private var chatRoute: EchoChatRoute?
-    @State private var isComposerActive = false
-    @FocusState private var isComposerFocused: Bool
+    @State private var isComposerPresented = false
     @Binding var composeRequestID: Int
 
     init(composeRequestID: Binding<Int> = .constant(0)) {
@@ -24,6 +23,9 @@ struct StarSeaView: View {
         NavigationStack {
             mainContent
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    draftToolbarContent
+                }
                 .navigationDestination(isPresented: $isMatchingPresented) {
                     MatchingView(
                         manager: manager,
@@ -48,6 +50,13 @@ struct StarSeaView: View {
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
+        .fullScreenCover(isPresented: $isComposerPresented) {
+            StarSeaComposerCover(
+                text: $text,
+                onDismiss: dismissComposer,
+                onSend: send
+            )
+        }
         .onChange(of: manager.errorMessage) { _, newValue in
             if isMatchingPresented, newValue != nil {
                 shouldRecoverToVerseAfterError = true
@@ -64,7 +73,7 @@ struct StarSeaView: View {
                 isMatchingPresented = true
             } else {
                 isMatchingPresented = false
-                activateComposer()
+                presentComposer()
             }
         }
         .alert("matching.error.title", isPresented: $showError) {
@@ -89,24 +98,15 @@ struct StarSeaView: View {
         ZStack {
             StarryBackgroundView()
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    isComposerFocused = false
-                    if text.isEmpty {
-                        isComposerActive = false
-                    }
-                }
 
             VStack(spacing: 0) {
                 Spacer()
 
                 ZStack {
-                    if isComposerActive || !text.isEmpty {
-                        CentralGlimmerComposer(
-                            text: $text,
-                            isFocused: $isComposerFocused,
-                            onSend: send
-                        )
-                        .padding(.horizontal, 24)
+                    if hasDraft {
+                        DraftGlimmerCard(content: text) {
+                            presentComposer()
+                        }
                         .transition(.opacity.combined(with: .scale(scale: 0.98)))
                     } else {
                         HeroVerse()
@@ -117,20 +117,45 @@ struct StarSeaView: View {
                 .frame(maxWidth: .infinity)
 
                 Spacer()
-
-                if !isComposerActive && text.isEmpty {
-                    BottomGlimmerPrompt {
-                        activateComposer()
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 72)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
             }
             .transition(.opacity)
-            .animation(.easeInOut(duration: 0.28), value: isComposerActive)
-            .animation(.easeInOut(duration: 0.28), value: isComposerFocused)
             .animation(.easeInOut(duration: 0.22), value: text.isEmpty)
+
+            if !hasDraft {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        FloatingWriteButton {
+                            presentComposer()
+                        }
+                        .padding(.trailing, 28)
+                        .padding(.bottom, 40)
+                    }
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.9)).combined(with: .move(edge: .bottom)))
+            }
+        }
+    }
+
+    private var hasDraft: Bool {
+        !text.isEmpty
+    }
+
+    @ToolbarContentBuilder
+    private var draftToolbarContent: some ToolbarContent {
+        if hasDraft {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(role: .destructive, action: clearComposer) {
+                    Image(systemName: "xmark")
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(UITheme.primaryText)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("common.clear"))
+            }
         }
     }
 
@@ -141,8 +166,7 @@ struct StarSeaView: View {
         guard !input.isEmpty else { return }
 
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        isComposerFocused = false
-        isComposerActive = false
+        isComposerPresented = false
 
         manager.startMatching(text: input, context: context)
         text = ""
@@ -166,18 +190,22 @@ struct StarSeaView: View {
         manager.reset()
         isMatchingPresented = false
         currentPage = .glimmer
-        isComposerFocused = false
-        isComposerActive = false
+        isComposerPresented = false
     }
 
-    private func activateComposer() {
-        withAnimation(.easeInOut(duration: 0.28)) {
-            isComposerActive = true
-        }
+    private func presentComposer() {
+        isComposerPresented = true
+    }
 
-        Task { @MainActor in
-            await Task.yield()
-            isComposerFocused = true
+    private func dismissComposer() {
+        isComposerPresented = false
+    }
+
+    private func clearComposer() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+        withAnimation(.easeInOut(duration: 0.24)) {
+            text = ""
         }
     }
 }
@@ -187,34 +215,49 @@ struct StarSeaView: View {
 private struct HeroVerse: View {
     var body: some View {
         Text("starsea.hero.verse")
-            .font(.title2)
+            .font(.title3)
             .fontDesign(.serif)
-            .tracking(1.2)
+            .tracking(2.0)
             .multilineTextAlignment(.center)
-            .foregroundStyle(UITheme.primaryText.opacity(0.72))
-            .lineSpacing(8)
+            .foregroundStyle(UITheme.primaryText.opacity(0.65))
+            .lineSpacing(12)
             .accessibilityAddTraits(.isStaticText)
     }
 }
 
-// MARK: - Bottom Prompt
+// MARK: - Floating Write Button
 
-private struct BottomGlimmerPrompt: View {
-    let onTap: () -> Void
+private struct FloatingWriteButton: View {
+    let action: () -> Void
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 8) {
-                Text("starsea.prompt.glimmerWithin")
+        Button(action: action) {
+            Image(systemName: "pencil")
+                .font(.title3.weight(.medium))
+                .foregroundStyle(.black)
+                .frame(width: 56, height: 56)
+                .contentShape(Circle())
+                .background(UITheme.accent, in: Circle())
+                .overlay(
+                    Circle()
+                        .strokeBorder(.white.opacity(0.28), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.18), radius: 14, x: 0, y: 8)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
+    }
+}
 
-                Image(systemName: "arrow.right")
-                    .font(.callout.weight(.medium))
-            }
-            .font(.title3)
-            .fontDesign(.serif)
-            .foregroundStyle(UITheme.primaryText.opacity(0.42))
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
+// MARK: - Draft Glimmer
+
+private struct DraftGlimmerCard: View {
+    let content: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            GlimmerCardView(content: content)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
@@ -340,41 +383,77 @@ private struct MatchingView: View {
     }
 }
 
-// MARK: - Central Composer
+// MARK: - Full Screen Composer
 
-private struct CentralGlimmerComposer: View {
+private struct StarSeaComposerCover: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var text: String
-    var isFocused: FocusState<Bool>.Binding
+    let onDismiss: () -> Void
     let onSend: () -> Void
+    @FocusState private var isEditorFocused: Bool
 
     private var canSend: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    var body: some View {
-        ZStack(alignment: .leading) {
-            if text.isEmpty {
-                HStack(spacing: 8) {
-                    Text("starsea.prompt.glimmerWithin")
+    private var placeholderText: String {
+        String(localized: "starsea.prompt.glimmerWithin")
+    }
 
-                    Image(systemName: "arrow.right")
-                        .font(.callout.weight(.medium))
+    var body: some View {
+        NavigationStack {
+            ZStack(alignment: .topLeading) {
+                StarryBackgroundView()
+                    .ignoresSafeArea()
+
+                editor
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
+                    .padding(.bottom, 18)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    leadingButton
                 }
-                .font(.title3)
-                .fontDesign(.serif)
-                .foregroundStyle(UITheme.primaryText.opacity(0.42))
-                .allowsHitTesting(false)
-                .transition(.opacity)
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    sendButton
+                }
+            }
+            .toolbar(.hidden, for: .tabBar)
+        }
+        .presentationBackground(.clear)
+        .onAppear {
+            Task { @MainActor in
+                await Task.yield()
+                isEditorFocused = true
+            }
+        }
+    }
+
+    private var editor: some View {
+        ZStack(alignment: .topLeading) {
+            if text.isEmpty {
+                GlimmerCardText(placeholderText, foregroundStyle: UITheme.primaryText.opacity(0.42))
+                    .padding(.top, 8)
+                    .padding(.horizontal, 5)
+                    .transition(.opacity)
             }
 
-            TextField("", text: $text)
-                .focused(isFocused)
-                .font(.title3)
+            TextEditor(text: $text)
+                .focused($isEditorFocused)
+                .font(.body)
                 .fontDesign(.serif)
+                .lineSpacing(8)
+                .tracking(0.5)
                 .foregroundStyle(UITheme.primaryText)
                 .tint(UITheme.primaryText)
+                .scrollContentBackground(.hidden)
+                .scrollIndicators(.hidden)
+                .contentMargins(0, for: .scrollContent)
+                .background(.clear)
                 .submitLabel(.send)
-                .textFieldStyle(.plain)
                 .onSubmit {
                     if canSend {
                         onSend()
@@ -382,20 +461,32 @@ private struct CentralGlimmerComposer: View {
                 }
                 .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 18)
-        .background {
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(Color.white.opacity(isFocused.wrappedValue ? 0.035 : 0))
-                .shadow(
-                    color: .white.opacity(isFocused.wrappedValue ? 0.035 : 0),
-                    radius: 30,
-                    x: 0,
-                    y: 0
-                )
-            }
-        .frame(maxWidth: 520, alignment: .leading)
-        .animation(.easeInOut(duration: 0.22), value: isFocused.wrappedValue)
-        .animation(.easeInOut(duration: 0.18), value: text.isEmpty)
+    }
+
+    private var leadingButton: some View {
+        Button(action: onDismiss) {
+            Image(systemName: "chevron.down")
+                .font(.body.weight(.medium))
+                .foregroundStyle(UITheme.primaryText)
+                .frame(width: 36, height: 36)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("common.cancel"))
+    }
+
+    private var sendButton: some View {
+        Button(action: onSend) {
+            Image(systemName: "arrow.up")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(UITheme.primaryActionForeground(for: colorScheme))
+                .frame(width: 36, height: 36)
+                .background(UITheme.primaryActionBackground(for: colorScheme), in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!canSend)
+        .opacity(canSend ? 1 : 0.45)
+        .accessibilityLabel(Text("common.submit"))
     }
 }

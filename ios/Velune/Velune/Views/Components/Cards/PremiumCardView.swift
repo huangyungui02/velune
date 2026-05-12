@@ -20,16 +20,10 @@ struct PremiumCardView<Content: View>: View {
                     Spacer(minLength: 0)
                 }
 
-                scrollableContent(maxCardHeight: cap, isScrollable: isScrollable)
-                    .frame(height: cardHeight, alignment: .top)
-                    .padding(.vertical)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        RoundedRectangle(cornerRadius: 32, style: .continuous)
-                            .fill(Color.white.opacity(0.035))
-                            .shadow(color: .white.opacity(0.035), radius: 30, x: 0, y: 0)
-                    )
-                    .padding(.horizontal)
+                PremiumCardSurface {
+                    scrollableContent(maxCardHeight: cap, isScrollable: isScrollable)
+                        .frame(height: cardHeight, alignment: .top)
+                }
 
                 if !isScrollable {
                     Spacer(minLength: 0)
@@ -56,6 +50,7 @@ struct PremiumCardView<Content: View>: View {
             )
         }
         .scrollDisabled(!isScrollable)
+        .scrollIndicators(.hidden)
         .frame(maxHeight: maxCardHeight, alignment: .top)
         .onPreferenceChange(ContentHeightKey.self) { newValue in
             if contentHeight != newValue {
@@ -67,6 +62,26 @@ struct PremiumCardView<Content: View>: View {
     private func maxContentHeight(for maxCardHeight: CGFloat) -> CGFloat {
         guard maxCardHeight > 0 else { return .infinity }
         return max(0, maxCardHeight - 40)
+    }
+}
+
+struct PremiumCardSurface<Content: View>: View {
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .padding(.vertical)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 32, style: .continuous)
+                    .fill(Color.white.opacity(0.035))
+                    .shadow(color: .white.opacity(0.035), radius: 30, x: 0, y: 0)
+            )
+            .padding(.horizontal)
     }
 }
 

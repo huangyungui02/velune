@@ -53,8 +53,10 @@
 "settings.delete.confirm.message" = "此操作不可撤销。你的账号与相关数据将被永久删除。";
 
 "common.cancel" = "取消";
+"common.clear" = "清空";
 "common.ok" = "好的";
 "common.retry" = "重试";
+"common.submit" = "提交";
 "common.loading" = "加载中…";
 "common.search" = "搜索";
 

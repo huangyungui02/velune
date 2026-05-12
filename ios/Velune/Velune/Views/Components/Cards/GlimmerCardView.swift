@@ -13,13 +13,7 @@ struct GlimmerCardView: View {
     var body: some View {
         PremiumCardView {
             VStack(spacing: 24) {
-                Text(content)
-                    .font(.body)
-                    .fontDesign(.serif)
-                    .lineSpacing(8)
-                    .tracking(0.5)
-                    .multilineTextAlignment(.leading)
-                    .foregroundStyle(UITheme.primaryText)
+                GlimmerCardText(content)
 
                 if let createdAt {
                     Rectangle()
@@ -52,5 +46,30 @@ struct GlimmerCardView: View {
                 }
             }
         }
+    }
+}
+
+struct GlimmerCardText: View {
+    let content: String
+    let foregroundStyle: AnyShapeStyle
+
+    init(_ content: String) {
+        self.content = content
+        self.foregroundStyle = AnyShapeStyle(UITheme.primaryText)
+    }
+
+    init(_ content: String, foregroundStyle: some ShapeStyle) {
+        self.content = content
+        self.foregroundStyle = AnyShapeStyle(foregroundStyle)
+    }
+
+    var body: some View {
+        Text(content)
+            .font(.body)
+            .fontDesign(.serif)
+            .lineSpacing(8)
+            .tracking(0.5)
+            .multilineTextAlignment(.leading)
+            .foregroundStyle(foregroundStyle)
     }
 }

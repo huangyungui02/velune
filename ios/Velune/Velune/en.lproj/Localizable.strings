@@ -53,8 +53,10 @@
 "settings.delete.confirm.message" = "This action cannot be undone. Your account and related data will be permanently deleted.";
 
 "common.cancel" = "Cancel";
+"common.clear" = "Clear";
 "common.ok" = "OK";
 "common.retry" = "Retry";
+"common.submit" = "Submit";
 "common.loading" = "Loading…";
 "common.search" = "Search";
 
