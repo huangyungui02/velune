@@ -12,6 +12,7 @@ struct StarSeaView: View {
     @State private var shouldRecoverToVerseAfterError = false
     @State private var currentPage: CardID? = .glimmer
     @State private var chatRoute: EchoChatRoute?
+    @State private var isComposerActive = false
     @FocusState private var isComposerFocused: Bool
     @Binding var composeRequestID: Int
 
@@ -63,7 +64,7 @@ struct StarSeaView: View {
                 isMatchingPresented = true
             } else {
                 isMatchingPresented = false
-                isComposerFocused = true
+                activateComposer()
             }
         }
         .alert("matching.error.title", isPresented: $showError) {
@@ -90,21 +91,46 @@ struct StarSeaView: View {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     isComposerFocused = false
+                    if text.isEmpty {
+                        isComposerActive = false
+                    }
                 }
 
             VStack(spacing: 0) {
-                Spacer(minLength: 96)
+                Spacer()
 
-                CentralGlimmerComposer(
-                    text: $text,
-                    isFocused: $isComposerFocused,
-                    onSend: send
-                )
-                .padding(.horizontal, 24)
+                ZStack {
+                    if isComposerActive || !text.isEmpty {
+                        CentralGlimmerComposer(
+                            text: $text,
+                            isFocused: $isComposerFocused,
+                            onSend: send
+                        )
+                        .padding(.horizontal, 24)
+                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                    } else {
+                        HeroVerse()
+                            .padding(.horizontal, 32)
+                            .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                    }
+                }
+                .frame(maxWidth: .infinity)
 
-                Spacer(minLength: 140)
+                Spacer()
+
+                if !isComposerActive && text.isEmpty {
+                    BottomGlimmerPrompt {
+                        activateComposer()
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 72)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
             }
             .transition(.opacity)
+            .animation(.easeInOut(duration: 0.28), value: isComposerActive)
+            .animation(.easeInOut(duration: 0.28), value: isComposerFocused)
+            .animation(.easeInOut(duration: 0.22), value: text.isEmpty)
         }
     }
 
@@ -116,6 +142,7 @@ struct StarSeaView: View {
 
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         isComposerFocused = false
+        isComposerActive = false
 
         manager.startMatching(text: input, context: context)
         text = ""
@@ -139,6 +166,58 @@ struct StarSeaView: View {
         manager.reset()
         isMatchingPresented = false
         currentPage = .glimmer
+        isComposerFocused = false
+        isComposerActive = false
+    }
+
+    private func activateComposer() {
+        withAnimation(.easeInOut(duration: 0.28)) {
+            isComposerActive = true
+        }
+
+        Task { @MainActor in
+            await Task.yield()
+            isComposerFocused = true
+        }
+    }
+}
+
+// MARK: - Hero Verse
+
+private struct HeroVerse: View {
+    var body: some View {
+        Text("starsea.hero.verse")
+            .font(.title2)
+            .fontDesign(.serif)
+            .tracking(1.2)
+            .multilineTextAlignment(.center)
+            .foregroundStyle(UITheme.primaryText.opacity(0.72))
+            .lineSpacing(8)
+            .accessibilityAddTraits(.isStaticText)
+    }
+}
+
+// MARK: - Bottom Prompt
+
+private struct BottomGlimmerPrompt: View {
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 8) {
+                Text("starsea.prompt.glimmerWithin")
+
+                Image(systemName: "arrow.right")
+                    .font(.callout.weight(.medium))
+            }
+            .font(.title3)
+            .fontDesign(.serif)
+            .foregroundStyle(UITheme.primaryText.opacity(0.42))
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
     }
 }
 
