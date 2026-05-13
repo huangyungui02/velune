@@ -32,7 +32,6 @@ struct StarSeaView: View {
                         chatRoute: $chatRoute,
                         onClose: closeCurrentGlimmer
                     )
-                    .toolbar(.hidden, for: .tabBar)
                 }
                 .navigationDestination(item: $chatRoute) { route in
                     ChatView(
@@ -43,9 +42,9 @@ struct StarSeaView: View {
                         soulerName: route.soulerName,
                         focusComposerOnAppear: true
                     )
-                    .toolbar(.hidden, for: .tabBar)
                 }
         }
+        .toolbar((isMatchingPresented || chatRoute != nil) ? .hidden : .visible, for: .tabBar)
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }

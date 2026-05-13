@@ -32,7 +32,6 @@ struct GlimmerView: View {
         }
         .navigationTitle("glimmer.title")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {

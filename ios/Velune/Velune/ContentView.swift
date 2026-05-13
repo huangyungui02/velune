@@ -24,9 +24,7 @@ struct ContentView: View {
                 }
                 .tag(AppTab.resonance)
 
-            NavigationStack {
-                ProfileView(onOpenGlimmerComposer: openGlimmerComposer)
-            }
+            ProfileView(onOpenGlimmerComposer: openGlimmerComposer)
             .tabItem {
                 Label("app.tab.profile", systemImage: "person.crop.circle")
             }

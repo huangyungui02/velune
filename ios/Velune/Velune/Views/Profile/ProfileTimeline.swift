@@ -185,9 +185,7 @@ private struct ProfileTimelineSectionView: View {
 
             VStack(spacing: 0) {
                 ForEach(Array(section.items.enumerated()), id: \.element.id) { index, glimmer in
-                    NavigationLink {
-                        GlimmerView(glimmer: glimmer)
-                    } label: {
+                    NavigationLink(value: ProfileRoute.glimmer(glimmer.id)) {
                         GlimmerListRow(glimmer: glimmer)
                     }
                     .buttonStyle(.plain)

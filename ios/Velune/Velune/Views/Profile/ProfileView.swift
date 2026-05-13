@@ -2,10 +2,16 @@ import OSLog
 import SwiftData
 import SwiftUI
 
+enum ProfileRoute: Hashable {
+    case settings
+    case glimmer(UUID)
+}
+
 struct ProfileView: View {
     @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var context
     @State private var authManager = AuthManager.shared
+    @State private var path: [ProfileRoute] = []
     @State private var glimmers: [Glimmer] = []
     @State private var isRefreshing: Bool = false
     @State private var isLoadingMore: Bool = false
@@ -26,45 +32,56 @@ struct ProfileView: View {
     }
 
     var body: some View {
-        ZStack {
-            BackgroundView()
+        NavigationStack(path: $path) {
+            ZStack {
+                BackgroundView()
 
-            profileContent
-        }
-        .navigationTitle("profile.title.glimmers")
-        .navigationBarTitleDisplayMode(.inline)
-        .id(locale.identifier)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    SettingsView()
-                } label: {
-                    Image(systemName: "gearshape")
+                profileContent
+            }
+            .navigationTitle("profile.title.glimmers")
+            .navigationBarTitleDisplayMode(.inline)
+            .id(locale.identifier)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink(value: ProfileRoute.settings) {
+                        Image(systemName: "gearshape")
+                    }
                 }
             }
-        }
-        .task(id: authManager.currentUserId) {
-            guard !authManager.isAnonymous else {
-                glimmers = []
-                isRefreshing = false
-                isLoadingMore = false
-                hasMoreGlimmers = false
-                glimmerOffset = 0
-                return
+            .navigationDestination(for: ProfileRoute.self) { route in
+                switch route {
+                case .settings:
+                    SettingsView()
+                case let .glimmer(glimmerId):
+                    if let glimmer = glimmers.first(where: { $0.id == glimmerId }) {
+                        GlimmerView(glimmer: glimmer)
+                    }
+                }
             }
-            loadLocalGlimmers()
-            glimmerOffset = glimmers.count
-            hasMoreGlimmers = SyncStateStore.state(userId: currentUserId).glimmers.hasMore
+            .task(id: authManager.currentUserId) {
+                guard !authManager.isAnonymous else {
+                    glimmers = []
+                    isRefreshing = false
+                    isLoadingMore = false
+                    hasMoreGlimmers = false
+                    glimmerOffset = 0
+                    return
+                }
+                loadLocalGlimmers()
+                glimmerOffset = glimmers.count
+                hasMoreGlimmers = SyncStateStore.state(userId: currentUserId).glimmers.hasMore
 
-            if hasMoreGlimmers && glimmers.isEmpty {
-                await loadMoreGlimmers()
+                if hasMoreGlimmers && glimmers.isEmpty {
+                    await loadMoreGlimmers()
+                }
+            }
+            .alert("settings.error.title", isPresented: feedbackAlertBinding) {
+                Button("common.ok", role: .cancel) {}
+            } message: {
+                Text(feedbackMessage ?? "")
             }
         }
-        .alert("settings.error.title", isPresented: feedbackAlertBinding) {
-            Button("common.ok", role: .cancel) {}
-        } message: {
-            Text(feedbackMessage ?? "")
-        }
+        .toolbar(path.isEmpty ? .automatic : .hidden, for: .tabBar)
     }
 
     @ViewBuilder
