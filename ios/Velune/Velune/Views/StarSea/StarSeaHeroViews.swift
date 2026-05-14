@@ -20,15 +20,11 @@ struct FloatingWriteButton: View {
         Button(action: action) {
             Image(systemName: "pencil")
                 .font(.title3.weight(.medium))
-                .foregroundStyle(.black)
+                .foregroundStyle(UITheme.primaryText)
                 .frame(width: 56, height: 56)
                 .contentShape(Circle())
-                .background(UITheme.accent, in: Circle())
-                .overlay(
-                    Circle()
-                        .strokeBorder(.white.opacity(0.28), lineWidth: 0.5)
-                )
-                .shadow(color: .black.opacity(0.18), radius: 14, x: 0, y: 8)
+                .glassEffect(.regular.tint(UITheme.accent.opacity(0.22)).interactive(), in: .circle)
+                .shadow(color: .black.opacity(0.16), radius: 16, x: 0, y: 8)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
