@@ -83,14 +83,18 @@ struct MatchingView: View {
         }
 
         if hasEchoes {
+            ToolbarSpacer(placement: .bottomBar)
+
+            ToolbarItem(placement: .status) {
+                CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage, isMatching: manager.isMatching)
+            }
+
+            ToolbarSpacer(placement: .bottomBar)
+
             ToolbarItem(placement: .bottomBar) {
                 if shouldShowChatButton {
                     chatButton
                 }
-            }
-
-            ToolbarItem(placement: .status) {
-                CardPagerIndicatorView(echoes: echoes, currentPage: $currentPage, isMatching: manager.isMatching)
             }
         }
     }
@@ -109,6 +113,10 @@ struct MatchingView: View {
         Button("resonance.chat.newConversation", systemImage: "message") {
             openChat()
         }
+        .labelStyle(.iconOnly)
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(UITheme.primaryText)
+        .contentShape(.rect)
     }
 
     private func openChat() {
