@@ -109,6 +109,8 @@
 "glimmer.delete.progress" = "Deleting…";
 
 "souler.load.failed" = "Failed to load";
+"souler.bio.empty.body" = "No bio yet.";
+"souler.action.chat" = "Chat";
 "echo.reply.placeholder" = "Reply to this echo…";
 
 "resonance.title" = "Resonances";

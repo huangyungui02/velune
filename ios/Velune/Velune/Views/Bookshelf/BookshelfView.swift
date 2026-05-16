@@ -109,7 +109,12 @@ private struct BookshelfContent: View {
             LazyVGrid(columns: gridColumns, spacing: 24) {
                 ForEach(items) { item in
                     NavigationLink {
-                        SoulerView(soulerId: item.soulerId)
+                        ChatView(
+                            sessionId: item.lastSessionId,
+                            soulerId: item.soulerId,
+                            soulerName: item.soulerName,
+                            focusComposerOnAppear: false
+                        )
                     } label: {
                         SoulerBookCoverView(name: item.soulerName, imageURL: item.imageURL)
                     }
