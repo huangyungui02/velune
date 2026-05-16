@@ -57,6 +57,27 @@ nonisolated enum Backend {
         }
     }
 
+    static func publicStorageURL(bucket: String, path: String, version: Date?) throws -> URL? {
+        let imagePath = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !imagePath.isEmpty else { return nil }
+
+        if imagePath.hasPrefix("http://") || imagePath.hasPrefix("https://") || imagePath.hasPrefix("/") {
+            return versionedURL(URL(string: imagePath), version: version)
+        }
+
+        switch configurationResult {
+        case let .success(configuration):
+            let base = configuration.supabaseURL.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            let bucketPath = bucket.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            return versionedURL(
+                URL(string: "\(base)/storage/v1/object/public/\(bucketPath)/\(imagePath)"),
+                version: version
+            )
+        case let .failure(error):
+            throw error
+        }
+    }
+
     private static func loadConfiguration() -> Result<Configuration, AppError> {
         do {
             let supabaseURLString = try requiredInfoValue("SUPABASE_URL")
@@ -97,5 +118,22 @@ nonisolated enum Backend {
         }
 
         return value
+    }
+
+    private static func versionedURL(_ url: URL?, version: Date?) -> URL? {
+        guard let url else { return nil }
+        guard let version else { return url }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let value = formatter.string(from: version)
+
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return url
+        }
+        var queryItems = components.queryItems ?? []
+        queryItems.append(URLQueryItem(name: "v", value: value))
+        components.queryItems = queryItems
+        return components.url ?? url
     }
 }

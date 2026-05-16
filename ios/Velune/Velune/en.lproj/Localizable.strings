@@ -3,6 +3,7 @@
 "settings.section.legal" = "Legal";
 "settings.section.support" = "Support";
 "settings.section.billing" = "Subscription";
+"settings.section.ai" = "AI";
 "settings.section.about" = "About";
 "settings.account" = "Account";
 "settings.manageAccount" = "Manage Account";
@@ -51,6 +52,9 @@
 "settings.signOut.confirm.message" = "You’ll need to sign in again to continue using the app.";
 "settings.delete.confirm.title" = "Delete account permanently?";
 "settings.delete.confirm.message" = "This action cannot be undone. Your account and related data will be permanently deleted.";
+"settings.aiReplyLength.title" = "AI Reply Length";
+"settings.aiReplyLength.standard" = "Standard";
+"settings.aiReplyLength.concise" = "Concise";
 
 "common.cancel" = "Cancel";
 "common.clear" = "Clear";
@@ -61,6 +65,9 @@
 "common.search" = "Search";
 
 "app.tab.starsea" = "Star Sea";
+"app.tab.chat" = "Chat";
+"app.tab.explore" = "Explore";
+"app.tab.bookshelf" = "Bookshelf";
 "app.tab.resonance" = "Resonance";
 "app.tab.map" = "Map";
 "app.tab.profile" = "Me";
@@ -149,3 +156,11 @@
 "paywall.restore.signInRequired.description" = "Anonymous accounts can’t restore purchases. Sign in to continue.";
 "souler.bio.empty.title" = "This page is being perfected";
 "common.refresh" = "Refresh";
+"explore.title" = "Explore";
+"explore.tab.featured" = "Featured";
+"explore.tab.latest" = "Latest";
+"explore.search.placeholder" = "Search people";
+"explore.empty.featured" = "No featured sections yet";
+"explore.empty.latest" = "No latest soulers yet";
+"bookshelf.title" = "Bookshelf";
+"bookshelf.empty" = "Bookshelf is empty";

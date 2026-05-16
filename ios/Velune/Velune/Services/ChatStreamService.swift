@@ -19,6 +19,7 @@ enum ChatStreamService {
         var echoId: String?
         var soulerId: String
         var soulerName: String
+        var replyLength: String
         var content: String
     }
 
@@ -45,6 +46,7 @@ enum ChatStreamService {
             echoId: echoId?.uuidString,
             soulerId: soulerId.uuidString,
             soulerName: soulerName,
+            replyLength: UserDefaults.standard.string(forKey: AIReplyLength.storageKey) ?? AIReplyLength.standard.rawValue,
             content: content
         )
         let payloadDataStream = APISSEClient.stream(path: path, body: request)
