@@ -48,7 +48,7 @@ struct SoulerBookCoverView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                 .padding(12)
         }
-        .aspectRatio(2 / 3, contentMode: .fit)
+        .aspectRatio(3 / 4, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 10, style: .continuous))
         .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
         .overlay {

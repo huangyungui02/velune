@@ -32,6 +32,8 @@ struct ExploreView: View {
     @State private var isSearching = false
     @State private var errorMessage: String?
     @State private var searchErrorMessage: String?
+    
+    @Namespace private var tabNamespace
 
     private let gridColumns = [
         GridItem(.flexible(), spacing: 20),
@@ -52,15 +54,16 @@ struct ExploreView: View {
             ZStack {
                 BackgroundView()
 
-                VStack(spacing: 12) {
-                    ExploreSearchField(
-                        text: $searchText,
-                        isFocused: $isSearchFocused,
-                        onClear: clearSearch
+                VStack(spacing: 0) {
+                    ExploreHeaderView(
+                        searchText: $searchText,
+                        isSearchFocused: $isSearchFocused,
+                        selectedTab: $selectedTab,
+                        hasActiveSearch: hasActiveSearch,
+                        tabNamespace: tabNamespace,
+                        onClearSearch: clearSearch
                     )
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
-
+                    
                     if hasActiveSearch {
                         ExploreSearchContent(
                             query: normalizedSearchText,
@@ -73,7 +76,7 @@ struct ExploreView: View {
                         )
                     } else {
                         ExploreMainContent(
-                            selectedTab: $selectedTab,
+                            selectedTab: selectedTab,
                             featuredSections: featuredSections,
                             latestItems: latestItems,
                             latestHasMore: latestHasMore,
@@ -88,8 +91,7 @@ struct ExploreView: View {
                     }
                 }
             }
-            .navigationTitle("explore.title")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .task {
                 await loadFeaturedIfNeeded()
             }
@@ -214,6 +216,61 @@ struct ExploreView: View {
     }
 }
 
+private struct ExploreHeaderView: View {
+    @Binding var searchText: String
+    var isSearchFocused: FocusState<Bool>.Binding
+    @Binding var selectedTab: ExploreTab
+    let hasActiveSearch: Bool
+    let tabNamespace: Namespace.ID
+    let onClearSearch: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            ExploreSearchField(
+                text: $searchText,
+                isFocused: isSearchFocused,
+                onClear: onClearSearch
+            )
+            .padding(.horizontal, 20)
+
+            if !hasActiveSearch {
+                HStack(spacing: 32) {
+                    ForEach(ExploreTab.allCases) { tab in
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedTab = tab
+                            }
+                        }) {
+                            VStack(spacing: 6) {
+                                Text(tab.titleKey)
+                                    .font(.title3)
+                                    .fontWeight(selectedTab == tab ? .semibold : .medium)
+                                    .fontDesign(.serif)
+                                    .foregroundStyle(selectedTab == tab ? UITheme.primaryText : UITheme.secondaryText)
+                                
+                                if selectedTab == tab {
+                                    Capsule()
+                                        .fill(UITheme.primaryText)
+                                        .frame(width: 24, height: 2)
+                                        .matchedGeometryEffect(id: "TabIndicator", in: tabNamespace)
+                                } else {
+                                    Color.clear
+                                        .frame(width: 24, height: 2)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+        .padding(.top, 16)
+        .padding(.bottom, 8)
+    }
+}
+
 private struct ExploreSearchField: View {
     @Binding var text: String
     var isFocused: FocusState<Bool>.Binding
@@ -222,33 +279,34 @@ private struct ExploreSearchField: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .font(.footnote.weight(.semibold))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(UITheme.secondaryText)
 
             TextField("explore.search.placeholder", text: $text)
                 .focused(isFocused)
                 .submitLabel(.search)
                 .textFieldStyle(.plain)
-                .font(.footnote)
-                .fontDesign(.serif)
+                .font(.system(size: 15))
                 .foregroundStyle(UITheme.primaryText)
+                .tint(UITheme.primaryText)
 
             if !text.isEmpty {
                 Button(action: onClear) {
                     Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 15))
                         .foregroundStyle(UITheme.tertiaryText)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 16)
         .frame(height: 44)
         .glassEffect(in: .capsule)
     }
 }
 
 private struct ExploreMainContent: View {
-    @Binding var selectedTab: ExploreTab
+    let selectedTab: ExploreTab
     let featuredSections: [ExploreSection]
     let latestItems: [ExploreSoulerItem]
     let latestHasMore: Bool
@@ -261,41 +319,31 @@ private struct ExploreMainContent: View {
     let onLoadMoreLatest: () -> Void
 
     var body: some View {
-        VStack(spacing: 12) {
-            Picker("explore.title", selection: $selectedTab) {
-                ForEach(ExploreTab.allCases) { tab in
-                    Text(tab.titleKey).tag(tab)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 32) {
+                if let errorMessage {
+                    RetryStateView(message: errorMessage, onRetry: onRefresh)
+                        .padding(.horizontal, 20)
+                } else if selectedTab == .featured {
+                    FeaturedSectionsView(
+                        sections: featuredSections,
+                        isLoading: isLoadingFeatured
+                    )
+                } else {
+                    LatestSoulersView(
+                        items: latestItems,
+                        hasMore: latestHasMore,
+                        isLoading: isLoadingLatest,
+                        isLoadingMore: isLoadingMoreLatest,
+                        gridColumns: gridColumns,
+                        onLoadMore: onLoadMoreLatest
+                    )
                 }
             }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 20)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    if let errorMessage {
-                        RetryStateView(message: errorMessage, onRetry: onRefresh)
-                    } else if selectedTab == .featured {
-                        FeaturedSectionsView(
-                            sections: featuredSections,
-                            isLoading: isLoadingFeatured
-                        )
-                    } else {
-                        LatestSoulersView(
-                            items: latestItems,
-                            hasMore: latestHasMore,
-                            isLoading: isLoadingLatest,
-                            isLoadingMore: isLoadingMoreLatest,
-                            gridColumns: gridColumns,
-                            onLoadMore: onLoadMoreLatest
-                        )
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 24)
-            }
-            .refreshable {
-                onRefresh()
-            }
+            .padding(.vertical, 24)
+        }
+        .refreshable {
+            onRefresh()
         }
     }
 }
@@ -316,7 +364,7 @@ private struct ExploreSearchContent: View {
                     .padding(.top, 120)
             } else if isLoading {
                 SoulerBookSkeletonGrid(columns: gridColumns)
-                    .padding(.horizontal, 16)
+                    .padding(.top, 24)
             } else if items.isEmpty {
                 ContentUnavailableView.search(text: query)
                     .padding(.top, 120)
@@ -333,7 +381,7 @@ private struct ExploreSearchContent: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 24)
+                .padding(.vertical, 24)
             }
         }
         .scrollDismissesKeyboard(.interactively)
@@ -346,7 +394,7 @@ private struct FeaturedSectionsView: View {
 
     var body: some View {
         if isLoading && sections.isEmpty {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 32) {
                 ForEach(0 ..< 2, id: \.self) { _ in
                     FeaturedSectionSkeleton()
                 }
@@ -358,12 +406,13 @@ private struct FeaturedSectionsView: View {
                 actionTitle: "common.refresh",
                 actionIcon: "arrow.clockwise"
             )
+            .padding(.horizontal, 20)
         } else {
             ForEach(sections) { section in
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(section.title)
-                            .font(.headline.weight(.semibold))
+                            .font(.title3.weight(.medium))
                             .fontDesign(.serif)
                             .foregroundStyle(UITheme.primaryText)
 
@@ -373,21 +422,23 @@ private struct FeaturedSectionsView: View {
                                 .foregroundStyle(UITheme.secondaryText)
                         }
                     }
+                    .padding(.horizontal, 20)
 
                     ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(spacing: 20) {
+                        LazyHStack(spacing: 16) {
                             ForEach(section.soulers) { souler in
                                 NavigationLink {
                                     SoulerView(soulerId: souler.id)
                                 } label: {
                                     SoulerBookCoverView(name: souler.name, imageURL: souler.imageURL)
-                                        .frame(width: 120)
+                                        .frame(width: 130)
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
                         .scrollTargetLayout()
                     }
+                    .contentMargins(.horizontal, 20, for: .scrollContent)
                     .scrollTargetBehavior(.viewAligned)
                 }
             }
@@ -413,6 +464,7 @@ private struct LatestSoulersView: View {
                 actionTitle: "common.refresh",
                 actionIcon: "arrow.clockwise"
             )
+            .padding(.horizontal, 20)
         } else {
             LazyVGrid(columns: gridColumns, spacing: 24) {
                 ForEach(items) { item in
@@ -424,6 +476,7 @@ private struct LatestSoulersView: View {
                     .buttonStyle(.plain)
                 }
             }
+            .padding(.horizontal, 20)
 
             if isLoadingMore {
                 ProgressView()
@@ -460,19 +513,24 @@ private struct RetryStateView: View {
 
 private struct FeaturedSectionSkeleton: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(.white.opacity(0.12))
-                .frame(width: 140, height: 20)
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(.white.opacity(0.12))
+                    .frame(width: 120, height: 24)
+            }
+            .padding(.horizontal, 20)
 
-            HStack(spacing: 20) {
-                ForEach(0 ..< 3, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(.white.opacity(0.06))
-                        .aspectRatio(2 / 3, contentMode: .fit)
-                        .frame(width: 120)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(0 ..< 4, id: \.self) { _ in
+                        SoulerBookCoverView(name: "      ", imageURL: nil)
+                            .frame(width: 130)
+                    }
                 }
             }
+            .contentMargins(.horizontal, 20, for: .scrollContent)
+            .disabled(true)
         }
         .redacted(reason: .placeholder)
     }
@@ -484,11 +542,10 @@ private struct SoulerBookSkeletonGrid: View {
     var body: some View {
         LazyVGrid(columns: columns, spacing: 24) {
             ForEach(0 ..< 9, id: \.self) { _ in
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(.white.opacity(0.06))
-                    .aspectRatio(2 / 3, contentMode: .fit)
+                SoulerBookCoverView(name: "      ", imageURL: nil)
             }
         }
         .redacted(reason: .placeholder)
+        .padding(.horizontal, 20)
     }
 }
