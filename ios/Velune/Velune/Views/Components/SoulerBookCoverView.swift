@@ -14,20 +14,9 @@ struct SoulerBookCoverView: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(.white.opacity(0.06))
 
-            if let imageURL {
-                AsyncImage(url: imageURL) { phase in
-                    switch phase {
-                    case let .success(image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    case .empty:
-                        ProgressView()
-                            .controlSize(.small)
-                            .tint(UITheme.secondaryText)
-                    default:
-                        fallbackCover
-                    }
+            if imageURL != nil {
+                CachedRemoteImage(url: imageURL, contentMode: .fill) {
+                    fallbackCover
                 }
             } else {
                 fallbackCover

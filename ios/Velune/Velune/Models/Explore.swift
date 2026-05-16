@@ -1,20 +1,20 @@
 import Foundation
 import Supabase
 
-struct ExploreSoulerItem: Identifiable, Equatable, Codable {
+struct ExploreSoulerItem: Identifiable, Equatable, Codable, Sendable {
     var id: UUID
     var name: String
     var imageURL: URL?
 }
 
-struct ExploreSection: Identifiable, Equatable {
+struct ExploreSection: Identifiable, Equatable, Codable, Sendable {
     var id: UUID
     var title: String
     var subtitle: String
     var soulers: [ExploreSoulerItem]
 }
 
-struct LatestSoulersPage: Equatable {
+struct LatestSoulersPage: Equatable, Sendable {
     var page: Int
     var items: [ExploreSoulerItem]
     var hasNextPage: Bool

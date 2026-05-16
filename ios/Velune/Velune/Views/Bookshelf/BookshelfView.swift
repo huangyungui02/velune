@@ -1,6 +1,9 @@
+import SwiftData
 import SwiftUI
 
 struct BookshelfView: View {
+    @Environment(\.modelContext) private var context
+    @State private var authManager = AuthManager.shared
     @State private var items: [BookshelfItem] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -42,7 +45,7 @@ struct BookshelfView: View {
                     .disabled(isLoading)
                 }
             }
-            .task {
+            .task(id: authManager.currentUserId) {
                 await loadBookshelf()
             }
         }
@@ -55,14 +58,43 @@ struct BookshelfView: View {
     @MainActor
     private func loadBookshelf() async {
         if isLoading { return }
-        isLoading = true
+
+        guard let userId = authManager.currentUserId?.uuidString else {
+            items = []
+            errorMessage = nil
+            return
+        }
+
+        let hasLocalCache = loadLocalBookshelf(userId: userId)
+        isLoading = !hasLocalCache
         errorMessage = nil
         defer { isLoading = false }
 
         do {
-            items = try await BookshelfItem.fetch()
+            let remoteItems = try await BookshelfItem.fetch()
+            let hasChanges = try BookshelfItem.mergeCached(remoteItems, userId: userId, context: context)
+            if hasChanges || items.isEmpty {
+                items = try BookshelfItem.fetchCached(userId: userId, context: context)
+            }
         } catch {
-            errorMessage = error.localizedDescription
+            if !hasLocalCache && items.isEmpty {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    @MainActor
+    @discardableResult
+    private func loadLocalBookshelf(userId: String) -> Bool {
+        do {
+            items = try BookshelfItem.fetchCached(userId: userId, context: context)
+            if !items.isEmpty {
+                errorMessage = nil
+            }
+            return !items.isEmpty
+        } catch {
+            items = []
+            return false
         }
     }
 }

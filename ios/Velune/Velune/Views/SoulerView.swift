@@ -137,21 +137,9 @@ private struct SoulerPortraitView: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(Color.white.opacity(0.06))
 
-            if let imageURL {
-                AsyncImage(url: imageURL) { phase in
-                    switch phase {
-                    case let .success(image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    case .failure:
-                        SoulerPortraitFallback(name: name)
-                    case .empty:
-                        ProgressView()
-                            .tint(UITheme.tertiaryText)
-                    @unknown default:
-                        SoulerPortraitFallback(name: name)
-                    }
+            if imageURL != nil {
+                CachedRemoteImage(url: imageURL, contentMode: .fill) {
+                    SoulerPortraitFallback(name: name)
                 }
             } else {
                 SoulerPortraitFallback(name: name)

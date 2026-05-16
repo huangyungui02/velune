@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import SwiftData
 
 struct BookshelfItem: Identifiable, Equatable {
     var id: UUID
@@ -81,6 +82,16 @@ extension BookshelfItem {
         }
     }
 
+    @MainActor
+    static func fetchCached(userId: String, context: ModelContext) throws -> [BookshelfItem] {
+        try Resonance.fetchCached(userId: userId, context: context).map(Self.init(resonance:))
+    }
+
+    @MainActor
+    static func mergeCached(_ remoteItems: [BookshelfItem], userId: String, context: ModelContext) throws -> Bool {
+        try Resonance.mergeCached(remoteItems.map { $0.asResonance(userId: userId) }, userId: userId, context: context)
+    }
+
     private static func fetchImages(soulerIds: [UUID], supabase: SupabaseClient) async throws -> [UUID: URL] {
         guard !soulerIds.isEmpty else { return [:] }
         let rows: [SoulerCoverRow] = try await supabase
@@ -112,5 +123,31 @@ extension BookshelfItem {
             .execute()
             .value
         return Dictionary(uniqueKeysWithValues: rows.map { ($0.id, $0.chapterId) })
+    }
+
+    private init(resonance: Resonance) {
+        self.init(
+            id: resonance.id,
+            soulerId: resonance.soulerId,
+            soulerName: resonance.soulerName,
+            lastSessionId: resonance.lastSessionId,
+            lastChapterId: nil,
+            lastSessionTitle: resonance.lastSessionTitle,
+            updatedAt: resonance.updatedAt,
+            imageURL: resonance.soulerAvatarURL.flatMap(URL.init(string:))
+        )
+    }
+
+    private func asResonance(userId: String) -> Resonance {
+        Resonance(
+            id: id,
+            userId: userId,
+            soulerId: soulerId,
+            soulerName: soulerName,
+            soulerAvatarURL: imageURL?.absoluteString,
+            lastSessionId: lastSessionId,
+            lastSessionTitle: lastSessionTitle,
+            updatedAt: updatedAt
+        )
     }
 }

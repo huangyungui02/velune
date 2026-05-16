@@ -1,3 +1,4 @@
+import OSLog
 import SwiftUI
 
 private enum ExploreTab: String, CaseIterable, Identifiable {
@@ -49,6 +50,18 @@ struct ExploreView: View {
         !normalizedSearchText.isEmpty
     }
 
+    private var visibleErrorMessage: String? {
+        guard let errorMessage else { return nil }
+
+        if selectedTab == .featured, !featuredSections.isEmpty {
+            return nil
+        }
+        if selectedTab == .latest, !latestItems.isEmpty {
+            return nil
+        }
+        return errorMessage
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -83,7 +96,7 @@ struct ExploreView: View {
                             isLoadingFeatured: isLoadingFeatured,
                             isLoadingLatest: isLoadingLatest,
                             isLoadingMoreLatest: isLoadingMoreLatest,
-                            errorMessage: errorMessage,
+                            errorMessage: visibleErrorMessage,
                             gridColumns: gridColumns,
                             onRefresh: refreshCurrentTab,
                             onLoadMoreLatest: loadMoreLatest
@@ -93,7 +106,7 @@ struct ExploreView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .task {
-                await loadFeaturedIfNeeded()
+                await loadCachedExploreThenRefresh()
             }
             .onChange(of: selectedTab) { _, tab in
                 guard tab == .latest else { return }
@@ -109,9 +122,14 @@ struct ExploreView: View {
     }
 
     @MainActor
-    private func loadFeaturedIfNeeded() async {
-        guard featuredSections.isEmpty else { return }
-        await loadFeatured()
+    private func loadCachedExploreThenRefresh() async {
+        await loadCachedExplore()
+
+        if selectedTab == .featured {
+            await loadFeatured()
+        } else {
+            await loadLatest(reset: true)
+        }
     }
 
     @MainActor
@@ -139,8 +157,9 @@ struct ExploreView: View {
 
         do {
             featuredSections = try await ExploreSection.featured()
+            saveExploreCache()
         } catch {
-            errorMessage = error.localizedDescription
+            handleRefreshFailure(error)
         }
     }
 
@@ -152,6 +171,10 @@ struct ExploreView: View {
     private func loadLatest(reset: Bool) async {
         if isLoadingLatest || isLoadingMoreLatest { return }
         if !reset, !latestHasMore { return }
+
+        let previousItems = latestItems
+        let previousPage = latestPage
+        let previousHasMore = latestHasMore
 
         if reset {
             isLoadingLatest = true
@@ -171,8 +194,56 @@ struct ExploreView: View {
             latestPage = page.page
             latestHasMore = page.hasNextPage
             latestItems = reset ? page.items : latestItems + page.items
+            saveExploreCache()
         } catch {
+            if reset {
+                latestItems = previousItems
+                latestPage = previousPage
+                latestHasMore = previousHasMore
+            }
+            handleRefreshFailure(error)
+        }
+    }
+
+    @MainActor
+    private func loadCachedExplore() async {
+        do {
+            guard let payload = try ExploreCacheStore.shared.load() else { return }
+            featuredSections = payload.featuredSections
+            latestItems = payload.latestItems
+            latestPage = payload.latestPage
+            latestHasMore = payload.latestHasMore
+            errorMessage = nil
+        } catch {
+            AppLogger.storage.debug("Failed to load Explore cache: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    @MainActor
+    private func handleRefreshFailure(_ error: Error) {
+        if featuredSections.isEmpty && latestItems.isEmpty {
             errorMessage = error.localizedDescription
+        } else {
+            errorMessage = nil
+        }
+    }
+
+    @MainActor
+    private func saveExploreCache() {
+        let payload = CachedExplorePayload(
+            savedAt: Date(),
+            featuredSections: featuredSections,
+            latestItems: latestItems,
+            latestPage: latestPage,
+            latestHasMore: latestHasMore
+        )
+
+        Task {
+            do {
+                try ExploreCacheStore.shared.save(payload)
+            } catch {
+                AppLogger.storage.debug("Failed to save Explore cache: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 
