@@ -2,45 +2,32 @@ import SwiftUI
 
 struct ContentView: View {
     private enum AppTab: Hashable {
-        case chat
-        case explore
-        case bookshelf
+        case starSea
+        case reading
         case profile
     }
 
-    @State private var selectedTab: AppTab = .chat
-    @State private var composeRequestID = 0
+    @State private var selectedTab: AppTab = .starSea
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            StarSeaView(composeRequestID: $composeRequestID)
+            StarSeaView()
                 .tabItem {
-                    Label("app.tab.chat", systemImage: "message")
+                    Label("app.tab.starsea", systemImage: "sparkles")
                 }
-                .tag(AppTab.chat)
+                .tag(AppTab.starSea)
 
-            ExploreView()
+            ReadingView()
                 .tabItem {
-                    Label("app.tab.explore", systemImage: "safari")
+                    Label("app.tab.reading", systemImage: "books.vertical")
                 }
-                .tag(AppTab.explore)
+                .tag(AppTab.reading)
 
-            BookshelfView()
-                .tabItem {
-                    Label("app.tab.bookshelf", systemImage: "books.vertical")
-                }
-                .tag(AppTab.bookshelf)
-
-            ProfileView(onOpenGlimmerComposer: openGlimmerComposer)
+            ProfileView()
             .tabItem {
                 Label("app.tab.profile", systemImage: "person.crop.circle")
             }
             .tag(AppTab.profile)
         }
-    }
-
-    private func openGlimmerComposer() {
-        selectedTab = .chat
-        composeRequestID += 1
     }
 }

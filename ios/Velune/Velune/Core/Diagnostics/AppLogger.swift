@@ -12,5 +12,5 @@ nonisolated enum AppLogger {
     static let chat = Logger(subsystem: subsystem, category: "chat")
     static let network = Logger(subsystem: subsystem, category: "network")
     static let storage = Logger(subsystem: subsystem, category: "storage")
-    static let profile = Logger(subsystem: subsystem, category: "profile")
+    static let glimmerHistory = Logger(subsystem: subsystem, category: "glimmer-history")
 }

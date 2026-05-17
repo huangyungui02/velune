@@ -10,13 +10,13 @@ private enum TimelineBucket: Hashable {
     func title(calendar: Calendar, locale: Locale, now: Date = Date()) -> Text {
         switch self {
         case .today:
-            return Text("profile.section.today")
+            return Text("glimmerHistory.section.today")
         case .yesterday:
-            return Text("profile.section.yesterday")
+            return Text("glimmerHistory.section.yesterday")
         case .lastWeek:
-            return Text("profile.section.pastWeek")
+            return Text("glimmerHistory.section.pastWeek")
         case .lastMonth:
-            return Text("profile.section.pastMonth")
+            return Text("glimmerHistory.section.pastMonth")
         case let .month(year, month):
             return Text(verbatim: Self.monthTitle(year: year, month: month, calendar: calendar, locale: locale, now: now))
         }
@@ -106,7 +106,7 @@ private extension TimelineBucket {
     }
 }
 
-struct ProfileTimelineList: View {
+struct GlimmerHistoryTimelineList: View {
     let glimmers: [Glimmer]
     let isRefreshing: Bool
     let isLoadingMore: Bool
@@ -131,7 +131,7 @@ struct ProfileTimelineList: View {
             } else {
                 LazyVStack(alignment: .leading, spacing: 20) {
                     ForEach(sections) { section in
-                        ProfileTimelineSectionView(section: section, calendar: calendar, locale: locale)
+                        GlimmerHistoryTimelineSectionView(section: section, calendar: calendar, locale: locale)
                     }
 
                     loadMoreFooter
@@ -169,7 +169,7 @@ struct ProfileTimelineList: View {
     }
 }
 
-private struct ProfileTimelineSectionView: View {
+private struct GlimmerHistoryTimelineSectionView: View {
     let section: TimelineSection
     let calendar: Calendar
     let locale: Locale
@@ -185,7 +185,7 @@ private struct ProfileTimelineSectionView: View {
 
             VStack(spacing: 0) {
                 ForEach(Array(section.items.enumerated()), id: \.element.id) { index, glimmer in
-                    NavigationLink(value: ProfileRoute.glimmer(glimmer.id)) {
+                    NavigationLink(value: GlimmerHistoryRoute.glimmer(glimmer.id)) {
                         GlimmerListRow(glimmer: glimmer)
                     }
                     .buttonStyle(.plain)

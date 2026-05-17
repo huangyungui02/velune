@@ -66,8 +66,7 @@
 
 "app.tab.starsea" = "Star Sea";
 "app.tab.chat" = "Chat";
-"app.tab.explore" = "Explore";
-"app.tab.bookshelf" = "Bookshelf";
+"app.tab.reading" = "Reading";
 "app.tab.resonance" = "Resonance";
 "app.tab.map" = "Map";
 "app.tab.profile" = "Me";
@@ -79,22 +78,23 @@
 "sign.terms.label" = "Terms of Service";
 "sign.privacy.label" = "Privacy Policy";
 
-"anonymous.restricted.profile.title" = "Unlock Hearthaven";
-"anonymous.restricted.profile.description" = "Sign in to view, keep, and revisit your glimmers.";
+"anonymous.restricted.glimmerHistory.title" = "Unlock Hearthaven";
+"anonymous.restricted.glimmerHistory.description" = "Sign in to view, keep, and revisit your glimmers.";
 "anonymous.restricted.resonance.title" = "Open Resonance Threads";
 "anonymous.restricted.resonance.description" = "Sign in to browse resonances and return to each conversation.";
 
-"profile.empty.noGlimmers" = "No glimmers yet";
-"profile.empty.noGlimmers.subtitle" = "Write your first glimmer, and listen for the first echo.";
-"profile.title.glimmers" = "Hearthaven";
-"profile.section.today" = "Today";
-"profile.section.yesterday" = "Yesterday";
-"profile.section.pastWeek" = "Past Week";
-"profile.section.pastMonth" = "Past Month";
+"glimmerHistory.empty.noGlimmers" = "No glimmers yet";
+"glimmerHistory.empty.noGlimmers.subtitle" = "Write your first glimmer, and listen for the first echo.";
+"glimmerHistory.title" = "Hearthaven";
+"glimmerHistory.section.today" = "Today";
+"glimmerHistory.section.yesterday" = "Yesterday";
+"glimmerHistory.section.pastWeek" = "Past Week";
+"glimmerHistory.section.pastMonth" = "Past Month";
 
 "starsea.hero.verse" = "A glimmer in the heart, and the universe unfolds.";
 "starsea.prompt.glimmerWithin" = "What glimmers within you";
 "starsea.action.writeGlimmer" = "Write a glimmer";
+"starsea.action.history" = "History";
 "starsea.empty.resonanceTitle" = "No resonances yet";
 "starsea.empty.resonanceSubtitle" = "Write your first glimmer, and listen for the first echo.";
 
@@ -158,11 +158,11 @@
 "paywall.restore.signInRequired.description" = "Anonymous accounts can’t restore purchases. Sign in to continue.";
 "souler.bio.empty.title" = "This page is being perfected";
 "common.refresh" = "Refresh";
-"explore.title" = "Explore";
-"explore.tab.featured" = "Featured";
-"explore.tab.latest" = "Latest";
-"explore.search.placeholder" = "Search people";
-"explore.empty.featured" = "No featured sections yet";
-"explore.empty.latest" = "No latest soulers yet";
-"bookshelf.title" = "Bookshelf";
-"bookshelf.empty" = "Bookshelf is empty";
+"reading.title" = "Reading";
+"reading.tab.featured" = "Featured";
+"reading.tab.latest" = "Latest";
+"reading.tab.bookshelf" = "Bookshelf";
+"reading.search.placeholder" = "Search people";
+"reading.empty.featured" = "No featured sections yet";
+"reading.empty.latest" = "No latest soulers yet";
+"reading.empty.bookshelf" = "Bookshelf is empty";

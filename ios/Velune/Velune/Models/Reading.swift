@@ -1,26 +1,26 @@
 import Foundation
 import Supabase
 
-struct ExploreSoulerItem: Identifiable, Equatable, Codable, Sendable {
+struct ReadingSoulerItem: Identifiable, Equatable, Codable, Sendable {
     var id: UUID
     var name: String
     var imageURL: URL?
 }
 
-struct ExploreSection: Identifiable, Equatable, Codable, Sendable {
+struct ReadingSection: Identifiable, Equatable, Codable, Sendable {
     var id: UUID
     var title: String
     var subtitle: String
-    var soulers: [ExploreSoulerItem]
+    var soulers: [ReadingSoulerItem]
 }
 
-struct LatestSoulersPage: Equatable, Sendable {
+struct LatestReadingSoulersPage: Equatable, Sendable {
     var page: Int
-    var items: [ExploreSoulerItem]
+    var items: [ReadingSoulerItem]
     var hasNextPage: Bool
 }
 
-extension ExploreSoulerItem {
+extension ReadingSoulerItem {
     private struct SoulerRow: Decodable {
         var id: UUID
         var name: String?
@@ -47,7 +47,7 @@ extension ExploreSoulerItem {
 
     private static let fallbackName = String(localized: "resonance.unknownSouler")
 
-    static func latest(page: Int, pageSize: Int = 20) async throws -> LatestSoulersPage {
+    static func latest(page: Int, pageSize: Int = 20) async throws -> LatestReadingSoulersPage {
         let normalizedPage = max(page, 1)
         let size = max(pageSize, 1)
         let from = (normalizedPage - 1) * size
@@ -63,14 +63,14 @@ extension ExploreSoulerItem {
             .value
 
         let limitedRows = Array(rows.prefix(size))
-        return LatestSoulersPage(
+        return LatestReadingSoulersPage(
             page: normalizedPage,
             items: try await mapRows(limitedRows),
             hasNextPage: rows.count > size
         )
     }
 
-    static func search(query: String, limit: Int = 24) async throws -> [ExploreSoulerItem] {
+    static func search(query: String, limit: Int = 24) async throws -> [ReadingSoulerItem] {
         let normalizedQuery = query
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
@@ -140,12 +140,12 @@ extension ExploreSoulerItem {
         return result
     }
 
-    private static func mapRows(_ rows: [SoulerRow]) async throws -> [ExploreSoulerItem] {
+    private static func mapRows(_ rows: [SoulerRow]) async throws -> [ReadingSoulerItem] {
         let avatarByWikiId = try await resolveImageURLs(wikiIds: rows.map(\.wikiId))
         return rows.map { row in
             let name = row.name?.trimmingCharacters(in: .whitespacesAndNewlines)
             let wikiId = normalizeWikiId(row.wikiId)
-            return ExploreSoulerItem(
+            return ReadingSoulerItem(
                 id: row.id,
                 name: name?.isEmpty == false ? name! : fallbackName,
                 imageURL: wikiId.flatMap { avatarByWikiId[$0] }
@@ -166,7 +166,7 @@ extension ExploreSoulerItem {
     }
 }
 
-extension ExploreSection {
+extension ReadingSection {
     private struct SectionRow: Decodable {
         var id: UUID
         var lang: String
@@ -196,7 +196,7 @@ extension ExploreSection {
         }
     }
 
-    static func featured(preferredLang: String = AppLanguage.current.apiLanguageCode) async throws -> [ExploreSection] {
+    static func featured(preferredLang: String = AppLanguage.current.apiLanguageCode) async throws -> [ReadingSection] {
         let supabase = try Backend.requireSupabase()
         var sectionRows = try await fetchSections(lang: preferredLang, supabase: supabase)
         if sectionRows.isEmpty, preferredLang != "zh" {
@@ -244,13 +244,13 @@ extension ExploreSection {
             .execute()
             .value
 
-        let avatarByWikiId = try await ExploreSoulerItem.resolveImageURLs(wikiIds: soulerRows.map(\.wikiId))
+        let avatarByWikiId = try await ReadingSoulerItem.resolveImageURLs(wikiIds: soulerRows.map(\.wikiId))
         let soulerById = Dictionary(uniqueKeysWithValues: soulerRows.map { row in
             let name = row.name?.trimmingCharacters(in: .whitespacesAndNewlines)
             let wikiId = row.wikiId?.trimmingCharacters(in: .whitespacesAndNewlines)
             return (
                 row.id,
-                ExploreSoulerItem(
+                ReadingSoulerItem(
                     id: row.id,
                     name: name?.isEmpty == false ? name! : String(localized: "resonance.unknownSouler"),
                     imageURL: wikiId.flatMap { avatarByWikiId[$0] }
@@ -266,7 +266,7 @@ extension ExploreSection {
         return sectionRows.compactMap { section in
             let soulers = (soulerIdsBySectionId[section.id] ?? []).compactMap { soulerById[$0] }
             guard !soulers.isEmpty else { return nil }
-            return ExploreSection(
+            return ReadingSection(
                 id: section.id,
                 title: section.title.trimmingCharacters(in: .whitespacesAndNewlines),
                 subtitle: section.subtitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",

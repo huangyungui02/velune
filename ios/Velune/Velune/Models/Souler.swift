@@ -81,7 +81,7 @@ extension Souler {
             .value
         let keywords = (try? await fetchKeywords(soulerId, supabase: supabase)) ?? []
         let wikiId = response.wikiId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let imageURL = try await ExploreSoulerItem.resolveImageURLs(wikiIds: [wikiId])[wikiId]
+        let imageURL = try await ReadingSoulerItem.resolveImageURLs(wikiIds: [wikiId])[wikiId]
 
         return Souler(
             id: response.id,

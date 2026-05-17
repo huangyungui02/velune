@@ -1,6 +1,10 @@
 import SwiftData
 import SwiftUI
 
+enum StarSeaRoute: Hashable {
+    case history
+}
+
 struct StarSeaView: View {
     @Environment(\.modelContext) private var context
     @State private var text = ""
@@ -12,6 +16,7 @@ struct StarSeaView: View {
     @State private var currentPage: CardID? = .glimmer
     @State private var chatRoute: EchoChatRoute?
     @State private var isComposerPresented = false
+    @State private var path = NavigationPath()
     @Binding var composeRequestID: Int
 
     init(composeRequestID: Binding<Int> = .constant(0)) {
@@ -19,7 +24,7 @@ struct StarSeaView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             mainContent
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -43,8 +48,14 @@ struct StarSeaView: View {
                         focusComposerOnAppear: true
                     )
                 }
+                .navigationDestination(for: StarSeaRoute.self) { route in
+                    switch route {
+                    case .history:
+                        GlimmerHistoryView()
+                    }
+                }
         }
-        .toolbar((isMatchingPresented || chatRoute != nil) ? .hidden : .visible, for: .tabBar)
+        .toolbar(shouldHideTabBar ? .hidden : .visible, for: .tabBar)
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
@@ -148,6 +159,10 @@ struct StarSeaView: View {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    private var shouldHideTabBar: Bool {
+        isMatchingPresented || chatRoute != nil || !path.isEmpty
+    }
+
     @ToolbarContentBuilder
     private var draftToolbarContent: some ToolbarContent {
         if hasDraft {
@@ -166,6 +181,14 @@ struct StarSeaView: View {
                 }
                 .disabled(!canSendDraft)
                 .accessibilityLabel(Text("common.submit"))
+            }
+        } else {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(value: StarSeaRoute.history) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.body.weight(.medium))
+                }
+                .accessibilityLabel(Text("starsea.action.history"))
             }
         }
     }

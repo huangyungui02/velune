@@ -101,7 +101,7 @@ extension BookshelfItem {
             .execute()
             .value
 
-        let avatarByWikiId = try await ExploreSoulerItem.resolveImageURLs(wikiIds: rows.map(\.wikiId))
+        let avatarByWikiId = try await ReadingSoulerItem.resolveImageURLs(wikiIds: rows.map(\.wikiId))
         var result: [UUID: URL] = [:]
         for row in rows {
             let wikiId = row.wikiId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
