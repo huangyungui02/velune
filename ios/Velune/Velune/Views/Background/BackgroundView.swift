@@ -15,8 +15,8 @@ struct StarryBackgroundView: View {
     var body: some View {
         ZStack {
             BackgroundView()
-            StarFieldView(starCount: 75)
-                .opacity(0.65)
+//            StarFieldView(starCount: 75)
+//                .opacity(0.65)
         }
         .ignoresSafeArea()
     }

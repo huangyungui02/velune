@@ -101,6 +101,15 @@
 "matching.status.listening" = "Listening for echoes";
 "matching.error.title" = "Error";
 "matching.error.unknown" = "Unknown error";
+"flow.status.listening" = "Listening";
+"flow.coda.line" = "Some people have entered a similar place.";
+"flow.coda.continue" = "Continue↓";
+"flow.resonance.status" = "Finding resonance";
+"flow.resonance.enter" = "Enter";
+"flow.resonance.error.empty" = "No resonant figures were found.";
+"flow.error.title" = "Error";
+"flow.error.empty" = "No themes were found.";
+"flow.error.unknown" = "The flow could not be completed.";
 
 "glimmer.title" = "Glimmer";
 "glimmer.action.delete" = "Delete";

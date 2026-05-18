@@ -1,4 +1,3 @@
-import SwiftData
 import SwiftUI
 
 enum StarSeaRoute: Hashable {
@@ -6,15 +5,12 @@ enum StarSeaRoute: Hashable {
 }
 
 struct StarSeaView: View {
-    @Environment(\.modelContext) private var context
     @State private var text = ""
-    @State private var isMatchingPresented = false
-    @State private var manager = MatchingManager.shared
+    @State private var isFlowPresented = false
+    @State private var isFlowResonancePresented = false
+    @State private var flowManager = FlowManager()
     @State private var showError = false
-    @State private var showPaywall = false
     @State private var shouldRecoverToVerseAfterError = false
-    @State private var currentPage: CardID? = .glimmer
-    @State private var chatRoute: EchoChatRoute?
     @State private var isComposerPresented = false
     @State private var path = NavigationPath()
     @Binding var composeRequestID: Int
@@ -30,22 +26,17 @@ struct StarSeaView: View {
                 .toolbar {
                     draftToolbarContent
                 }
-                .navigationDestination(isPresented: $isMatchingPresented) {
-                    MatchingView(
-                        manager: manager,
-                        currentPage: $currentPage,
-                        chatRoute: $chatRoute,
-                        onClose: closeCurrentGlimmer
+                .navigationDestination(isPresented: $isFlowPresented) {
+                    FlowView(
+                        manager: flowManager,
+                        onClose: closeCurrentFlow,
+                        onContinue: showFlowResonances
                     )
                 }
-                .navigationDestination(item: $chatRoute) { route in
-                    ChatView(
-                        sessionId: route.sessionId,
-                        echoId: route.sessionId == nil ? route.echoId : nil,
-                        draftPrelude: route.draftPrelude,
-                        soulerId: route.soulerId,
-                        soulerName: route.soulerName,
-                        focusComposerOnAppear: true
+                .navigationDestination(isPresented: $isFlowResonancePresented) {
+                    FlowResonanceView(
+                        manager: flowManager,
+                        onClose: closeCurrentFlow
                     )
                 }
                 .navigationDestination(for: StarSeaRoute.self) { route in
@@ -56,9 +47,6 @@ struct StarSeaView: View {
                 }
         }
         .toolbar(shouldHideTabBar ? .hidden : .visible, for: .tabBar)
-        .sheet(isPresented: $showPaywall) {
-            PaywallView()
-        }
         .fullScreenCover(isPresented: $isComposerPresented) {
             StarSeaComposerCover(
                 text: $text,
@@ -66,8 +54,8 @@ struct StarSeaView: View {
                 onSend: send
             )
         }
-        .onChange(of: manager.errorMessage) { _, newValue in
-            if isMatchingPresented, newValue != nil {
+        .onChange(of: flowManager.errorMessage) { _, newValue in
+            if isFlowPresented, newValue != nil {
                 shouldRecoverToVerseAfterError = true
             }
             showError = newValue != nil
@@ -78,27 +66,22 @@ struct StarSeaView: View {
             }
         }
         .onChange(of: composeRequestID) { _, _ in
-            if manager.isMatching {
-                isMatchingPresented = true
+            if flowManager.isFlowing || !flowManager.submittedText.isEmpty {
+                isFlowPresented = true
             } else {
-                isMatchingPresented = false
+                isFlowPresented = false
                 presentComposer()
             }
         }
-        .alert("matching.error.title", isPresented: $showError) {
-            if manager.billingErrorContext?.shouldOfferUpgrade == true {
-                Button("billing.action.openPaywall") {
-                    showPaywall = true
-                }
-            }
+        .alert("flow.error.title", isPresented: $showError) {
             Button("common.ok", role: .cancel) {
                 recoverToVerseAfterError()
             }
         } message: {
-            if let errorMessage = manager.errorMessage {
+            if let errorMessage = flowManager.errorMessage {
                 Text(errorMessage)
             } else {
-                Text("matching.error.unknown")
+                Text("flow.error.unknown")
             }
         }
     }
@@ -160,7 +143,7 @@ struct StarSeaView: View {
     }
 
     private var shouldHideTabBar: Bool {
-        isMatchingPresented || chatRoute != nil || !path.isEmpty
+        isFlowPresented || !path.isEmpty
     }
 
     @ToolbarContentBuilder
@@ -202,16 +185,15 @@ struct StarSeaView: View {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         isComposerPresented = false
 
-        manager.startMatching(text: input, context: context)
+        flowManager.start(text: input)
         text = ""
-        currentPage = .glimmer
 
         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-            isMatchingPresented = true
+            isFlowPresented = true
         }
     }
 
-    private func closeCurrentGlimmer() {
+    private func closeCurrentFlow() {
         resetToVerse()
     }
 
@@ -221,10 +203,18 @@ struct StarSeaView: View {
     }
 
     private func resetToVerse() {
-        manager.reset()
-        isMatchingPresented = false
-        currentPage = .glimmer
+        flowManager.reset()
+        isFlowResonancePresented = false
+        isFlowPresented = false
         isComposerPresented = false
+    }
+
+    private func showFlowResonances() {
+        guard !flowManager.keywords.isEmpty else { return }
+
+        withAnimation(.spring(response: 0.58, dampingFraction: 0.84)) {
+            isFlowResonancePresented = true
+        }
     }
 
     private func presentComposer() {

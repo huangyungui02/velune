@@ -101,6 +101,15 @@
 "matching.status.listening" = "正在聆听回响";
 "matching.error.title" = "错误";
 "matching.error.unknown" = "未知错误";
+"flow.status.listening" = "正在辨认";
+"flow.coda.line" = "有一些人曾走进过类似的地方。";
+"flow.coda.continue" = "继续↓";
+"flow.resonance.status" = "正在寻找共鸣";
+"flow.resonance.enter" = "进入";
+"flow.resonance.error.empty" = "还没有找到可以共鸣的人。";
+"flow.error.title" = "错误";
+"flow.error.empty" = "还没有辨认出主题。";
+"flow.error.unknown" = "暂时无法继续这段流动。";
 
 "glimmer.title" = "心澜";
 "glimmer.action.delete" = "删除";
