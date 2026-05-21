@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from app.domain.exceptions import CreditLimitError
 
-from ._client import first_row, supabase
+from ._client import await_repo, first_row, get_supabase
 
 
-def consume_stardust(user_id: str, amount: int) -> None:
-    response = supabase.rpc(
-        "consume_stardust",
-        {
-            "p_user_id": user_id,
-            "p_cost": amount,
-        },
-    ).execute()
+async def consume_stardust(user_id: str, amount: int) -> None:
+    response = await await_repo(
+        get_supabase().rpc(
+            "consume_stardust",
+            {
+                "p_user_id": user_id,
+                "p_cost": amount,
+            },
+        ).execute()
+    )
     row = first_row(response.data)
     if not row:
         raise ValueError("Failed to consume stardust")
@@ -25,14 +27,16 @@ def consume_stardust(user_id: str, amount: int) -> None:
     raise CreditLimitError(message, code)
 
 
-def refund_stardust(user_id: str, amount: int) -> None:
-    response = supabase.rpc(
-        "refund_stardust",
-        {
-            "p_user_id": user_id,
-            "p_amount": amount,
-        },
-    ).execute()
+async def refund_stardust(user_id: str, amount: int) -> None:
+    response = await await_repo(
+        get_supabase().rpc(
+            "refund_stardust",
+            {
+                "p_user_id": user_id,
+                "p_amount": amount,
+            },
+        ).execute()
+    )
     row = first_row(response.data)
     if not row:
         raise ValueError("Failed to refund stardust")

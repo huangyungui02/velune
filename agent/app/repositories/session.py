@@ -6,13 +6,14 @@ from postgrest.types import ReturnMethod
 
 from app.domain.types import Session
 
-from ._client import first_row, supabase
+from ._client import await_repo, first_row, get_supabase
 from .parsers import to_chapter, to_souler
 
 
-def get_session_by_id(user_id: str, session_id: str) -> Session:
-    response = (
-        supabase.table("sessions")
+async def get_session_by_id(user_id: str, session_id: str) -> Session:
+    response = await await_repo(
+        get_supabase()
+        .table("sessions")
         .select(
             "id, user_id, souler_id, title, chapter_id, "
             "soulers(id, name, bio), "
@@ -39,14 +40,15 @@ def get_session_by_id(user_id: str, session_id: str) -> Session:
     }
 
 
-def create_session(
+async def create_session(
     user_id: str,
     souler_id: str,
     title: str = "",
     chapter_id: str | None = None,
 ) -> str:
-    response = (
-        supabase.table("sessions")
+    response = await await_repo(
+        get_supabase()
+        .table("sessions")
         .insert(
             {
                 "user_id": user_id,
@@ -64,9 +66,10 @@ def create_session(
     return str(row["id"])
 
 
-def delete_session(user_id: str, session_id: str) -> None:
-    (
-        supabase.table("sessions")
+async def delete_session(user_id: str, session_id: str) -> None:
+    await await_repo(
+        get_supabase()
+        .table("sessions")
         .delete()
         .eq("id", session_id)
         .eq("user_id", user_id)
@@ -74,21 +77,36 @@ def delete_session(user_id: str, session_id: str) -> None:
     )
 
 
-def update_session_title(user_id: str, session_id: str, title: str) -> None:
-    (
-        supabase.table("sessions")
+async def update_session_title(
+    user_id: str,
+    session_id: str,
+    title: str,
+    *,
+    timeout: float | None = None,
+) -> None:
+    await await_repo(
+        get_supabase()
+        .table("sessions")
         .update({"title": title})
         .eq("id", session_id)
         .eq("user_id", user_id)
-        .execute()
+        .execute(),
+        timeout=timeout,
     )
 
 
-def touch_session(user_id: str, session_id: str) -> None:
-    (
-        supabase.table("sessions")
+async def touch_session(
+    user_id: str,
+    session_id: str,
+    *,
+    timeout: float | None = None,
+) -> None:
+    await await_repo(
+        get_supabase()
+        .table("sessions")
         .update({"updated_at": datetime.now(timezone.utc).isoformat()})
         .eq("id", session_id)
         .eq("user_id", user_id)
-        .execute()
+        .execute(),
+        timeout=timeout,
     )

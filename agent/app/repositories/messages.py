@@ -5,14 +5,15 @@ from postgrest.types import ReturnMethod
 from app.config import get_settings
 from app.domain.types import Message, Role
 
-from ._client import first_row, supabase
+from ._client import await_repo, first_row, get_supabase
 
 settings = get_settings()
 
 
-def get_recent_messages(user_id: str, session_id: str) -> list[Message]:
-    response = (
-        supabase.table("messages")
+async def get_recent_messages(user_id: str, session_id: str) -> list[Message]:
+    response = await await_repo(
+        get_supabase()
+        .table("messages")
         .select("id, user_id, souler_id, session_id, role, content, created_at")
         .eq("user_id", user_id)
         .eq("session_id", session_id)
@@ -26,15 +27,18 @@ def get_recent_messages(user_id: str, session_id: str) -> list[Message]:
     return rows  # type: ignore[return-value]
 
 
-def insert_message(
+async def insert_message(
     user_id: str,
     souler_id: str,
     session_id: str,
     role: Role,
     content: str,
+    *,
+    timeout: float | None = None,
 ) -> dict[str, str]:
-    response = (
-        supabase.table("messages")
+    response = await await_repo(
+        get_supabase()
+        .table("messages")
         .insert(
             {
                 "user_id": user_id,
@@ -45,7 +49,8 @@ def insert_message(
             },
             returning=ReturnMethod.representation,
         )
-        .execute()
+        .execute(),
+        timeout=timeout,
     )
 
     row = first_row(response.data)

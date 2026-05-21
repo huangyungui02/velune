@@ -1,13 +1,23 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from app.api.router import router
 from app.config import get_settings
+from app.repositories._client import init_supabase
 
 settings = get_settings()
 
-app = FastAPI(title=settings.APP_NAME)
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    await init_supabase()
+    yield
+
+
+app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
 app.include_router(router)
 
 

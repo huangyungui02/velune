@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from ._client import first_row, supabase
-from .parsers import to_chapter, to_souler
 from app.domain.types import Chapter, Souler
 
+from ._client import await_repo, first_row, get_supabase
+from .parsers import to_chapter, to_souler
 
-def get_souler_by_id(souler_id: str) -> Souler:
-    response = (
-        supabase.table("soulers")
+
+async def get_souler_by_id(souler_id: str) -> Souler:
+    response = await await_repo(
+        get_supabase()
+        .table("soulers")
         .select("id, name, bio")
         .eq("id", souler_id)
         .single()
@@ -19,9 +21,10 @@ def get_souler_by_id(souler_id: str) -> Souler:
     return to_souler(row)
 
 
-def get_chapter_by_id(chapter_id: str) -> Chapter:
-    response = (
-        supabase.table("chapters")
+async def get_chapter_by_id(chapter_id: str) -> Chapter:
+    response = await await_repo(
+        get_supabase()
+        .table("chapters")
         .select("id, souler_id, seq, title, subtitle, role, task")
         .eq("id", chapter_id)
         .single()
