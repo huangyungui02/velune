@@ -1,4 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS moddatetime schema extensions;
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
 
 CREATE TABLE IF NOT EXISTS public.chapters (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -8,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.chapters (
     subtitle TEXT NOT NULL,
     role TEXT NOT NULL,
     task TEXT NOT NULL,
+    "for" TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT chapters_souler_seq_unique UNIQUE (souler_id, seq)
@@ -37,5 +39,27 @@ CREATE POLICY "Deny anyone from deleting chapters"
 
 CREATE TRIGGER handle_chapters_updated_at
     BEFORE UPDATE ON public.chapters
+    FOR EACH ROW
+    EXECUTE FUNCTION extensions.moddatetime(updated_at);
+
+CREATE TABLE IF NOT EXISTS public.chapter_embeddings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chapter_id UUID NOT NULL REFERENCES public.chapters(id) ON DELETE CASCADE,
+    source_text TEXT NOT NULL,
+    embedding extensions.vector(1024) NOT NULL,
+    model TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chapter_embeddings_chapter_id_unique UNIQUE (chapter_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_chapter_embeddings_embedding_hnsw
+    ON public.chapter_embeddings
+    USING hnsw (embedding vector_cosine_ops);
+
+ALTER TABLE public.chapter_embeddings ENABLE ROW LEVEL SECURITY;
+
+CREATE TRIGGER handle_chapter_embeddings_updated_at
+    BEFORE UPDATE ON public.chapter_embeddings
     FOR EACH ROW
     EXECUTE FUNCTION extensions.moddatetime(updated_at);
