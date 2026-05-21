@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 from uuid import UUID
 
-from app.chat.chapters.reply import parse_chapter_combined_response
-from app.config import get_settings
-from app.shared import Lang
-from app.errors import error_log_payload
-from app.llm import complete_text
-from app.chat.preferences import ReplyLength
 from app.billing import (
     CHAT_STARDUST_COST,
     consume_stardust_if_enabled,
     refund_stardust_safely,
 )
+from app.config import get_settings
+from app.core.lang import Lang
+from app.errors import error_log_payload
+from app.infra.blocking import run_blocking
+from app.infra.llm import DEFAULT_MODEL, complete_text
 from app.repositories import (
     create_or_update_resonance,
     create_session,
@@ -24,13 +22,12 @@ from app.repositories import (
     insert_message,
     touch_session,
 )
-
-from .prompt import build_chapter_opening_messages
+from app.services.chat.chapters.prompt import build_chapter_opening_messages
+from app.services.chat.chapters.reply import parse_chapter_combined_response
+from app.services.chat.preferences import ReplyLength
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
-
-CHAPTER_SESSION_MODEL = "qwen3.5-flash"
 
 
 async def start_chapter_session(
@@ -41,18 +38,23 @@ async def start_chapter_session(
     lang: Lang,
     reply_length: ReplyLength = "standard",
 ) -> dict[str, object]:
-    await consume_stardust_if_enabled(user_id, CHAT_STARDUST_COST)
+    await consume_stardust_if_enabled(
+        user_id,
+        CHAT_STARDUST_COST,
+        run_blocking=run_blocking,
+    )
 
     created_session_id: str | None = None
     assistant_written = False
 
     try:
-        souler = await asyncio.to_thread(get_souler_by_id, str(souler_id))
-        chapter = await asyncio.to_thread(get_chapter_by_id, str(chapter_id))
+        souler = await run_blocking("Load souler", get_souler_by_id, str(souler_id))
+        chapter = await run_blocking("Load chapter", get_chapter_by_id, str(chapter_id))
         if chapter["souler_id"] != str(souler_id):
             raise ValueError("Chapter does not belong to souler")
 
-        created_session_id = await asyncio.to_thread(
+        created_session_id = await run_blocking(
+            "Create session",
             create_session,
             user_id,
             str(souler_id),
@@ -67,7 +69,7 @@ async def start_chapter_session(
                 lang=lang,
                 reply_length=reply_length,
             ),
-            model=CHAPTER_SESSION_MODEL,
+            model=DEFAULT_MODEL,
             temperature=settings.CHAT_TEMPERATURE,
         )
         _, options = parse_chapter_combined_response(opening_raw)
@@ -75,7 +77,8 @@ async def start_chapter_session(
         if not opening_storage_content:
             raise ValueError("Empty chapter opening response")
 
-        assistant_message = await asyncio.to_thread(
+        assistant_message = await run_blocking(
+            "Insert assistant message",
             insert_message,
             user_id,
             str(souler_id),
@@ -86,8 +89,9 @@ async def start_chapter_session(
         assistant_written = True
 
         try:
-            await asyncio.to_thread(touch_session, user_id, created_session_id)
-            await asyncio.to_thread(
+            await run_blocking("Touch session", touch_session, user_id, created_session_id)
+            await run_blocking(
+                "Update resonance",
                 create_or_update_resonance,
                 user_id,
                 str(souler_id),
@@ -115,7 +119,12 @@ async def start_chapter_session(
     except Exception:
         if created_session_id and not assistant_written:
             try:
-                await asyncio.to_thread(delete_session, user_id, created_session_id)
+                await run_blocking(
+                    "Delete session",
+                    delete_session,
+                    user_id,
+                    created_session_id,
+                )
             except Exception as cleanup_error:  # noqa: BLE001
                 logger.warning(
                     "Failed to cleanup chapter session: session_id=%s error=%s",
@@ -127,5 +136,6 @@ async def start_chapter_session(
             user_id,
             CHAT_STARDUST_COST,
             reason="chapter_session_start_failed",
+            run_blocking=run_blocking,
         )
         raise

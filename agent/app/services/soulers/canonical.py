@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from app.llm import complete_json
-from app.shared import Lang
+from app.core.lang import Lang
+from app.infra.llm import DEFAULT_MODEL, complete_json
 
-CANONICAL_NAME_MODEL = "qwen3.5-flash"
 CANONICAL_NAME_TEMPERATURE = 0.25
 CANONICAL_NAME_SCHEMA = {
     "type": "object",
@@ -47,7 +46,7 @@ async def canonicalize_souler_name(name: str, lang: Lang) -> str:
             {"role": "system", "content": prompt},
             {"role": "user", "content": cleaned_name},
         ],
-        model=CANONICAL_NAME_MODEL,
+        model=DEFAULT_MODEL,
         schema_name="canonical_souler_name",
         schema=CANONICAL_NAME_SCHEMA,
         temperature=CANONICAL_NAME_TEMPERATURE,

@@ -5,12 +5,13 @@ from uuid import UUID
 
 from fastapi import Request
 
-from app.shared import Lang
 from app.billing import (
     CHAT_STARDUST_COST,
     consume_stardust_if_enabled,
     refund_stardust_safely,
 )
+from app.core.lang import Lang
+from app.infra.blocking import run_blocking
 from app.repositories import (
     ChapterContext,
     SessionContext,
@@ -23,13 +24,9 @@ from app.repositories import (
     get_user_id_from_auth_header,
     insert_message,
 )
-
-from .shared import (
-    PreparedChat,
-    build_prompt_messages,
-    run_blocking,
-)
-from .preferences import normalize_reply_length
+from app.services.chat.preferences import normalize_reply_length
+from app.services.chat.prompts import build_prompt_messages
+from app.services.chat.types import PreparedChat
 
 
 def normalize_uuid(value: str) -> str:

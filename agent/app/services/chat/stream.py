@@ -7,35 +7,28 @@ from fastapi import Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.requests import ClientDisconnect
 
-from app.chat.chapters.reply import parse_chapter_combined_response
+from app.billing import CHAT_STARDUST_COST, refund_stardust_safely
 from app.config import get_settings
-from app.shared import normalize_lang
-from app.shared import Lang
+from app.core.lang import Lang, normalize_lang
 from app.errors import (
     CreditLimitError,
     credit_error_payload,
     error_log_payload,
     error_message,
 )
-from app.llm import stream_text
-from app.billing import CHAT_STARDUST_COST, refund_stardust_safely
-from app.sse import emit_once, sse_event, sse_response
+from app.infra.blocking import run_blocking, stream_with_timeout
+from app.infra.llm import DEFAULT_MODEL, stream_text
+from app.infra.sse import emit_once, sse_event, sse_response
 from app.repositories import (
     create_or_update_resonance,
     insert_message,
     touch_session,
     update_session_title,
 )
-
-from .prepare import prepare_chat_request
-from .shared import (
-    CHAT_MODEL,
-    ChapterStreamState,
-    consume_chapter_stream_delta,
-    generate_session_title,
-    run_blocking,
-    stream_with_timeout,
-)
+from app.services.chat.chapters.reply import parse_chapter_combined_response
+from app.services.chat.prepare import prepare_chat_request
+from app.services.chat.prompts import generate_session_title
+from app.services.chat.stream_state import ChapterStreamState, consume_chapter_stream_delta
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -85,7 +78,7 @@ async def handle_chat(lang: Lang, request: Request) -> StreamingResponse | JSONR
             async for delta in stream_with_timeout(
                 stream_text(
                     prepared.prompt_messages,
-                    model=CHAT_MODEL,
+                    model=DEFAULT_MODEL,
                     temperature=settings.CHAT_TEMPERATURE,
                 ),
                 first_chunk_timeout=settings.LLM_FIRST_TOKEN_TIMEOUT_SECONDS,
@@ -148,7 +141,6 @@ async def handle_chat(lang: Lang, request: Request) -> StreamingResponse | JSONR
                         prepared.content,
                         final_content,
                         prepared.lang,
-                        model=CHAT_MODEL,
                     ),
                     timeout=settings.POST_STREAM_TIMEOUT_SECONDS,
                 )

@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 CHAT_STARDUST_COST = 1
-ECHO_STARDUST_COST = 5
 
 RunBlocking = Callable[..., Awaitable[Any]]
 

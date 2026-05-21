@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+from app.core.lang import Lang
 from app.repositories import ChapterContext
-from app.chat.chapters.reply import build_chapter_system_prompt
-from app.chat.preferences import ReplyLength, apply_reply_length_prompt
-from app.shared import Lang
-
+from app.services.chat.chapters.reply import build_chapter_system_prompt
+from app.services.chat.preferences import ReplyLength, apply_reply_length_prompt
 
 CHAPTER_OPENING_PROMPT: dict[Lang, str] = {
     "zh": (

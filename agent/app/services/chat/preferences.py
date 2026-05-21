@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from app.shared import Lang
+from app.core.lang import Lang
 
 ReplyLength = Literal["standard", "concise"]
 

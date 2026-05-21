@@ -8,6 +8,8 @@ from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 from app.config import get_settings
 
+DEFAULT_MODEL = "qwen3.5-flash"
+
 settings = get_settings()
 _client = AsyncOpenAI(
     api_key=settings.DASHSCOPE_API_KEY,
@@ -17,7 +19,6 @@ _client = AsyncOpenAI(
 
 def _build_model_extra_body(model: str) -> dict[str, Any]:
     if model.strip().lower().startswith("qwen"):
-        # DashScope OpenAI-compatible API uses this non-standard flag.
         return {"enable_thinking": False}
     return {}
 

@@ -53,25 +53,3 @@ def insert_message(
         "id": str(row.get("id", "")),
         "created_at": str(row.get("created_at", "")),
     }
-
-
-def insert_session_message(
-    user_id: str,
-    souler_id: str,
-    session_id: str,
-    role: Role,
-    content: str,
-) -> None:
-    (
-        supabase.table("messages")
-        .insert(
-            {
-                "user_id": user_id,
-                "souler_id": souler_id,
-                "session_id": session_id,
-                "role": role,
-                "content": content,
-            }
-        )
-        .execute()
-    )
