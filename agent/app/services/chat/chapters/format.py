@@ -3,12 +3,21 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping
+from dataclasses import dataclass
 
 from app.core.lang import Lang
 
-CHAPTER_JSON_OPEN_MARKER = "---JSON---"
-CHAPTER_JSON_CLOSE_MARKER = "---END_JSON---"
+JSON_OPEN = "---JSON---"
+JSON_CLOSE = "---END_JSON---"
 _TRAILING_COMMA_RE = re.compile(r",(\s*[\]}])")
+
+
+@dataclass
+class ChapterStreamState:
+    raw_chunks: list[str]
+    output_chunks: list[str]
+    pending: str
+    phase: str
 
 
 def build_chapter_system_prompt(
@@ -55,7 +64,7 @@ def build_chapter_system_prompt(
             "所以你称之为“偏离”。\n"
             "但也许，那不是偏离。\n"
             "那只是一个分叉口。\n\n"
-            "---JSON---\n"
+            f"{JSON_OPEN}\n"
             "{\n"
             '  "options": [\n'
             '    "我是变得更好了，还是更糟了？",\n'
@@ -64,7 +73,7 @@ def build_chapter_system_prompt(
             '    "停一下，我需要时间消化这些。"\n'
             "  ]\n"
             "}\n"
-            "---END_JSON---\n\n"
+            f"{JSON_CLOSE}\n\n"
             "# 结束对话\n"
             "如果你的任务已经完成，你可以进行总结，并主动结束这段对话。\n"
         )
@@ -91,7 +100,7 @@ def build_chapter_system_prompt(
         "So you call it deviation.\n"
         "But perhaps it is not deviation.\n"
         "It is a fork.\n\n"
-        "---JSON---\n"
+        f"{JSON_OPEN}\n"
         "{\n"
         '  "options": [\n'
         '    "Did I become better or worse",\n'
@@ -100,25 +109,22 @@ def build_chapter_system_prompt(
         '    "Pause for a moment, I need to process this"\n'
         "  ]\n"
         "}\n"
-        "---END_JSON---\n\n"
+        f"{JSON_CLOSE}\n\n"
         "# End Conversation\n"
         "If your task is complete, you may summarize and proactively close the conversation."
     )
 
 
-def parse_chapter_combined_response(raw_content: str) -> tuple[str, list[str]]:
+def parse_chapter_response(raw_content: str) -> tuple[str, list[str]]:
     content = raw_content.strip()
     if not content:
         raise ValueError("Empty chapter response")
 
-    open_index = content.find(CHAPTER_JSON_OPEN_MARKER)
+    open_index = content.find(JSON_OPEN)
     if open_index < 0:
         raise ValueError("Missing chapter JSON block")
 
-    close_index = content.find(
-        CHAPTER_JSON_CLOSE_MARKER,
-        open_index + len(CHAPTER_JSON_OPEN_MARKER),
-    )
+    close_index = content.find(JSON_CLOSE, open_index + len(JSON_OPEN))
     if close_index < 0:
         raise ValueError("Missing chapter JSON end marker")
 
@@ -126,9 +132,7 @@ def parse_chapter_combined_response(raw_content: str) -> tuple[str, list[str]]:
     if not content_body:
         raise ValueError("Missing chapter content body")
 
-    json_block = content[
-        open_index + len(CHAPTER_JSON_OPEN_MARKER) : close_index
-    ].strip()
+    json_block = content[open_index + len(JSON_OPEN) : close_index].strip()
     if not json_block:
         raise ValueError("Empty chapter JSON block")
 
@@ -154,3 +158,42 @@ def parse_chapter_combined_response(raw_content: str) -> tuple[str, list[str]]:
         raise ValueError("Chapter options must contain exactly 4 items")
 
     return content_body, options
+
+
+def consume_chapter_stream_delta(state: ChapterStreamState, delta: str) -> str:
+    state.raw_chunks.append(delta)
+    state.pending += delta
+    visible_parts: list[str] = []
+
+    while state.pending:
+        pending_lower = state.pending.lower()
+
+        if state.phase == "done":
+            break
+
+        if state.phase == "streaming_content":
+            marker_lower = JSON_OPEN.lower()
+            options_open_index = pending_lower.find(marker_lower)
+            if options_open_index >= 0:
+                visible = state.pending[:options_open_index]
+                if visible:
+                    state.output_chunks.append(visible)
+                    visible_parts.append(visible)
+                state.pending = state.pending[options_open_index:]
+                state.phase = "done"
+                break
+
+            hold = len(marker_lower) - 1
+            if len(state.pending) <= hold:
+                break
+
+            visible = state.pending[:-hold]
+            state.pending = state.pending[-hold:]
+            if visible:
+                state.output_chunks.append(visible)
+                visible_parts.append(visible)
+            break
+
+        raise ValueError(f"Unknown chapter stream phase: {state.phase}")
+
+    return "".join(visible_parts)

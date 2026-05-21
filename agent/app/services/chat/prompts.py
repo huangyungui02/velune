@@ -3,9 +3,9 @@ from __future__ import annotations
 from app.config import get_settings
 from app.core.lang import Lang
 from app.core.text import sanitize_title
+from app.domain.types import Chapter, Message, Session
 from app.infra.llm import DEFAULT_MODEL, complete_text
-from app.repositories import ChapterContext, MessageRow, SessionContext
-from app.services.chat.chapters.reply import build_chapter_system_prompt
+from app.services.chat.chapters.format import build_chapter_system_prompt
 from app.services.chat.preferences import ReplyLength, apply_reply_length_prompt
 
 settings = get_settings()
@@ -14,7 +14,7 @@ settings = get_settings()
 def build_system_prompt(
     name: str,
     lang: Lang,
-    chapter: ChapterContext | None = None,
+    chapter: Chapter | None = None,
     reply_length: ReplyLength = "standard",
 ) -> str:
     if chapter:
@@ -32,8 +32,8 @@ def build_system_prompt(
 
 
 def build_prompt_messages(
-    session: SessionContext,
-    history: list[MessageRow],
+    session: Session,
+    history: list[Message],
     content: str,
     lang: Lang,
     reply_length: ReplyLength = "standard",

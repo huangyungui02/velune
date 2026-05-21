@@ -7,8 +7,10 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 
 from app.api.deps import require_lang, require_user_id
+from app.api.http import credit_limit_response
 from app.core.lang import Lang
-from app.errors import CreditLimitError, error_log_payload, error_message
+from app.domain.exceptions import CreditLimitError
+from app.errors import error_log_payload, error_message
 from app.services.chat.chapters import start_chapter_session
 from app.services.chat.preferences import normalize_reply_length
 
@@ -41,13 +43,7 @@ async def start_chapter_session_route(
         )
         return JSONResponse(payload, status_code=200)
     except CreditLimitError as error:
-        return JSONResponse(
-            {
-                "code": error.code,
-                "error": str(error),
-            },
-            status_code=402,
-        )
+        return credit_limit_response(error)
     except Exception as error:  # noqa: BLE001
         logger.error("Failed to start chapter session: %s", error_log_payload(error))
         return JSONResponse({"error": error_message(error)}, status_code=400)

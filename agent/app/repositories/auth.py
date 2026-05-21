@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.errors import UnauthorizedError
+from app.domain.exceptions import UnauthorizedError
 
 from ._client import supabase
 

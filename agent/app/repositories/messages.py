@@ -1,20 +1,23 @@
 from __future__ import annotations
+
 from postgrest.types import ReturnMethod
 
+from app.config import get_settings
+from app.domain.types import Message, Role
+
 from ._client import first_row, supabase
-from .types import MessageRow, Role
 
-CHAT_HISTORY_LIMIT = 30
+settings = get_settings()
 
 
-def get_recent_messages(user_id: str, session_id: str) -> list[MessageRow]:
+def get_recent_messages(user_id: str, session_id: str) -> list[Message]:
     response = (
         supabase.table("messages")
         .select("id, user_id, souler_id, session_id, role, content, created_at")
         .eq("user_id", user_id)
         .eq("session_id", session_id)
         .order("created_at", desc=True)
-        .limit(CHAT_HISTORY_LIMIT)
+        .limit(settings.CHAT_HISTORY_LIMIT)
         .execute()
     )
 

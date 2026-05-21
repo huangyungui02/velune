@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.errors import CreditLimitError
+from app.domain.exceptions import CreditLimitError
 
 from ._client import first_row, supabase
 

@@ -1,29 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator, Callable
-from typing import Awaitable, TypeVar, cast
-
-from app.config import get_settings
-
-settings = get_settings()
-
-T = TypeVar("T")
-
-
-async def run_blocking(
-    label: str,
-    func: Callable[..., T],
-    *args: object,
-    timeout: float | None = None,
-) -> T:
-    try:
-        return await asyncio.wait_for(
-            asyncio.to_thread(func, *args),
-            timeout=timeout or settings.REPO_TIMEOUT_SECONDS,
-        )
-    except asyncio.TimeoutError as error:
-        raise TimeoutError(f"{label} timed out") from error
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import cast
 
 
 async def stream_with_timeout(

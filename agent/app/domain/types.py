@@ -11,7 +11,7 @@ class Souler(TypedDict):
     bio: str | None
 
 
-class ChapterContext(TypedDict):
+class Chapter(TypedDict):
     id: str
     souler_id: str
     seq: int
@@ -21,15 +21,15 @@ class ChapterContext(TypedDict):
     task: str
 
 
-class SessionContext(TypedDict):
+class Session(TypedDict):
     id: str
-    soulerId: str
+    souler_id: str
     title: str
     souler: Souler
-    chapter: ChapterContext | None
+    chapter: Chapter | None
 
 
-class MessageRow(TypedDict):
+class Message(TypedDict):
     id: str
     user_id: str
     souler_id: str

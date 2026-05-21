@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from app.core.lang import Lang
-from app.repositories import ChapterContext
-from app.services.chat.chapters.reply import build_chapter_system_prompt
+from app.domain.types import Chapter
+from app.services.chat.chapters.format import build_chapter_system_prompt
 from app.services.chat.preferences import ReplyLength, apply_reply_length_prompt
 
 CHAPTER_OPENING_PROMPT: dict[Lang, str] = {
@@ -28,7 +28,7 @@ CHAPTER_OPENING_PROMPT: dict[Lang, str] = {
 
 def build_chapter_opening_messages(
     souler_name: str,
-    chapter: ChapterContext,
+    chapter: Chapter,
     lang: Lang,
     reply_length: ReplyLength = "standard",
 ) -> list[dict[str, str]]:

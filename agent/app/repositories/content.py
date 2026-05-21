@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ._client import first_row, supabase
 from .parsers import to_chapter, to_souler
-from .types import ChapterContext, Souler
+from app.domain.types import Chapter, Souler
 
 
 def get_souler_by_id(souler_id: str) -> Souler:
@@ -19,7 +19,7 @@ def get_souler_by_id(souler_id: str) -> Souler:
     return to_souler(row)
 
 
-def get_chapter_by_id(chapter_id: str) -> ChapterContext:
+def get_chapter_by_id(chapter_id: str) -> Chapter:
     response = (
         supabase.table("chapters")
         .select("id, souler_id, seq, title, subtitle, role, task")

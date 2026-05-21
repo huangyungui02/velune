@@ -3,19 +3,16 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from app.domain.exceptions import CreditLimitError, UnauthorizedError
 
-class CreditLimitError(Exception):
-    def __init__(
-        self,
-        message: str,
-        code: str,
-    ) -> None:
-        super().__init__(message)
-        self.code = code
-
-
-class UnauthorizedError(Exception):
-    pass
+__all__ = [
+    "CreditLimitError",
+    "UnauthorizedError",
+    "safe_json_stringify",
+    "error_message",
+    "error_log_payload",
+    "credit_error_payload",
+]
 
 
 def safe_json_stringify(value: Any) -> str | None:

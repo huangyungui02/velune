@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .types import ChapterContext, Souler
+from app.domain.types import Chapter, Souler
 
 
 def to_souler(raw: Any) -> Souler:
@@ -23,7 +23,7 @@ def to_souler(raw: Any) -> Souler:
     }
 
 
-def to_chapter(raw: Any) -> ChapterContext:
+def to_chapter(raw: Any) -> Chapter:
     chapter = raw[0] if isinstance(raw, list) and raw else raw
     if not isinstance(chapter, dict):
         raise ValueError("Chapter not found")

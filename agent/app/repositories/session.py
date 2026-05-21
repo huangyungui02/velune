@@ -1,14 +1,16 @@
 from __future__ import annotations
-from postgrest.types import ReturnMethod
 
 from datetime import datetime, timezone
 
+from postgrest.types import ReturnMethod
+
+from app.domain.types import Session
+
 from ._client import first_row, supabase
 from .parsers import to_chapter, to_souler
-from .types import SessionContext
 
 
-def get_session_by_id(user_id: str, session_id: str) -> SessionContext:
+def get_session_by_id(user_id: str, session_id: str) -> Session:
     response = (
         supabase.table("sessions")
         .select(
@@ -30,7 +32,7 @@ def get_session_by_id(user_id: str, session_id: str) -> SessionContext:
     parsed_chapter = to_chapter(chapter) if chapter else None
     return {
         "id": str(row.get("id")),
-        "soulerId": str(row.get("souler_id")),
+        "souler_id": str(row.get("souler_id")),
         "title": str(row.get("title", "")),
         "souler": to_souler(row.get("soulers")),
         "chapter": parsed_chapter,
