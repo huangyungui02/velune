@@ -57,8 +57,6 @@ extension ChatView {
 
             activeSessionId = payload.sessionId
             isDraftSession = false
-            draftEchoId = nil
-            activeDraftPrelude = nil
 
             if let messageIndex = messages.firstIndex(where: { $0.id == localAssistantId }) {
                 messages[messageIndex].id = payload.assistantMessage.id

@@ -1,6 +1,5 @@
 import SwiftData
 import SwiftUI
-import OSLog
 
 extension ChatView {
     @MainActor
@@ -12,7 +11,7 @@ extension ChatView {
         hasScrolledToLatestOnAppear = false
 
         if isDraftSession {
-            applyDraftPreludeIfNeeded()
+            messages = []
         } else {
             await loadMessages()
         }
@@ -51,7 +50,6 @@ extension ChatView {
             let startedFromDraft = isDraftSession
             for try await event in ChatStreamService.streamReply(
                 sessionId: isDraftSession ? nil : activeSessionId,
-                echoId: isDraftSession ? draftEchoId : nil,
                 soulerId: soulerId,
                 soulerName: soulerName,
                 path: "\(AppLanguage.current.apiLanguageCode)/chat",
@@ -131,20 +129,9 @@ extension ChatView {
         resolvedTitle: String?,
         startedFromDraft: Bool
     ) async throws {
-        let sourceDraftEchoId = draftEchoId
-
         if let resolvedSessionId {
             activeSessionId = resolvedSessionId
             isDraftSession = false
-            draftEchoId = nil
-            activeDraftPrelude = nil
-
-            if let sourceDraftEchoId {
-                persistEchoSessionIdIfNeeded(
-                    echoId: sourceDraftEchoId,
-                    sessionId: resolvedSessionId
-                )
-            }
         }
 
         let sessionId = resolvedSessionId ?? activeSessionId
@@ -182,26 +169,6 @@ extension ChatView {
     }
 
     @MainActor
-    func persistEchoSessionIdIfNeeded(echoId: UUID, sessionId: UUID) {
-        var descriptor = FetchDescriptor<Echo>(
-            predicate: #Predicate { echo in
-                echo.id == echoId
-            }
-        )
-        descriptor.fetchLimit = 1
-
-        guard let echo = try? modelContext.fetch(descriptor).first else { return }
-        guard echo.sessionId != sessionId else { return }
-
-        echo.sessionId = sessionId
-        do {
-            try modelContext.save()
-        } catch {
-            logger.error("persisting echo sessionId failed: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    @MainActor
     func openSession(_ session: ChatSession) {
         guard session.id != activeSessionId else { return }
         if let onSelectSession {
@@ -221,8 +188,6 @@ extension ChatView {
 
         activeSessionId = UUID()
         isDraftSession = true
-        draftEchoId = nil
-        activeDraftPrelude = nil
         messages = []
         inputText = ""
         errorMessage = nil
@@ -235,45 +200,9 @@ extension ChatView {
     }
 
     @MainActor
-    func applyDraftPreludeIfNeeded() {
-        guard let activeDraftPrelude else { return }
-
-        let trimmedGlimmer = activeDraftPrelude.glimmerContent.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedEcho = activeDraftPrelude.echoContent.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if !trimmedGlimmer.isEmpty {
-            messages.append(
-                Message(
-                    id: UUID(),
-                    soulerId: soulerId,
-                    sessionId: nil,
-                    role: .user,
-                    content: trimmedGlimmer,
-                    createdAt: .now
-                )
-            )
-        }
-
-        if !trimmedEcho.isEmpty {
-            messages.append(
-                Message(
-                    id: UUID(),
-                    soulerId: soulerId,
-                    sessionId: nil,
-                    role: .assistant,
-                    content: trimmedEcho,
-                    createdAt: .now
-                )
-            )
-        }
-    }
-
-    @MainActor
     func switchToExistingSession(_ sessionId: UUID) async {
         activeSessionId = sessionId
         isDraftSession = false
-        draftEchoId = nil
-        activeDraftPrelude = nil
         await loadConversationSessions()
         await prepareConversation()
     }

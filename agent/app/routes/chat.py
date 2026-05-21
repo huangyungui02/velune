@@ -13,7 +13,7 @@ from app.shared import Lang, normalize_lang
 from app.errors import CreditLimitError, UnauthorizedError, error_log_payload, error_message
 from app.chat import handle_chat
 from app.chat.chapters import start_chapter_session
-from app.echo.canonical import canonicalize_souler_name
+from app.soulers.canonical import canonicalize_souler_name
 from app.repositories import get_user_id_from_auth_header
 
 logger = logging.getLogger(__name__)

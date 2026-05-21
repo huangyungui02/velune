@@ -173,7 +173,7 @@ private struct AppMarkView: View {
             let innerStroke = max(2.0, side * (12.0 / 1024.0))
 
             ZStack {
-                // Outer Echo Circle - "回响" (Resonance)
+                // Outer resonance circle
                 Circle()
                     .stroke(
                         LinearGradient(

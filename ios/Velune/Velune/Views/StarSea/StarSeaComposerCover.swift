@@ -3,10 +3,10 @@ import SwiftUI
 struct StarSeaComposerCover: View {
     @Binding var text: String
     let onDismiss: () -> Void
-    let onSend: () -> Void
+    let onDone: () -> Void
     @FocusState private var isEditorFocused: Bool
 
-    private var canSend: Bool {
+    private var canFinish: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -67,10 +67,10 @@ struct StarSeaComposerCover: View {
                 .scrollIndicators(.hidden)
                 .contentMargins(0, for: .scrollContent)
                 .background(.clear)
-                .submitLabel(.send)
+                .submitLabel(.done)
                 .onSubmit {
-                    if canSend {
-                        onSend()
+                    if canFinish {
+                        onDone()
                     }
                 }
                 .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
@@ -86,11 +86,11 @@ struct StarSeaComposerCover: View {
     }
 
     private var sendButton: some View {
-        Button(action: onSend) {
-            Image(systemName: "arrow.up")
+        Button(action: onDone) {
+            Image(systemName: "checkmark")
                 .font(.body.weight(.semibold))
         }
-        .disabled(!canSend)
-        .accessibilityLabel(Text("common.submit"))
+        .disabled(!canFinish)
+        .accessibilityLabel(Text("common.done"))
     }
 }

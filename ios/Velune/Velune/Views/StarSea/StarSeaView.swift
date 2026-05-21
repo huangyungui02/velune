@@ -1,18 +1,8 @@
 import SwiftUI
 
-enum StarSeaRoute: Hashable {
-    case history
-}
-
 struct StarSeaView: View {
     @State private var text = ""
-    @State private var isFlowPresented = false
-    @State private var isFlowResonancePresented = false
-    @State private var flowManager = FlowManager()
-    @State private var showError = false
-    @State private var shouldRecoverToVerseAfterError = false
     @State private var isComposerPresented = false
-    @State private var path = NavigationPath()
     @Binding var composeRequestID: Int
 
     init(composeRequestID: Binding<Int> = .constant(0)) {
@@ -20,69 +10,22 @@ struct StarSeaView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack {
             mainContent
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     draftToolbarContent
                 }
-                .navigationDestination(isPresented: $isFlowPresented) {
-                    FlowView(
-                        manager: flowManager,
-                        onClose: closeCurrentFlow,
-                        onContinue: showFlowResonances
-                    )
-                }
-                .navigationDestination(isPresented: $isFlowResonancePresented) {
-                    FlowResonanceView(
-                        manager: flowManager,
-                        onClose: closeCurrentFlow
-                    )
-                }
-                .navigationDestination(for: StarSeaRoute.self) { route in
-                    switch route {
-                    case .history:
-                        GlimmerHistoryView()
-                    }
-                }
         }
-        .toolbar(shouldHideTabBar ? .hidden : .visible, for: .tabBar)
         .fullScreenCover(isPresented: $isComposerPresented) {
             StarSeaComposerCover(
                 text: $text,
                 onDismiss: dismissComposer,
-                onSend: send
+                onDone: dismissComposer
             )
         }
-        .onChange(of: flowManager.errorMessage) { _, newValue in
-            if isFlowPresented, newValue != nil {
-                shouldRecoverToVerseAfterError = true
-            }
-            showError = newValue != nil
-        }
-        .onChange(of: showError) { _, isShowing in
-            if !isShowing, shouldRecoverToVerseAfterError {
-                recoverToVerseAfterError()
-            }
-        }
         .onChange(of: composeRequestID) { _, _ in
-            if flowManager.isFlowing || !flowManager.submittedText.isEmpty {
-                isFlowPresented = true
-            } else {
-                isFlowPresented = false
-                presentComposer()
-            }
-        }
-        .alert("flow.error.title", isPresented: $showError) {
-            Button("common.ok", role: .cancel) {
-                recoverToVerseAfterError()
-            }
-        } message: {
-            if let errorMessage = flowManager.errorMessage {
-                Text(errorMessage)
-            } else {
-                Text("flow.error.unknown")
-            }
+            presentComposer()
         }
     }
 
@@ -138,14 +81,6 @@ struct StarSeaView: View {
         !text.isEmpty
     }
 
-    private var canSendDraft: Bool {
-        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private var shouldHideTabBar: Bool {
-        isFlowPresented || !path.isEmpty
-    }
-
     @ToolbarContentBuilder
     private var draftToolbarContent: some ToolbarContent {
         if hasDraft {
@@ -157,65 +92,10 @@ struct StarSeaView: View {
                 .accessibilityLabel(Text("common.clear"))
             }
 
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: send) {
-                    Image(systemName: "arrow.up")
-                        .font(.body.weight(.semibold))
-                }
-                .disabled(!canSendDraft)
-                .accessibilityLabel(Text("common.submit"))
-            }
-        } else {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(value: StarSeaRoute.history) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.body.weight(.medium))
-                }
-                .accessibilityLabel(Text("starsea.action.history"))
-            }
         }
     }
 
     // MARK: - Actions
-
-    private func send() {
-        let input = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !input.isEmpty else { return }
-
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        isComposerPresented = false
-
-        flowManager.start(text: input)
-        text = ""
-
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-            isFlowPresented = true
-        }
-    }
-
-    private func closeCurrentFlow() {
-        resetToVerse()
-    }
-
-    private func recoverToVerseAfterError() {
-        resetToVerse()
-        shouldRecoverToVerseAfterError = false
-    }
-
-    private func resetToVerse() {
-        flowManager.reset()
-        isFlowResonancePresented = false
-        isFlowPresented = false
-        isComposerPresented = false
-    }
-
-    private func showFlowResonances() {
-        guard !flowManager.keywords.isEmpty else { return }
-
-        withAnimation(.spring(response: 0.58, dampingFraction: 0.84)) {
-            isFlowResonancePresented = true
-        }
-    }
 
     private func presentComposer() {
         isComposerPresented = true

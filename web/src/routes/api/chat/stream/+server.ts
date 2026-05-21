@@ -5,7 +5,6 @@ import type { RequestHandler } from './$types';
 
 type StreamRequestPayload = {
 	sessionId?: string;
-	echoId?: string;
 	soulerId?: string;
 	soulerName?: string;
 	replyLength?: string;
@@ -37,7 +36,6 @@ export const POST: RequestHandler = async ({ request, url, locals }) => {
 
 	const payload = {
 		sessionId: body?.sessionId?.trim() || undefined,
-		echoId: body?.echoId?.trim() || undefined,
 		soulerId,
 		soulerName,
 		replyLength: normalizeReplyLength(body?.replyLength),

@@ -4,11 +4,6 @@ import SwiftUI
 struct ChatView: View {
     let logger = AppLogger.chat
 
-    struct DraftPrelude: Hashable {
-        let glimmerContent: String
-        let echoContent: String
-    }
-
     let sessionId: UUID?
     let soulerId: UUID
     let soulerName: String
@@ -28,8 +23,6 @@ struct ChatView: View {
     @State var sessionMenuError: String?
     @State var isShowingSouler = false
     @State var showPaywall = false
-    @State var draftEchoId: UUID?
-    @State var activeDraftPrelude: DraftPrelude?
     @State var hasPerformedInitialLoad = false
     @State var shouldPauseAutoScrollDuringStreaming = false
     @State var billingErrorContext: BillingErrorContext?
@@ -43,8 +36,6 @@ struct ChatView: View {
 
     init(
         sessionId: UUID?,
-        echoId: UUID? = nil,
-        draftPrelude: DraftPrelude? = nil,
         soulerId: UUID,
         soulerName: String,
         focusComposerOnAppear: Bool = false,
@@ -58,8 +49,6 @@ struct ChatView: View {
         self.onSelectSession = onSelectSession
         _activeSessionId = State(initialValue: sessionId ?? UUID())
         _isDraftSession = State(initialValue: isDraft)
-        _draftEchoId = State(initialValue: isDraft ? echoId : nil)
-        _activeDraftPrelude = State(initialValue: isDraft ? draftPrelude : nil)
     }
 
     var body: some View {

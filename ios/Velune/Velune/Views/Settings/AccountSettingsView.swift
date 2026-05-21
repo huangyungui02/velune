@@ -124,7 +124,6 @@ struct AccountSettingsView: View {
                 try Message.clearCached(userId: userId, context: modelContext)
             }
             try modelContext.delete(model: Glimmer.self)
-            try modelContext.delete(model: Echo.self)
             dismiss()
         } catch {
             feedbackMessage = error.localizedDescription

@@ -10,9 +10,6 @@ class Glimmer {
     var createdAt: Date
     var status: String
 
-    @Relationship(deleteRule: .cascade, inverse: \Echo.glimmer)
-    var echoes: [Echo] = []
-
     init(
         id: UUID = UUID(),
         userId: String = "",

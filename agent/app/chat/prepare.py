@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from collections.abc import Callable
 from uuid import UUID
 
@@ -12,17 +11,12 @@ from app.billing import (
     consume_stardust_if_enabled,
     refund_stardust_safely,
 )
-from app.errors import error_log_payload
 from app.repositories import (
     ChapterContext,
-    EchoContext,
     SessionContext,
     Souler,
-    bind_echo_session_if_missing,
     create_session,
-    delete_session,
     get_chapter_by_id,
-    get_echo_context,
     get_recent_messages,
     get_session_by_id,
     get_souler_by_id,
@@ -36,8 +30,6 @@ from .shared import (
     run_blocking,
 )
 from .preferences import normalize_reply_length
-
-logger = logging.getLogger(__name__)
 
 
 def normalize_uuid(value: str) -> str:
@@ -63,7 +55,6 @@ async def prepare_chat_request(
     try:
         session_id = normalize_uuid(str(body.get("sessionId", "")))
         souler_id = normalize_uuid(str(body.get("soulerId", "")))
-        echo_id = normalize_uuid(str(body.get("echoId", "")))
         chapter_id = normalize_uuid(str(body.get("chapterId", "")))
     except ValueError as error:
         raise ValueError("Invalid UUID in request body") from error
@@ -82,9 +73,7 @@ async def prepare_chat_request(
     try:
         is_new_session = False
         needs_new_session = False
-        should_insert_echo_context = False
         should_generate_title = False
-        echo_context: EchoContext | None = None
         pending_souler: Souler | None = None
         pending_chapter: ChapterContext | None = None
         session: SessionContext | None = None
@@ -97,54 +86,24 @@ async def prepare_chat_request(
                 session_id,
             )
         else:
-            if echo_id:
-                echo_context = await run_blocking(
-                    "Load echo context",
-                    get_echo_context,
-                    user_id,
-                    echo_id,
+            if not souler_id:
+                raise ValueError("Missing soulerId for new conversation")
+            pending_souler = await run_blocking(
+                "Load souler",
+                get_souler_by_id,
+                souler_id,
+            )
+            if chapter_id:
+                pending_chapter = await run_blocking(
+                    "Load chapter",
+                    get_chapter_by_id,
+                    chapter_id,
                 )
-                resolved_souler_id = echo_context["souler_id"]
-                if souler_id and resolved_souler_id != souler_id:
-                    raise ValueError("Echo souler does not match request soulerId")
-                pending_souler = await run_blocking(
-                    "Load souler",
-                    get_souler_by_id,
-                    resolved_souler_id,
-                )
-
-                existing_echo_session_id = echo_context.get("session_id")
-                if existing_echo_session_id:
-                    session = await run_blocking(
-                        "Load echo session",
-                        get_session_by_id,
-                        user_id,
-                        existing_echo_session_id,
-                    )
-                else:
-                    needs_new_session = True
-                    is_new_session = True
-                    should_insert_echo_context = True
-                    should_generate_title = True
-            else:
-                if not souler_id:
-                    raise ValueError("Missing soulerId for new conversation")
-                pending_souler = await run_blocking(
-                    "Load souler",
-                    get_souler_by_id,
-                    souler_id,
-                )
-                if chapter_id:
-                    pending_chapter = await run_blocking(
-                        "Load chapter",
-                        get_chapter_by_id,
-                        chapter_id,
-                    )
-                    if pending_chapter["souler_id"] != str(pending_souler["id"]):
-                        raise ValueError("Chapter does not belong to souler")
-                needs_new_session = True
-                is_new_session = True
-                should_generate_title = pending_chapter is None
+                if pending_chapter["souler_id"] != str(pending_souler["id"]):
+                    raise ValueError("Chapter does not belong to souler")
+            needs_new_session = True
+            is_new_session = True
+            should_generate_title = pending_chapter is None
 
         if needs_new_session:
             if not pending_souler:
@@ -168,63 +127,11 @@ async def prepare_chat_request(
                 "chapter": pending_chapter,
             }
 
-            if echo_id and should_insert_echo_context:
-                bound_session_id = await run_blocking(
-                    "Bind echo session",
-                    bind_echo_session_if_missing,
-                    user_id,
-                    echo_id,
-                    created_session_id,
-                )
-                if bound_session_id != created_session_id:
-                    should_insert_echo_context = False
-                    is_new_session = False
-                    should_generate_title = False
-                    try:
-                        await run_blocking(
-                            "Delete orphan session",
-                            delete_session,
-                            user_id,
-                            created_session_id,
-                        )
-                    except Exception as cleanup_error:  # noqa: BLE001
-                        logger.warning(
-                            "Failed to cleanup orphan session: %s",
-                            error_log_payload(cleanup_error),
-                        )
-                    session = await run_blocking(
-                        "Load bound session",
-                        get_session_by_id,
-                        user_id,
-                        bound_session_id,
-                    )
-                else:
-                    session = created_session
-            else:
-                session = created_session
+            session = created_session
 
         if not session:
             raise ValueError("Session not found")
 
-        if should_insert_echo_context and echo_context:
-            await run_blocking(
-                "Insert glimmer context message",
-                insert_message,
-                user_id,
-                str(session["soulerId"]),
-                str(session["id"]),
-                "user",
-                echo_context["glimmer_content"],
-            )
-            await run_blocking(
-                "Insert echo context message",
-                insert_message,
-                user_id,
-                str(session["soulerId"]),
-                str(session["id"]),
-                "assistant",
-                echo_context["content"],
-            )
         log_stage("session_ready")
 
         history = await run_blocking(

@@ -37,11 +37,3 @@ class MessageRow(TypedDict):
     role: Role
     content: str
     created_at: str
-
-
-class EchoContext(TypedDict):
-    id: str
-    souler_id: str
-    session_id: str | None
-    content: str
-    glimmer_content: str

@@ -4,8 +4,6 @@ from .credit import (
     consume_stardust,
     refund_stardust,
 )
-from .echo import bind_echo_session_if_missing, create_echo, get_echo_context
-from .glimmer import ensure_glimmer, get_glimmer_or_none, list_glimmer_echoes, update_glimmer_status
 from .messages import get_recent_messages, insert_message, insert_session_message
 from .resonance import create_or_update_resonance
 from .session import (
@@ -24,7 +22,7 @@ from .soulers import (
     get_souler_by_name,
     update_souler,
 )
-from .types import ChapterContext, EchoContext, MessageRow, Role, SessionContext, Souler
+from .types import ChapterContext, MessageRow, Role, SessionContext, Souler
 
 __all__ = [
     "Role",
@@ -32,17 +30,10 @@ __all__ = [
     "ChapterContext",
     "SessionContext",
     "MessageRow",
-    "EchoContext",
     "get_user_id_from_auth_header",
-    "update_glimmer_status",
-    "get_glimmer_or_none",
-    "ensure_glimmer",
-    "list_glimmer_echoes",
     "get_session_by_id",
     "get_souler_by_id",
     "get_chapter_by_id",
-    "get_echo_context",
-    "bind_echo_session_if_missing",
     "create_session",
     "delete_session",
     "update_session_title",
@@ -59,6 +50,5 @@ __all__ = [
     "create_souler",
     "add_souler_alias",
     "update_souler",
-    "create_echo",
     "insert_session_message",
 ]

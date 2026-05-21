@@ -12,7 +12,6 @@ class DataContainer {
     init(inMemoryOnly: Bool = false) throws {
         let schema = Schema([
             Glimmer.self,
-            Echo.self,
             Resonance.self,
             CachedChatSession.self,
             CachedMessage.self,

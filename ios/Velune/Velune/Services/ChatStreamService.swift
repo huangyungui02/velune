@@ -16,7 +16,6 @@ enum ChatStreamService {
 
     private struct SendRequest: Encodable {
         var sessionId: String?
-        var echoId: String?
         var soulerId: String
         var soulerName: String
         var replyLength: String
@@ -35,7 +34,6 @@ enum ChatStreamService {
 
     static func streamReply(
         sessionId: UUID?,
-        echoId: UUID?,
         soulerId: UUID,
         soulerName: String,
         path: String,
@@ -43,7 +41,6 @@ enum ChatStreamService {
     ) -> AsyncThrowingStream<Event, Error> {
         let request = SendRequest(
             sessionId: sessionId?.uuidString,
-            echoId: echoId?.uuidString,
             soulerId: soulerId.uuidString,
             soulerName: soulerName,
             replyLength: UserDefaults.standard.string(forKey: AIReplyLength.storageKey) ?? AIReplyLength.standard.rawValue,
