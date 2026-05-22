@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "velune-agent"
     BILLING_ENABLED: bool = False
 
+    DATABASE_URL: str
+
     SUPABASE_URL: str
     SUPABASE_SERVICE_ROLE_KEY: str
 

@@ -2,35 +2,33 @@ from __future__ import annotations
 
 from app.domain import Chapter, Souler
 
-from ._client import await_repo, first_row, get_supabase
+from ._client import fetch_one
 from .parsers import to_chapter, to_souler
 
 
 async def get_souler_by_id(souler_id: str) -> Souler:
-    response = await await_repo(
-        get_supabase()
-        .table("soulers")
-        .select("id, name, bio")
-        .eq("id", souler_id)
-        .single()
-        .execute()
+    row = await fetch_one(
+        """
+        SELECT id, name, bio
+        FROM public.soulers
+        WHERE id = CAST(:souler_id AS uuid)
+        """,
+        {"souler_id": souler_id},
     )
-    row = first_row(response.data)
     if not row:
         raise ValueError("Souler not found")
     return to_souler(row)
 
 
 async def get_chapter_by_id(chapter_id: str) -> Chapter:
-    response = await await_repo(
-        get_supabase()
-        .table("chapters")
-        .select("id, souler_id, seq, title, subtitle, role, task")
-        .eq("id", chapter_id)
-        .single()
-        .execute()
+    row = await fetch_one(
+        """
+        SELECT id, souler_id, seq, title, subtitle, role, task
+        FROM public.chapters
+        WHERE id = CAST(:chapter_id AS uuid)
+        """,
+        {"chapter_id": chapter_id},
     )
-    row = first_row(response.data)
     if not row:
         raise ValueError("Chapter not found")
     return to_chapter(row)

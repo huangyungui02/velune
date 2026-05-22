@@ -2,40 +2,58 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from postgrest.types import ReturnMethod
-
 from app.domain import Session
 
-from ._client import await_repo, first_row, get_supabase
+from ._client import execute, execute_fetch_one, fetch_one
 from .parsers import to_chapter, to_souler
 
 
 async def get_session_by_id(user_id: str, session_id: str) -> Session:
-    response = await await_repo(
-        get_supabase()
-        .table("sessions")
-        .select(
-            "id, user_id, souler_id, title, chapter_id, "
-            "soulers(id, name, bio), "
-            "chapters(id, souler_id, seq, title, subtitle, role, task)"
-        )
-        .eq("id", session_id)
-        .eq("user_id", user_id)
-        .single()
-        .execute()
+    row = await fetch_one(
+        """
+        SELECT
+            sess.id,
+            sess.user_id,
+            sess.souler_id,
+            sess.title,
+            sess.chapter_id,
+            jsonb_build_object(
+                'id', s.id,
+                'name', s.name,
+                'bio', s.bio
+            ) AS souler,
+            CASE
+                WHEN c.id IS NULL THEN NULL
+                ELSE jsonb_build_object(
+                    'id', c.id,
+                    'souler_id', c.souler_id,
+                    'seq', c.seq,
+                    'title', c.title,
+                    'subtitle', c.subtitle,
+                    'role', c.role,
+                    'task', c.task
+                )
+            END AS chapter
+        FROM public.sessions AS sess
+        JOIN public.soulers AS s
+            ON s.id = sess.souler_id
+        LEFT JOIN public.chapters AS c
+            ON c.id = sess.chapter_id
+        WHERE sess.id = CAST(:session_id AS uuid)
+          AND sess.user_id = CAST(:user_id AS uuid)
+        """,
+        {"user_id": user_id, "session_id": session_id},
     )
-
-    row = first_row(response.data)
     if not row:
         raise ValueError("Session not found")
 
-    chapter = row.get("chapters")
+    chapter = row.get("chapter")
     parsed_chapter = to_chapter(chapter) if chapter else None
     return {
         "id": str(row.get("id")),
         "souler_id": str(row.get("souler_id")),
         "title": str(row.get("title", "")),
-        "souler": to_souler(row.get("soulers")),
+        "souler": to_souler(row.get("souler")),
         "chapter": parsed_chapter,
     }
 
@@ -46,34 +64,37 @@ async def create_session(
     title: str = "",
     chapter_id: str | None = None,
 ) -> str:
-    response = await await_repo(
-        get_supabase()
-        .table("sessions")
-        .insert(
-            {
-                "user_id": user_id,
-                "souler_id": souler_id,
-                "title": title,
-                "chapter_id": chapter_id,
-            },
-            returning=ReturnMethod.representation,
+    row = await execute_fetch_one(
+        """
+        INSERT INTO public.sessions (user_id, souler_id, title, chapter_id)
+        VALUES (
+            CAST(:user_id AS uuid),
+            CAST(:souler_id AS uuid),
+            :title,
+            CAST(:chapter_id AS uuid)
         )
-        .execute()
+        RETURNING id
+        """,
+        {
+            "user_id": user_id,
+            "souler_id": souler_id,
+            "title": title,
+            "chapter_id": chapter_id,
+        },
     )
-    row = first_row(response.data)
     if not row or not row.get("id"):
         raise ValueError("Failed to create session")
     return str(row["id"])
 
 
 async def delete_session(user_id: str, session_id: str) -> None:
-    await await_repo(
-        get_supabase()
-        .table("sessions")
-        .delete()
-        .eq("id", session_id)
-        .eq("user_id", user_id)
-        .execute()
+    await execute(
+        """
+        DELETE FROM public.sessions
+        WHERE id = CAST(:session_id AS uuid)
+          AND user_id = CAST(:user_id AS uuid)
+        """,
+        {"user_id": user_id, "session_id": session_id},
     )
 
 
@@ -84,13 +105,14 @@ async def update_session_title(
     *,
     timeout: float | None = None,
 ) -> None:
-    await await_repo(
-        get_supabase()
-        .table("sessions")
-        .update({"title": title})
-        .eq("id", session_id)
-        .eq("user_id", user_id)
-        .execute(),
+    await execute(
+        """
+        UPDATE public.sessions
+        SET title = :title
+        WHERE id = CAST(:session_id AS uuid)
+          AND user_id = CAST(:user_id AS uuid)
+        """,
+        {"user_id": user_id, "session_id": session_id, "title": title},
         timeout=timeout,
     )
 
@@ -101,12 +123,17 @@ async def touch_session(
     *,
     timeout: float | None = None,
 ) -> None:
-    await await_repo(
-        get_supabase()
-        .table("sessions")
-        .update({"updated_at": datetime.now(timezone.utc).isoformat()})
-        .eq("id", session_id)
-        .eq("user_id", user_id)
-        .execute(),
+    await execute(
+        """
+        UPDATE public.sessions
+        SET updated_at = :updated_at
+        WHERE id = CAST(:session_id AS uuid)
+          AND user_id = CAST(:user_id AS uuid)
+        """,
+        {
+            "user_id": user_id,
+            "session_id": session_id,
+            "updated_at": datetime.now(timezone.utc),
+        },
         timeout=timeout,
     )

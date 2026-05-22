@@ -2,20 +2,17 @@ from __future__ import annotations
 
 from app.domain import CreditLimitError
 
-from ._client import await_repo, first_row, get_supabase
+from ._client import fetch_one
 
 
 async def consume_stardust(user_id: str, amount: int) -> None:
-    response = await await_repo(
-        get_supabase().rpc(
-            "consume_stardust",
-            {
-                "p_user_id": user_id,
-                "p_cost": amount,
-            },
-        ).execute()
+    row = await fetch_one(
+        """
+        SELECT ok, code, message, credits, product_id, daily_credits
+        FROM public.consume_stardust(CAST(:user_id AS uuid), :amount)
+        """,
+        {"user_id": user_id, "amount": amount},
     )
-    row = first_row(response.data)
     if not row:
         raise ValueError("Failed to consume stardust")
 
@@ -28,16 +25,13 @@ async def consume_stardust(user_id: str, amount: int) -> None:
 
 
 async def refund_stardust(user_id: str, amount: int) -> None:
-    response = await await_repo(
-        get_supabase().rpc(
-            "refund_stardust",
-            {
-                "p_user_id": user_id,
-                "p_amount": amount,
-            },
-        ).execute()
+    row = await fetch_one(
+        """
+        SELECT ok, code, message, credits, product_id, daily_credits
+        FROM public.refund_stardust(CAST(:user_id AS uuid), :amount)
+        """,
+        {"user_id": user_id, "amount": amount},
     )
-    row = first_row(response.data)
     if not row:
         raise ValueError("Failed to refund stardust")
 

@@ -6,15 +6,19 @@ from fastapi import FastAPI
 
 from app.api.routes import router
 from app.core.config import get_settings
-from app.repositories._client import init_supabase
+from app.repositories._client import close_database, init_database, init_supabase_auth
 
 settings = get_settings()
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    await init_supabase()
-    yield
+    init_database()
+    await init_supabase_auth()
+    try:
+        yield
+    finally:
+        await close_database()
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)

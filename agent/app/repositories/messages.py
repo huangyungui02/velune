@@ -1,28 +1,30 @@
 from __future__ import annotations
 
-from postgrest.types import ReturnMethod
-
 from app.core.config import get_settings
 from app.domain import Message, Role
 
-from ._client import await_repo, first_row, get_supabase
+from ._client import execute_fetch_one, fetch_all
 
 settings = get_settings()
 
 
 async def get_recent_messages(user_id: str, session_id: str) -> list[Message]:
-    response = await await_repo(
-        get_supabase()
-        .table("messages")
-        .select("id, user_id, souler_id, session_id, role, content, created_at")
-        .eq("user_id", user_id)
-        .eq("session_id", session_id)
-        .order("created_at", desc=True)
-        .limit(settings.CHAT_HISTORY_LIMIT)
-        .execute()
+    rows = await fetch_all(
+        """
+        SELECT id, user_id, souler_id, session_id, role, content, created_at
+        FROM public.messages
+        WHERE user_id = CAST(:user_id AS uuid)
+          AND session_id = CAST(:session_id AS uuid)
+        ORDER BY created_at DESC
+        LIMIT :limit
+        """,
+        {
+            "user_id": user_id,
+            "session_id": session_id,
+            "limit": settings.CHAT_HISTORY_LIMIT,
+        },
     )
 
-    rows = response.data if isinstance(response.data, list) else []
     rows.reverse()
     return rows  # type: ignore[return-value]
 
@@ -36,24 +38,28 @@ async def insert_message(
     *,
     timeout: float | None = None,
 ) -> dict[str, str]:
-    response = await await_repo(
-        get_supabase()
-        .table("messages")
-        .insert(
-            {
-                "user_id": user_id,
-                "souler_id": souler_id,
-                "session_id": session_id,
-                "role": role,
-                "content": content,
-            },
-            returning=ReturnMethod.representation,
+    row = await execute_fetch_one(
+        """
+        INSERT INTO public.messages (user_id, souler_id, session_id, role, content)
+        VALUES (
+            CAST(:user_id AS uuid),
+            CAST(:souler_id AS uuid),
+            CAST(:session_id AS uuid),
+            :role,
+            :content
         )
-        .execute(),
+        RETURNING id, created_at
+        """,
+        {
+            "user_id": user_id,
+            "souler_id": souler_id,
+            "session_id": session_id,
+            "role": role,
+            "content": content,
+        },
         timeout=timeout,
     )
 
-    row = first_row(response.data)
     if not row:
         raise ValueError("Failed to create message")
 

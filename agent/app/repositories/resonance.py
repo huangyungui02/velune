@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ._client import await_repo, get_supabase
+from ._client import execute
 
 
 async def create_or_update_resonance(
@@ -10,17 +10,22 @@ async def create_or_update_resonance(
     *,
     timeout: float | None = None,
 ) -> None:
-    row: dict[str, str] = {
-        "user_id": user_id,
-        "souler_id": souler_id,
-    }
-    if last_session_id is not None:
-        row["last_session_id"] = last_session_id
-
-    await await_repo(
-        get_supabase()
-        .table("resonances")
-        .upsert(row, on_conflict="user_id,souler_id")
-        .execute(),
+    await execute(
+        """
+        INSERT INTO public.resonances (user_id, souler_id, last_session_id)
+        VALUES (
+            CAST(:user_id AS uuid),
+            CAST(:souler_id AS uuid),
+            CAST(:last_session_id AS uuid)
+        )
+        ON CONFLICT (user_id, souler_id)
+        DO UPDATE SET
+            last_session_id = COALESCE(EXCLUDED.last_session_id, resonances.last_session_id)
+        """,
+        {
+            "user_id": user_id,
+            "souler_id": souler_id,
+            "last_session_id": last_session_id,
+        },
         timeout=timeout,
     )
