@@ -3,7 +3,7 @@ from __future__ import annotations
 from app.core.config import get_settings
 from app.domain import Message, Role
 
-from ._client import execute_fetch_one, fetch_all
+from .database import execute_fetch_one, fetch_all
 
 settings = get_settings()
 

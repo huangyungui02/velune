@@ -8,7 +8,6 @@ from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from supabase import AsyncClient, acreate_client
 
 from app.core.config import get_settings
 
@@ -16,20 +15,7 @@ settings = get_settings()
 
 T = TypeVar("T")
 
-_supabase_auth: AsyncClient | None = None
 _engine: AsyncEngine | None = None
-
-
-async def init_supabase_auth() -> AsyncClient:
-    global _supabase_auth
-    if _supabase_auth is not None:
-        return _supabase_auth
-
-    _supabase_auth = await acreate_client(
-        settings.SUPABASE_URL,
-        settings.SUPABASE_SERVICE_ROLE_KEY,
-    )
-    return _supabase_auth
 
 
 def init_database() -> AsyncEngine:
@@ -56,12 +42,6 @@ def get_engine() -> AsyncEngine:
     if _engine is None:
         raise RuntimeError("Database engine not initialized; app lifespan did not run")
     return _engine
-
-
-def get_supabase_auth() -> AsyncClient:
-    if _supabase_auth is None:
-        raise RuntimeError("Supabase auth client not initialized; app lifespan did not run")
-    return _supabase_auth
 
 
 def _json_ready(value: Any) -> Any:

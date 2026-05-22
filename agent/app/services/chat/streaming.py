@@ -6,18 +6,25 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from typing import cast
 
+from starlette.requests import ClientDisconnect
+
 from app.core.config import get_settings
+from app.core.errors import credit_error_payload, error_log_payload, error_message
 from app.core.llm import DEFAULT_MODEL, stream_text
-from app.domain import Session
+from app.core.sse import sse_event
+from app.domain import CreditLimitError, Session
+from app.services.billing import CHAT_STARDUST_COST, refund_stardust_safely
 from app.services.chat.chapters.response import (
     ChapterStreamState,
     consume_chapter_stream_delta,
     parse_chapter_response,
 )
+from app.services.chat.post_stream import persist_chat_response
 from app.services.chat.types import PreparedChat
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+StageLogger = Callable[[str], None]
 
 
 @dataclass(frozen=True)
@@ -26,6 +33,14 @@ class StreamResult:
     storage_content: str
     options: list[str]
     tail_delta: str | None
+
+
+@dataclass(frozen=True)
+class ResponseComplete:
+    result: StreamResult
+
+
+type ResponseStreamItem = str | ResponseComplete
 
 
 def chapter_stream_state(session: Session) -> ChapterStreamState | None:
@@ -37,6 +52,87 @@ def chapter_stream_state(session: Session) -> ChapterStreamState | None:
         pending="",
         phase="streaming_content",
     )
+
+
+def stream_chat_events(
+    prepared: PreparedChat,
+    log_stage: StageLogger,
+) -> AsyncIterator[str]:
+    async def generate() -> AsyncIterator[str]:
+        try:
+            yield sse_event({"type": "ready", "sessionId": prepared.session["id"]})
+            log_stage("stream_opened")
+
+            result: StreamResult | None = None
+            async for item in iter_response_stream(prepared):
+                if isinstance(item, ResponseComplete):
+                    result = item.result
+                else:
+                    yield item
+
+            if result is None:
+                raise ValueError("Missing assistant response")
+            if not result.final_content or not result.storage_content:
+                raise ValueError("Empty assistant response")
+            log_stage("model_completed")
+
+            if result.tail_delta:
+                yield sse_event({"type": "delta", "delta": result.tail_delta})
+
+            assistant_message, generated_title = await persist_chat_response(
+                prepared,
+                storage_content=result.storage_content,
+                final_content=result.final_content,
+            )
+            log_stage("assistant_message_inserted")
+
+            if result.options:
+                yield sse_event({"type": "options", "options": result.options})
+
+            log_stage("stream_done")
+            yield sse_event(
+                {
+                    "type": "done",
+                    "sessionId": prepared.session["id"],
+                    "title": generated_title,
+                    "assistantMessage": {
+                        "id": assistant_message["id"],
+                        "createdAt": assistant_message["created_at"],
+                    },
+                }
+            )
+        except CreditLimitError as error:
+            await _refund_chat(prepared.user_id, reason="chat_stream_credit_error")
+            yield sse_event(credit_error_payload(error))
+        except (ClientDisconnect, asyncio.CancelledError):
+            logger.info("Chat stream closed by client.")
+            return
+        except Exception as error:  # noqa: BLE001
+            await _refund_chat(prepared.user_id, reason="chat_stream_failed")
+            logger.error("Failed to process chat request: %s", error_log_payload(error))
+            yield sse_event({"type": "error", "message": error_message(error)})
+
+    return generate()
+
+
+async def iter_response_stream(
+    prepared: PreparedChat,
+) -> AsyncIterator[ResponseStreamItem]:
+    chapter_state = chapter_stream_state(prepared.session)
+    plain_chunks: list[str] = []
+
+    async for delta in iter_model_deltas(prepared):
+        if chapter_state is None:
+            plain_chunks.append(delta)
+            yield sse_event({"type": "delta", "delta": delta})
+            continue
+
+        output_delta = consume_chapter_stream_delta(chapter_state, delta)
+        if output_delta:
+            plain_chunks.append(output_delta)
+            yield sse_event({"type": "delta", "delta": output_delta})
+
+    yield ResponseComplete(finalize_stream(prepared, chapter_state, plain_chunks))
 
 
 async def iter_model_deltas(prepared: PreparedChat) -> AsyncIterator[str]:
@@ -101,3 +197,7 @@ def finalize_stream(
         options=options,
         tail_delta=tail_delta,
     )
+
+
+async def _refund_chat(user_id: str, *, reason: str) -> None:
+    await refund_stardust_safely(user_id, CHAT_STARDUST_COST, reason=reason)

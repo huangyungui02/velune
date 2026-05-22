@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from app.domain import CreditLimitError
 
-from ._client import fetch_one
+from .database import fetch_one
 
 
 async def consume_stardust(user_id: str, amount: int) -> None:

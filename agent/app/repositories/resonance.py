@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ._client import execute
+from .database import execute
 
 
 async def create_or_update_resonance(
