@@ -4,9 +4,9 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from app.config import get_settings
+from app.core.config import get_settings
 from app.domain import CreditLimitError
-from app.errors import error_log_payload
+from app.core.errors import error_log_payload
 from app.repositories import consume_stardust, refund_stardust
 
 logger = logging.getLogger(__name__)

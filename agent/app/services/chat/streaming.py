@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
+from typing import cast
 
-from app.config import get_settings
+from app.core.config import get_settings
+from app.core.llm import DEFAULT_MODEL, stream_text
 from app.domain import Session
-from app.infra.llm import DEFAULT_MODEL, stream_text
-from app.infra.streaming import stream_with_timeout
 from app.services.chat.chapters.response import (
     ChapterStreamState,
     consume_chapter_stream_delta,
@@ -39,17 +40,30 @@ def chapter_stream_state(session: Session) -> ChapterStreamState | None:
 
 
 async def iter_model_deltas(prepared: PreparedChat) -> AsyncIterator[str]:
-    async for delta in stream_with_timeout(
-        stream_text(
-            prepared.prompt_messages,
-            model=DEFAULT_MODEL,
-            temperature=settings.CHAT_TEMPERATURE,
-        ),
-        first_chunk_timeout=settings.LLM_FIRST_TOKEN_TIMEOUT_SECONDS,
-        idle_timeout=settings.LLM_STREAM_IDLE_TIMEOUT_SECONDS,
-    ):
-        if delta:
-            yield delta
+    chunks = stream_text(
+        prepared.prompt_messages,
+        model=DEFAULT_MODEL,
+        temperature=settings.CHAT_TEMPERATURE,
+    )
+    iterator = chunks.__aiter__()
+    timeout = settings.LLM_FIRST_TOKEN_TIMEOUT_SECONDS
+
+    try:
+        while True:
+            try:
+                delta = await asyncio.wait_for(iterator.__anext__(), timeout=timeout)
+            except StopAsyncIteration:
+                return
+            except asyncio.TimeoutError as error:
+                raise TimeoutError("Model response timed out") from error
+
+            timeout = settings.LLM_STREAM_IDLE_TIMEOUT_SECONDS
+            if delta:
+                yield delta
+    finally:
+        aclose = getattr(iterator, "aclose", None)
+        if callable(aclose):
+            await cast(Callable[[], Awaitable[None]], aclose)()
 
 
 def finalize_stream(

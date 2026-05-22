@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from app.config import get_settings
+from app.core.config import get_settings
 from app.core import Lang
-from app.errors import error_log_payload
-from app.infra.llm import DEFAULT_MODEL, complete_text
+from app.core.errors import error_log_payload
+from app.core.llm import DEFAULT_MODEL, complete_text
 from app.repositories import delete_session, insert_message
 from app.services.billing import CHAT_STARDUST_COST, stardust_charge
 from app.services.chat.chapters.prompt import build_chapter_opening_messages

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-from app.config import get_settings
+from app.core.config import get_settings
 from app.repositories import insert_message, update_session_title
 from app.services.chat.prompts import generate_session_title
 from app.services.chat.session import sync_session_activity

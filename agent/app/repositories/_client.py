@@ -7,7 +7,7 @@ from typing import Any, TypeVar
 from supabase import AsyncClient, acreate_client
 from supabase.lib.client_options import AsyncClientOptions
 
-from app.config import get_settings
+from app.core.config import get_settings
 
 settings = get_settings()
 

@@ -6,7 +6,7 @@ from typing import Any, cast
 from openai import AsyncOpenAI, AsyncStream
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
-from app.config import get_settings
+from app.core.config import get_settings
 
 DEFAULT_MODEL = "qwen3.5-flash"
 

@@ -8,11 +8,11 @@ from fastapi import Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.requests import ClientDisconnect
 
-from app.api.http import error_response, required_json_body
 from app.core import Lang
 from app.domain import CreditLimitError
-from app.errors import credit_error_payload, error_log_payload, error_message
-from app.infra.sse import emit_once, sse_event, sse_response
+from app.core.errors import credit_error_payload, error_log_payload, error_message
+from app.api.http import error_response, required_json_body
+from app.core.sse import emit_once, sse_event, sse_response
 from app.services.billing import CHAT_STARDUST_COST, refund_stardust_safely
 from app.services.chat.chapters.response import consume_chapter_stream_delta
 from app.services.chat.post_stream import persist_chat_response

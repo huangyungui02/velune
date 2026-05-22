@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from app.core import Lang
-from app.infra.llm import DEFAULT_MODEL, complete_json
+from app.core.llm import DEFAULT_MODEL, complete_json
 
 CANONICAL_NAME_TEMPERATURE = 0.25
 CANONICAL_NAME_SCHEMA = {

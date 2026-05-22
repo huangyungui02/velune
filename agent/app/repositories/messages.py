@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from postgrest.types import ReturnMethod
 
-from app.config import get_settings
+from app.core.config import get_settings
 from app.domain import Message, Role
 
 from ._client import await_repo, first_row, get_supabase
