@@ -8,12 +8,13 @@ from fastapi import Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.requests import ClientDisconnect
 
-from app.core.lang import Lang
-from app.domain.exceptions import CreditLimitError
+from app.api.http import error_response, required_json_body
+from app.core import Lang
+from app.domain import CreditLimitError
 from app.errors import credit_error_payload, error_log_payload, error_message
 from app.infra.sse import emit_once, sse_event, sse_response
 from app.services.billing import CHAT_STARDUST_COST, refund_stardust_safely
-from app.services.chat.chapters.format import consume_chapter_stream_delta
+from app.services.chat.chapters.response import consume_chapter_stream_delta
 from app.services.chat.post_stream import persist_chat_response
 from app.services.chat.prepare import prepare_chat
 from app.services.chat.streaming import (
@@ -38,9 +39,7 @@ async def handle_chat(
         logger.info("chat stage=%s elapsed_ms=%s", stage, elapsed_ms)
 
     try:
-        body = await request.json()
-        if not isinstance(body, dict):
-            raise ValueError("Invalid request body")
+        body = await required_json_body(request)
         prepared = await prepare_chat(
             user_id=user_id,
             lang=lang,
@@ -50,7 +49,7 @@ async def handle_chat(
     except CreditLimitError as error:
         return sse_response(emit_once(credit_error_payload(error)))
     except ValueError as error:
-        return JSONResponse({"error": str(error)}, status_code=400)
+        return error_response(str(error))
     except Exception as error:  # noqa: BLE001
         logger.error("Failed before stream start: %s", error_log_payload(error))
         return sse_response(emit_once({"type": "error", "message": error_message(error)}))

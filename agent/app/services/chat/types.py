@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.core.lang import Lang
-from app.domain.types import Session
+from app.core import Lang
+from app.domain import Session
 
 
 @dataclass(frozen=True)

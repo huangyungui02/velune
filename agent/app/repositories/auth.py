@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.domain.exceptions import UnauthorizedError
+from app.domain import UnauthorizedError
 
 from ._client import await_repo, get_supabase
 

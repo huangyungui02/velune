@@ -1,22 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from uuid import UUID
 
-from app.core.lang import Lang
+from app.core import Lang, normalize_uuid
 from app.repositories import get_recent_messages, insert_message
 from app.services.billing import CHAT_STARDUST_COST, stardust_charge
 from app.services.chat.preferences import normalize_reply_length
 from app.services.chat.prompts import build_prompt_messages
 from app.services.chat.session import resolve_session
 from app.services.chat.types import PreparedChat
-
-
-def normalize_uuid(value: str) -> str:
-    trimmed = value.strip()
-    if not trimmed:
-        return ""
-    return str(UUID(trimmed))
 
 
 async def prepare_chat(

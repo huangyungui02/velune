@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.domain.types import Chapter, Souler
+from app.domain import Chapter, Souler
 
 from ._client import await_repo, first_row, get_supabase
 from .parsers import to_chapter, to_souler

@@ -4,13 +4,13 @@ import logging
 from uuid import UUID
 
 from app.config import get_settings
-from app.core.lang import Lang
+from app.core import Lang
 from app.errors import error_log_payload
 from app.infra.llm import DEFAULT_MODEL, complete_text
 from app.repositories import delete_session, insert_message
 from app.services.billing import CHAT_STARDUST_COST, stardust_charge
-from app.services.chat.chapters.format import parse_chapter_response
 from app.services.chat.chapters.prompt import build_chapter_opening_messages
+from app.services.chat.chapters.response import parse_chapter_response
 from app.services.chat.preferences import ReplyLength
 from app.services.chat.session import create_chapter_session, load_chapter_pair, sync_session_activity
 

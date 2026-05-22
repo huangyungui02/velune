@@ -7,7 +7,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.api.deps import require_lang, require_user_id
-from app.core.lang import Lang
+from app.api.http import error_response
+from app.core import Lang
 from app.errors import error_log_payload, error_message
 from app.services.soulers import canonicalize_souler_name
 
@@ -30,4 +31,4 @@ async def canonicalize_souler_name_route(
         return JSONResponse({"canonical_name": canonical_name}, status_code=200)
     except Exception as error:  # noqa: BLE001
         logger.error("Failed to canonicalize souler: %s", error_log_payload(error))
-        return JSONResponse({"error": error_message(error)}, status_code=400)
+        return error_response(error_message(error))

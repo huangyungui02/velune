@@ -37,3 +37,13 @@ class Message(TypedDict):
     role: Role
     content: str
     created_at: str
+
+
+class CreditLimitError(Exception):
+    def __init__(self, message: str, code: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+class UnauthorizedError(Exception):
+    pass

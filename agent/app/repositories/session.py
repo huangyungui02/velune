@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from postgrest.types import ReturnMethod
 
-from app.domain.types import Session
+from app.domain import Session
 
 from ._client import await_repo, first_row, get_supabase
 from .parsers import to_chapter, to_souler

@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 
 from app.api.deps import require_lang, require_user_id
-from app.core.lang import Lang
+from app.core import Lang
 from app.services.chat import handle_chat
 
 router = APIRouter()

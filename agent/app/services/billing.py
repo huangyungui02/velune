@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from app.config import get_settings
-from app.domain.exceptions import CreditLimitError
+from app.domain import CreditLimitError
 from app.errors import error_log_payload
 from app.repositories import consume_stardust, refund_stardust
 

@@ -5,10 +5,10 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
 from app.config import get_settings
-from app.domain.types import Session
+from app.domain import Session
 from app.infra.llm import DEFAULT_MODEL, stream_text
 from app.infra.streaming import stream_with_timeout
-from app.services.chat.chapters.format import (
+from app.services.chat.chapters.response import (
     ChapterStreamState,
     consume_chapter_stream_delta,
     parse_chapter_response,

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from app.domain.exceptions import CreditLimitError, UnauthorizedError
+from app.domain import CreditLimitError, UnauthorizedError
 
 __all__ = [
     "CreditLimitError",

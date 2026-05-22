@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from app.config import get_settings
-from app.core.lang import Lang
-from app.core.text import sanitize_title
-from app.domain.types import Chapter, Message, Session
+from app.core import Lang, sanitize_title
+from app.domain import Chapter, Message, Session
 from app.infra.llm import DEFAULT_MODEL, complete_text
 from app.services.chat.chapters.format import build_chapter_system_prompt
 from app.services.chat.preferences import ReplyLength, apply_reply_length_prompt

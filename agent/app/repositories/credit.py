@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.domain.exceptions import CreditLimitError
+from app.domain import CreditLimitError
 
 from ._client import await_repo, first_row, get_supabase
 

@@ -4,8 +4,8 @@ import logging
 
 from fastapi import HTTPException, Request
 
-from app.core.lang import Lang, normalize_lang
-from app.domain.exceptions import UnauthorizedError
+from app.core import Lang, normalize_lang
+from app.domain import UnauthorizedError
 from app.errors import error_log_payload, error_message
 from app.repositories import get_user_id_from_auth_header
 
