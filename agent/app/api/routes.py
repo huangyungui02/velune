@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncIterator
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -14,12 +16,14 @@ from app.api.http import (
 )
 from app.core import Lang, normalize_lang
 from app.core.errors import error_log_payload, error_message
+from app.core.sse import sse_event, sse_response
 from app.domain import CreditLimitError, UnauthorizedError
-from app.repositories import get_user_id_from_auth_header
+from app.repositories import get_glimmer_by_id, get_user_id_from_auth_header
 from app.services.chat import handle_chat
 from app.services.chat.chapters import start_chapter_session
 from app.services.chat.preferences import normalize_reply_length
 from app.services.soulers import canonicalize_souler_name
+from app.services.starsea import stream_graph
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -42,6 +46,39 @@ async def require_user_id(request: Request) -> str:
         raise HTTPException(status_code=400, detail=error_message(error)) from error
 
 
+@router.post("/starsea")
+async def starsea(
+    request: Request,
+    user_id: str = Depends(require_user_id),
+):
+    try:
+        body = await required_json_body(request)
+        glimmer_id = _require_uuid(body.get("glimmerId"), "glimmerId")
+        metadata = body.get("metadata")
+        if metadata is None:
+            metadata = {}
+        if not isinstance(metadata, dict):
+            raise ValueError("metadata must be an object")
+
+        glimmer = await get_glimmer_by_id(user_id, glimmer_id)
+        if glimmer is None:
+            raise ValueError("Glimmer not found")
+
+        content = str(glimmer.get("content") or "").strip()
+        fallback = body.get("content")
+        if not content and isinstance(fallback, str):
+            content = fallback.strip()
+        if not content:
+            raise ValueError("Glimmer content cannot be empty")
+
+        return sse_response(_stream_starsea(content, metadata, glimmer_id))
+    except ValueError as error:
+        return error_response(str(error))
+    except Exception as error:  # noqa: BLE001
+        logger.error("Failed before starsea stream start: %s", error_log_payload(error))
+        return sse_response(_emit_starsea_error(error_message(error)))
+
+
 @router.post("/{lang}/chat")
 async def chat(
     request: Request,
@@ -49,6 +86,46 @@ async def chat(
     user_id: str = Depends(require_user_id),
 ):
     return await handle_chat(normalized_lang, user_id, request)
+
+
+def _require_uuid(value: Any, field: str) -> str:
+    try:
+        return str(UUID(str(value)))
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"{field} must be a valid uuid") from error
+
+
+async def _stream_starsea(
+    content: str,
+    metadata: dict[str, Any],
+    thread_id: str,
+) -> AsyncIterator[str]:
+    yield sse_event({"type": "ready", "threadId": thread_id})
+    async for event in stream_graph(content, metadata=metadata, thread_id=thread_id):
+        payload = _starsea_payload(event)
+        yield sse_event(payload)
+
+
+async def _emit_starsea_error(message: str) -> AsyncIterator[str]:
+    yield sse_event({"type": "error", "message": message})
+
+
+def _starsea_payload(event: dict[str, Any]) -> dict[str, Any]:
+    event_name = str(event.get("event") or "")
+    thread_id = str(event.get("thread_id") or "")
+    data = event.get("data")
+
+    if event_name == "message_delta" and isinstance(data, dict):
+        return {"type": "delta", "delta": str(data.get("delta") or "")}
+    if event_name == "thought_matches":
+        return {"type": "thought_matches", "matches": data if isinstance(data, list) else []}
+    if event_name == "completed" and isinstance(data, dict):
+        display = data.get("display")
+        return {"type": "done", "threadId": thread_id, "display": display}
+    if event_name == "error" and isinstance(data, dict):
+        return {"type": "error", "message": str(data.get("message") or "Starsea failed")}
+
+    return {"type": "event", "threadId": thread_id, "data": data}
 
 
 @router.post("/{lang}/soulers/{souler_id}/chapters/{chapter_id}/start")

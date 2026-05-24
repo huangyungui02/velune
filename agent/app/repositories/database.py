@@ -6,8 +6,8 @@ from datetime import date, datetime
 from typing import Any, TypeVar
 from uuid import UUID
 
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from psycopg.rows import dict_row
+from psycopg_pool import AsyncConnectionPool
 
 from app.core.config import get_settings
 
@@ -15,33 +15,47 @@ settings = get_settings()
 
 T = TypeVar("T")
 
-_engine: AsyncEngine | None = None
+_pool: AsyncConnectionPool | None = None
 
 
-def init_database() -> AsyncEngine:
-    global _engine
-    if _engine is None:
-        _engine = create_async_engine(
-            settings.DATABASE_URL,
-            pool_pre_ping=True,
-            pool_timeout=settings.REPO_TIMEOUT_SECONDS,
+def _psycopg_database_url() -> str:
+    return settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://", 1)
+
+
+def init_database() -> AsyncConnectionPool:
+    global _pool
+    if _pool is None:
+        _pool = AsyncConnectionPool(
+            _psycopg_database_url(),
+            kwargs={
+                "autocommit": True,
+                "row_factory": dict_row,
+            },
+            timeout=settings.REPO_TIMEOUT_SECONDS,
+            open=False,
         )
-    return _engine
+    return _pool
 
 
 async def close_database() -> None:
-    global _engine
-    if _engine is None:
+    global _pool
+    if _pool is None:
         return
 
-    await _engine.dispose()
-    _engine = None
+    await _pool.close()
+    _pool = None
 
 
-def get_engine() -> AsyncEngine:
-    if _engine is None:
-        raise RuntimeError("Database engine not initialized; app lifespan did not run")
-    return _engine
+async def open_database() -> AsyncConnectionPool:
+    pool = init_database()
+    await pool.open(wait=True)
+    return pool
+
+
+def get_pool() -> AsyncConnectionPool:
+    if _pool is None:
+        raise RuntimeError("Database pool not initialized; app lifespan did not run")
+    return _pool
 
 
 def _json_ready(value: Any) -> Any:
@@ -81,9 +95,10 @@ async def fetch_one(
     timeout: float | None = None,
 ) -> dict[str, Any] | None:
     async def run() -> dict[str, Any] | None:
-        async with get_engine().connect() as connection:
-            result = await connection.execute(text(sql), params or {})
-            row = result.mappings().first()
+        async with get_pool().connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(sql, params or {})
+                row = await cursor.fetchone()
             return _row_dict(row) if row else None
 
     return await await_repo(run(), timeout=timeout)
@@ -96,9 +111,11 @@ async def fetch_all(
     timeout: float | None = None,
 ) -> list[dict[str, Any]]:
     async def run() -> list[dict[str, Any]]:
-        async with get_engine().connect() as connection:
-            result = await connection.execute(text(sql), params or {})
-            return [_row_dict(row) for row in result.mappings().all()]
+        async with get_pool().connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(sql, params or {})
+                rows = await cursor.fetchall()
+            return [_row_dict(row) for row in rows]
 
     return await await_repo(run(), timeout=timeout)
 
@@ -110,8 +127,9 @@ async def execute(
     timeout: float | None = None,
 ) -> None:
     async def run() -> None:
-        async with get_engine().begin() as connection:
-            await connection.execute(text(sql), params or {})
+        async with get_pool().connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(sql, params or {})
 
     await await_repo(run(), timeout=timeout)
 
@@ -123,9 +141,10 @@ async def execute_fetch_one(
     timeout: float | None = None,
 ) -> dict[str, Any] | None:
     async def run() -> dict[str, Any] | None:
-        async with get_engine().begin() as connection:
-            result = await connection.execute(text(sql), params or {})
-            row = result.mappings().first()
+        async with get_pool().connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(sql, params or {})
+                row = await cursor.fetchone()
             return _row_dict(row) if row else None
 
     return await await_repo(run(), timeout=timeout)

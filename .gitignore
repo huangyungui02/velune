@@ -65,3 +65,6 @@ htmlcov/
 site/dist/
 site/.astro/
 site/.vercel/
+
+# Agent
+.agents/

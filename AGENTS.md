@@ -16,4 +16,4 @@
 - Web端: bun, sveltekit, svelte5, tailwindcss, shadcn-svelte(https://www.shadcn-svelte.com/llms.txt)
 - 产品官网：astro5
 - 数据库：supabase
-- Agent(chat/echo): python3.14, fastapi
+- Agent: python3.14, fastapi

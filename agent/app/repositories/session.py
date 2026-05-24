@@ -39,8 +39,8 @@ async def get_session_by_id(user_id: str, session_id: str) -> Session:
             ON s.id = sess.souler_id
         LEFT JOIN public.chapters AS c
             ON c.id = sess.chapter_id
-        WHERE sess.id = CAST(:session_id AS uuid)
-          AND sess.user_id = CAST(:user_id AS uuid)
+        WHERE sess.id = CAST(%(session_id)s AS uuid)
+          AND sess.user_id = CAST(%(user_id)s AS uuid)
         """,
         {"user_id": user_id, "session_id": session_id},
     )
@@ -68,10 +68,10 @@ async def create_session(
         """
         INSERT INTO public.sessions (user_id, souler_id, title, chapter_id)
         VALUES (
-            CAST(:user_id AS uuid),
-            CAST(:souler_id AS uuid),
-            :title,
-            CAST(:chapter_id AS uuid)
+            CAST(%(user_id)s AS uuid),
+            CAST(%(souler_id)s AS uuid),
+            %(title)s,
+            CAST(%(chapter_id)s AS uuid)
         )
         RETURNING id
         """,
@@ -91,8 +91,8 @@ async def delete_session(user_id: str, session_id: str) -> None:
     await execute(
         """
         DELETE FROM public.sessions
-        WHERE id = CAST(:session_id AS uuid)
-          AND user_id = CAST(:user_id AS uuid)
+        WHERE id = CAST(%(session_id)s AS uuid)
+          AND user_id = CAST(%(user_id)s AS uuid)
         """,
         {"user_id": user_id, "session_id": session_id},
     )
@@ -108,9 +108,9 @@ async def update_session_title(
     await execute(
         """
         UPDATE public.sessions
-        SET title = :title
-        WHERE id = CAST(:session_id AS uuid)
-          AND user_id = CAST(:user_id AS uuid)
+        SET title = %(title)s
+        WHERE id = CAST(%(session_id)s AS uuid)
+          AND user_id = CAST(%(user_id)s AS uuid)
         """,
         {"user_id": user_id, "session_id": session_id, "title": title},
         timeout=timeout,
@@ -126,9 +126,9 @@ async def touch_session(
     await execute(
         """
         UPDATE public.sessions
-        SET updated_at = :updated_at
-        WHERE id = CAST(:session_id AS uuid)
-          AND user_id = CAST(:user_id AS uuid)
+        SET updated_at = %(updated_at)s
+        WHERE id = CAST(%(session_id)s AS uuid)
+          AND user_id = CAST(%(user_id)s AS uuid)
         """,
         {
             "user_id": user_id,

@@ -11,7 +11,7 @@ async def get_souler_by_id(souler_id: str) -> Souler:
         """
         SELECT id, name, bio
         FROM public.soulers
-        WHERE id = CAST(:souler_id AS uuid)
+        WHERE id = CAST(%(souler_id)s AS uuid)
         """,
         {"souler_id": souler_id},
     )
@@ -25,7 +25,7 @@ async def get_chapter_by_id(chapter_id: str) -> Chapter:
         """
         SELECT id, souler_id, seq, title, subtitle, role, task
         FROM public.chapters
-        WHERE id = CAST(:chapter_id AS uuid)
+        WHERE id = CAST(%(chapter_id)s AS uuid)
         """,
         {"chapter_id": chapter_id},
     )

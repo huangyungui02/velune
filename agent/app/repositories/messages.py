@@ -13,10 +13,10 @@ async def get_recent_messages(user_id: str, session_id: str) -> list[Message]:
         """
         SELECT id, user_id, souler_id, session_id, role, content, created_at
         FROM public.messages
-        WHERE user_id = CAST(:user_id AS uuid)
-          AND session_id = CAST(:session_id AS uuid)
+        WHERE user_id = CAST(%(user_id)s AS uuid)
+          AND session_id = CAST(%(session_id)s AS uuid)
         ORDER BY created_at DESC
-        LIMIT :limit
+        LIMIT %(limit)s
         """,
         {
             "user_id": user_id,
@@ -42,11 +42,11 @@ async def insert_message(
         """
         INSERT INTO public.messages (user_id, souler_id, session_id, role, content)
         VALUES (
-            CAST(:user_id AS uuid),
-            CAST(:souler_id AS uuid),
-            CAST(:session_id AS uuid),
-            :role,
-            :content
+            CAST(%(user_id)s AS uuid),
+            CAST(%(souler_id)s AS uuid),
+            CAST(%(session_id)s AS uuid),
+            %(role)s,
+            %(content)s
         )
         RETURNING id, created_at
         """,

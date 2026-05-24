@@ -14,9 +14,9 @@ async def create_or_update_resonance(
         """
         INSERT INTO public.resonances (user_id, souler_id, last_session_id)
         VALUES (
-            CAST(:user_id AS uuid),
-            CAST(:souler_id AS uuid),
-            CAST(:last_session_id AS uuid)
+            CAST(%(user_id)s AS uuid),
+            CAST(%(souler_id)s AS uuid),
+            CAST(%(last_session_id)s AS uuid)
         )
         ON CONFLICT (user_id, souler_id)
         DO UPDATE SET

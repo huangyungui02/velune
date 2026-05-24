@@ -9,7 +9,7 @@ async def consume_stardust(user_id: str, amount: int) -> None:
     row = await fetch_one(
         """
         SELECT ok, code, message, credits, product_id, daily_credits
-        FROM public.consume_stardust(CAST(:user_id AS uuid), :amount)
+        FROM public.consume_stardust(CAST(%(user_id)s AS uuid), %(amount)s)
         """,
         {"user_id": user_id, "amount": amount},
     )
@@ -28,7 +28,7 @@ async def refund_stardust(user_id: str, amount: int) -> None:
     row = await fetch_one(
         """
         SELECT ok, code, message, credits, product_id, daily_credits
-        FROM public.refund_stardust(CAST(:user_id AS uuid), :amount)
+        FROM public.refund_stardust(CAST(%(user_id)s AS uuid), %(amount)s)
         """,
         {"user_id": user_id, "amount": amount},
     )
