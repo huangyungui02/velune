@@ -1,4 +1,3 @@
-import MarkdownUI
 import SwiftUI
 
 struct StarSeaConversationView: View {
@@ -81,9 +80,28 @@ struct StarSeaConversationView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
+                    let lastMessageId = messages.last?.id
+
                     ForEach(messages) { message in
-                        StarSeaBubble(message: message)
-                            .id(message.id)
+                        VStack(spacing: 8) {
+                            let payload = starSeaPayload(for: message)
+
+                            ConversationMessageRow(
+                                role: message.role == .user ? .user : .assistant,
+                                content: payload.body
+                            )
+
+                            if message.id == lastMessageId, !payload.options.isEmpty {
+                                ConversationOptionsView(
+                                    options: payload.options,
+                                    isDisabled: isStreaming || isSettling || threadId == nil
+                                ) { option in
+                                    selectConversationOption(option)
+                                }
+                                .padding(.top, 2)
+                            }
+                        }
+                        .id(message.id)
                     }
 
                     if !resonanceMatches.isEmpty {
@@ -180,6 +198,19 @@ struct StarSeaConversationView: View {
         resonanceMatches = []
         messages.append(StarSeaMessage(role: .user, content: content))
         await streamTurn(content: content)
+    }
+
+    private func starSeaPayload(for message: StarSeaMessage) -> ConversationOptionPayload {
+        guard message.role == .assistant else {
+            return ConversationOptionPayload(body: message.content, options: [])
+        }
+
+        return ConversationOptionParser.parse(message.content)
+    }
+
+    private func selectConversationOption(_ option: String) {
+        inputText = option
+        isComposerFocused = true
     }
 
     private func streamTurn(content: String) async {
@@ -310,46 +341,6 @@ struct StarSeaMessage: Identifiable, Hashable {
         self.id = id
         self.role = role
         self.content = content
-    }
-}
-
-private struct StarSeaBubble: View {
-    let message: StarSeaMessage
-
-    private var isUser: Bool {
-        message.role == .user
-    }
-
-    var body: some View {
-        HStack {
-            if isUser {
-                Spacer(minLength: 32)
-            }
-
-            Group {
-                if !isUser && message.content.isEmpty {
-                    MatchingWaveIcon(
-                        ringSize: 10,
-                        containerSize: 22,
-                        color: UITheme.primaryText.opacity(0.6)
-                    )
-                } else {
-                    Markdown(message.content)
-                        .veluneMarkdownBodyStyle()
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(
-                isUser ? .white.opacity(0.12) : .white.opacity(0.06),
-                in: .rect(cornerRadius: 16)
-            )
-            .frame(maxWidth: 320, alignment: isUser ? .trailing : .leading)
-
-            if !isUser {
-                Spacer(minLength: 32)
-            }
-        }
     }
 }
 

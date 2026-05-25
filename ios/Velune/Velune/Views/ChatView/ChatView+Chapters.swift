@@ -133,12 +133,7 @@ extension ChatView {
     }
 
     func normalizeChapterOptions(_ options: [String]) -> [String] {
-        Array(
-            options
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
-                .prefix(4)
-        )
+        ConversationOptionParser.normalize(options)
     }
 
     func parseServerDate(_ value: String) -> Date? {

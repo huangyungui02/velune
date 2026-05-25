@@ -30,8 +30,8 @@ extension ChatView {
 
                     ForEach(messages) { message in
                         VStack(spacing: 8) {
-                            ChatBubble(
-                                message: message,
+                            ConversationMessageRow(
+                                role: message.role == .user ? .user : .assistant,
                                 content: visibleContent(for: message)
                             )
 
@@ -179,35 +179,22 @@ extension ChatView {
     }
 
     func chapterOptionsInlineView(options: [String]) -> some View {
-        HStack {
-            chapterOptionsView(options: options)
-                .frame(maxWidth: 320, alignment: .leading)
-            Spacer(minLength: 32)
-        }
+        chapterOptionsView(options: options)
+            .padding(.top, 2)
     }
 
     func chapterOptionsView(options: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
-                Button {
-                    Task {
-                        await sendMessage(prefilledContent: option)
-                    }
-                } label: {
-                    Text(option)
-                        .font(.footnote)
-                        .fontDesign(.serif)
-                        .foregroundStyle(UITheme.primaryText)
-                        .lineLimit(2)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.white.opacity(0.06), in: .rect(cornerRadius: 16))
-                }
-                .buttonStyle(.plain)
-                .disabled(isSending || isLoading)
-            }
+        ConversationOptionsView(
+            options: options,
+            isDisabled: isSending || isLoading
+        ) { option in
+            selectConversationOption(option)
         }
+    }
+
+    func selectConversationOption(_ option: String) {
+        inputText = option
+        isComposerFocused = true
     }
 
     private var chapterUnavailableView: some View {
@@ -283,49 +270,6 @@ extension ChatView {
             }
         } else {
             proxy.scrollTo(lastId, anchor: .bottom)
-        }
-    }
-}
-
-private struct ChatBubble: View {
-    let message: Message
-    let content: String
-
-    private var isUser: Bool {
-        message.role == .user
-    }
-
-    var body: some View {
-        HStack {
-            if isUser {
-                Spacer(minLength: 32)
-            }
-
-            Group {
-                if !isUser && content.isEmpty {
-                    MatchingWaveIcon(
-                        ringSize: 10,
-                        containerSize: 22,
-                        color: UITheme.primaryText.opacity(0.6)
-                    )
-                } else {
-                    Markdown(content)
-                        .veluneMarkdownBodyStyle()
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(
-                isUser
-                    ? .white.opacity(0.12)
-                    : .white.opacity(0.06),
-                in: .rect(cornerRadius: 16)
-            )
-                .frame(maxWidth: 320, alignment: isUser ? .trailing : .leading)
-
-            if !isUser {
-                Spacer(minLength: 32)
-            }
         }
     }
 }
