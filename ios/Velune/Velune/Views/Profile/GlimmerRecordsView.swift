@@ -34,7 +34,6 @@ struct GlimmerRecordsView: View {
         }
         .navigationTitle(Text("glimmerHistory.title"))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)
         .alert("matching.error.title", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
