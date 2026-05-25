@@ -18,10 +18,11 @@ async def run_graph(
     user_input: str,
     metadata: dict[str, Any] | None = None,
     thread_id: str | None = None,
+    intent: str | None = None,
 ) -> dict[str, Any]:
     thread_id = thread_id or str(uuid4())
     config = {"configurable": {"thread_id": thread_id}}
-    result = await build_graph().ainvoke(_initial_state(user_input, metadata), config)
+    result = await build_graph().ainvoke(_initial_state(user_input, metadata, intent), config)
 
     payload: dict[str, Any] = {
         "status": "completed",
@@ -36,6 +37,7 @@ async def stream_graph(
     user_input: str,
     metadata: dict[str, Any] | None = None,
     thread_id: str | None = None,
+    intent: str | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
     thread_id = thread_id or str(uuid4())
     config = {"configurable": {"thread_id": thread_id}}
@@ -43,7 +45,7 @@ async def stream_graph(
 
     try:
         async for chunk in graph.astream(
-            _initial_state(user_input, metadata),
+            _initial_state(user_input, metadata, intent),
             config,
             stream_mode="custom",
         ):
@@ -56,11 +58,11 @@ async def stream_graph(
                         "delta": chunk.get("delta", ""),
                     },
                 }
-            elif isinstance(chunk, dict) and chunk.get("type") == "thought_matches":
+            elif isinstance(chunk, dict) and chunk.get("type") == "resonance_match":
                 yield {
-                    "event": "thought_matches",
+                    "event": "resonance_match",
                     "thread_id": thread_id,
-                    "data": chunk["thought_matches"],
+                    "data": chunk["matches"],
                 }
             else:
                 yield {
@@ -98,14 +100,22 @@ async def stream_graph(
         }
 
 
-def _initial_state(user_input: str, metadata: dict[str, Any] | None = None) -> State:
+def _initial_state(
+    user_input: str,
+    metadata: dict[str, Any] | None = None,
+    intent: str | None = None,
+) -> State:
     settings = get_settings()
     runtime_metadata = {
         "app_env": settings.APP_ENV,
         **(metadata or {}),
     }
+    if intent is not None:
+        runtime_metadata["intent"] = intent
+
+    messages = [HumanMessage(content=user_input)] if user_input.strip() else []
     initial_state: State = {
-        "messages": [HumanMessage(content=user_input)],
+        "messages": messages,
         "display": None,
         "metadata": runtime_metadata,
     }

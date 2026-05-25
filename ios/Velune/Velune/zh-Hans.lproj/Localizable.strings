@@ -63,6 +63,7 @@
 "common.submit" = "提交";
 "common.loading" = "加载中…";
 "common.search" = "搜索";
+"common.back" = "返回";
 
 "app.tab.starsea" = "星海";
 "app.tab.chat" = "聊天";
@@ -97,6 +98,12 @@
 "starsea.action.history" = "历史记录";
 "starsea.empty.resonanceTitle" = "还没有共鸣";
 "starsea.empty.resonanceSubtitle" = "写下第一道心澜，静候第一声回响。";
+"starsea.chat.placeholder" = "继续说下去…";
+"starsea.leave.title" = "离开星海？";
+"starsea.leave.message" = "可以先把这段对话沉淀成一篇心澜，也可以直接离开。";
+"starsea.leave.settle" = "沉淀并离开";
+"starsea.leave.direct" = "直接离开";
+"starsea.leave.settleFailed" = "暂时没有完成沉淀，请稍后再试。";
 
 "matching.status.listening" = "正在聆听回响";
 "matching.error.title" = "错误";

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -18,7 +18,7 @@ from app.core import Lang, normalize_lang
 from app.core.errors import error_log_payload, error_message
 from app.core.sse import sse_event, sse_response
 from app.domain import CreditLimitError, UnauthorizedError
-from app.repositories import get_glimmer_by_id, get_user_id_from_auth_header
+from app.repositories import create_glimmer, get_user_id_from_auth_header
 from app.services.chat import handle_chat
 from app.services.chat.chapters import start_chapter_session
 from app.services.chat.preferences import normalize_reply_length
@@ -53,25 +53,22 @@ async def starsea(
 ):
     try:
         body = await required_json_body(request)
-        glimmer_id = _require_uuid(body.get("glimmerId"), "glimmerId")
         metadata = body.get("metadata")
         if metadata is None:
             metadata = {}
         if not isinstance(metadata, dict):
             raise ValueError("metadata must be an object")
 
-        glimmer = await get_glimmer_by_id(user_id, glimmer_id)
-        if glimmer is None:
-            raise ValueError("Glimmer not found")
+        intent = _optional_intent(body.get("intent"))
+        thread_id = _optional_uuid(body.get("threadId"), "threadId") or str(uuid4())
+        raw_content = body.get("content")
+        content = raw_content.strip() if isinstance(raw_content, str) else ""
+        if intent == "collect" and body.get("threadId") is None:
+            raise ValueError("threadId is required when intent is collect")
+        if intent != "collect" and not content:
+            raise ValueError("content cannot be empty")
 
-        content = str(glimmer.get("content") or "").strip()
-        fallback = body.get("content")
-        if not content and isinstance(fallback, str):
-            content = fallback.strip()
-        if not content:
-            raise ValueError("Glimmer content cannot be empty")
-
-        return sse_response(_stream_starsea(content, metadata, glimmer_id))
+        return sse_response(_stream_starsea(content, metadata, thread_id, user_id, intent))
     except ValueError as error:
         return error_response(str(error))
     except Exception as error:  # noqa: BLE001
@@ -88,21 +85,42 @@ async def chat(
     return await handle_chat(normalized_lang, user_id, request)
 
 
-def _require_uuid(value: Any, field: str) -> str:
+def _optional_uuid(value: Any, field: str) -> str | None:
+    if value is None:
+        return None
     try:
         return str(UUID(str(value)))
     except (TypeError, ValueError) as error:
         raise ValueError(f"{field} must be a valid uuid") from error
 
 
+def _optional_intent(value: Any) -> str | None:
+    if value is None:
+        return None
+    if value == "collect":
+        return "collect"
+    raise ValueError("intent must be collect")
+
+
 async def _stream_starsea(
     content: str,
     metadata: dict[str, Any],
     thread_id: str,
+    user_id: str,
+    intent: str | None,
 ) -> AsyncIterator[str]:
     yield sse_event({"type": "ready", "threadId": thread_id})
-    async for event in stream_graph(content, metadata=metadata, thread_id=thread_id):
-        payload = _starsea_payload(event)
+    async for event in stream_graph(
+        content,
+        metadata=metadata,
+        thread_id=thread_id,
+        intent=intent,
+    ):
+        try:
+            payload = await _starsea_payload(event, user_id)
+        except Exception as error:  # noqa: BLE001
+            logger.error("Failed to map starsea stream event: %s", error_log_payload(error))
+            payload = {"type": "error", "message": error_message(error)}
         yield sse_event(payload)
 
 
@@ -110,22 +128,53 @@ async def _emit_starsea_error(message: str) -> AsyncIterator[str]:
     yield sse_event({"type": "error", "message": message})
 
 
-def _starsea_payload(event: dict[str, Any]) -> dict[str, Any]:
+async def _starsea_payload(event: dict[str, Any], user_id: str) -> dict[str, Any]:
     event_name = str(event.get("event") or "")
     thread_id = str(event.get("thread_id") or "")
     data = event.get("data")
 
     if event_name == "message_delta" and isinstance(data, dict):
         return {"type": "delta", "delta": str(data.get("delta") or "")}
-    if event_name == "thought_matches":
-        return {"type": "thought_matches", "matches": data if isinstance(data, list) else []}
+    if event_name == "resonance_match":
+        return {"type": "resonance_match", "matches": _resonance_matches(data)}
     if event_name == "completed" and isinstance(data, dict):
         display = data.get("display")
+        if isinstance(display, dict) and display.get("type") == "collect":
+            glimmer = await _settle_glimmer(user_id, display)
+            return {"type": "settled", "threadId": thread_id, "glimmer": glimmer}
         return {"type": "done", "threadId": thread_id, "display": display}
     if event_name == "error" and isinstance(data, dict):
         return {"type": "error", "message": str(data.get("message") or "Starsea failed")}
 
     return {"type": "event", "threadId": thread_id, "data": data}
+
+
+async def _settle_glimmer(user_id: str, display: dict[str, Any]) -> dict[str, Any]:
+    content = str(display.get("content") or "").strip()
+    if not content:
+        raise ValueError("Settled glimmer content cannot be empty")
+
+    glimmer = await create_glimmer(user_id, content)
+    return {
+        "id": glimmer["id"],
+        "content": glimmer["content"],
+        "createdAt": glimmer["created_at"],
+    }
+
+
+def _resonance_matches(data: Any) -> list[dict[str, str]]:
+    if not isinstance(data, list):
+        return []
+
+    matches: list[dict[str, str]] = []
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or "").strip()
+        line = str(item.get("line") or item.get("whisper") or "").strip()
+        if name and line:
+            matches.append({"name": name, "line": line})
+    return matches
 
 
 @router.post("/{lang}/soulers/{souler_id}/chapters/{chapter_id}/start")

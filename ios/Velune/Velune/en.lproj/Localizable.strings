@@ -63,6 +63,7 @@
 "common.submit" = "Submit";
 "common.loading" = "Loading…";
 "common.search" = "Search";
+"common.back" = "Back";
 
 "app.tab.starsea" = "Star Sea";
 "app.tab.chat" = "Chat";
@@ -97,6 +98,12 @@
 "starsea.action.history" = "History";
 "starsea.empty.resonanceTitle" = "No resonances yet";
 "starsea.empty.resonanceSubtitle" = "Write your first glimmer, and listen for the first echo.";
+"starsea.chat.placeholder" = "Keep going…";
+"starsea.leave.title" = "Leave Star Sea?";
+"starsea.leave.message" = "You can settle this conversation into a glimmer, or leave without saving it.";
+"starsea.leave.settle" = "Settle and Leave";
+"starsea.leave.direct" = "Leave Directly";
+"starsea.leave.settleFailed" = "The glimmer could not be settled yet. Please try again.";
 
 "matching.status.listening" = "Listening for echoes";
 "matching.error.title" = "Error";

@@ -10,13 +10,13 @@ RouterAction = Literal["starsea", "collect"]
 
 class ThoughtMatchPreview(TypedDict):
     name: str
-    whisper: str
+    line: str
 
 
 class StarseaDisplay(TypedDict):
     type: Literal["starsea"]
     content: str
-    thought_matches: list[ThoughtMatchPreview]
+    resonance_matches: list[ThoughtMatchPreview]
 
 
 class CollectDisplay(TypedDict):

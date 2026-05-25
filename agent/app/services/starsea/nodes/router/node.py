@@ -18,6 +18,9 @@ ROUTER_TEMPERATURE = 0
 
 
 def router_node(state: State) -> Command[Literal["starsea", "collect"]]:
+    if state.get("metadata", {}).get("intent") == "collect":
+        return Command(goto="collect")
+
     model = create_chat_model(model=ROUTER_MODEL, temperature=ROUTER_TEMPERATURE)
     structured_model = model.with_structured_output(RouterDecision, method="json_mode")
     decision = structured_model.invoke(

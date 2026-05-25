@@ -32,10 +32,10 @@ def starsea_node(state: State) -> dict[str, Any]:
     response = _stream_ai_message(model, messages)
     returned_messages: list[Any] = [response]
     final_response = response
-    thought_matches: list[Any] = []
+    resonance_matches: list[Any] = []
 
     if isinstance(response, AIMessage) and response.tool_calls:
-        tool_messages, thought_matches = _run_starsea_tools(response, state)
+        tool_messages, resonance_matches = _run_starsea_tools(response, state)
         returned_messages.extend(tool_messages)
         final_response = _stream_ai_message(model, [*messages, response, *tool_messages])
         returned_messages.append(final_response)
@@ -45,7 +45,7 @@ def starsea_node(state: State) -> dict[str, Any]:
         "display": {
             "type": "starsea",
             "content": str(final_response.content).strip(),
-            "thought_matches": thought_matches,
+            "resonance_matches": resonance_matches,
         },
     }
 
@@ -56,7 +56,7 @@ def _run_starsea_tools(
 ) -> tuple[list[ToolMessage], list[Any]]:
     tools_by_name = {tool.name: tool for tool in STARSEA_TOOLS}
     tool_messages: list[ToolMessage] = []
-    thought_matches: list[Any] = []
+    resonance_matches: list[Any] = []
     conversation = format_messages(state["messages"])
 
     for tool_call in response.tool_calls:
@@ -89,12 +89,12 @@ def _run_starsea_tools(
 
         if selected_tool.name == match_thought_voices.name:
             tool_message, previews = _prepare_match_tool_message(tool_message)
-            thought_matches.extend(previews)
-            _stream_thought_matches(previews)
+            resonance_matches.extend(previews)
+            _stream_resonance_matches(previews)
 
         tool_messages.append(tool_message)
 
-    return tool_messages, thought_matches
+    return tool_messages, resonance_matches
 
 
 def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
@@ -147,7 +147,7 @@ def _prepare_match_tool_message(
             stripped_voices.append({"name": name, "resonance": resonance})
 
         if name and whisper:
-            previews.append({"name": name, "whisper": whisper})
+            previews.append({"name": name, "line": whisper})
 
     stripped_payload = {
         **payload,
@@ -180,7 +180,7 @@ def _load_tool_json(content: Any) -> dict[str, Any] | None:
     return None
 
 
-def _stream_thought_matches(previews: list[dict[str, str]]) -> None:
+def _stream_resonance_matches(previews: list[dict[str, str]]) -> None:
     if not previews:
         return
 
@@ -191,8 +191,8 @@ def _stream_thought_matches(previews: list[dict[str, str]]) -> None:
 
     writer(
         {
-            "type": "thought_matches",
-            "thought_matches": previews,
+            "type": "resonance_match",
+            "matches": previews,
         }
     )
 

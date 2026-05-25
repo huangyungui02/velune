@@ -1,8 +1,13 @@
 import SwiftUI
 
+private enum StarSeaRoute: Hashable {
+    case conversation(openingText: String)
+}
+
 struct StarSeaView: View {
     @State private var text = ""
     @State private var isComposerPresented = false
+    @State private var path: [StarSeaRoute] = []
     @Binding var composeRequestID: Int
 
     init(composeRequestID: Binding<Int> = .constant(0)) {
@@ -10,18 +15,25 @@ struct StarSeaView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             mainContent
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    draftToolbarContent
+                .navigationDestination(for: StarSeaRoute.self) { route in
+                    switch route {
+                    case let .conversation(openingText):
+                        StarSeaConversationView(openingText: openingText) {
+                            if !path.isEmpty {
+                                path.removeLast()
+                            }
+                        }
+                    }
                 }
         }
         .fullScreenCover(isPresented: $isComposerPresented) {
             StarSeaComposerCover(
                 text: $text,
                 onDismiss: dismissComposer,
-                onDone: dismissComposer
+                onDone: finishComposer
             )
         }
         .onChange(of: composeRequestID) { _, _ in
@@ -38,20 +50,9 @@ struct StarSeaView: View {
                 Spacer()
 
                 ZStack {
-                    if hasDraft {
-                        Button {
-                            presentComposer()
-                        } label: {
-                            GlimmerCardView(content: text)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
-                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
-                    } else {
-                        HeroVerse()
-                            .padding(.horizontal, 32)
-                            .transition(.opacity.combined(with: .scale(scale: 1.02)))
-                    }
+                    HeroVerse()
+                        .padding(.horizontal, 32)
+                        .transition(.opacity.combined(with: .scale(scale: 1.02)))
                 }
                 .frame(maxWidth: .infinity)
 
@@ -60,38 +61,18 @@ struct StarSeaView: View {
             .transition(.opacity)
             .animation(.easeInOut(duration: 0.22), value: text.isEmpty)
 
-            if !hasDraft {
-                VStack {
+            VStack {
+                Spacer()
+                HStack {
                     Spacer()
-                    HStack {
-                        Spacer()
-                        FloatingWriteButton {
-                            presentComposer()
-                        }
-                        .padding(.trailing, 28)
-                        .padding(.bottom, 40)
+                    FloatingWriteButton {
+                        presentComposer()
                     }
+                    .padding(.trailing, 28)
+                    .padding(.bottom, 40)
                 }
-                .transition(.opacity.combined(with: .scale(scale: 0.9)).combined(with: .move(edge: .bottom)))
             }
-        }
-    }
-
-    private var hasDraft: Bool {
-        !text.isEmpty
-    }
-
-    @ToolbarContentBuilder
-    private var draftToolbarContent: some ToolbarContent {
-        if hasDraft {
-            ToolbarItem(placement: .topBarLeading) {
-                Button(role: .destructive, action: clearComposer) {
-                    Image(systemName: "xmark")
-                        .font(.body.weight(.medium))
-                }
-                .accessibilityLabel(Text("common.clear"))
-            }
-
+            .transition(.opacity.combined(with: .scale(scale: 0.9)).combined(with: .move(edge: .bottom)))
         }
     }
 
@@ -105,11 +86,12 @@ struct StarSeaView: View {
         isComposerPresented = false
     }
 
-    private func clearComposer() {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    private func finishComposer() {
+        let openingText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        isComposerPresented = false
+        guard !openingText.isEmpty else { return }
 
-        withAnimation(.easeInOut(duration: 0.24)) {
-            text = ""
-        }
+        text = ""
+        path.append(.conversation(openingText: openingText))
     }
 }
