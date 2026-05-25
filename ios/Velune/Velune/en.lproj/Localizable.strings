@@ -104,6 +104,10 @@
 "starsea.leave.settle" = "Settle and Leave";
 "starsea.leave.direct" = "Leave Directly";
 "starsea.leave.settleFailed" = "The glimmer could not be settled yet. Please try again.";
+"starsea.settlement.title" = "This Star Sea has settled into a glimmer";
+"starsea.settlement.edit" = "Edit";
+"starsea.settlement.save" = "Save";
+"starsea.settlement.editor" = "Edit glimmer";
 
 "matching.status.listening" = "Listening for echoes";
 "matching.error.title" = "Error";

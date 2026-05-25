@@ -151,6 +151,21 @@ extension Glimmer {
             .execute()
     }
 
+    static func updateContent(id: UUID, content: String) async throws {
+        struct Data: Encodable {
+            var content: String
+        }
+
+        let userId = try await AuthManager.shared.getUserId()
+        let supabase = try Backend.requireSupabase()
+        try await supabase
+            .from("glimmers")
+            .update(Data(content: content))
+            .eq("id", value: id)
+            .eq("user_id", value: userId.uuidString)
+            .execute()
+    }
+
     static func delete(_ glimmerId: UUID) async throws {
         let supabase = try Backend.requireSupabase()
         try await supabase

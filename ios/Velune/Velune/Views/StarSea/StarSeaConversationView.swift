@@ -14,7 +14,12 @@ struct StarSeaConversationView: View {
     @State private var resonanceMatches: [StarSeaStreamService.ResonanceMatch] = []
     @State private var activeTask: Task<Void, Never>?
     @State private var isLeaveConfirmationPresented = false
+    @State private var settledGlimmer: StarSeaStreamService.SettledGlimmer?
+    @State private var settlementText = ""
+    @State private var isEditingSettlement = false
+    @State private var isSavingSettlement = false
     @FocusState private var isComposerFocused: Bool
+    @FocusState private var isSettlementEditorFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -23,7 +28,11 @@ struct StarSeaConversationView: View {
 
             VStack(spacing: 0) {
                 messageList
-                composer
+                if settledGlimmer == nil {
+                    composer
+                } else {
+                    settlementCard
+                }
             }
         }
         .highPriorityGesture(backSwipeGesture)
@@ -47,7 +56,7 @@ struct StarSeaConversationView: View {
             Button("starsea.leave.settle") {
                 Task { await settleAndLeave() }
             }
-            .disabled(threadId == nil || isSettling)
+            .disabled(threadId == nil || isSettling || settledGlimmer != nil)
 
             Button("starsea.leave.direct", role: .destructive) {
                 leaveDirectly()
@@ -131,6 +140,7 @@ struct StarSeaConversationView: View {
     private var composer: some View {
         let canSend = !isStreaming
             && !isSettling
+            && settledGlimmer == nil
             && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && threadId != nil
 
@@ -174,6 +184,18 @@ struct StarSeaConversationView: View {
         .padding()
     }
 
+    private var settlementCard: some View {
+        StarSeaSettlementCard(
+            text: $settlementText,
+            isEditing: isEditingSettlement,
+            isSaving: isSavingSettlement,
+            isEditorFocused: $isSettlementEditorFocused,
+            onEdit: editSettlement,
+            onSave: saveSettlement
+        )
+        .padding()
+    }
+
     private var backSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 24, coordinateSpace: .local)
             .onEnded { value in
@@ -192,7 +214,7 @@ struct StarSeaConversationView: View {
 
     private func sendFollowUp() async {
         let content = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !content.isEmpty, threadId != nil else { return }
+        guard !content.isEmpty, threadId != nil, settledGlimmer == nil else { return }
 
         inputText = ""
         resonanceMatches = []
@@ -214,7 +236,7 @@ struct StarSeaConversationView: View {
     }
 
     private func streamTurn(content: String) async {
-        guard !isStreaming else { return }
+        guard !isStreaming, settledGlimmer == nil else { return }
 
         isStreaming = true
         errorMessage = nil
@@ -261,8 +283,8 @@ struct StarSeaConversationView: View {
                 content: nil,
                 intent: .collect
             ) {
-                if case .settled = event {
-                    leaveDirectly()
+                if case let .settled(glimmer) = event {
+                    presentSettlement(glimmer)
                     return
                 }
             }
@@ -286,8 +308,50 @@ struct StarSeaConversationView: View {
             if let threadId {
                 self.threadId = threadId
             }
-        case .settled:
-            break
+        case let .settled(glimmer):
+            removeEmptyAssistantMessage(id: assistantId)
+            presentSettlement(glimmer)
+        }
+    }
+
+    private func presentSettlement(_ glimmer: StarSeaStreamService.SettledGlimmer) {
+        settledGlimmer = glimmer
+        settlementText = glimmer.content
+        isEditingSettlement = false
+        isSavingSettlement = false
+        isSettling = false
+        isComposerFocused = false
+        activeTask?.cancel()
+        activeTask = nil
+    }
+
+    private func editSettlement() {
+        isEditingSettlement = true
+        Task { @MainActor in
+            await Task.yield()
+            isSettlementEditorFocused = true
+        }
+    }
+
+    private func saveSettlement() {
+        Task { await saveSettlementAsync() }
+    }
+
+    private func saveSettlementAsync() async {
+        guard let settledGlimmer, !isSavingSettlement else { return }
+
+        let content = settlementText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !content.isEmpty else { return }
+
+        isSavingSettlement = true
+        errorMessage = nil
+
+        do {
+            try await Glimmer.updateContent(id: settledGlimmer.id, content: content)
+            leaveDirectly()
+        } catch {
+            errorMessage = error.localizedDescription
+            isSavingSettlement = false
         }
     }
 
@@ -302,6 +366,7 @@ struct StarSeaConversationView: View {
     }
 
     private func requestLeave() {
+        guard settledGlimmer == nil else { return }
         isLeaveConfirmationPresented = true
     }
 
@@ -374,5 +439,102 @@ private struct StarSeaResonanceMatchesView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct StarSeaSettlementCard: View {
+    @Binding var text: String
+    let isEditing: Bool
+    let isSaving: Bool
+    let isEditorFocused: FocusState<Bool>.Binding
+    let onEdit: () -> Void
+    let onSave: () -> Void
+
+    private var canSave: Bool {
+        !isSaving && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("starsea.settlement.title")
+                .font(.headline.weight(.semibold))
+                .fontDesign(.serif)
+                .foregroundStyle(UITheme.primaryText)
+
+            if isEditing {
+                editor
+            } else {
+                Text(text)
+                    .font(.body)
+                    .fontDesign(.serif)
+                    .lineSpacing(7)
+                    .foregroundStyle(UITheme.primaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            actions
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white.opacity(0.07), in: .rect(cornerRadius: 20))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(.white.opacity(0.12), lineWidth: 0.5)
+        }
+    }
+
+    private var editor: some View {
+        TextEditor(text: $text)
+            .focused(isEditorFocused)
+            .font(.body)
+            .fontDesign(.serif)
+            .lineSpacing(7)
+            .foregroundStyle(UITheme.primaryText)
+            .tint(UITheme.primaryText)
+            .scrollContentBackground(.hidden)
+            .frame(minHeight: 180, maxHeight: 280)
+            .padding(10)
+            .background(.white.opacity(0.05), in: .rect(cornerRadius: 14))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(.white.opacity(0.1), lineWidth: 0.5)
+            }
+            .accessibilityLabel(Text("starsea.settlement.editor"))
+    }
+
+    private var actions: some View {
+        HStack(spacing: 10) {
+            Button(action: onEdit) {
+                Label("starsea.settlement.edit", systemImage: "pencil")
+            }
+            .buttonStyle(.plain)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(UITheme.primaryText)
+            .opacity(isEditing ? 0.45 : 1)
+            .disabled(isEditing || isSaving)
+
+            Spacer()
+
+            Button(action: onSave) {
+                HStack(spacing: 8) {
+                    if isSaving {
+                        ProgressView()
+                            .tint(.black)
+                    } else {
+                        Image(systemName: "checkmark")
+                    }
+
+                    Text("starsea.settlement.save")
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.black)
+                .padding(.horizontal, 16)
+                .frame(height: 38)
+                .background(.white, in: .capsule)
+            }
+            .buttonStyle(.plain)
+            .disabled(!canSave)
+            .opacity(canSave ? 1 : 0.45)
+        }
     }
 }

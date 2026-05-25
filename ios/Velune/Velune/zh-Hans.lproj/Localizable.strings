@@ -104,6 +104,10 @@
 "starsea.leave.settle" = "沉淀并离开";
 "starsea.leave.direct" = "直接离开";
 "starsea.leave.settleFailed" = "暂时没有完成沉淀，请稍后再试。";
+"starsea.settlement.title" = "这段星海已沉淀成心澜";
+"starsea.settlement.edit" = "编辑";
+"starsea.settlement.save" = "保存";
+"starsea.settlement.editor" = "编辑心澜";
 
 "matching.status.listening" = "正在聆听回响";
 "matching.error.title" = "错误";
