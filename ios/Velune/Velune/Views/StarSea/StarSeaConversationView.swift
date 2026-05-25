@@ -37,6 +37,7 @@ struct StarSeaConversationView: View {
         }
         .highPriorityGesture(backSwipeGesture)
         .navigationBarBackButtonHidden(true)
+        .navigationTitle("app.tab.starsea")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
@@ -118,7 +119,9 @@ struct StarSeaConversationView: View {
                             .id("resonance-matches")
                     }
                 }
-                .padding()
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 10)
             }
             .scrollDismissesKeyboard(.interactively)
             .contentShape(.rect)
@@ -144,44 +147,50 @@ struct StarSeaConversationView: View {
             && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && threadId != nil
 
-        return HStack(alignment: .bottom, spacing: 6) {
+        return HStack(alignment: .center, spacing: 10) {
             TextField("starsea.chat.placeholder", text: $inputText, axis: .vertical)
                 .focused($isComposerFocused)
                 .lineLimit(1 ... 4)
                 .textFieldStyle(.plain)
-                .font(.body)
-                .fontDesign(.serif)
+                .font(.footnote)
                 .foregroundStyle(UITheme.primaryText)
-                .padding(.leading, 16)
-                .padding(.trailing, 4)
-                .padding(.vertical, 14)
+                .tint(UITheme.primaryText)
+                .submitLabel(.send)
+                .padding(.leading, 18)
+                .padding(.vertical, 13)
 
             Button {
                 Task { await sendFollowUp() }
             } label: {
                 if isStreaming || isSettling {
                     ProgressView()
-                        .tint(.black)
-                        .frame(width: 36, height: 36)
-                        .background(.white.opacity(0.8), in: .circle)
+                        .tint(UITheme.primaryText.opacity(0.8))
+                        .frame(width: 32, height: 32)
+                        .background(.white.opacity(0.06), in: .circle)
                 } else {
                     Image(systemName: "arrow.up")
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(.black)
-                        .frame(width: 36, height: 36)
-                        .background(.white, in: .circle)
+                        .foregroundStyle(canSend ? UITheme.primaryText : UITheme.primaryText.opacity(0.24))
+                        .frame(width: 32, height: 32)
+                        .background(.white.opacity(canSend ? 0.08 : 0.02), in: .circle)
                 }
             }
             .disabled(!canSend)
-            .opacity(canSend ? 1.0 : 0.45)
             .scaleEffect(canSend ? 1 : 0.94)
-            .padding(.trailing, 6)
-            .padding(.bottom, 6)
+            .padding(.trailing, 8)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: canSend)
         }
-        .background(Color.clear, in: .rect(cornerRadius: 24))
-        .glassEffect(in: .rect(cornerRadius: 24))
-        .padding()
+        .frame(minHeight: 46)
+        .background(Color(red: 0.03, green: 0.035, blue: 0.055).opacity(0.60), in: .capsule)
+        .glassEffect(in: .capsule)
+        .overlay {
+            Capsule()
+                .stroke(.white.opacity(isComposerFocused ? 0.15 : 0.08), lineWidth: 0.5)
+        }
+        .shadow(color: .black.opacity(0.45), radius: 24, y: 10)
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 16)
     }
 
     private var settlementCard: some View {
@@ -413,28 +422,56 @@ private struct StarSeaResonanceMatchesView: View {
     let matches: [StarSeaStreamService.ResonanceMatch]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(matches) { match in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(match.name)
-                        .font(.subheadline.weight(.semibold))
-                        .fontDesign(.serif)
-                        .foregroundStyle(UITheme.primaryText)
-                        .lineLimit(1)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("starsea.resonance.title")
+                .font(.system(size: 11, weight: .light))
+                .tracking(2.0)
+                .foregroundStyle(UITheme.tertiaryText.opacity(0.6))
+                .padding(.leading, 6)
 
-                    Text(match.line)
-                        .font(.footnote)
-                        .fontDesign(.serif)
-                        .foregroundStyle(UITheme.secondaryText)
-                        .lineLimit(3)
+            ForEach(matches) { match in
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(.white.opacity(0.06))
+                            .frame(width: 48, height: 48)
+
+                        Text(String(match.name.prefix(1)))
+                            .font(.system(size: 19, weight: .medium))
+                            .foregroundStyle(UITheme.primaryText.opacity(0.86))
+                    }
+                    .overlay {
+                        Circle()
+                            .stroke(.white.opacity(0.09), lineWidth: 0.5)
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(match.name)
+                            .font(.system(size: 14, weight: .medium))
+                            .tracking(1.5)
+                            .foregroundStyle(UITheme.primaryText.opacity(0.9))
+                            .lineLimit(1)
+
+                        Text(match.line)
+                            .font(.system(size: 12, weight: .light))
+                            .tracking(0.8)
+                            .foregroundStyle(UITheme.secondaryText.opacity(0.62))
+                            .lineLimit(2)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .light))
+                        .foregroundStyle(UITheme.primaryText.opacity(0.24))
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .frame(maxWidth: 320, alignment: .leading)
-                .background(.white.opacity(0.06), in: .rect(cornerRadius: 16))
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(red: 0.07, green: 0.075, blue: 0.095).opacity(0.30), in: .rect(cornerRadius: 18))
+                .glassEffect(in: .rect(cornerRadius: 18))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(.white.opacity(0.08), lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(.white.opacity(0.06), lineWidth: 0.5)
                 }
             }
         }
@@ -458,7 +495,6 @@ private struct StarSeaSettlementCard: View {
         VStack(alignment: .leading, spacing: 18) {
             Text("starsea.settlement.title")
                 .font(.headline.weight(.semibold))
-                .fontDesign(.serif)
                 .foregroundStyle(UITheme.primaryText)
 
             if isEditing {
@@ -466,7 +502,6 @@ private struct StarSeaSettlementCard: View {
             } else {
                 Text(text)
                     .font(.body)
-                    .fontDesign(.serif)
                     .lineSpacing(7)
                     .foregroundStyle(UITheme.primaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -487,7 +522,6 @@ private struct StarSeaSettlementCard: View {
         TextEditor(text: $text)
             .focused(isEditorFocused)
             .font(.body)
-            .fontDesign(.serif)
             .lineSpacing(7)
             .foregroundStyle(UITheme.primaryText)
             .tint(UITheme.primaryText)

@@ -99,6 +99,8 @@
 "starsea.empty.resonanceTitle" = "No resonances yet";
 "starsea.empty.resonanceSubtitle" = "Write your first glimmer, and listen for the first echo.";
 "starsea.chat.placeholder" = "Keep going…";
+"starsea.chat.subtitle" = "Inner tide";
+"starsea.resonance.title" = "Resonances";
 "starsea.leave.title" = "Leave Star Sea?";
 "starsea.leave.message" = "You can settle this conversation into a glimmer, or leave without saving it.";
 "starsea.leave.settle" = "Settle and Leave";
