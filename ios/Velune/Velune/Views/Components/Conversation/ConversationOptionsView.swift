@@ -11,19 +11,13 @@ struct ConversationOptionsView: View {
                 Button {
                     onSelect(option)
                 } label: {
-                    HStack(spacing: 12) {
-                        Text(option)
-                            .font(.system(size: 13, weight: .regular))
-                            .tracking(1.4)
-                            .foregroundStyle(UITheme.primaryText.opacity(isDisabled ? 0.36 : 0.76))
-                            .lineLimit(3)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .light))
-                            .foregroundStyle(UITheme.primaryText.opacity(isDisabled ? 0.16 : 0.28))
-                    }
+                    Text(option)
+                        .font(.system(size: 13, weight: .regular))
+                        .tracking(1.4)
+                        .foregroundStyle(UITheme.primaryText.opacity(isDisabled ? 0.36 : 0.76))
+                        .lineLimit(3)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 18)
                     .padding(.vertical, 15)
                     .contentShape(.rect)

@@ -96,6 +96,11 @@ struct StarSeaConversationView: View {
                         VStack(spacing: 8) {
                             let payload = starSeaPayload(for: message)
 
+                            if shouldShowResonanceMatches(for: message, lastMessageId: lastMessageId) {
+                                StarSeaResonanceMatchesView(matches: resonanceMatches)
+                                    .padding(.bottom, 2)
+                            }
+
                             ConversationMessageRow(
                                 role: message.role == .user ? .user : .assistant,
                                 content: payload.body
@@ -112,11 +117,6 @@ struct StarSeaConversationView: View {
                             }
                         }
                         .id(message.id)
-                    }
-
-                    if !resonanceMatches.isEmpty {
-                        StarSeaResonanceMatchesView(matches: resonanceMatches)
-                            .id("resonance-matches")
                     }
                 }
                 .padding(.horizontal, 20)
@@ -237,6 +237,12 @@ struct StarSeaConversationView: View {
         }
 
         return ConversationOptionParser.parse(message.content)
+    }
+
+    private func shouldShowResonanceMatches(for message: StarSeaMessage, lastMessageId: UUID?) -> Bool {
+        message.role == .assistant
+            && message.id == lastMessageId
+            && !resonanceMatches.isEmpty
     }
 
     private func selectConversationOption(_ option: String) {
@@ -386,10 +392,7 @@ struct StarSeaConversationView: View {
     }
 
     private func scrollToLatest(with proxy: ScrollViewProxy, animated: Bool) {
-        let target: AnyHashable? = resonanceMatches.isEmpty
-            ? messages.last?.id
-            : AnyHashable("resonance-matches")
-        guard let target else { return }
+        guard let target = messages.last?.id else { return }
 
         if animated {
             withAnimation(.easeOut(duration: 0.2)) {
