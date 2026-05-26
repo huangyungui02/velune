@@ -4,6 +4,7 @@ struct StarSeaConversationMessageList: View {
     let messages: [StarSeaMessage]
     let resonanceMatches: [StarSeaStreamService.ResonanceMatch]
     let isOptionsDisabled: Bool
+    var showsOptions = true
     let onDismissComposerFocus: () -> Void
     let onSelectOption: (String) -> Void
 
@@ -51,7 +52,7 @@ struct StarSeaConversationMessageList: View {
                 content: payload.body
             )
 
-            if message.id == lastMessageId, !payload.options.isEmpty {
+            if showsOptions, message.id == lastMessageId, !payload.options.isEmpty {
                 ConversationOptionsView(
                     options: payload.options,
                     isDisabled: isOptionsDisabled,

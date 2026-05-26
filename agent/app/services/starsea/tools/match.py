@@ -60,7 +60,7 @@ class ThoughtMatch(BaseModel):
 
 @tool
 def match_thought_voices(conversation: str) -> str:
-    """匹配能与当前对话共鸣的灵魂。除非用户要求，否则不要调用此工具。"""
+    """匹配能与当前用户处境共鸣的灵魂。"""
     model = create_chat_model(model=MATCH_MODEL, temperature=MATCH_TEMPERATURE)
     structured_model = model.with_structured_output(ThoughtMatch, method="json_mode")
     match = structured_model.invoke(

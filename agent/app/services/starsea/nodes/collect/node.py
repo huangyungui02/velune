@@ -29,6 +29,7 @@ def collect_node(state: State) -> dict[str, Any]:
 
     return {
         "messages": [message],
+        "pending_glimmer": content,
         "display": {
             "type": "collect",
             "content": content,

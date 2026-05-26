@@ -61,6 +61,7 @@
 "common.ok" = "OK";
 "common.retry" = "Retry";
 "common.submit" = "Submit";
+"common.done" = "Done";
 "common.loading" = "Loading…";
 "common.search" = "Search";
 "common.back" = "Back";
@@ -87,6 +88,9 @@
 "glimmerHistory.empty.noGlimmers" = "No glimmers yet";
 "glimmerHistory.empty.noGlimmers.subtitle" = "Write your first glimmer, and listen for the first echo.";
 "glimmerHistory.title" = "Hearthaven";
+"glimmerHistory.detail.title" = "Glimmer";
+"glimmerHistory.history.title" = "Star Sea History";
+"glimmerHistory.history.empty" = "No Star Sea history";
 "glimmerHistory.section.today" = "Today";
 "glimmerHistory.section.yesterday" = "Yesterday";
 "glimmerHistory.section.pastWeek" = "Past Week";
@@ -109,6 +113,10 @@
 "starsea.settlement.title" = "This Star Sea has settled into a glimmer";
 "starsea.settlement.edit" = "Edit";
 "starsea.settlement.save" = "Save";
+"starsea.settlement.exit" = "Exit";
+"starsea.settlement.exit.title" = "Discard this glimmer?";
+"starsea.settlement.exit.message" = "If you exit, this Star Sea will be discarded and the conversation cannot continue.";
+"starsea.settlement.discardConfirm" = "Discard and return to Star Sea";
 "starsea.settlement.editor" = "Edit glimmer";
 
 "matching.status.listening" = "Listening for echoes";

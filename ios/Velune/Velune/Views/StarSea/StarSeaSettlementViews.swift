@@ -94,9 +94,10 @@ struct StarSeaSettlementSummaryCard: View {
 
 struct StarSeaSettlementSheet: View {
     @Binding var text: String
-    let isEditing: Bool
+    @Binding var isEditing: Bool
     let isSaving: Bool
     let isEditorFocused: FocusState<Bool>.Binding
+    let onExit: () -> Void
     let onEdit: () -> Void
     let onSave: () -> Void
 
@@ -116,10 +117,8 @@ struct StarSeaSettlementSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(action: onEdit) {
-                        Label("starsea.settlement.edit", systemImage: "pencil")
-                    }
-                    .disabled(isEditing || isSaving)
+                    Button("starsea.settlement.exit", action: onExit)
+                        .disabled(isSaving)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -137,11 +136,11 @@ struct StarSeaSettlementSheet: View {
         }
     }
 
-    @ViewBuilder
     private var content: some View {
-        if isEditing {
+        ZStack {
             TextEditor(text: $text)
                 .focused(isEditorFocused)
+                .disabled(!isEditing || isSaving)
                 .font(.body)
                 .lineSpacing(7)
                 .foregroundStyle(UITheme.primaryText)
@@ -154,21 +153,19 @@ struct StarSeaSettlementSheet: View {
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .stroke(.white.opacity(0.10), lineWidth: 0.5)
                 }
-                .padding(.horizontal, 18)
-                .padding(.top, 12)
-                .padding(.bottom, 18)
                 .accessibilityLabel(Text("starsea.settlement.editor"))
-        } else {
-            ScrollView {
-                Text(text)
-                    .font(.body)
-                    .lineSpacing(7)
-                    .foregroundStyle(UITheme.primaryText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 18)
+
+            if !isEditing {
+                Button(action: onEdit) {
+                    Color.clear
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .disabled(isSaving)
             }
-            .scrollDismissesKeyboard(.interactively)
         }
+        .padding(.horizontal, 18)
+        .padding(.top, 12)
+        .padding(.bottom, 18)
     }
 }

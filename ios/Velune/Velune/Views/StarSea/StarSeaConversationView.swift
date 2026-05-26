@@ -14,12 +14,13 @@ struct StarSeaConversationView: View {
     @State private var resonanceMatches: [StarSeaStreamService.ResonanceMatch] = []
     @State private var activeTask: Task<Void, Never>?
     @State private var isLeaveConfirmationPresented = false
-    @State private var settledGlimmer: StarSeaStreamService.SettledGlimmer?
     @State private var settlementText = ""
-    @State private var isEditingSettlement = false
+    @State private var isAwaitingSettlementConfirmation = false
     @State private var isSettlementSheetPresented = false
+    @State private var isEditingSettlement = false
     @State private var settlementSheetDetent = PresentationDetent.medium
     @State private var isSavingSettlement = false
+    @State private var isLeaving = false
     @FocusState private var isComposerFocused: Bool
     @FocusState private var isSettlementEditorFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -30,10 +31,8 @@ struct StarSeaConversationView: View {
 
             VStack(spacing: 0) {
                 messageList
-                if settledGlimmer == nil {
+                if !isAwaitingSettlementConfirmation {
                     composer
-                } else {
-                    settlementCard
                 }
             }
         }
@@ -52,22 +51,28 @@ struct StarSeaConversationView: View {
             }
         }
         .confirmationDialog(
-            "starsea.leave.title",
+            leaveConfirmationTitle,
             isPresented: $isLeaveConfirmationPresented,
             titleVisibility: .visible
         ) {
-            Button("starsea.leave.settle") {
-                Task { await settleAndLeave() }
-            }
-            .disabled(threadId == nil || isSettling || settledGlimmer != nil)
+            if isAwaitingSettlementConfirmation {
+                Button("starsea.settlement.discardConfirm", role: .destructive) {
+                    Task { await discardSettlement() }
+                }
+            } else {
+                Button("starsea.leave.settle") {
+                    Task { await settleAndLeave() }
+                }
+                .disabled(threadId == nil || isSettling)
 
-            Button("starsea.leave.direct", role: .destructive) {
-                leaveDirectly()
+                Button("starsea.leave.direct", role: .destructive) {
+                    leaveDirectly()
+                }
             }
 
             Button("common.cancel", role: .cancel) {}
         } message: {
-            Text("starsea.leave.message")
+            Text(leaveConfirmationMessage)
         }
         .alert("matching.error.title", isPresented: Binding(
             get: { errorMessage != nil },
@@ -80,12 +85,14 @@ struct StarSeaConversationView: View {
         .sheet(isPresented: $isSettlementSheetPresented) {
             StarSeaSettlementSheet(
                 text: $settlementText,
-                isEditing: isEditingSettlement,
+                isEditing: $isEditingSettlement,
                 isSaving: isSavingSettlement,
                 isEditorFocused: $isSettlementEditorFocused,
-                onEdit: editSettlement,
+                onExit: requestLeave,
+                onEdit: openSettlementEditor,
                 onSave: saveSettlement
             )
+            .interactiveDismissDisabled()
             .presentationDetents([.medium, .large], selection: $settlementSheetDetent)
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(28)
@@ -111,6 +118,7 @@ struct StarSeaConversationView: View {
             messages: messages,
             resonanceMatches: resonanceMatches,
             isOptionsDisabled: isStreaming || isSettling || threadId == nil,
+            showsOptions: !isAwaitingSettlementConfirmation,
             onDismissComposerFocus: { isComposerFocused = false },
             onSelectOption: selectConversationOption
         )
@@ -127,23 +135,20 @@ struct StarSeaConversationView: View {
         )
     }
 
-    private var settlementCard: some View {
-        StarSeaSettlementSummaryCard(
-            text: settlementText,
-            isSaving: isSavingSettlement,
-            onOpen: openSettlementSheet,
-            onEdit: editSettlement,
-            onSave: saveSettlement
-        )
-        .padding()
-    }
-
     private var canSendMessage: Bool {
         !isStreaming
             && !isSettling
-            && settledGlimmer == nil
+            && !isAwaitingSettlementConfirmation
             && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && threadId != nil
+    }
+
+    private var leaveConfirmationTitle: LocalizedStringKey {
+        isAwaitingSettlementConfirmation ? "starsea.settlement.exit.title" : "starsea.leave.title"
+    }
+
+    private var leaveConfirmationMessage: LocalizedStringKey {
+        isAwaitingSettlementConfirmation ? "starsea.settlement.exit.message" : "starsea.leave.message"
     }
 
     private var backSwipeGesture: some Gesture {
@@ -164,7 +169,7 @@ struct StarSeaConversationView: View {
 
     private func sendFollowUp() async {
         let content = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !content.isEmpty, threadId != nil, settledGlimmer == nil else { return }
+        guard !content.isEmpty, threadId != nil, !isAwaitingSettlementConfirmation else { return }
 
         inputText = ""
         resonanceMatches = []
@@ -178,7 +183,7 @@ struct StarSeaConversationView: View {
     }
 
     private func streamTurn(content: String) async {
-        guard !isStreaming, settledGlimmer == nil else { return }
+        guard !isStreaming, !isAwaitingSettlementConfirmation else { return }
 
         isStreaming = true
         errorMessage = nil
@@ -225,8 +230,8 @@ struct StarSeaConversationView: View {
                 content: nil,
                 intent: .collect
             ) {
-                if case let .settled(glimmer) = event {
-                    presentSettlement(glimmer)
+                if case let .confirmRequired(threadId, content) = event {
+                    presentSettlement(threadId: threadId, content: content)
                     return
                 }
             }
@@ -246,38 +251,35 @@ struct StarSeaConversationView: View {
             append(delta: delta, to: assistantId)
         case let .resonanceMatch(matches):
             resonanceMatches = matches
+        case let .confirmRequired(threadId, content):
+            presentSettlement(threadId: threadId, content: content)
         case let .done(threadId):
             if let threadId {
                 self.threadId = threadId
             }
         case let .settled(glimmer):
             removeEmptyAssistantMessage(id: assistantId)
-            presentSettlement(glimmer)
+            settlementText = glimmer.content
+            leaveDirectly()
+        case .discarded:
+            leaveDirectly()
         }
     }
 
-    private func presentSettlement(_ glimmer: StarSeaStreamService.SettledGlimmer) {
-        settledGlimmer = glimmer
-        settlementText = glimmer.content
+    private func presentSettlement(threadId: String, content: String) {
+        self.threadId = threadId
+        settlementText = content
+        isAwaitingSettlementConfirmation = true
         isEditingSettlement = false
         isSettlementSheetPresented = true
         settlementSheetDetent = .medium
         isSavingSettlement = false
         isSettling = false
         isComposerFocused = false
-        activeTask?.cancel()
-        activeTask = nil
     }
 
-    private func openSettlementSheet() {
-        isEditingSettlement = false
-        settlementSheetDetent = .medium
-        isSettlementEditorFocused = false
-        isSettlementSheetPresented = true
-    }
-
-    private func editSettlement() {
-        isSettlementSheetPresented = true
+    private func openSettlementEditor() {
+        guard !isSavingSettlement else { return }
         isEditingSettlement = true
         settlementSheetDetent = .large
         Task { @MainActor in
@@ -291,7 +293,7 @@ struct StarSeaConversationView: View {
     }
 
     private func saveSettlementAsync() async {
-        guard let settledGlimmer, !isSavingSettlement else { return }
+        guard let threadId, !isSavingSettlement else { return }
 
         let content = settlementText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty else { return }
@@ -300,11 +302,37 @@ struct StarSeaConversationView: View {
         errorMessage = nil
 
         do {
-            try await Glimmer.updateContent(id: settledGlimmer.id, content: content)
-            leaveDirectly()
+            for try await event in StarSeaStreamService.resume(
+                threadId: threadId,
+                approved: true,
+                content: content
+            ) {
+                if case .settled = event {
+                    leaveDirectly()
+                    return
+                }
+            }
+            errorMessage = String(localized: "starsea.leave.settleFailed")
+            isSavingSettlement = false
         } catch {
             errorMessage = error.localizedDescription
             isSavingSettlement = false
+        }
+    }
+
+    private func discardSettlement() async {
+        let threadId = threadId
+        leaveDirectly()
+
+        guard let threadId else { return }
+        Task {
+            do {
+                for try await _ in StarSeaStreamService.resume(
+                    threadId: threadId,
+                    approved: false,
+                    content: nil
+                ) {}
+            } catch {}
         }
     }
 
@@ -319,13 +347,22 @@ struct StarSeaConversationView: View {
     }
 
     private func requestLeave() {
-        guard settledGlimmer == nil else { return }
         isLeaveConfirmationPresented = true
     }
 
     private func leaveDirectly() {
+        guard !isLeaving else { return }
+        isLeaving = true
         activeTask?.cancel()
         activeTask = nil
-        onLeave()
+        isComposerFocused = false
+        isSettlementEditorFocused = false
+        isLeaveConfirmationPresented = false
+        isSettlementSheetPresented = false
+
+        Task { @MainActor in
+            await Task.yield()
+            onLeave()
+        }
     }
 }

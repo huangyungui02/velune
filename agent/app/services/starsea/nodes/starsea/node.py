@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk, SystemMessage, ToolMessage
@@ -47,7 +48,46 @@ def starsea_node(state: State) -> dict[str, Any]:
             "content": str(final_response.content).strip(),
             "resonance_matches": resonance_matches,
         },
+        "archive_events": _archive_events(final_response.content, resonance_matches),
     }
+
+
+def _archive_events(content: Any, resonance_matches: list[Any]) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    visible_reply = _strip_options_markup(str(content).strip())
+    if visible_reply:
+        events.append(
+            {
+                "type": "message",
+                "role": "assistant",
+                "content": visible_reply,
+                "payload": {},
+            }
+        )
+
+    if resonance_matches:
+        events.append(
+            {
+                "type": "tool_result",
+                "role": None,
+                "content": None,
+                "payload": {
+                    "tool": "resonance_match",
+                    "items": resonance_matches,
+                },
+            }
+        )
+
+    return events
+
+
+def _strip_options_markup(content: str) -> str:
+    return re.sub(
+        r"\n*---JSON---.*?---END_JSON---\s*",
+        "",
+        content,
+        flags=re.DOTALL,
+    ).strip()
 
 
 def _run_starsea_tools(

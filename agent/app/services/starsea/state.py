@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import operator
 from typing import Annotated, Any, Literal, TypedDict
 
 from langchain_core.messages import AnyMessage
@@ -24,10 +25,26 @@ class CollectDisplay(TypedDict):
     content: str
 
 
-Display = StarseaDisplay | CollectDisplay
+class GlimmerDisplay(TypedDict):
+    type: Literal["glimmer"]
+    glimmer: dict[str, str]
+
+
+Display = StarseaDisplay | CollectDisplay | GlimmerDisplay
+
+
+class ArchiveEvent(TypedDict):
+    type: str
+    role: str | None
+    content: str | None
+    payload: dict[str, Any]
 
 
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     display: Display | None
+    archive_events: Annotated[list[ArchiveEvent], operator.add]
+    pending_glimmer: str | None
+    confirmed_glimmer: str | None
+    created_glimmer_id: str | None
     metadata: dict[str, Any]

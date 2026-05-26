@@ -61,6 +61,7 @@
 "common.ok" = "好的";
 "common.retry" = "重试";
 "common.submit" = "提交";
+"common.done" = "完成";
 "common.loading" = "加载中…";
 "common.search" = "搜索";
 "common.back" = "返回";
@@ -87,6 +88,9 @@
 "glimmerHistory.empty.noGlimmers" = "暂无心澜";
 "glimmerHistory.empty.noGlimmers.subtitle" = "写下第一道心澜，静候第一声回响。";
 "glimmerHistory.title" = "心舍";
+"glimmerHistory.detail.title" = "心澜";
+"glimmerHistory.history.title" = "星海回望";
+"glimmerHistory.history.empty" = "暂无星海记录";
 "glimmerHistory.section.today" = "今天";
 "glimmerHistory.section.yesterday" = "昨天";
 "glimmerHistory.section.pastWeek" = "过去一周";
@@ -109,6 +113,10 @@
 "starsea.settlement.title" = "这段星海已沉淀成心澜";
 "starsea.settlement.edit" = "编辑";
 "starsea.settlement.save" = "保存";
+"starsea.settlement.exit" = "退出";
+"starsea.settlement.exit.title" = "放弃沉淀？";
+"starsea.settlement.exit.message" = "一旦退出，这段星海会被丢弃，无法继续对话。";
+"starsea.settlement.discardConfirm" = "放弃沉淀并回到星海主页";
 "starsea.settlement.editor" = "编辑心澜";
 
 "matching.status.listening" = "正在聆听回响";
