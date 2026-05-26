@@ -17,6 +17,8 @@ struct StarSeaConversationView: View {
     @State private var settledGlimmer: StarSeaStreamService.SettledGlimmer?
     @State private var settlementText = ""
     @State private var isEditingSettlement = false
+    @State private var isSettlementSheetPresented = false
+    @State private var settlementSheetDetent = PresentationDetent.medium
     @State private var isSavingSettlement = false
     @FocusState private var isComposerFocused: Bool
     @FocusState private var isSettlementEditorFocused: Bool
@@ -75,6 +77,24 @@ struct StarSeaConversationView: View {
         } message: {
             Text(errorMessage ?? String(localized: "matching.error.unknown"))
         }
+        .sheet(isPresented: $isSettlementSheetPresented) {
+            StarSeaSettlementSheet(
+                text: $settlementText,
+                isEditing: isEditingSettlement,
+                isSaving: isSavingSettlement,
+                isEditorFocused: $isSettlementEditorFocused,
+                onEdit: editSettlement,
+                onSave: saveSettlement
+            )
+            .presentationDetents([.medium, .large], selection: $settlementSheetDetent)
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
+        }
+        .onChange(of: settlementSheetDetent) { _, detent in
+            guard detent != .large, isEditingSettlement else { return }
+            isEditingSettlement = false
+            isSettlementEditorFocused = false
+        }
         .task {
             guard !hasStarted else { return }
             hasStarted = true
@@ -87,122 +107,43 @@ struct StarSeaConversationView: View {
     }
 
     private var messageList: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    let lastMessageId = messages.last?.id
-
-                    ForEach(messages) { message in
-                        VStack(spacing: 8) {
-                            let payload = starSeaPayload(for: message)
-
-                            if shouldShowResonanceMatches(for: message, lastMessageId: lastMessageId) {
-                                StarSeaResonanceMatchesView(matches: resonanceMatches)
-                                    .padding(.bottom, 2)
-                            }
-
-                            ConversationMessageRow(
-                                role: message.role == .user ? .user : .assistant,
-                                content: payload.body
-                            )
-
-                            if message.id == lastMessageId, !payload.options.isEmpty {
-                                ConversationOptionsView(
-                                    options: payload.options,
-                                    isDisabled: isStreaming || isSettling || threadId == nil
-                                ) { option in
-                                    selectConversationOption(option)
-                                }
-                                .padding(.top, 2)
-                            }
-                        }
-                        .id(message.id)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 14)
-                .padding(.bottom, 10)
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .contentShape(.rect)
-            .onTapGesture {
-                isComposerFocused = false
-            }
-            .onChange(of: messages.count) { _, _ in
-                scrollToLatest(with: proxy, animated: true)
-            }
-            .onChange(of: messages.last?.content) { _, _ in
-                scrollToLatest(with: proxy, animated: false)
-            }
-            .onChange(of: resonanceMatches) { _, _ in
-                scrollToLatest(with: proxy, animated: true)
-            }
-        }
+        StarSeaConversationMessageList(
+            messages: messages,
+            resonanceMatches: resonanceMatches,
+            isOptionsDisabled: isStreaming || isSettling || threadId == nil,
+            onDismissComposerFocus: { isComposerFocused = false },
+            onSelectOption: selectConversationOption
+        )
     }
 
     private var composer: some View {
-        let canSend = !isStreaming
-            && !isSettling
-            && settledGlimmer == nil
-            && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && threadId != nil
-
-        return HStack(alignment: .center, spacing: 10) {
-            TextField("starsea.chat.placeholder", text: $inputText, axis: .vertical)
-                .focused($isComposerFocused)
-                .lineLimit(1 ... 4)
-                .textFieldStyle(.plain)
-                .font(.footnote)
-                .foregroundStyle(UITheme.primaryText)
-                .tint(UITheme.primaryText)
-                .submitLabel(.send)
-                .padding(.leading, 18)
-                .padding(.vertical, 13)
-
-            Button {
-                Task { await sendFollowUp() }
-            } label: {
-                if isStreaming || isSettling {
-                    ProgressView()
-                        .tint(UITheme.primaryText.opacity(0.8))
-                        .frame(width: 32, height: 32)
-                        .background(.white.opacity(0.06), in: .circle)
-                } else {
-                    Image(systemName: "arrow.up")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(canSend ? UITheme.primaryText : UITheme.primaryText.opacity(0.24))
-                        .frame(width: 32, height: 32)
-                        .background(.white.opacity(canSend ? 0.08 : 0.02), in: .circle)
-                }
-            }
-            .disabled(!canSend)
-            .scaleEffect(canSend ? 1 : 0.94)
-            .padding(.trailing, 8)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: canSend)
-        }
-        .frame(minHeight: 46)
-        .background(Color(red: 0.03, green: 0.035, blue: 0.055).opacity(0.60), in: .capsule)
-        .glassEffect(in: .capsule)
-        .overlay {
-            Capsule()
-                .stroke(.white.opacity(isComposerFocused ? 0.15 : 0.08), lineWidth: 0.5)
-        }
-        .shadow(color: .black.opacity(0.45), radius: 24, y: 10)
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 16)
+        StarSeaConversationComposer(
+            text: $inputText,
+            isFocused: $isComposerFocused,
+            isBusy: isStreaming || isSettling,
+            canSend: canSendMessage,
+            reduceMotion: reduceMotion,
+            onSend: sendFollowUp
+        )
     }
 
     private var settlementCard: some View {
-        StarSeaSettlementCard(
-            text: $settlementText,
-            isEditing: isEditingSettlement,
+        StarSeaSettlementSummaryCard(
+            text: settlementText,
             isSaving: isSavingSettlement,
-            isEditorFocused: $isSettlementEditorFocused,
+            onOpen: openSettlementSheet,
             onEdit: editSettlement,
             onSave: saveSettlement
         )
         .padding()
+    }
+
+    private var canSendMessage: Bool {
+        !isStreaming
+            && !isSettling
+            && settledGlimmer == nil
+            && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && threadId != nil
     }
 
     private var backSwipeGesture: some Gesture {
@@ -229,20 +170,6 @@ struct StarSeaConversationView: View {
         resonanceMatches = []
         messages.append(StarSeaMessage(role: .user, content: content))
         await streamTurn(content: content)
-    }
-
-    private func starSeaPayload(for message: StarSeaMessage) -> ConversationOptionPayload {
-        guard message.role == .assistant else {
-            return ConversationOptionPayload(body: message.content, options: [])
-        }
-
-        return ConversationOptionParser.parse(message.content)
-    }
-
-    private func shouldShowResonanceMatches(for message: StarSeaMessage, lastMessageId: UUID?) -> Bool {
-        message.role == .assistant
-            && message.id == lastMessageId
-            && !resonanceMatches.isEmpty
     }
 
     private func selectConversationOption(_ option: String) {
@@ -333,6 +260,8 @@ struct StarSeaConversationView: View {
         settledGlimmer = glimmer
         settlementText = glimmer.content
         isEditingSettlement = false
+        isSettlementSheetPresented = true
+        settlementSheetDetent = .medium
         isSavingSettlement = false
         isSettling = false
         isComposerFocused = false
@@ -340,8 +269,17 @@ struct StarSeaConversationView: View {
         activeTask = nil
     }
 
+    private func openSettlementSheet() {
+        isEditingSettlement = false
+        settlementSheetDetent = .medium
+        isSettlementEditorFocused = false
+        isSettlementSheetPresented = true
+    }
+
     private func editSettlement() {
+        isSettlementSheetPresented = true
         isEditingSettlement = true
+        settlementSheetDetent = .large
         Task { @MainActor in
             await Task.yield()
             isSettlementEditorFocused = true
@@ -389,189 +327,5 @@ struct StarSeaConversationView: View {
         activeTask?.cancel()
         activeTask = nil
         onLeave()
-    }
-
-    private func scrollToLatest(with proxy: ScrollViewProxy, animated: Bool) {
-        guard let target = messages.last?.id else { return }
-
-        if animated {
-            withAnimation(.easeOut(duration: 0.2)) {
-                proxy.scrollTo(target, anchor: .bottom)
-            }
-        } else {
-            proxy.scrollTo(target, anchor: .bottom)
-        }
-    }
-}
-
-struct StarSeaMessage: Identifiable, Hashable {
-    enum Role: Hashable {
-        case user
-        case assistant
-    }
-
-    let id: UUID
-    let role: Role
-    var content: String
-
-    init(id: UUID = UUID(), role: Role, content: String) {
-        self.id = id
-        self.role = role
-        self.content = content
-    }
-}
-
-private struct StarSeaResonanceMatchesView: View {
-    let matches: [StarSeaStreamService.ResonanceMatch]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("starsea.resonance.title")
-                .font(.system(size: 11, weight: .light))
-                .tracking(2.0)
-                .foregroundStyle(UITheme.tertiaryText.opacity(0.6))
-                .padding(.leading, 6)
-
-            ForEach(matches) { match in
-                HStack(spacing: 14) {
-                    ZStack {
-                        Circle()
-                            .fill(.white.opacity(0.06))
-                            .frame(width: 48, height: 48)
-
-                        Text(String(match.name.prefix(1)))
-                            .font(.system(size: 19, weight: .medium))
-                            .foregroundStyle(UITheme.primaryText.opacity(0.86))
-                    }
-                    .overlay {
-                        Circle()
-                            .stroke(.white.opacity(0.09), lineWidth: 0.5)
-                    }
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(match.name)
-                            .font(.system(size: 14, weight: .medium))
-                            .tracking(1.5)
-                            .foregroundStyle(UITheme.primaryText.opacity(0.9))
-                            .lineLimit(1)
-
-                        Text(match.line)
-                            .font(.system(size: 12, weight: .light))
-                            .tracking(0.8)
-                            .foregroundStyle(UITheme.secondaryText.opacity(0.62))
-                            .lineLimit(2)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .light))
-                        .foregroundStyle(UITheme.primaryText.opacity(0.24))
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(red: 0.07, green: 0.075, blue: 0.095).opacity(0.30), in: .rect(cornerRadius: 18))
-                .glassEffect(in: .rect(cornerRadius: 18))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(.white.opacity(0.06), lineWidth: 0.5)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct StarSeaSettlementCard: View {
-    @Binding var text: String
-    let isEditing: Bool
-    let isSaving: Bool
-    let isEditorFocused: FocusState<Bool>.Binding
-    let onEdit: () -> Void
-    let onSave: () -> Void
-
-    private var canSave: Bool {
-        !isSaving && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text("starsea.settlement.title")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(UITheme.primaryText)
-
-            if isEditing {
-                editor
-            } else {
-                Text(text)
-                    .font(.body)
-                    .lineSpacing(7)
-                    .foregroundStyle(UITheme.primaryText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            actions
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.white.opacity(0.07), in: .rect(cornerRadius: 20))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(.white.opacity(0.12), lineWidth: 0.5)
-        }
-    }
-
-    private var editor: some View {
-        TextEditor(text: $text)
-            .focused(isEditorFocused)
-            .font(.body)
-            .lineSpacing(7)
-            .foregroundStyle(UITheme.primaryText)
-            .tint(UITheme.primaryText)
-            .scrollContentBackground(.hidden)
-            .frame(minHeight: 180, maxHeight: 280)
-            .padding(10)
-            .background(.white.opacity(0.05), in: .rect(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(.white.opacity(0.1), lineWidth: 0.5)
-            }
-            .accessibilityLabel(Text("starsea.settlement.editor"))
-    }
-
-    private var actions: some View {
-        HStack(spacing: 10) {
-            Button(action: onEdit) {
-                Label("starsea.settlement.edit", systemImage: "pencil")
-            }
-            .buttonStyle(.plain)
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(UITheme.primaryText)
-            .opacity(isEditing ? 0.45 : 1)
-            .disabled(isEditing || isSaving)
-
-            Spacer()
-
-            Button(action: onSave) {
-                HStack(spacing: 8) {
-                    if isSaving {
-                        ProgressView()
-                            .tint(.black)
-                    } else {
-                        Image(systemName: "checkmark")
-                    }
-
-                    Text("starsea.settlement.save")
-                }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.black)
-                .padding(.horizontal, 16)
-                .frame(height: 38)
-                .background(.white, in: .capsule)
-            }
-            .buttonStyle(.plain)
-            .disabled(!canSave)
-            .opacity(canSave ? 1 : 0.45)
-        }
     }
 }
