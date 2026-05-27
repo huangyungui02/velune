@@ -70,7 +70,6 @@ export type AdminSoulerChapter = {
 	seq: number;
 	title: string;
 	subtitle: string;
-	role: string;
 	task: string;
 };
 

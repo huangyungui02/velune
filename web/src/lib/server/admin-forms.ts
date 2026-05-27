@@ -91,7 +91,6 @@ export function parseSaveChaptersForm(formData: FormData) {
 			.filter(Boolean),
 		titles: formData.getAll('chapter_title').map((item) => String(item ?? '').trim()),
 		subtitles: formData.getAll('chapter_subtitle').map((item) => String(item ?? '').trim()),
-		roles: formData.getAll('chapter_role').map((item) => String(item ?? '').trim()),
 		tasks: formData.getAll('chapter_task').map((item) => String(item ?? '').trim())
 	};
 }

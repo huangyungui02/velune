@@ -17,7 +17,6 @@ class Chapter(TypedDict):
     seq: int
     title: str
     subtitle: str
-    role: str
     task: str
 
 

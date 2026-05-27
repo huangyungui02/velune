@@ -123,7 +123,7 @@ export async function fetchSoulerDetail(locals: App.Locals, soulerId: string) {
 
 	const { data: chaptersRaw } = await locals.supabase
 		.from('chapters')
-		.select('id, seq, title, subtitle, role, task')
+		.select('id, seq, title, subtitle, task')
 		.eq('souler_id', soulerId)
 		.order('seq', { ascending: true });
 
@@ -428,10 +428,9 @@ export async function saveChapters(
 		const chapterId = parsed.chapterIds[index];
 		const title = parsed.titles[index] ?? '';
 		const subtitle = parsed.subtitles[index] ?? '';
-		const role = parsed.roles[index] ?? '';
 		const task = parsed.tasks[index] ?? '';
 
-		if (!title || !subtitle || !role || !task) {
+		if (!title || !subtitle || !task) {
 			return {
 				ok: false,
 				status: 400,
@@ -445,7 +444,7 @@ export async function saveChapters(
 
 		const { error } = await locals.supabase
 			.from('chapters')
-			.update({ title, subtitle, role, task })
+			.update({ title, subtitle, task })
 			.eq('id', chapterId)
 			.eq('souler_id', parsed.soulerId);
 

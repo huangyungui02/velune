@@ -21,7 +21,6 @@ type ChatMessage = { role: "system" | "user"; content: string };
 type Chapter = {
   title: string;
   subtitle: string;
-  role: string;
   task: string;
 };
 
@@ -42,10 +41,9 @@ const CHAPTER_SCHEMA: Json = {
         properties: {
           title: { type: "string" },
           subtitle: { type: "string" },
-          role: { type: "string" },
           task: { type: "string" },
         },
-        required: ["title", "subtitle", "role", "task"],
+        required: ["title", "subtitle", "task"],
         additionalProperties: false,
       },
     },
@@ -105,14 +103,13 @@ const normalizeChapter = (value: unknown): Chapter => {
 
   const title = typeof value.title === "string" ? value.title.trim() : "";
   const subtitle = typeof value.subtitle === "string" ? value.subtitle.trim() : "";
-  const role = typeof value.role === "string" ? value.role.trim() : "";
   const task = typeof value.task === "string" ? value.task.trim() : "";
 
-  if (!title || !subtitle || !role || !task) {
+  if (!title || !subtitle || !task) {
     throw new Error("Chapter fields cannot be empty");
   }
 
-  return { title, subtitle, role, task };
+  return { title, subtitle, task };
 };
 
 const normalizeChapters = (payload: unknown): Chapter[] => {
@@ -198,7 +195,6 @@ Deno.serve(async (req) => {
       seq: index + 1,
       title: chapter.title,
       subtitle: chapter.subtitle,
-      role: chapter.role,
       task: chapter.task,
     }));
 

@@ -233,13 +233,6 @@
 												placeholder="副标题"
 												required
 											/>
-											<Input
-												class="h-9 rounded-lg bg-background/72 text-sm"
-												name="chapter_role"
-												value={chapter.role}
-												placeholder="role"
-												required
-											/>
 											<Textarea
 												class="min-h-24 rounded-lg bg-background/72 text-sm leading-6"
 												name="chapter_task"

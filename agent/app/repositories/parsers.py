@@ -43,6 +43,5 @@ def to_chapter(raw: Any) -> Chapter:
         "seq": seq_value,
         "title": str(chapter.get("title", "")).strip(),
         "subtitle": str(chapter.get("subtitle", "")).strip(),
-        "role": str(chapter.get("role", "")).strip(),
         "task": str(chapter.get("task", "")).strip(),
     }

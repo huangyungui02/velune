@@ -19,11 +19,10 @@ MATCH_PROMPT = """
 根据当前对话，匹配 3 位最能与用户处境产生共鸣的人物。
 
 # 要求
-1. 每个人物都要对应一种不同的内在主题，例如孤独、失去、重生、自由、
-自我评判、身份认同、意义、身体感受等等。
-2. 重点不是讲知识，而是找到“这个人为什么能陪用户走过这一刻”。
-3. resonance 要说明这个人物如何映照用户当下。
-4. whisper 是这个人物可以留给用户的一句低声回应，必须平实、具体、有穿透力，不要引用名言。
+1. 重点不是讲知识，而是找到“这个人为什么能陪用户走过这一刻”。
+2. resonance 要说明这个人物如何映照用户当下。
+3. whisper 是这个人物可以留给用户的一句回应。
+4. 人物必须是真实存在的，并且属于public domain。
 
 # 输出
 仅输出纯 JSON，不要 Markdown。
@@ -33,7 +32,6 @@ JSON 结构：
   "voices": [
     {
       "name": "人物姓名",
-      "theme": "内在主题",
       "resonance": "与用户当下的共鸣",
       "whisper": "一句低声回应"
     }
@@ -44,9 +42,8 @@ JSON 结构：
 
 class ThoughtVoice(BaseModel):
     name: str = Field(description="人物姓名")
-    theme: str = Field(description="对应的内在主题")
     resonance: str = Field(description="不超过 40 字，说明与用户当下的共鸣")
-    whisper: str = Field(description="10 到 30 字的低声回应")
+    whisper: str = Field(description="10 到 30 字的回应")
 
 
 class ThoughtMatch(BaseModel):
@@ -60,7 +57,7 @@ class ThoughtMatch(BaseModel):
 
 @tool
 def match_thought_voices(conversation: str) -> str:
-    """匹配能与当前用户处境共鸣的灵魂。"""
+    """寻找星海中能够与当前用户处境共鸣的灵魂。"""
     model = create_chat_model(model=MATCH_MODEL, temperature=MATCH_TEMPERATURE)
     structured_model = model.with_structured_output(ThoughtMatch, method="json_mode")
     match = structured_model.invoke(

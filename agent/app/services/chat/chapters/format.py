@@ -13,15 +13,9 @@ def build_chapter_system_prompt(
 ) -> str:
     chapter_title = str(chapter.get("title", "")).strip()
     chapter_subtitle = str(chapter.get("subtitle", "")).strip()
-    chapter_role = str(chapter.get("role", "")).strip()
     chapter_task = str(chapter.get("task", "")).strip()
 
-    if (
-        not chapter_title
-        or not chapter_subtitle
-        or not chapter_role
-        or not chapter_task
-    ):
+    if not chapter_title or not chapter_subtitle or not chapter_task:
         raise ValueError("Invalid chapter context for system prompt")
 
     if lang == "zh":
@@ -32,8 +26,6 @@ def build_chapter_system_prompt(
             f"{chapter_title}\n\n"
             "## 章节概要\n"
             f"{chapter_subtitle}\n\n"
-            "# 角色姿态\n"
-            f"{chapter_role}\n\n"
             "# 章节任务\n"
             f"{chapter_task}\n\n"
             "# 任务说明\n"
@@ -71,8 +63,6 @@ def build_chapter_system_prompt(
         f"{chapter_title}\n\n"
         "## Chapter Summary\n"
         f"{chapter_subtitle}\n\n"
-        "# Role In This Chapter\n"
-        f"{chapter_role}\n\n"
         "# Task\n"
         f"{chapter_task}\n\n"
         "# Output Format\n"

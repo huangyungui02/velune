@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS public.chapters (
     seq INT NOT NULL CHECK (seq > 0),
     title TEXT NOT NULL,
     subtitle TEXT NOT NULL,
-    role TEXT NOT NULL,
     task TEXT NOT NULL,
     "for" TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

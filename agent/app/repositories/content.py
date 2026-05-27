@@ -23,7 +23,7 @@ async def get_souler_by_id(souler_id: str) -> Souler:
 async def get_chapter_by_id(chapter_id: str) -> Chapter:
     row = await fetch_one(
         """
-        SELECT id, souler_id, seq, title, subtitle, role, task
+        SELECT id, souler_id, seq, title, subtitle, task
         FROM public.chapters
         WHERE id = CAST(%(chapter_id)s AS uuid)
         """,
