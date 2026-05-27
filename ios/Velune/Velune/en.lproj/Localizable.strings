@@ -66,6 +66,10 @@
 "common.search" = "Search";
 "common.back" = "Back";
 
+"network.error.unavailable" = "The network is unavailable. Please check your connection and try again.";
+"network.error.timeout" = "The request timed out. Please check your connection and try again.";
+"network.error.serverUnavailable" = "The server is unavailable. Please try again later.";
+
 "app.tab.starsea" = "Star Sea";
 "app.tab.chat" = "Chat";
 "app.tab.reading" = "Reading";

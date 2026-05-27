@@ -203,8 +203,7 @@ struct StarSeaConversationView: View {
                 }
             } catch {
                 await MainActor.run {
-                    removeEmptyAssistantMessage(id: assistantId)
-                    errorMessage = error.localizedDescription
+                    showStreamFailure(error.localizedDescription, assistantId: assistantId)
                 }
             }
 
@@ -346,7 +345,21 @@ struct StarSeaConversationView: View {
         messages.removeAll { $0.id == id && $0.content.isEmpty }
     }
 
+    private func showStreamFailure(_ message: String, assistantId: UUID?) {
+        if let assistantId, let index = messages.firstIndex(where: { $0.id == assistantId }) {
+            messages[index].content = message
+        } else {
+            messages.append(StarSeaMessage(role: .assistant, content: message))
+        }
+        errorMessage = message
+    }
+
     private func requestLeave() {
+        guard threadId != nil else {
+            leaveDirectly()
+            return
+        }
+
         isLeaveConfirmationPresented = true
     }
 

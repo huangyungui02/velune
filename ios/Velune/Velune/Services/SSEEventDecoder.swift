@@ -4,6 +4,7 @@ import OSLog
 
 nonisolated enum APISSEClient {
     private static let logger = AppLogger.network
+    private static let connectionTimeout: TimeInterval = 8
     private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -26,8 +27,18 @@ nonisolated enum APISSEClient {
             let task = Task(priority: .userInitiated) {
                 do {
                     let request = try await makeRequest(path: path, body: encodedBody)
-                    let eventSource = EventSource(mode: .default)
+                    let eventSource = EventSource(
+                        mode: .default,
+                        timeoutIntervalForRequest: connectionTimeout
+                    )
                     let dataTask = eventSource.dataTask(for: request)
+                    var didReceivePayload = false
+                    let timeoutTask = Task {
+                        try? await Task.sleep(for: .seconds(connectionTimeout))
+                        guard !Task.isCancelled else { return }
+                        continuation.finish(throwing: serverUnavailableError())
+                    }
+                    defer { timeoutTask.cancel() }
 
                     for await event in dataTask.events() {
                         if Task.isCancelled { break }
@@ -36,7 +47,7 @@ nonisolated enum APISSEClient {
                         case .open:
                             continue
                         case .closed:
-                            continuation.finish()
+                            finish(continuation, didReceivePayload: didReceivePayload)
                             return
                         case let .event(message):
                             guard let raw = message.data?
@@ -46,12 +57,14 @@ nonisolated enum APISSEClient {
                             else {
                                 continue
                             }
+                            didReceivePayload = true
+                            timeoutTask.cancel()
                             continuation.yield(Data(raw.utf8))
                         case let .error(error):
                             throw resolveEventSourceError(error)
                         }
                     }
-                    continuation.finish()
+                    finish(continuation, didReceivePayload: didReceivePayload)
                 } catch {
                     continuation.finish(throwing: error)
                 }
@@ -77,6 +90,7 @@ nonisolated enum APISSEClient {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.httpBody = body
+        request.timeoutInterval = connectionTimeout
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
@@ -84,6 +98,18 @@ nonisolated enum APISSEClient {
     }
 
     nonisolated private static func resolveEventSourceError(_ error: Error) -> Error {
+        if let networkError = networkErrorMessage(for: error) {
+            logger.error("stream request failed: \(networkError, privacy: .public)")
+            return NSError(
+                domain: "APISSEClient",
+                code: (error as? URLError)?.errorCode ?? -1,
+                userInfo: [
+                    NSLocalizedDescriptionKey: networkError,
+                    NSUnderlyingErrorKey: error,
+                ]
+            )
+        }
+
         guard case let EventSourceError.connectionError(statusCode, response) = error else {
             return error
         }
@@ -96,6 +122,42 @@ nonisolated enum APISSEClient {
             code: statusCode,
             userInfo: [NSLocalizedDescriptionKey: message]
         )
+    }
+
+    nonisolated private static func finish(
+        _ continuation: AsyncThrowingStream<Data, Error>.Continuation,
+        didReceivePayload: Bool
+    ) {
+        if didReceivePayload {
+            continuation.finish()
+        } else {
+            continuation.finish(throwing: serverUnavailableError())
+        }
+    }
+
+    nonisolated private static func serverUnavailableError() -> NSError {
+        NSError(
+            domain: "APISSEClient",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: String(localized: "network.error.serverUnavailable")]
+        )
+    }
+
+    nonisolated private static func networkErrorMessage(for error: Error) -> String? {
+        guard let urlError = error as? URLError else { return nil }
+
+        switch urlError.code {
+        case .notConnectedToInternet,
+             .cannotConnectToHost,
+             .cannotFindHost,
+             .dnsLookupFailed,
+             .networkConnectionLost:
+            return String(localized: "network.error.unavailable")
+        case .timedOut:
+            return String(localized: "network.error.timeout")
+        default:
+            return nil
+        }
     }
 
     static func decode<Payload: Decodable>(

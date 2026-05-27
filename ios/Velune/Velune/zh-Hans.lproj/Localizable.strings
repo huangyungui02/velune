@@ -66,6 +66,10 @@
 "common.search" = "搜索";
 "common.back" = "返回";
 
+"network.error.unavailable" = "网络暂时不可用，请检查连接后再试。";
+"network.error.timeout" = "连接超时，请检查网络后再试。";
+"network.error.serverUnavailable" = "后端服务暂时不可用，请稍后再试。";
+
 "app.tab.starsea" = "星海";
 "app.tab.chat" = "聊天";
 "app.tab.reading" = "阅读";
