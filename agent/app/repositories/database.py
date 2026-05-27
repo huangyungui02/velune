@@ -18,15 +18,11 @@ T = TypeVar("T")
 _pool: AsyncConnectionPool | None = None
 
 
-def _psycopg_database_url() -> str:
-    return settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://", 1)
-
-
 def init_database() -> AsyncConnectionPool:
     global _pool
     if _pool is None:
         _pool = AsyncConnectionPool(
-            _psycopg_database_url(),
+            settings.DATABASE_URL,
             kwargs={
                 "autocommit": True,
                 "row_factory": dict_row,
