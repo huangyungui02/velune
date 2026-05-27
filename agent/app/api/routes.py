@@ -22,7 +22,6 @@ from app.repositories import get_user_id_from_auth_header
 from app.services.chat import handle_chat
 from app.services.chat.chapters import start_chapter_session
 from app.services.chat.preferences import normalize_reply_length
-from app.services.soulers import canonicalize_souler_name
 from app.services.starsea import resume_graph, stream_graph
 
 logger = logging.getLogger(__name__)
@@ -246,25 +245,4 @@ async def start_chapter_session_route(
         return credit_limit_response(error)
     except Exception as error:  # noqa: BLE001
         logger.error("Failed to start chapter session: %s", error_log_payload(error))
-        return error_response(error_message(error))
-
-
-@router.post("/{lang}/soulers/canonicalize")
-async def canonicalize_souler_name_route(
-    request: Request,
-    normalized_lang: Lang = Depends(require_lang),
-    _: str = Depends(require_user_id),
-):
-    try:
-        body = await required_json_body(request)
-        raw_name = body.get("name")
-        if not isinstance(raw_name, str) or not raw_name.strip():
-            raise ValueError("Souler name cannot be empty")
-        if len(raw_name) > 128:
-            raise ValueError("Souler name is too long")
-
-        canonical_name = await canonicalize_souler_name(raw_name, normalized_lang)
-        return JSONResponse({"canonical_name": canonical_name}, status_code=200)
-    except Exception as error:  # noqa: BLE001
-        logger.error("Failed to canonicalize souler: %s", error_log_payload(error))
         return error_response(error_message(error))

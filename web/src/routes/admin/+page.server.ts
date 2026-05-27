@@ -35,11 +35,7 @@ export const actions: Actions = {
 			});
 		}
 
-		const result = await createSouler(
-			locals,
-			adminContext.session.access_token,
-			await request.formData()
-		);
+		const result = await createSouler(locals, await request.formData());
 		if (!result.ok) {
 			return fail(result.status, result.data);
 		}

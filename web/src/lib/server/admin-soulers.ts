@@ -1,4 +1,3 @@
-import { getAgentApiBaseUrl } from '$lib/server/agent';
 import {
 	AVATAR_BUCKET,
 	MAX_AVATAR_BYTES,
@@ -14,6 +13,7 @@ import {
 	parseSoulerIdForm
 } from '$lib/server/admin-forms';
 import { createAvatarResolver, ensureAvatarPath, normalizeWikiId } from '$lib/server/avatar';
+import { completeJson, type JsonSchema } from '$lib/server/llm';
 import type { AdminSoulerChapter, AdminSoulerDetail, AdminSoulerListItem } from '$lib/types';
 
 type SoulerListRow = {
@@ -48,8 +48,36 @@ type KeywordRow = {
 
 type CanonicalizeResponse = {
 	canonical_name?: string;
-	error?: string;
 };
+
+const CANONICAL_NAME_SCHEMA: JsonSchema = {
+	type: 'object',
+	properties: {
+		canonical_name: {
+			type: 'string'
+		}
+	},
+	required: ['canonical_name'],
+	additionalProperties: false
+};
+
+const CANONICAL_NAME_PROMPT = {
+	en:
+		'## Task\n' +
+		'Given a person name, return a canonical person name, as JSON format.\n\n' +
+		'## Example Input\n' +
+		'Nietzsche\n\n' +
+		'## Example Output\n' +
+		'{"canonical_name":"Friedrich Nietzsche"}',
+	zh:
+		'## Task\n' +
+		'将给定人物名，返回为规范人物名，以JSON格式返回。\n' +
+		'请使用大众最熟知的名字（例如：庄子而非庄周）。\n\n' +
+		'## Example Input\n' +
+		'尼采\n\n' +
+		'## Example Output\n' +
+		'{"canonical_name":"弗里德里希·尼采"}'
+} as const;
 
 export async function fetchSoulerListByStatus(locals: App.Locals, checked: boolean) {
 	const { data: rowsRaw } = await locals.supabase
@@ -182,27 +210,27 @@ export async function findPotentialDuplicate(
 	return null;
 }
 
-export async function canonicalizeWithLlm(
-	accessToken: string,
-	lang: string,
-	name: string
-): Promise<string> {
-	const baseUrl = getAgentApiBaseUrl();
-	const endpoint = `${baseUrl}/${lang}/soulers/canonicalize`;
-	const response = await fetch(endpoint, {
-		method: 'POST',
-		headers: {
-			authorization: `Bearer ${accessToken}`,
-			accept: 'application/json',
-			'content-type': 'application/json'
-		},
-		body: JSON.stringify({ name })
-	});
-
-	const payload = (await response.json().catch(() => null)) as CanonicalizeResponse | null;
-	if (!response.ok) {
-		throw new Error(payload?.error || 'canonical name 生成失败');
+export async function canonicalizeWithLlm(lang: string, name: string): Promise<string> {
+	const cleanedName = name.trim();
+	if (!cleanedName) {
+		throw new Error('Souler name cannot be empty');
 	}
+	if (cleanedName.length > 128) {
+		throw new Error('Souler name is too long');
+	}
+
+	const prompt = lang === 'zh' ? CANONICAL_NAME_PROMPT.zh : CANONICAL_NAME_PROMPT.en;
+	const payload = await completeJson<CanonicalizeResponse>(
+		[
+			{ role: 'system', content: prompt },
+			{ role: 'user', content: cleanedName }
+		],
+		{
+			schemaName: 'canonical_souler_name',
+			schema: CANONICAL_NAME_SCHEMA,
+			temperature: 0.25
+		}
+	);
 
 	const canonicalName = payload?.canonical_name?.trim() ?? '';
 	if (!canonicalName) {
@@ -214,7 +242,6 @@ export async function canonicalizeWithLlm(
 
 export async function createSouler(
 	locals: App.Locals,
-	accessToken: string,
 	formData: FormData
 ): Promise<
 	AdminActionResult<{ action: 'createSouler'; name: string; language: string; id?: string }>
@@ -244,7 +271,7 @@ export async function createSouler(
 
 	let canonicalName: string;
 	try {
-		canonicalName = await canonicalizeWithLlm(accessToken, lang, name);
+		canonicalName = await canonicalizeWithLlm(lang, name);
 	} catch (err) {
 		return {
 			ok: false,
