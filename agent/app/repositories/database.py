@@ -27,6 +27,7 @@ def init_database() -> AsyncConnectionPool:
                 "autocommit": True,
                 "row_factory": dict_row,
             },
+            max_size=4,
             timeout=settings.REPO_TIMEOUT_SECONDS,
             open=False,
         )
