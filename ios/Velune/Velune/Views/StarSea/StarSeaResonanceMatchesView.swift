@@ -23,52 +23,84 @@ private struct StarSeaResonanceMatchRow: View {
     let match: StarSeaStreamService.ResonanceMatch
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 16) {
             avatar
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(match.name)
-                    .font(.system(size: 14, weight: .medium))
-                    .tracking(1.5)
-                    .foregroundStyle(UITheme.primaryText.opacity(0.9))
+                    .font(.system(size: 14.5, weight: .light, design: .serif))
+                    .tracking(1.0)
+                    .foregroundStyle(UITheme.primaryText.opacity(0.92))
                     .lineLimit(1)
 
                 Text(match.line)
-                    .font(.system(size: 12, weight: .light))
-                    .tracking(0.8)
-                    .foregroundStyle(UITheme.secondaryText.opacity(0.62))
+                    .font(.system(size: 12, weight: .light, design: .serif))
+                    .lineSpacing(5)
+                    .tracking(0.5)
+                    .foregroundStyle(UITheme.secondaryText.opacity(0.68))
                     .lineLimit(2)
             }
 
             Spacer(minLength: 0)
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .light))
-                .foregroundStyle(UITheme.primaryText.opacity(0.24))
         }
-        .padding(16)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(red: 0.07, green: 0.075, blue: 0.095).opacity(0.30), in: .rect(cornerRadius: 18))
-        .glassEffect(in: .rect(cornerRadius: 18))
+        .background(
+            .ultraThinMaterial.opacity(0.20),
+            in: .rect(cornerRadius: 16, style: .continuous)
+        )
+        .background {
+            RadialGradient(
+                colors: [
+                    UITheme.glimmerGlow.opacity(0.04),
+                    .clear
+                ],
+                center: .topLeading,
+                startRadius: 0,
+                endRadius: 180
+            )
+            .clipShape(.rect(cornerRadius: 16, style: .continuous))
+        }
         .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(.white.opacity(0.06), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [.white.opacity(0.04), .white.opacity(0.005)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 0.5
+                )
         }
     }
 
     private var avatar: some View {
-        ZStack {
-            Circle()
-                .fill(.white.opacity(0.06))
-                .frame(width: 48, height: 48)
+        let initial = String(match.name.prefix(1))
+        let hue = Double(abs(match.name.hashValue) % 360) / 360.0
 
-            Text(String(match.name.prefix(1)))
-                .font(.system(size: 19, weight: .medium))
-                .foregroundStyle(UITheme.primaryText.opacity(0.86))
+        return ZStack {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(hue: hue, saturation: 0.24, brightness: 0.65).opacity(0.24),
+                            Color(hue: hue, saturation: 0.12, brightness: 0.82).opacity(0.08)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                      )
+                )
+                .frame(width: 45, height: 60)
+
+            Text(initial)
+                .font(.system(size: 16, weight: .light, design: .serif))
+                .foregroundStyle(UITheme.primaryText.opacity(0.85))
         }
         .overlay {
-            Circle()
-                .stroke(.white.opacity(0.09), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(.white.opacity(0.12), lineWidth: 0.5)
         }
+        .frame(width: 45, height: 60)
+        .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
     }
 }
