@@ -9,11 +9,8 @@ struct SettingsView: View {
     @State private var showSignOutConfirmation = false
     @State private var isSigningOut = false
     @State private var showPaywall = false
-    @State private var showStardustInfo = false
     @State private var showSignInSheet = false
     @State private var signInSheetDescriptionKey = "paywall.restore.signInRequired.description"
-    @State private var redeemCodeInput = ""
-    @State private var isRedeemingCode = false
     @State private var feedbackTitleKey = "settings.error.title"
     @State private var feedbackMessage: String?
     @AppStorage(AIReplyLength.storageKey) private var aiReplyLength = AIReplyLength.standard.rawValue
@@ -50,28 +47,6 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    HStack(spacing: 10) {
-                        HStack(spacing: 6) {
-                            settingsRowLabel("settings.billing.credits", systemImage: "sparkle")
-                            Button {
-                                showStardustInfo = true
-                            } label: {
-                                Image(systemName: "info.circle")
-                                    .font(.system(size: 14, weight: .regular))
-                                    .foregroundStyle(UITheme.tertiaryText)
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 4)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .popover(isPresented: $showStardustInfo, arrowEdge: .top) {
-                                StardustInfoPopover(subscriptionManager: subscriptionManager)
-                            }
-                        }
-                        Spacer(minLength: 0)
-                        stardustAccessView
-                    }
-
                     LabeledContent {
                         Text(subscriptionPlanName)
                             .foregroundStyle(UITheme.secondaryText)
@@ -120,33 +95,6 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(subscriptionManager.isRestoring || !subscriptionManager.isRevenueCatAvailable)
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        settingsRowLabel("settings.billing.redeem.title", systemImage: "ticket")
-
-                        HStack(spacing: 10) {
-                            TextField("settings.billing.redeem.placeholder", text: $redeemCodeInput)
-                                .textInputAutocapitalization(.characters)
-                                .autocorrectionDisabled(true)
-                                .submitLabel(.done)
-                                .onSubmit { handleRedeemTap() }
-
-                            Button {
-                                handleRedeemTap()
-                            } label: {
-                                if isRedeemingCode {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                        .frame(minWidth: 36)
-                                } else {
-                                    Text("settings.billing.action.redeem")
-                                }
-                            }
-                            .buttonStyle(.bordered)
-                            .disabled(!canRedeemCode)
-                        }
-                    }
-                    .padding(.vertical, 2)
                 } header: {
                     sectionHeader("settings.section.billing")
                 } footer: {
@@ -307,43 +255,6 @@ struct SettingsView: View {
         Task { await restorePurchases() }
     }
 
-    private func handleRedeemTap() {
-        guard !authManager.isAnonymous else {
-            presentSignInSheet(descriptionKey: "settings.billing.redeem.signInRequired.description")
-            return
-        }
-
-        Task { await redeemCode() }
-    }
-
-    private func redeemCode() async {
-        let normalizedCode = redeemCodeInput
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .uppercased()
-
-        guard !normalizedCode.isEmpty else {
-            showError(String(localized: "settings.billing.redeem.error.empty"))
-            return
-        }
-
-        isRedeemingCode = true
-        defer { isRedeemingCode = false }
-
-        do {
-            let result = try await subscriptionManager.redeemCode(normalizedCode)
-            redeemCodeInput = ""
-            let format = String(localized: "settings.billing.redeem.success.format")
-            let message = String(
-                format: format,
-                locale: Locale.current,
-                result.rewardCredits
-            )
-            showNotice(message)
-        } catch {
-            showError(error.localizedDescription)
-        }
-    }
-
     private var appVersion: String {
         let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "-"
@@ -365,12 +276,6 @@ struct SettingsView: View {
         !subscriptionManager.isPremium
     }
 
-    private var canRedeemCode: Bool {
-        !redeemCodeInput
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .isEmpty && !isRedeemingCode
-    }
-
     private var renewalTimeText: String? {
         guard subscriptionManager.isPremium,
               let renewalDate = subscriptionManager.entitlementExpiresAt
@@ -385,13 +290,6 @@ struct SettingsView: View {
         NSLocalizedString(subscriptionManager.currentPlan.localizedNameKey, comment: "")
     }
 
-    private var stardustAccessView: some View {
-        Text("\(subscriptionManager.credits)")
-            .font(.system(.body, design: .rounded).monospacedDigit())
-            .fontWeight(.medium)
-            .foregroundStyle(UITheme.primaryText)
-    }
-
     private func presentSignInSheet(descriptionKey: String) {
         signInSheetDescriptionKey = descriptionKey
         showSignInSheet = true
@@ -402,8 +300,4 @@ struct SettingsView: View {
         feedbackMessage = message
     }
 
-    private func showNotice(_ message: String) {
-        feedbackTitleKey = "settings.notice.title"
-        feedbackMessage = message
-    }
 }

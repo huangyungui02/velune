@@ -57,9 +57,9 @@ struct PaywallView: View {
                     // Features
                     VStack(spacing: 16) {
                         FeatureRow(
-                            icon: "sparkles.rectangle.stack",
-                            title: "paywall.feature.moreStardust.title",
-                            subtitle: "paywall.feature.moreStardust.subtitle"
+                            icon: "sparkles",
+                            title: "paywall.feature.unlimitedConversations.title",
+                            subtitle: "paywall.feature.unlimitedConversations.subtitle"
                         )
                         
                         FeatureRow(

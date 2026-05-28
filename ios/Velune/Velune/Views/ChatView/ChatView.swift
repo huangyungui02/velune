@@ -22,10 +22,8 @@ struct ChatView: View {
     @State var isLoadingSessions = false
     @State var sessionMenuError: String?
     @State var isShowingSouler = false
-    @State var showPaywall = false
     @State var hasPerformedInitialLoad = false
     @State var shouldPauseAutoScrollDuringStreaming = false
-    @State var billingErrorContext: BillingErrorContext?
     @State var chapters: [SoulerChapter] = []
     @State var isLoadingChapters = false
     @State var isStartingChapterSession = false
@@ -140,15 +138,9 @@ struct ChatView: View {
             set: {
                 if !$0 {
                     errorMessage = nil
-                    billingErrorContext = nil
                 }
             }
         )) {
-            if billingErrorContext?.shouldOfferUpgrade == true {
-                Button("billing.action.openPaywall") {
-                    showPaywall = true
-                }
-            }
             Button("common.ok", role: .cancel) {}
         } message: {
             if let errorMessage {
@@ -156,9 +148,6 @@ struct ChatView: View {
             } else {
                 Text("matching.error.unknown")
             }
-        }
-        .sheet(isPresented: $showPaywall) {
-            PaywallView()
         }
         .onChange(of: sessionId) { _, newValue in
             guard let newValue, newValue != activeSessionId else { return }

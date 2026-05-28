@@ -8,9 +8,8 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.core import Lang
 from app.api.http import error_response, required_json_body
-from app.core.errors import credit_error_payload, error_log_payload, error_message
+from app.core.errors import error_log_payload, error_message
 from app.core.sse import emit_once, sse_response
-from app.domain import CreditLimitError
 from app.services.chat.prepare import prepare_chat
 from app.services.chat.streaming import stream_chat_events
 
@@ -36,8 +35,6 @@ async def handle_chat(
             body=body,
             log_stage=log_stage,
         )
-    except CreditLimitError as error:
-        return sse_response(emit_once(credit_error_payload(error)))
     except ValueError as error:
         return error_response(str(error))
     except Exception as error:  # noqa: BLE001

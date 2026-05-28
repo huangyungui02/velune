@@ -103,20 +103,14 @@ enum ChatStreamService {
     }
 
     private static func streamError(for payload: StreamEvent) -> NSError {
-        var userInfo: [String: Any] = [
+        let userInfo: [String: Any] = [
             NSLocalizedDescriptionKey: errorMessage(for: payload)
         ]
-        if let code = payload.code, !code.isEmpty {
-            userInfo[AppErrorUserInfoKey.billingCode] = code
-        }
 
         return NSError(domain: domain, code: -1, userInfo: userInfo)
     }
 
     private static func errorMessage(for payload: StreamEvent) -> String {
-        if payload.code == "INSUFFICIENT_CREDITS" {
-            return NSLocalizedString("billing.error.insufficientStardust.free", comment: "")
-        }
         return payload.message ?? String(localized: "matching.error.unknown")
     }
 }

@@ -38,7 +38,6 @@ extension ChatView {
                     messages = cachedMessages
                     hasUsableCache = true
                     errorMessage = nil
-                    billingErrorContext = nil
                 }
 
                 shouldRefreshFromRemote = try Message.shouldRefreshCache(
@@ -87,14 +86,12 @@ extension ChatView {
                 }
 
                 errorMessage = nil
-                billingErrorContext = nil
                 return
             }
 
             let remoteMessages = try await Message.getHistory(sessionId: sessionId)
             messages = remoteMessages
             errorMessage = nil
-            billingErrorContext = nil
 
             cacheMessagesIfPossible(
                 remoteMessages,
@@ -107,7 +104,6 @@ extension ChatView {
                 return
             }
             errorMessage = error.localizedDescription
-            billingErrorContext = error.billingErrorContext
         }
     }
 

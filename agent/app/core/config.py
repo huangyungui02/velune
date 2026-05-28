@@ -24,7 +24,6 @@ class Settings(BaseSettings):
 
     APP_ENV: str = _current_app_env()
     APP_NAME: str = "velune-agent"
-    BILLING_ENABLED: bool = False
 
     DATABASE_URL: str
 

@@ -5,17 +5,6 @@ enum BillingPlan: String, Equatable {
     case awaken
     case depth
 
-    var dailyCredits: Int {
-        switch self {
-        case .free:
-            BillingConfig.freeDailyCredits
-        case .awaken:
-            BillingConfig.awakenDailyCredits
-        case .depth:
-            BillingConfig.depthDailyCredits
-        }
-    }
-
     var localizedNameKey: String {
         switch self {
         case .free:
@@ -29,36 +18,15 @@ enum BillingPlan: String, Equatable {
 }
 
 enum BillingConfig {
-    static let freeDailyCredits = 10
-    static let awakenDailyCredits = 50
-    static let depthDailyCredits = 100
-
     static var revenueCatPublicSDKKey: String {
         (Bundle.main.object(forInfoDictionaryKey: "REVENUECAT_PUBLIC_SDK_KEY") as? String ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    static func resolvePlan(
-        productId: String?,
-        dailyCredits: Int?
-    ) -> BillingPlan {
+    static func resolvePlan(productId: String?) -> BillingPlan {
         if let productId, let matched = resolvePlan(productIdentifiers: [productId]) {
             return matched
         }
-
-        if let dailyCredits {
-            switch dailyCredits {
-            case awakenDailyCredits:
-                return .awaken
-            case depthDailyCredits...:
-                return .depth
-            case (freeDailyCredits + 1)..<depthDailyCredits:
-                return .awaken
-            default:
-                break
-            }
-        }
-
         return .free
     }
 

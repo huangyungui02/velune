@@ -246,14 +246,11 @@ Deno.serve(async (req) => {
 
     if (active) {
       const restored = before.productId === null;
-      // Restore purchase only synchronizes subscription metadata.
-      // It must not mutate credits or credits_refreshed_on.
       await updateSubscriptionMetadataOnly(userId, active);
 
       return jsonResponse({
         ok: true,
         restored,
-        credits_changed: false,
         action: "metadata_only",
         user_id: userId,
         product_id: active.productId,
@@ -262,11 +259,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // No active subscription in RevenueCat: don't mutate credits on restore tap.
     return jsonResponse({
       ok: true,
       restored: false,
-      credits_changed: false,
       action: "noop",
       user_id: userId,
       product_id: before.productId,

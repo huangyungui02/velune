@@ -5,8 +5,6 @@ from typing import Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from app.domain import CreditLimitError
-
 
 async def json_body(request: Request) -> dict[str, Any]:
     try:
@@ -28,10 +26,3 @@ async def required_json_body(request: Request) -> dict[str, Any]:
 
 def error_response(message: str, status_code: int = 400) -> JSONResponse:
     return JSONResponse({"error": message}, status_code=status_code)
-
-
-def credit_limit_response(error: CreditLimitError) -> JSONResponse:
-    return JSONResponse(
-        {"code": error.code, "error": str(error)},
-        status_code=402,
-    )

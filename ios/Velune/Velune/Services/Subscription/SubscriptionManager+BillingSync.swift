@@ -8,14 +8,10 @@ extension SubscriptionManager {
         let expiration = BillingDateParser.parse(payload.expirationAt)
         let hasProduct = payload.productId != nil
         let notExpired = expiration.map { $0 > Date() } ?? true
-        let resolvedPlan = BillingConfig.resolvePlan(
-            productId: payload.productId,
-            dailyCredits: payload.dailyCredits
-        )
+        let resolvedPlan = BillingConfig.resolvePlan(productId: payload.productId)
 
         currentPlan = resolvedPlan
         isPremium = (resolvedPlan != .free || hasProduct) && notExpired
-        credits = payload.credits
         entitlementExpiresAt = expiration
     }
 
@@ -79,7 +75,7 @@ extension SubscriptionManager {
     private func callBillingSync() async throws -> BillingSyncResponse {
         let supabase = try Backend.requireSupabase()
         let rows: [BillingSyncResponse] = try await supabase
-            .rpc("get_user_credit_state")
+            .rpc("get_user_subscription_state")
             .execute()
             .value
 
@@ -87,7 +83,7 @@ extension SubscriptionManager {
             throw NSError(
                 domain: "BillingRPC",
                 code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Billing state is empty"]
+                userInfo: [NSLocalizedDescriptionKey: "Subscription state is empty"]
             )
         }
 

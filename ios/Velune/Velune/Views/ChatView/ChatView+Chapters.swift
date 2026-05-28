@@ -99,7 +99,6 @@ extension ChatView {
         } catch {
             messages = []
             errorMessage = error.localizedDescription
-            billingErrorContext = error.billingErrorContext
         }
     }
 

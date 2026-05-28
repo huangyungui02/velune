@@ -9,11 +9,10 @@ from typing import cast
 from starlette.requests import ClientDisconnect
 
 from app.core.config import get_settings
-from app.core.errors import credit_error_payload, error_log_payload, error_message
+from app.core.errors import error_log_payload, error_message
 from app.core.llm import DEFAULT_MODEL, stream_text
 from app.core.sse import sse_event
-from app.domain import CreditLimitError, Session
-from app.services.billing import CHAT_STARDUST_COST, refund_stardust_safely
+from app.domain import Session
 from app.services.chat.chapters.response import (
     ChapterStreamState,
     consume_chapter_stream_delta,
@@ -101,14 +100,10 @@ def stream_chat_events(
                     },
                 }
             )
-        except CreditLimitError as error:
-            await _refund_chat(prepared.user_id, reason="chat_stream_credit_error")
-            yield sse_event(credit_error_payload(error))
         except (ClientDisconnect, asyncio.CancelledError):
             logger.info("Chat stream closed by client.")
             return
         except Exception as error:  # noqa: BLE001
-            await _refund_chat(prepared.user_id, reason="chat_stream_failed")
             logger.error("Failed to process chat request: %s", error_log_payload(error))
             yield sse_event({"type": "error", "message": error_message(error)})
 
@@ -197,7 +192,3 @@ def finalize_stream(
         options=options,
         tail_delta=tail_delta,
     )
-
-
-async def _refund_chat(user_id: str, *, reason: str) -> None:
-    await refund_stardust_safely(user_id, CHAT_STARDUST_COST, reason=reason)

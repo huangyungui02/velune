@@ -25,6 +25,7 @@ def init_database() -> AsyncConnectionPool:
             settings.DATABASE_URL,
             kwargs={
                 "autocommit": True,
+                "prepare_threshold": None,
                 "row_factory": dict_row,
             },
             max_size=4,

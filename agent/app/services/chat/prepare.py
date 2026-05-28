@@ -4,7 +4,6 @@ from collections.abc import Callable
 
 from app.core import Lang, normalize_uuid
 from app.repositories import get_recent_messages, insert_message
-from app.services.billing import CHAT_STARDUST_COST, stardust_charge
 from app.services.chat.preferences import normalize_reply_length
 from app.services.chat.prompts import build_prompt_messages
 from app.services.chat.session import resolve_session
@@ -31,37 +30,34 @@ async def prepare_chat(
 
     reply_length = normalize_reply_length(body.get("replyLength"))
 
-    async with stardust_charge(user_id, CHAT_STARDUST_COST, reason="chat_prepare_failed"):
-        log_stage("credit_checked")
+    resolved = await resolve_session(
+        user_id,
+        session_id=session_id,
+        souler_id=souler_id,
+        chapter_id=chapter_id,
+    )
+    session = resolved.session
+    log_stage("session_ready")
 
-        resolved = await resolve_session(
-            user_id,
-            session_id=session_id,
-            souler_id=souler_id,
-            chapter_id=chapter_id,
-        )
-        session = resolved.session
-        log_stage("session_ready")
+    history = await get_recent_messages(user_id, session["id"])
+    await insert_message(
+        user_id,
+        session["souler_id"],
+        session["id"],
+        "user",
+        content,
+    )
+    log_stage("user_message_inserted")
 
-        history = await get_recent_messages(user_id, session["id"])
-        await insert_message(
-            user_id,
-            session["souler_id"],
-            session["id"],
-            "user",
-            content,
-        )
-        log_stage("user_message_inserted")
+    prompt_messages = build_prompt_messages(session, history, content, lang, reply_length)
+    log_stage("prompt_ready")
 
-        prompt_messages = build_prompt_messages(session, history, content, lang, reply_length)
-        log_stage("prompt_ready")
-
-        return PreparedChat(
-            user_id=user_id,
-            session=session,
-            lang=lang,
-            content=content,
-            is_new_session=resolved.is_new,
-            should_generate_title=resolved.should_generate_title,
-            prompt_messages=prompt_messages,
-        )
+    return PreparedChat(
+        user_id=user_id,
+        session=session,
+        lang=lang,
+        content=content,
+        is_new_session=resolved.is_new,
+        should_generate_title=resolved.should_generate_title,
+        prompt_messages=prompt_messages,
+    )

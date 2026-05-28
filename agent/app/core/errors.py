@@ -3,15 +3,13 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from app.domain import CreditLimitError, UnauthorizedError
+from app.domain import UnauthorizedError
 
 __all__ = [
-    "CreditLimitError",
     "UnauthorizedError",
     "safe_json_stringify",
     "error_message",
     "error_log_payload",
-    "credit_error_payload",
 ]
 
 
@@ -51,11 +49,3 @@ def error_log_payload(error: Any) -> Any:
             "message": str(error),
         }
     return safe_json_stringify(error) or str(error)
-
-
-def credit_error_payload(error: CreditLimitError) -> dict[str, Any]:
-    return {
-        "type": "error",
-        "code": error.code,
-        "message": str(error),
-    }

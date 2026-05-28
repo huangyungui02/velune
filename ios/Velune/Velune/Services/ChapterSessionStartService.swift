@@ -68,18 +68,13 @@ enum ChapterSessionStartService {
 
         let message = parseErrorMessage(from: data)
             ?? HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
-        let code = parseErrorCode(from: data)
         logger.error(
             "chapter start request failed: soulerId=\(soulerId.uuidString, privacy: .public) chapterId=\(chapterId.uuidString, privacy: .public) status=\(httpResponse.statusCode, privacy: .public) message=\(message, privacy: .public)"
         )
-        var userInfo: [String: Any] = [NSLocalizedDescriptionKey: message]
-        if let code, !code.isEmpty {
-            userInfo[AppErrorUserInfoKey.billingCode] = code
-        }
         throw NSError(
             domain: "ChapterSessionStartService",
             code: httpResponse.statusCode,
-            userInfo: userInfo
+            userInfo: [NSLocalizedDescriptionKey: message]
         )
     }
 
@@ -97,13 +92,4 @@ enum ChapterSessionStartService {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private static func parseErrorCode(from data: Data) -> String? {
-        guard !data.isEmpty else { return nil }
-        if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let code = object["code"] as? String
-        {
-            return code.trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-        return nil
-    }
 }

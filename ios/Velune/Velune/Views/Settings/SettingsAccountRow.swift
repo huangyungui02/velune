@@ -38,30 +38,3 @@ struct SettingsAccountRow: View {
         .padding(.vertical, 4)
     }
 }
-
-struct StardustInfoPopover: View {
-    let subscriptionManager: SubscriptionManager
-
-    private var descriptionText: String {
-        guard subscriptionManager.currentPlan != .free else {
-            return String(localized: "settings.billing.stardust.description")
-        }
-
-        let format = String(localized: "settings.billing.stardust.description.premium.format")
-        return String(format: format, locale: Locale.current, subscriptionManager.dailyCreditsAllowance)
-    }
-
-    var body: some View {
-        ScrollView {
-            Text(descriptionText)
-                .font(.subheadline)
-                .foregroundStyle(UITheme.secondaryText)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(16)
-        .frame(width: 320, alignment: .topLeading)
-        .frame(maxHeight: 360, alignment: .topLeading)
-        .presentationCompactAdaptation(.popover)
-    }
-}

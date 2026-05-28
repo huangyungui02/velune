@@ -10,8 +10,6 @@ final class SubscriptionManager {
 
     var isPremium = false
     var currentPlan: BillingPlan = .free
-    var credits = BillingConfig.freeDailyCredits
-    var dailyCreditsAllowance: Int { currentPlan.dailyCredits }
     
     private(set) var availablePackages: [Package] = []
     var entitlementExpiresAt: Date?
@@ -224,7 +222,6 @@ final class SubscriptionManager {
     private func resetToFreeDefaults() {
         isPremium = false
         currentPlan = .free
-        credits = BillingConfig.freeDailyCredits
         availablePackages = []
         entitlementExpiresAt = nil
         pendingForcedRefresh = false

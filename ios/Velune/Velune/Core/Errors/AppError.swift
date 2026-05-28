@@ -1,17 +1,5 @@
 import Foundation
 
-enum AppErrorUserInfoKey {
-    static let billingCode = "billingCode"
-}
-
-struct BillingErrorContext: Equatable {
-    let code: String
-
-    var shouldOfferUpgrade: Bool {
-        code == "INSUFFICIENT_CREDITS"
-    }
-}
-
 enum AppError: LocalizedError {
     case unauthenticated
     case missingConfiguration(String)
@@ -44,18 +32,5 @@ struct AppLaunchFailure: Equatable {
     init(error: Error) {
         self.title = "Velune could not open"
         self.message = error.localizedDescription
-    }
-}
-
-extension Error {
-    var billingErrorContext: BillingErrorContext? {
-        let nsError = self as NSError
-        guard let code = nsError.userInfo[AppErrorUserInfoKey.billingCode] as? String,
-              !code.isEmpty
-        else {
-            return nil
-        }
-
-        return BillingErrorContext(code: code)
     }
 }

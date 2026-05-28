@@ -52,7 +52,7 @@ You represent that you have the necessary rights to submit your content, and tha
 
 #### 6.1 Subscription Services
 
-Velune may offer subscription-based features, such as “Velune · Depth.” Subscription benefits may include recurring credits (“Stardust”) and extended or enhanced access to certain features.
+Velune may offer subscription-based features, such as “Velune · Depth.” Subscription benefits may include extended or enhanced access to certain features.
 
 Details such as pricing, billing terms, and feature limits will be presented in the app at the time of purchase.
 
@@ -74,17 +74,7 @@ Cancellation takes effect at the end of the current billing period, and you will
 
 ------
 
-#### 6.4 Credits
-
-Credits may be required to access certain features of the Service.
-
-The amount of credits available to you may depend on your plan or promotional offer, as described in the app. Credits refresh daily and do not roll over unless otherwise stated.
-
-Credits have no monetary value, are non-transferable, and are non-refundable except where required by law.
-
-------
-
-#### 6.5 Payments and Refunds
+#### 6.4 Payments and Refunds
 
 All purchases are processed by Apple. We do not receive or store your full payment information.
 

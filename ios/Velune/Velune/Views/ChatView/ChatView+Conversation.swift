@@ -7,7 +7,6 @@ extension ChatView {
         messages = []
         inputText = ""
         errorMessage = nil
-        billingErrorContext = nil
         hasScrolledToLatestOnAppear = false
 
         if isDraftSession {
@@ -82,7 +81,6 @@ extension ChatView {
         } catch {
             messages.removeAll { $0.id == assistantLocalId }
             errorMessage = error.localizedDescription
-            billingErrorContext = error.billingErrorContext
         }
     }
 
@@ -191,7 +189,6 @@ extension ChatView {
         messages = []
         inputText = ""
         errorMessage = nil
-        billingErrorContext = nil
         hasScrolledToLatestOnAppear = false
 
         Task {
