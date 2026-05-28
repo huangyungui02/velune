@@ -6,11 +6,11 @@ type SoulerRow = {
 	name: string;
 	wiki_id: string | null;
 	updated_at: string;
+	lang: string | null;
 };
 
 type DiscoverSectionRow = {
 	id: string;
-	lang: string;
 	title: string;
 	subtitle: string | null;
 	sort_order: number;
@@ -23,30 +23,6 @@ type DiscoverSectionItemRow = {
 };
 
 const LATEST_PAGE_SIZE = 20;
-
-function normalizeLang(raw: string | null | undefined) {
-	const value = raw?.trim().toLowerCase();
-	if (!value) {
-		return null;
-	}
-
-	const [segment] = value.split(/[-_]/);
-	return segment?.trim() || null;
-}
-
-export function resolveExploreLang(user: unknown, acceptLanguage: string | null) {
-	if (user && typeof user === 'object') {
-		const metadata =
-			(user as { user_metadata?: { lang?: string; language?: string } }).user_metadata ?? {};
-		const fromMetadata = normalizeLang(metadata.lang) ?? normalizeLang(metadata.language);
-		if (fromMetadata) {
-			return fromMetadata;
-		}
-	}
-
-	const fromHeader = normalizeLang(acceptLanguage?.split(',')[0] ?? null);
-	return fromHeader ?? 'zh';
-}
 
 function buildExploreSoulerItems(soulers: SoulerRow[], avatarByWikiId: Map<string, string | null>) {
 	return soulers.map((souler) => {
@@ -63,7 +39,7 @@ function buildExploreSoulerItems(soulers: SoulerRow[], avatarByWikiId: Map<strin
 async function fetchSectionRowsByLang(locals: App.Locals, lang: string) {
 	const { data: rows } = await locals.supabase
 		.from('discover_sections')
-		.select('id, lang, title, subtitle, sort_order')
+		.select('id, title, subtitle, sort_order')
 		.eq('is_active', true)
 		.eq('lang', lang)
 		.order('sort_order', { ascending: true })
@@ -72,28 +48,10 @@ async function fetchSectionRowsByLang(locals: App.Locals, lang: string) {
 	return (rows ?? []) as DiscoverSectionRow[];
 }
 
-export async function fetchFeaturedSections(locals: App.Locals, preferredLang: string) {
-	let sections = await fetchSectionRowsByLang(locals, preferredLang);
-	if (sections.length === 0 && preferredLang !== 'zh') {
-		sections = await fetchSectionRowsByLang(locals, 'zh');
-	}
-
+export async function fetchFeaturedSections(locals: App.Locals) {
+	const sections = await fetchSectionRowsByLang(locals, 'zh');
 	if (sections.length === 0) {
-		const { data: allRows } = await locals.supabase
-			.from('discover_sections')
-			.select('id, lang, title, subtitle, sort_order')
-			.eq('is_active', true)
-			.order('lang', { ascending: true })
-			.order('sort_order', { ascending: true })
-			.order('updated_at', { ascending: false });
-
-		const allSections = (allRows ?? []) as DiscoverSectionRow[];
-		if (allSections.length === 0) {
-			return [] satisfies ExploreSection[];
-		}
-
-		const fallbackLang = allSections[0]?.lang?.trim() || 'zh';
-		sections = allSections.filter((section) => (section.lang?.trim() || 'zh') === fallbackLang);
+		return [] satisfies ExploreSection[];
 	}
 
 	const sectionIds = sections.map((section) => section.id);
@@ -115,9 +73,10 @@ export async function fetchFeaturedSections(locals: App.Locals, preferredLang: s
 
 	const { data: soulerRowsRaw } = await locals.supabase
 		.from('soulers')
-		.select('id, name, wiki_id, updated_at')
+		.select('id, name, wiki_id, updated_at, lang')
 		.in('id', soulerIds)
-		.eq('checked', true);
+		.eq('checked', true)
+		.eq('lang', 'zh');
 
 	const soulerRows = (soulerRowsRaw ?? []) as SoulerRow[];
 	const avatarByWikiId = await fetchAvatarMap(
@@ -161,8 +120,9 @@ export async function fetchLatestSoulersPage(locals: App.Locals, page: number) {
 	const to = from + LATEST_PAGE_SIZE - 1;
 	const { data: soulersRaw, count } = await locals.supabase
 		.from('soulers')
-		.select('id, name, wiki_id, updated_at', { count: 'exact' })
+		.select('id, name, wiki_id, updated_at, lang', { count: 'exact' })
 		.eq('checked', true)
+		.eq('lang', 'zh')
 		.order('updated_at', { ascending: false })
 		.range(from, to);
 
