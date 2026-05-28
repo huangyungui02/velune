@@ -1,7 +1,7 @@
 import Foundation
 import Supabase
 
-enum JSONValue: Codable, Hashable, Sendable {
+enum JSONValue: Codable, Hashable {
     case string(String)
     case number(Double)
     case bool(Bool)
@@ -22,7 +22,7 @@ enum JSONValue: Codable, Hashable, Sendable {
         } else if let value = try? container.decode([JSONValue].self) {
             self = .array(value)
         } else {
-            self = .object(try container.decode([String: JSONValue].self))
+            self = try .object(container.decode([String: JSONValue].self))
         }
     }
 
@@ -72,7 +72,7 @@ enum JSONValue: Codable, Hashable, Sendable {
     }
 }
 
-struct GlimmerMessage: Identifiable, Decodable, Hashable, Sendable {
+struct GlimmerMessage: Identifiable, Decodable, Hashable {
     let id: UUID
     let glimmerId: UUID
     let sequence: Int
@@ -96,9 +96,9 @@ struct GlimmerMessage: Identifiable, Decodable, Hashable, Sendable {
 
 extension GlimmerMessage {
     static func getAll(glimmerId: UUID) async throws -> [GlimmerMessage] {
-        let userId = try await AuthManager.shared.getUserId()
+        let userId = try AuthManager.shared.getUserId()
         let supabase = try Backend.requireSupabase()
-        let response: [GlimmerMessage] = try await supabase
+        return try await supabase
             .from("glimmer_messages")
             .select("id, glimmer_id, sequence, type, role, content, payload, created_at")
             .eq("glimmer_id", value: glimmerId.uuidString)
@@ -106,7 +106,5 @@ extension GlimmerMessage {
             .order("sequence", ascending: true)
             .execute()
             .value
-
-        return response
     }
 }

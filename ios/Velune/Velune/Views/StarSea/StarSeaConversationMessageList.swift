@@ -4,6 +4,8 @@ struct StarSeaConversationMessageList: View {
     let messages: [StarSeaMessage]
     let resonanceMatches: [StarSeaStreamService.ResonanceMatch]
     let isOptionsDisabled: Bool
+    let isStreaming: Bool
+    @Binding var shouldPauseAutoScrollDuringStreaming: Bool
     var showsOptions = true
     let onDismissComposerFocus: () -> Void
     let onSelectOption: (String) -> Void
@@ -27,14 +29,22 @@ struct StarSeaConversationMessageList: View {
             .contentShape(.rect)
             .onTapGesture(perform: onDismissComposerFocus)
             .onChange(of: messages.count) { _, _ in
-                scrollToLatest(with: proxy, animated: true)
+                scrollToLatest(with: proxy, animated: true, reason: .countChanged)
             }
             .onChange(of: messages.last?.content) { _, _ in
-                scrollToLatest(with: proxy, animated: false)
+                scrollToLatest(with: proxy, animated: false, reason: .contentChanged)
             }
             .onChange(of: resonanceMatches) { _, _ in
-                scrollToLatest(with: proxy, animated: true)
+                scrollToLatest(with: proxy, animated: true, reason: .resonanceChanged)
             }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        if isStreaming {
+                            shouldPauseAutoScrollDuringStreaming = true
+                        }
+                    }
+            )
         }
     }
 
@@ -77,7 +87,17 @@ struct StarSeaConversationMessageList: View {
             && !resonanceMatches.isEmpty
     }
 
-    private func scrollToLatest(with proxy: ScrollViewProxy, animated: Bool) {
+    private enum ScrollTrigger {
+        case countChanged
+        case contentChanged
+        case resonanceChanged
+    }
+
+    private func scrollToLatest(with proxy: ScrollViewProxy, animated: Bool, reason: ScrollTrigger? = nil) {
+        if isStreaming, shouldPauseAutoScrollDuringStreaming, reason != nil {
+            return
+        }
+
         guard let target = messages.last?.id else { return }
 
         if animated {

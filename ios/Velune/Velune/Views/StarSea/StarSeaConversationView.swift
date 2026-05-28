@@ -12,6 +12,7 @@ struct StarSeaConversationView: View {
     @State private var errorMessage: String?
     @State private var hasStarted = false
     @State private var resonanceMatches: [StarSeaStreamService.ResonanceMatch] = []
+    @State private var shouldPauseAutoScrollDuringStreaming = false
     @State private var activeTask: Task<Void, Never>?
     @State private var isLeaveConfirmationPresented = false
     @State private var settlementText = ""
@@ -36,7 +37,12 @@ struct StarSeaConversationView: View {
                 }
             }
         }
-        .highPriorityGesture(backSwipeGesture)
+        .overlay(alignment: .leading) {
+            Color.clear
+                .frame(width: 28)
+                .contentShape(.rect)
+                .gesture(backSwipeGesture)
+        }
         .navigationBarBackButtonHidden(true)
         .navigationTitle("app.tab.starsea")
         .navigationBarTitleDisplayMode(.inline)
@@ -118,6 +124,8 @@ struct StarSeaConversationView: View {
             messages: messages,
             resonanceMatches: resonanceMatches,
             isOptionsDisabled: isStreaming || isSettling || threadId == nil,
+            isStreaming: isStreaming,
+            shouldPauseAutoScrollDuringStreaming: $shouldPauseAutoScrollDuringStreaming,
             showsOptions: !isAwaitingSettlementConfirmation,
             onDismissComposerFocus: { isComposerFocused = false },
             onSelectOption: selectConversationOption
@@ -186,6 +194,7 @@ struct StarSeaConversationView: View {
         guard !isStreaming, !isAwaitingSettlementConfirmation else { return }
 
         isStreaming = true
+        shouldPauseAutoScrollDuringStreaming = false
         errorMessage = nil
         messages.append(StarSeaMessage(role: .assistant, content: ""))
         let assistantId = messages.last?.id
@@ -209,6 +218,7 @@ struct StarSeaConversationView: View {
 
             await MainActor.run {
                 isStreaming = false
+                shouldPauseAutoScrollDuringStreaming = false
                 activeTask = nil
             }
         }
