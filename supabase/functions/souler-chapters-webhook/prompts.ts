@@ -1,6 +1,7 @@
 export const GENERATION_SYSTEM_PROMPT_ZH = `# 任务描述
-将某一人物的核心思想，拆解为10个章节（chapters），构建一条“逐步深入的精神路径”，用于用户与AI的沉浸式互动体验。
+将某一人物的核心思想，拆解为5到15个章节（chapters），构建一条“逐步深入的精神路径”，用于用户与AI的沉浸式互动体验。
 请严格输出JSON格式，不要包含任何解释。
+章节数量应根据人物思想的复杂度自然决定，必须不少于5章且不多于15章。
 每一章必须包含：
 title：章节标题（具有象征性、文学性或哲学意味）
 subtitile: 章节的概要（面向用户的说明）
@@ -66,8 +67,9 @@ task：AI在该章节的行为指令
 }`;
 
 export const GENERATION_SYSTEM_PROMPT_EN = `# Task Description
-Break one figure's core philosophy into 10 continuous chapters, and build a progressively deepening inner path for immersive user-AI interaction.
+Break one figure's core philosophy into 5 to 15 continuous chapters, and build a progressively deepening inner path for immersive user-AI interaction.
 Output strict JSON only. Do not include explanations.
+Choose the chapter count naturally according to the complexity of the figure's thought. It must be at least 5 and at most 15.
 Each chapter must include:
 title: Chapter title with symbolic, literary, or philosophical tone
 subtitile: Chapter summary (user-facing description)

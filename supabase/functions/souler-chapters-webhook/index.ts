@@ -26,7 +26,8 @@ type Chapter = {
 
 const QWEN_MODEL = getQwenModel();
 const CHAPTERS_TEMPERATURE = 0.35;
-const CHAPTER_COUNT = 10;
+const MIN_CHAPTER_COUNT = 5;
+const MAX_CHAPTER_COUNT = 15;
 const MODEL_TIMEOUT_MS = 60_000;
 
 const CHAPTER_SCHEMA: Json = {
@@ -34,8 +35,8 @@ const CHAPTER_SCHEMA: Json = {
   properties: {
     chapters: {
       type: "array",
-      minItems: CHAPTER_COUNT,
-      maxItems: CHAPTER_COUNT,
+      minItems: MIN_CHAPTER_COUNT,
+      maxItems: MAX_CHAPTER_COUNT,
       items: {
         type: "object",
         properties: {
@@ -117,8 +118,13 @@ const normalizeChapters = (payload: unknown): Chapter[] => {
     throw new Error("Invalid chapters payload");
   }
 
-  if (payload.chapters.length !== CHAPTER_COUNT) {
-    throw new Error(`Expected ${CHAPTER_COUNT} chapters`);
+  if (
+    payload.chapters.length < MIN_CHAPTER_COUNT ||
+    payload.chapters.length > MAX_CHAPTER_COUNT
+  ) {
+    throw new Error(
+      `Expected ${MIN_CHAPTER_COUNT}-${MAX_CHAPTER_COUNT} chapters`,
+    );
   }
 
   return payload.chapters.map(normalizeChapter);
