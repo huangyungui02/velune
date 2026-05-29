@@ -30,7 +30,6 @@ async def get_session_by_id(user_id: str, session_id: str) -> Session:
                     'seq', c.seq,
                     'title', c.title,
                     'subtitle', c.subtitle,
-                    'role', c.role,
                     'task', c.task
                 )
             END AS chapter
