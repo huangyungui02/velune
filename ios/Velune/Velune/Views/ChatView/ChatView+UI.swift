@@ -129,57 +129,18 @@ extension ChatView {
                 && !isStartingChapterSession
                 && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
-            HStack(alignment: .center, spacing: 10) {
-                TextField(
-                    "resonance.chat.placeholder",
-                    text: $inputText,
-                    axis: .vertical
-                )
-                .focused($isComposerFocused)
-                .lineLimit(1 ... 4)
-                .textFieldStyle(.plain)
-                .font(.footnote)
-                .foregroundStyle(UITheme.primaryText)
-                .tint(UITheme.primaryText)
-                .submitLabel(.send)
-                .padding(.leading, 18)
-                .padding(.vertical, 13)
-
-                Button {
-                    Task {
-                        await sendMessage()
-                    }
-                } label: {
-                    if isSending || isStartingChapterSession {
-                        ProgressView()
-                            .tint(UITheme.primaryText.opacity(0.8))
-                            .frame(width: 32, height: 32)
-                            .background(.white.opacity(0.06), in: .circle)
-                    } else {
-                        Image(systemName: "arrow.up")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(canSend ? UITheme.primaryText : UITheme.primaryText.opacity(0.24))
-                            .frame(width: 32, height: 32)
-                            .background(.white.opacity(canSend ? 0.08 : 0.02), in: .circle)
-                    }
-                }
-                .disabled(!canSend)
-                .scaleEffect(canSend ? 1 : 0.94)
-                .padding(.trailing, 8)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: canSend)
+            SereneChatComposer(
+                text: $inputText,
+                isFocused: $isComposerFocused,
+                isBusy: isSending || isStartingChapterSession,
+                canSend: canSend,
+                placeholderKey: "resonance.chat.placeholder"
+            ) {
+                await sendMessage()
             }
-            .frame(minHeight: 46)
-            .background(Color(red: 0.03, green: 0.035, blue: 0.055).opacity(0.60), in: .capsule)
-            .glassEffect(in: .capsule)
-            .overlay {
-                Capsule()
-                    .stroke(.white.opacity(isComposerFocused ? 0.15 : 0.08), lineWidth: 0.5)
-            }
-            .shadow(color: .black.opacity(0.45), radius: 24, y: 10)
             .padding(.horizontal, 20)
             .padding(.top, 10)
             .padding(.bottom, 16)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: isSending)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }

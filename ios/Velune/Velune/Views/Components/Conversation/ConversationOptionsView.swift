@@ -6,39 +6,63 @@ struct ConversationOptionsView: View {
     let onSelect: (String) -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 8) {
             ForEach(Array(options.enumerated()), id: \.offset) { index, option in
                 Button {
                     onSelect(option)
                 } label: {
                     Text(option)
-                        .font(.system(size: 13, weight: .regular))
-                        .tracking(1.4)
-                        .foregroundStyle(UITheme.primaryText.opacity(isDisabled ? 0.36 : 0.76))
-                        .lineLimit(3)
+                        .font(.system(size: 14, weight: .regular))
+                        .fontDesign(.serif)
+                        .tracking(0.3)
+                        .lineSpacing(5)
+                        .foregroundStyle(UITheme.primaryText.opacity(isDisabled ? 0.36 : 0.85))
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 15)
-                    .contentShape(.rect)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 13)
+                        .contentShape(.rect)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(ElegantOptionButtonStyle(isDisabled: isDisabled))
                 .disabled(isDisabled)
-
-                if index < options.count - 1 {
-                    Divider()
-                        .overlay(.white.opacity(0.05))
-                        .padding(.leading, 18)
-                }
             }
         }
-        .background(Color(red: 0.07, green: 0.075, blue: 0.095).opacity(0.28), in: .rect(cornerRadius: 18))
-        .glassEffect(in: .rect(cornerRadius: 18))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(.white.opacity(0.06), lineWidth: 0.5)
-        }
-        .shadow(color: .black.opacity(0.20), radius: 18, y: 8)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct ElegantOptionButtonStyle: ButtonStyle {
+    let isDisabled: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                configuration.isPressed
+                ? AnyShapeStyle(
+                    LinearGradient(
+                        colors: [
+                            UITheme.glimmerGlow.opacity(0.08),
+                            Color(red: 0.07, green: 0.075, blue: 0.095).opacity(0.35)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                : AnyShapeStyle(
+                    Color(red: 0.06, green: 0.065, blue: 0.085)
+                        .opacity(0.24)
+                ),
+                in: .rect(cornerRadius: 14)
+            )
+            .glassEffect(in: .rect(cornerRadius: 14))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(
+                        configuration.isPressed ? UITheme.glimmerGlow.opacity(0.12) : .white.opacity(0.04),
+                        lineWidth: 0.5
+                    )
+            }
+            .scaleEffect(configuration.isPressed ? 0.99 : 1.0)
+            .animation(.spring(response: 0.28, dampingFraction: 0.75), value: configuration.isPressed)
     }
 }

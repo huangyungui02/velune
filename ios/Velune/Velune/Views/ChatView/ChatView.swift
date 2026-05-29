@@ -82,8 +82,23 @@ struct ChatView: View {
                     isShowingSouler = true
                 } label: {
                     Text(soulerName)
+                        .font(.system(size: 14, weight: .medium))
+                        .fontDesign(.serif)
+                        .foregroundStyle(UITheme.primaryText)
                         .lineLimit(1)
+                        .padding(.horizontal, 16)
+                        .frame(height: 32)
+                        .background(
+                            Color(red: 0.07, green: 0.075, blue: 0.095).opacity(0.36),
+                            in: .capsule
+                        )
+                        .glassEffect(in: .capsule)
+                        .overlay {
+                            Capsule()
+                                .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                        }
                 }
+                .buttonStyle(NavigationCapsuleButtonStyle())
             }
 
             ToolbarItem(placement: .topBarTrailing) {
@@ -178,5 +193,14 @@ struct ChatView: View {
         .sheet(isPresented: $isShowingPaywall) {
             PaywallView()
         }
+    }
+}
+
+struct NavigationCapsuleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .opacity(configuration.isPressed ? 0.86 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }

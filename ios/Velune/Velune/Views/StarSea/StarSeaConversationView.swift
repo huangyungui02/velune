@@ -133,14 +133,18 @@ struct StarSeaConversationView: View {
     }
 
     private var composer: some View {
-        StarSeaConversationComposer(
+        SereneChatComposer(
             text: $inputText,
             isFocused: $isComposerFocused,
             isBusy: isStreaming || isSettling,
             canSend: canSendMessage,
-            reduceMotion: reduceMotion,
-            onSend: sendFollowUp
-        )
+            placeholderKey: "starsea.chat.placeholder"
+        ) {
+            await sendFollowUp()
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 16)
     }
 
     private var canSendMessage: Bool {
