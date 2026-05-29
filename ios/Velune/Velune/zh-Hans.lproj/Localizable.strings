@@ -25,7 +25,6 @@
 "settings.billing.renewalTime" = "续订时间";
 "settings.billing.plan" = "当前方案";
 "settings.billing.plan.free" = "免费";
-"settings.billing.plan.awaken" = "心启";
 "settings.billing.plan.depth" = "深处";
 "settings.billing.price" = "订阅价格";
 "settings.billing.revenuecat.missingKey" = "未配置 RevenueCat 公钥，暂不可购买。";
@@ -55,7 +54,7 @@
 
 "app.tab.starsea" = "星海";
 "app.tab.chat" = "聊天";
-"app.tab.reading" = "阅读";
+"app.tab.reading" = "一隅";
 "app.tab.resonance" = "共鸣";
 "app.tab.map" = "地图";
 "app.tab.profile" = "我的";
@@ -149,29 +148,34 @@
 
 "app.error.unauthenticated" = "用户尚未登录";
 "billing.price.perMonthSuffix" = "/月";
+"billing.price.perYearSuffix" = "/年";
 "billing.error.missingRevenueCatKey" = "未配置 RevenueCat 公钥。";
 "billing.error.signInRequiredForPurchase" = "请先登录后再订阅。";
 "billing.error.restoreAccountMismatch" = "当前登录账号与购买绑定账号不一致，无法恢复购买。请登录购买时使用的账号。";
 "billing.error.offeringUnavailable" = "当前暂无可购买套餐，请稍后重试。";
 "paywall.restore.notFound" = "未找到有效订阅。如果刚刚完成购买，请稍后再试。";
 
-"paywall.title" = "微澜";
+"paywall.title" = "微澜 · 深处";
 "paywall.subtitle" = "心有微澜，回响未止。";
-"paywall.tier.awaken.title" = "微澜 · 心启";
-"paywall.tier.awaken.subtitle" = "完整访问";
-"paywall.tier.deep.title" = "微澜 · 深处";
-"paywall.tier.deep.subtitle" = "完整访问";
-"paywall.feature.unlimitedConversations.title" = "无限对话";
-"paywall.feature.unlimitedConversations.subtitle" = "完整访问，持续对话与聆听回响。";
+"paywall.tier.monthly.label" = "月度会员";
+"paywall.tier.monthly.desc" = "灵活体验，随时取消";
+"paywall.tier.annual.label" = "年度会员";
+"paywall.tier.annual.desc" = "超值推荐，更佳之选";
+"paywall.tier.annual.billed" = "按年结算（共 %@）";
+"paywall.tier.saveBadge" = "立省 %d%%";
+"paywall.feature.fullContent.title" = "完整旅程";
+"paywall.feature.fullContent.subtitle" = "解锁完整的对话篇章，进入更深处的探索。";
+"paywall.feature.advancedModel.title" = "深度对话";
+"paywall.feature.advancedModel.subtitle" = "遇见更懂你的灵魂，获得更有深度的回响。";
 "paywall.feature.priorityAccess.title" = "优先体验";
-"paywall.feature.priorityAccess.subtitle" = "新能力与功能，将优先向你开放。";
+"paywall.feature.priorityAccess.subtitle" = "更多新功能与特性，都将优先向你开放。";
 "paywall.action.subscribe" = "立即开启";
 "paywall.signInRequired.title" = "需要先登录";
 "paywall.signInRequired.description" = "匿名账号暂不支持订阅。请先登录。";
 "paywall.restore.signInRequired.description" = "匿名账号暂不支持恢复购买。请先登录。";
 "souler.bio.empty.title" = "当前页面正在完善中";
 "common.refresh" = "刷新";
-"reading.title" = "阅读";
+"reading.title" = "一隅";
 "reading.tab.featured" = "精选";
 "reading.tab.latest" = "最新";
 "reading.tab.bookshelf" = "书架";

@@ -2,15 +2,12 @@ import Foundation
 
 enum BillingPlan: String, Equatable {
     case free
-    case awaken
     case depth
 
     var localizedNameKey: String {
         switch self {
         case .free:
             "settings.billing.plan.free"
-        case .awaken:
-            "settings.billing.plan.awaken"
         case .depth:
             "settings.billing.plan.depth"
         }
@@ -18,6 +15,9 @@ enum BillingPlan: String, Equatable {
 }
 
 enum BillingConfig {
+    static let depthAnnualProductId = "com.echoversa.velune.depth.annual"
+    static let depthMonthlyProductId = "com.echoversa.velune.depth.monthly"
+
     static var revenueCatPublicSDKKey: String {
         (Bundle.main.object(forInfoDictionaryKey: "REVENUECAT_PUBLIC_SDK_KEY") as? String ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -35,13 +35,19 @@ enum BillingConfig {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
             .filter { !$0.isEmpty }
 
-        if normalized.contains(where: { $0.contains("depth") }) {
+        if normalized.contains(where: isDepthProduct) {
             return .depth
-        }
-        if normalized.contains(where: { $0.contains("awaken") }) {
-            return .awaken
         }
 
         return nil
+    }
+
+    static func isDepthProduct(_ productId: String) -> Bool {
+        switch productId.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case depthAnnualProductId, depthMonthlyProductId:
+            true
+        default:
+            false
+        }
     }
 }

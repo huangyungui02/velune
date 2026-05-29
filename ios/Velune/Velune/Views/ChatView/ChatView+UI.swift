@@ -219,9 +219,15 @@ extension ChatView {
 
     private var chapterListView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ForEach(chapters) { chapter in
+            ForEach(Array(chapters.enumerated()), id: \.element.id) { index, chapter in
                 let isSelected = selectedChapter?.id == chapter.id
+                let isLocked = isChapterLocked(at: index)
                 Button {
+                    if isLocked {
+                        isShowingPaywall = true
+                        return
+                    }
+
                     withAnimation(.easeOut(duration: 0.2)) {
                         if isSelected {
                             selectedChapter = nil
@@ -230,24 +236,42 @@ extension ChatView {
                         }
                     }
                 } label: {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(chapter.title)
-                            .font(.body.weight(isSelected ? .semibold : .medium))
-                            .fontDesign(.serif)
-                            .foregroundStyle(UITheme.primaryText)
-                            .lineLimit(1)
+                    ZStack(alignment: .trailing) {
+                        if isLocked {
+                            Image(systemName: "lock")
+                                .font(.system(size: 54, weight: .ultraLight))
+                                .foregroundStyle(UITheme.primaryText.opacity(0.08))
+                                .padding(.trailing, 18)
+                        }
 
-                        Text(chapter.subtitle)
-                            .font(.footnote)
-                            .fontDesign(.serif)
-                            .foregroundStyle(UITheme.secondaryText)
-                            .lineLimit(2)
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 8) {
+                                Text(chapter.title)
+                                    .font(.body.weight(isSelected ? .semibold : .medium))
+                                    .fontDesign(.serif)
+                                    .foregroundStyle(isLocked ? UITheme.primaryText.opacity(0.72) : UITheme.primaryText)
+                                    .lineLimit(1)
+
+                                if isLocked {
+                                    Image(systemName: "lock.fill")
+                                        .font(.caption2.weight(.medium))
+                                        .foregroundStyle(UITheme.secondaryText.opacity(0.7))
+                                }
+                            }
+
+                            Text(chapter.subtitle)
+                                .font(.footnote)
+                                .fontDesign(.serif)
+                                .foregroundStyle(isLocked ? UITheme.secondaryText.opacity(0.72) : UITheme.secondaryText)
+                                .lineLimit(2)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
-                        isSelected ? .white.opacity(0.12) : .white.opacity(0.04),
+                        isSelected ? .white.opacity(0.12) : .white.opacity(isLocked ? 0.03 : 0.04),
                         in: .rect(cornerRadius: 16)
                     )
                     .overlay {
@@ -261,9 +285,13 @@ extension ChatView {
                     }
                 }
                 .buttonStyle(.plain)
-                .disabled(isSending || isStartingChapterSession)
+                .disabled(!isLocked && (isSending || isStartingChapterSession))
             }
         }
+    }
+
+    private func isChapterLocked(at index: Int) -> Bool {
+        index > 0 && !subscriptionManager.isPremium
     }
 
     private enum ScrollTrigger {

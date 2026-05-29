@@ -28,6 +28,8 @@ struct ChatView: View {
     @State var isLoadingChapters = false
     @State var isStartingChapterSession = false
     @State var selectedChapter: SoulerChapter?
+    @State var isShowingPaywall = false
+    @State var subscriptionManager = SubscriptionManager.shared
     @FocusState var isComposerFocused: Bool
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     @Environment(\.modelContext) var modelContext
@@ -172,6 +174,9 @@ struct ChatView: View {
         }
         .navigationDestination(isPresented: $isShowingSouler) {
             SoulerView(soulerId: soulerId)
+        }
+        .sheet(isPresented: $isShowingPaywall) {
+            PaywallView()
         }
     }
 }

@@ -25,7 +25,6 @@
 "settings.billing.renewalTime" = "Renewal Time";
 "settings.billing.plan" = "Current Plan";
 "settings.billing.plan.free" = "Free";
-"settings.billing.plan.awaken" = "Awaken";
 "settings.billing.plan.depth" = "Depth";
 "settings.billing.price" = "Subscription Price";
 "settings.billing.revenuecat.missingKey" = "RevenueCat public key is missing. Purchases are disabled.";
@@ -55,7 +54,7 @@
 
 "app.tab.starsea" = "Star Sea";
 "app.tab.chat" = "Chat";
-"app.tab.reading" = "Reading";
+"app.tab.reading" = "Folio";
 "app.tab.resonance" = "Resonance";
 "app.tab.map" = "Map";
 "app.tab.profile" = "Me";
@@ -149,29 +148,34 @@
 
 "app.error.unauthenticated" = "User is not authenticated";
 "billing.price.perMonthSuffix" = "/month";
+"billing.price.perYearSuffix" = "/year";
 "billing.error.missingRevenueCatKey" = "RevenueCat public key is missing.";
 "billing.error.signInRequiredForPurchase" = "Please sign in before subscribing.";
 "billing.error.restoreAccountMismatch" = "This signed-in account does not match the account that owns the purchase. Sign in with the original account to restore.";
 "billing.error.offeringUnavailable" = "No purchasable package is available right now. Please try again later.";
 "paywall.restore.notFound" = "No active subscription found. If you recently purchased, please try again in a moment.";
 
-"paywall.title" = "Velune";
+"paywall.title" = "Velune · Depth";
 "paywall.subtitle" = "A glimmer in the heart, and the echo goes on.";
-"paywall.tier.awaken.title" = "Velune · Awaken";
-"paywall.tier.awaken.subtitle" = "Full access";
-"paywall.tier.deep.title" = "Velune · Depth";
-"paywall.tier.deep.subtitle" = "Full access";
-"paywall.feature.unlimitedConversations.title" = "Unlimited Conversations";
-"paywall.feature.unlimitedConversations.subtitle" = "Continue your conversations and echoes with full access.";
-"paywall.feature.priorityAccess.title" = "Priority Access";
-"paywall.feature.priorityAccess.subtitle" = "Be the first to experience new features and capabilities.";
+"paywall.tier.monthly.label" = "Monthly";
+"paywall.tier.monthly.desc" = "Flexible access";
+"paywall.tier.annual.label" = "Annual";
+"paywall.tier.annual.desc" = "Best value";
+"paywall.tier.annual.billed" = "Billed annually at %@";
+"paywall.tier.saveBadge" = "SAVE %d%%";
+"paywall.feature.fullContent.title" = "Full Journeys";
+"paywall.feature.fullContent.subtitle" = "Unlock complete conversation chapters and venture into deeper exploration.";
+"paywall.feature.advancedModel.title" = "Deep Conversations";
+"paywall.feature.advancedModel.subtitle" = "Meet a mind that truly understands you and experience deeper echoes.";
+"paywall.feature.priorityAccess.title" = "Early Access";
+"paywall.feature.priorityAccess.subtitle" = "New features and experimental capabilities will open to you first.";
 "paywall.action.subscribe" = "Subscribe";
 "paywall.signInRequired.title" = "Sign In Required";
 "paywall.signInRequired.description" = "Anonymous accounts can’t subscribe. Sign in to continue.";
 "paywall.restore.signInRequired.description" = "Anonymous accounts can’t restore purchases. Sign in to continue.";
 "souler.bio.empty.title" = "This page is being perfected";
 "common.refresh" = "Refresh";
-"reading.title" = "Reading";
+"reading.title" = "Folio";
 "reading.tab.featured" = "Featured";
 "reading.tab.latest" = "Latest";
 "reading.tab.bookshelf" = "Bookshelf";

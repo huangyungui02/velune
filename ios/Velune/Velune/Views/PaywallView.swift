@@ -30,168 +30,261 @@ struct PaywallView: View {
     @State private var signInPromptReason: SignInPromptReason = .subscribe
     @State private var selectedPackage: RevenueCat.Package?
     
+    private var monthlyPackage: RevenueCat.Package? {
+        depthPackages.first { $0.storeProduct.productIdentifier.lowercased() == BillingConfig.depthMonthlyProductId }
+    }
+    
+    private var annualPackage: RevenueCat.Package? {
+        depthPackages.first { $0.storeProduct.productIdentifier.lowercased() == BillingConfig.depthAnnualProductId }
+    }
+    
+    private var annualDiscountPercentage: Int? {
+        guard let monthly = monthlyPackage, let annual = annualPackage else { return nil }
+        let monthlyPrice = monthly.storeProduct.price
+        let annualPrice = annual.storeProduct.price
+        let annualMonthlyEquivalent = annualPrice / 12
+        guard monthlyPrice > 0 else { return nil }
+        let discount = (monthlyPrice - annualMonthlyEquivalent) / monthlyPrice
+        let percentage = NSDecimalNumber(decimal: discount * 100).intValue
+        return percentage > 0 ? percentage : nil
+    }
+    
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Header
-                    VStack(spacing: 12) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 40, weight: .light))
-                            .foregroundStyle(.primary)
-                            .padding(.top, 24)
-                        
-                        Text("paywall.title")
-                            .font(.system(.largeTitle, design: .serif))
-                            .fontWeight(.medium)
-                        
-                        Text("paywall.subtitle")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                    }
-                    
-                    Spacer()
-                    
-                    // Features
-                    VStack(spacing: 16) {
-                        FeatureRow(
-                            icon: "sparkles",
-                            title: "paywall.feature.unlimitedConversations.title",
-                            subtitle: "paywall.feature.unlimitedConversations.subtitle"
-                        )
-                        
-                        FeatureRow(
-                            icon: "lock.open",
-                            title: "paywall.feature.priorityAccess.title",
-                            subtitle: "paywall.feature.priorityAccess.subtitle"
-                        )
-                    }
-                    .padding(.horizontal, 32)
-                    
-                    Spacer()
-                    
-                    // Action Area
-                    VStack(spacing: 12) {
-                        if !subscriptionManager.availablePackages.isEmpty {
-                            VStack(spacing: 8) {
-                                ForEach(subscriptionManager.availablePackages, id: \.identifier) { package in
-                                    PackageRow(
-                                        package: package,
-                                        isSelected: selectedPackage?.identifier == package.identifier,
-                                        onSelect: { selectedPackage = package }
-                                    )
-                                }
-                            }
-                            .padding(.horizontal, 32)
-                            .padding(.bottom, 8)
-                        } else {
-                            ProgressView()
-                                .padding()
+            ZStack {
+                // Background Theme with cosmic ambient glow
+                Color.black.ignoresSafeArea()
+                
+                RadialGradient(
+                    colors: [UITheme.glimmerGlow.opacity(0.12), Color.clear],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 28) {
+                        // Header
+                        VStack(spacing: 12) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 38, weight: .light))
+                                .foregroundStyle(UITheme.glimmerGlow)
+                                .shadow(color: UITheme.glimmerGlow.opacity(0.4), radius: 8)
+                                .padding(.top, 24)
+                            
+                            Text("paywall.title")
+                                .font(.system(.largeTitle, design: .serif))
+                                .fontWeight(.medium)
+                                .foregroundStyle(.white)
+                                .tracking(0.5)
+                            
+                            Text("paywall.subtitle")
+                                .font(.system(.subheadline, design: .default))
+                                .foregroundStyle(UITheme.secondaryText)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
                         }
                         
-                        Button {
-                            handleSubscribeTap()
-                        } label: {
-                            HStack {
-                                if subscriptionManager.isPurchasing {
-                                    ProgressView()
-                                        .tint(UITheme.primaryActionForeground(for: colorScheme))
-                                        .padding(.trailing, 8)
-                                }
-                                Text("paywall.action.subscribe")
-                                    .fontWeight(.medium)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(UITheme.primaryActionBackground(for: colorScheme))
-                            .foregroundStyle(UITheme.primaryActionForeground(for: colorScheme))
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        }
-                        .disabled(subscriptionManager.isPurchasing || !subscriptionManager.isRevenueCatAvailable || selectedPackage == nil)
-                        .opacity(selectedPackage == nil ? 0.5 : 1.0)
-                        .padding(.horizontal, 32)
-                        
-                        Button {
-                            handleRestoreTap()
-                        } label: {
-                            HStack {
-                                if subscriptionManager.isRestoring {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                        .padding(.trailing, 4)
-                                }
-                                Text("settings.billing.action.restore")
-                            }
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        }
-                        .disabled(subscriptionManager.isRestoring || !subscriptionManager.isRevenueCatAvailable)
-                    }
+                        // Poetic & Spiritual Feature list in an elegant card container
+                        VStack(spacing: 20) {
+                            FeatureRow(
+                                icon: "book.closed",
+                                title: "paywall.feature.fullContent.title",
+                                subtitle: "paywall.feature.fullContent.subtitle"
+                            )
 
-                    // Legal
-                    HStack(spacing: 16) {
-                        Link("settings.link.terms", destination: AppLinks.terms)
-                            .foregroundStyle(.secondary)
-                        Text("•").foregroundStyle(.tertiary)
-                        Link("settings.link.privacy", destination: AppLinks.privacy)
-                            .foregroundStyle(.secondary)
+                            FeatureRow(
+                                icon: "sparkles",
+                                title: "paywall.feature.advancedModel.title",
+                                subtitle: "paywall.feature.advancedModel.subtitle"
+                            )
+                            
+                            FeatureRow(
+                                icon: "lock.open",
+                                title: "paywall.feature.priorityAccess.title",
+                                subtitle: "paywall.feature.priorityAccess.subtitle"
+                            )
+                        }
+                        .padding(20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .fill(Color.white.opacity(0.02))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 24)
+                        
+                        // Action Area (Packages & Subscription Button)
+                        VStack(spacing: 20) {
+                            if !depthPackages.isEmpty {
+                                HStack(spacing: 14) {
+                                    ForEach(depthPackages, id: \.identifier) { package in
+                                        let isAnnual = package.storeProduct.productIdentifier.lowercased() == BillingConfig.depthAnnualProductId
+                                        let isSelected = selectedPackage?.identifier == package.identifier
+                                        
+                                        ZStack(alignment: .top) {
+                                            PackageCard(
+                                                package: package,
+                                                isSelected: isSelected,
+                                                onSelect: { selectedPackage = package },
+                                                comparePrice: isAnnual ? monthlyPackage?.storeProduct.localizedPriceString : nil
+                                            )
+                                            
+                                            if isAnnual, let discount = annualDiscountPercentage {
+                                                Text(String(format: String(localized: "paywall.tier.saveBadge"), discount))
+                                                    .font(.system(size: 9, weight: .bold))
+                                                    .foregroundStyle(UITheme.primaryActionForeground(for: colorScheme))
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(
+                                                        Capsule()
+                                                            .fill(UITheme.glimmerGlow)
+                                                    )
+                                                    .offset(y: -9)
+                                                    .shadow(color: UITheme.glimmerGlow.opacity(0.3), radius: 4, x: 0, y: 2)
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 24)
+                            } else {
+                                ProgressView()
+                                    .tint(UITheme.glimmerGlow)
+                                    .padding(.vertical, 32)
+                            }
+                            
+                            VStack(spacing: 14) {
+                                Button {
+                                    handleSubscribeTap()
+                                } label: {
+                                    HStack {
+                                        if subscriptionManager.isPurchasing {
+                                            ProgressView()
+                                                .tint(UITheme.primaryActionForeground(for: colorScheme))
+                                                .padding(.trailing, 8)
+                                        }
+                                        Text("paywall.action.subscribe")
+                                            .font(.system(.body, design: .default))
+                                            .fontWeight(.semibold)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 15)
+                                    .background(UITheme.primaryActionBackground(for: colorScheme))
+                                    .foregroundStyle(UITheme.primaryActionForeground(for: colorScheme))
+                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                    .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 4)
+                                }
+                                .disabled(subscriptionManager.isPurchasing || !subscriptionManager.isRevenueCatAvailable || selectedPackage == nil)
+                                .opacity(selectedPackage == nil ? 0.5 : 1.0)
+                                .padding(.horizontal, 24)
+                                
+                                Button {
+                                    handleRestoreTap()
+                                } label: {
+                                    HStack {
+                                        if subscriptionManager.isRestoring {
+                                            ProgressView()
+                                                .controlSize(.small)
+                                                .padding(.trailing, 4)
+                                        }
+                                        Text("settings.billing.action.restore")
+                                    }
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundStyle(UITheme.secondaryText)
+                                }
+                                .disabled(subscriptionManager.isRestoring || !subscriptionManager.isRevenueCatAvailable)
+                            }
+                        }
+                        
+                        // Legal links
+                        HStack(spacing: 16) {
+                            Link("settings.link.terms", destination: AppLinks.terms)
+                                .foregroundStyle(UITheme.tertiaryText)
+                            Text("•")
+                                .foregroundStyle(UITheme.tertiaryText.opacity(0.5))
+                            Link("settings.link.privacy", destination: AppLinks.privacy)
+                                .foregroundStyle(UITheme.tertiaryText)
+                        }
+                        .font(.system(size: 11))
+                        .padding(.top, 8)
+                        .padding(.bottom, 24)
                     }
-                    .font(.caption2)
-                    .padding(.bottom, 16)
                 }
-            }
-            .scrollIndicators(.hidden)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.tertiary)
-                            .font(.title3)
+                .scrollIndicators(.hidden)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(UITheme.tertiaryText.opacity(0.7))
+                                .font(.title3)
+                        }
                     }
                 }
-            }
-            .alert("settings.error.title", isPresented: Binding(
-                get: { feedbackMessage != nil },
-                set: { if !$0 { feedbackMessage = nil } }
-            )) {
-                Button("common.ok", role: .cancel) {}
-            } message: {
-                switch feedbackMessage {
-                case .localized(let key):
-                    Text(key)
-                case .text(let message):
-                    Text(message)
-                case .none:
-                    SwiftUI.EmptyView()
-                }
-            }
-            .onChange(of: subscriptionManager.isPremium) { _, isPremium in
-                if isPremium {
-                    // Dismiss after a short delay to show success state if needed, or immediately
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        dismiss()
+                .alert("settings.error.title", isPresented: Binding(
+                    get: { feedbackMessage != nil },
+                    set: { if !$0 { feedbackMessage = nil } }
+                )) {
+                    Button("common.ok", role: .cancel) {}
+                } message: {
+                    switch feedbackMessage {
+                    case .localized(let key):
+                        Text(key)
+                    case .text(let message):
+                        Text(message)
+                    case .none:
+                        SwiftUI.EmptyView()
                     }
                 }
-            }
-            .onChange(of: subscriptionManager.availablePackages) { _, newPackages in
-                if selectedPackage == nil, let first = newPackages.first {
-                    selectedPackage = first
+                .onChange(of: subscriptionManager.isPremium) { _, isPremium in
+                    if isPremium {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            dismiss()
+                        }
+                    }
                 }
-            }
-            .onAppear {
-                if selectedPackage == nil, let first = subscriptionManager.availablePackages.first {
-                    selectedPackage = first
+                .onChange(of: subscriptionManager.availablePackages) { _, newPackages in
+                    let packages = sortedDepthPackages(newPackages)
+                    if let selectedPackage, !packages.contains(where: { $0.identifier == selectedPackage.identifier }) {
+                        self.selectedPackage = packages.first
+                    } else if selectedPackage == nil, let first = packages.first {
+                        selectedPackage = first
+                    }
                 }
-            }
-            .sheet(isPresented: $showSignInSheet) {
-                SignInRequiredSheet(descriptionKey: signInPromptReason.descriptionKey)
+                .onAppear {
+                    if selectedPackage == nil, let first = depthPackages.first {
+                        selectedPackage = first
+                    }
+                }
+                .sheet(isPresented: $showSignInSheet) {
+                    SignInRequiredSheet(descriptionKey: signInPromptReason.descriptionKey)
+                }
             }
         }
+    }
+
+    private var depthPackages: [RevenueCat.Package] {
+        sortedDepthPackages(subscriptionManager.availablePackages)
+    }
+
+    private func sortedDepthPackages(_ packages: [RevenueCat.Package]) -> [RevenueCat.Package] {
+        packages
+            .filter { BillingConfig.isDepthProduct($0.storeProduct.productIdentifier) }
+            .sorted { lhs, rhs in
+                packageSortRank(lhs) < packageSortRank(rhs)
+            }
+    }
+
+    private func packageSortRank(_ package: RevenueCat.Package) -> Int {
+        let productId = package.storeProduct.productIdentifier.lowercased()
+        if productId == BillingConfig.depthMonthlyProductId { return 0 }
+        if productId == BillingConfig.depthAnnualProductId { return 1 }
+        return 2
     }
 
     private func handleSubscribeTap() {
@@ -243,18 +336,23 @@ private struct FeatureRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             Image(systemName: icon)
-                .font(.system(size: 24, weight: .light))
-                .foregroundStyle(.primary)
-                .frame(width: 32)
+                .font(.system(size: 16, weight: .light))
+                .foregroundStyle(UITheme.glimmerGlow)
+                .frame(width: 32, height: 32)
+                .background(
+                    Circle()
+                        .fill(UITheme.glimmerGlow.opacity(0.08))
+                )
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 5) {
                 Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    .font(.system(size: 14.5, weight: .semibold, design: .serif))
+                    .foregroundStyle(.white)
                 
                 Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(UITheme.secondaryText)
+                    .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
             }
             
@@ -263,41 +361,103 @@ private struct FeatureRow: View {
     }
 }
 
-private struct PackageRow: View {
+private struct PackageCard: View {
     let package: RevenueCat.Package
     let isSelected: Bool
     let onSelect: () -> Void
+    let comparePrice: String?
+    
     @Environment(\.colorScheme) private var colorScheme
     
-    private var isAwaken: Bool {
-        package.identifier.lowercased().contains("awaken")
+    private var isAnnual: Bool {
+        package.storeProduct.productIdentifier.lowercased() == BillingConfig.depthAnnualProductId
+    }
+    
+    private var titleKey: LocalizedStringKey {
+        isAnnual ? "paywall.tier.annual.label" : "paywall.tier.monthly.label"
+    }
+    
+    private var monthlyPriceString: String {
+        let product = package.storeProduct
+        if isAnnual {
+            let price = product.price
+            let monthlyPrice = price / 12
+            if let formatter = product.priceFormatter {
+                return formatter.string(from: monthlyPrice as NSDecimalNumber) ?? ""
+            }
+            return String(format: "$%.2f", NSDecimalNumber(decimal: monthlyPrice).doubleValue)
+        } else {
+            return product.localizedPriceString
+        }
+    }
+    
+    private var priceSuffix: String {
+        String(localized: "billing.price.perMonthSuffix")
     }
     
     var body: some View {
         Button(action: onSelect) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(isAwaken ? "paywall.tier.awaken.title" : "paywall.tier.deep.title")
-                        .font(.headline)
-                        .foregroundStyle(isSelected ? UITheme.primaryActionBackground(for: colorScheme) : .primary)
-                    Text(isAwaken ? "paywall.tier.awaken.subtitle" : "paywall.tier.deep.subtitle")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            VStack(spacing: 8) {
+                // Card Header (Label)
+                Text(titleKey)
+                    .font(.system(.headline, design: .serif))
+                    .fontWeight(.semibold)
+                    .foregroundStyle(isSelected ? UITheme.glimmerGlow : .white)
+                
+                Spacer(minLength: 0)
+                
+                // Pricing Area
+                VStack(spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 2) {
+                        Text(monthlyPriceString)
+                            .font(.system(size: 23, weight: .bold, design: .rounded))
+                            .foregroundStyle(isSelected ? .white : UITheme.primaryText)
+                        
+                        Text(priceSuffix)
+                            .font(.system(size: 11))
+                            .foregroundStyle(UITheme.secondaryText)
+                    }
+                    
+                    // Comparison crossed out price if annual
+                    if isAnnual, let comparePrice = comparePrice {
+                        HStack(spacing: 2) {
+                            Text(comparePrice)
+                                .strikethrough()
+                                .font(.system(size: 12))
+                                .foregroundStyle(UITheme.tertiaryText)
+                            Text(priceSuffix)
+                                .font(.system(size: 10))
+                                .foregroundStyle(UITheme.tertiaryText)
+                        }
+                    } else {
+                        // Invisible placeholder to keep heights and baseline alignments 100% identical!
+                        HStack(spacing: 2) {
+                            Text(" ")
+                                .font(.system(size: 12))
+                            Text(" ")
+                                .font(.system(size: 10))
+                        }
+                    }
                 }
-                Spacer()
-                Text(package.storeProduct.localizedPriceString + " " + String(localized: "billing.price.perMonthSuffix"))
-                    .font(.subheadline)
-                    .fontWeight(.medium)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? UITheme.primaryActionBackground(for: colorScheme) : Color.secondary.opacity(0.3), lineWidth: isSelected ? 2 : 1)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .padding(.horizontal, 10)
+            .frame(height: 116) // Fully restored to balanced height for premium breathing room!
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.white.opacity(isSelected ? 0.08 : 0.03))
             )
-            .background(isSelected ? UITheme.primaryActionBackground(for: colorScheme).opacity(0.05) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .contentShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        isSelected ? UITheme.glimmerGlow.opacity(0.8) : Color.white.opacity(0.12),
+                        lineWidth: isSelected ? 1.5 : 1.0
+                    )
+            )
+            .shadow(color: isSelected ? UITheme.glimmerGlow.opacity(0.08) : Color.clear, radius: 8, x: 0, y: 3)
+            .scaleEffect(isSelected ? 1.02 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         }
         .buttonStyle(.plain)
     }

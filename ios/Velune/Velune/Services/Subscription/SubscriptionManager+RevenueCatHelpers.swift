@@ -8,11 +8,8 @@ extension SubscriptionManager {
             .filter { !$0.isEmpty }
 
         guard !products.isEmpty else { return nil }
-        if let depth = products.first(where: { $0.localizedCaseInsensitiveContains("depth") }) {
+        if let depth = products.first(where: BillingConfig.isDepthProduct) {
             return depth
-        }
-        if let awaken = products.first(where: { $0.localizedCaseInsensitiveContains("awaken") }) {
-            return awaken
         }
         return products.sorted().first
     }
