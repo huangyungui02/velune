@@ -19,13 +19,13 @@ struct ContentView: View {
 
             ReadingView()
                 .tabItem {
-                    Label("app.tab.reading", systemImage: "books.vertical")
+                    Label("app.tab.reading", systemImage: "book.closed")
                 }
                 .tag(AppTab.reading)
 
             ProfileView()
             .tabItem {
-                Label("app.tab.profile", systemImage: "person.crop.circle")
+                Label("app.tab.profile", systemImage: "house")
             }
             .tag(AppTab.profile)
         }

@@ -45,7 +45,7 @@ struct GlimmerRecordsView: View {
                 }
             }
         }
-        .navigationTitle(Text("glimmerHistory.title"))
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .alert("matching.error.title", isPresented: Binding(
             get: { errorMessage != nil },

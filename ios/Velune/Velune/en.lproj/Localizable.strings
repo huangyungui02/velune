@@ -52,12 +52,12 @@
 "network.error.timeout" = "The request timed out. Please check your connection and try again.";
 "network.error.serverUnavailable" = "The server is unavailable. Please try again later.";
 
-"app.tab.starsea" = "Star Sea";
+"app.tab.starsea" = "Starsea";
 "app.tab.chat" = "Chat";
 "app.tab.reading" = "Folio";
 "app.tab.resonance" = "Resonance";
 "app.tab.map" = "Map";
-"app.tab.profile" = "Me";
+"app.tab.profile" = "Haven";
 
 "sign.appName" = "Velune";
 "sign.slogan" = "Explore inward,\nreach the depths of the cosmos.";
@@ -66,17 +66,17 @@
 "sign.terms.label" = "Terms of Service";
 "sign.privacy.label" = "Privacy Policy";
 
-"anonymous.restricted.glimmerHistory.title" = "Unlock Hearthaven";
+"anonymous.restricted.glimmerHistory.title" = "Unlock Haven";
 "anonymous.restricted.glimmerHistory.description" = "Sign in to view, keep, and revisit your glimmers.";
 "anonymous.restricted.resonance.title" = "Open Resonance Threads";
 "anonymous.restricted.resonance.description" = "Sign in to browse resonances and return to each conversation.";
 
 "glimmerHistory.empty.noGlimmers" = "No glimmers yet";
 "glimmerHistory.empty.noGlimmers.subtitle" = "Write your first glimmer, and listen for the first echo.";
-"glimmerHistory.title" = "Hearthaven";
+"glimmerHistory.title" = "Haven";
 "glimmerHistory.detail.title" = "Glimmer";
-"glimmerHistory.history.title" = "Star Sea History";
-"glimmerHistory.history.empty" = "No Star Sea history";
+"glimmerHistory.history.title" = "Starsea History";
+"glimmerHistory.history.empty" = "No Starsea history";
 "glimmerHistory.section.today" = "Today";
 "glimmerHistory.section.yesterday" = "Yesterday";
 "glimmerHistory.section.pastWeek" = "Past Week";
@@ -91,18 +91,18 @@
 "starsea.chat.placeholder" = "Keep going…";
 "starsea.chat.subtitle" = "Inner tide";
 "starsea.resonance.title" = "Resonances";
-"starsea.leave.title" = "Leave Star Sea?";
+"starsea.leave.title" = "Leave Starsea?";
 "starsea.leave.message" = "You can settle this conversation into a glimmer, or leave without saving it.";
 "starsea.leave.settle" = "Settle and Leave";
 "starsea.leave.direct" = "Leave Directly";
 "starsea.leave.settleFailed" = "The glimmer could not be settled yet. Please try again.";
-"starsea.settlement.title" = "This Star Sea has settled into a glimmer";
+"starsea.settlement.title" = "This Starsea has settled into a glimmer";
 "starsea.settlement.edit" = "Edit";
 "starsea.settlement.save" = "Save";
 "starsea.settlement.exit" = "Exit";
 "starsea.settlement.exit.title" = "Discard this glimmer?";
-"starsea.settlement.exit.message" = "If you exit, this Star Sea will be discarded and the conversation cannot continue.";
-"starsea.settlement.discardConfirm" = "Discard and return to Star Sea";
+"starsea.settlement.exit.message" = "If you exit, this Starsea will be discarded and the conversation cannot continue.";
+"starsea.settlement.discardConfirm" = "Discard and return to Starsea";
 "starsea.settlement.editor" = "Edit glimmer";
 
 "matching.status.listening" = "Listening for echoes";
