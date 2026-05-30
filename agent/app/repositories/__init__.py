@@ -1,4 +1,4 @@
-from app.domain import Chapter, Message, Role, Session, Souler
+from app.schemas.entities import Chapter, Message, Role, Session, Souler
 
 from .auth import get_user_id_from_auth_header
 from .content import get_chapter_by_id, get_souler_by_id

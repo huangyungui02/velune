@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from app.core.config import get_settings
-from app.domain import Message, Role
+from app.schemas.entities import Message, Role
 
 from app.db.session import execute_fetch_one, fetch_all
 

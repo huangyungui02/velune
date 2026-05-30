@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from app.domain import Session
+from app.schemas.entities import Session
 
 from app.db.session import execute, execute_fetch_one, fetch_one
 from .parsers import to_chapter, to_souler

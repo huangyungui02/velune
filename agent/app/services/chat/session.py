@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 
-from app.domain import Chapter, Session, Souler
+from app.schemas.entities import Chapter, Session, Souler
 from app.repositories import (
     create_or_update_resonance,
     create_session,

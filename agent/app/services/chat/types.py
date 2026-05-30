@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.core import Lang
-from app.domain import Session
+from app.schemas.entities import Session
 
 
 @dataclass(frozen=True)

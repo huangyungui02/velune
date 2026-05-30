@@ -5,8 +5,7 @@ import logging
 from fastapi import HTTPException, Request
 
 from app.core import Lang, normalize_lang
-from app.core.errors import error_log_payload, error_message
-from app.domain import UnauthorizedError
+from app.core.errors import UnauthorizedError, error_log_payload, error_message
 from app.repositories import get_user_id_from_auth_header
 
 logger = logging.getLogger(__name__)

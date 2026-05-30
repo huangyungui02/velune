@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.domain import Chapter, Souler
+from app.schemas.entities import Chapter, Souler
 
 from app.db.session import fetch_one
 from .parsers import to_chapter, to_souler

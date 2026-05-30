@@ -3,14 +3,16 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from app.domain import UnauthorizedError
-
 __all__ = [
     "UnauthorizedError",
     "safe_json_stringify",
     "error_message",
     "error_log_payload",
 ]
+
+
+class UnauthorizedError(Exception):
+    pass
 
 
 def safe_json_stringify(value: Any) -> str | None:

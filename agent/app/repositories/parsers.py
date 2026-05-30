@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.domain import Chapter, Souler
+from app.schemas.entities import Chapter, Souler
 
 
 def to_souler(raw: Any) -> Souler:
