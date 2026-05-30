@@ -1,26 +1,48 @@
 from __future__ import annotations
 
-from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from contextlib import AbstractAsyncContextManager
 
-from app.repositories.database import get_pool
+from langgraph.checkpoint.redis.aio import AsyncRedisSaver
 
-_checkpointer: AsyncPostgresSaver | None = None
+from app.core.config import get_settings
 
 
-async def init_starsea_checkpoint() -> AsyncPostgresSaver:
-    global _checkpointer
+_checkpointer_context: AbstractAsyncContextManager[AsyncRedisSaver] | None = None
+_checkpointer: AsyncRedisSaver | None = None
+
+
+async def init_starsea_checkpoint() -> AsyncRedisSaver:
+    global _checkpointer, _checkpointer_context
     if _checkpointer is None:
-        _checkpointer = AsyncPostgresSaver(get_pool())
-        await _checkpointer.setup()
+        settings = get_settings()
+        _checkpointer_context = AsyncRedisSaver.from_conn_string(
+            settings.REDIS_URL,
+            ttl={
+                "default_ttl": settings.LANGGRAPH_CHECKPOINT_TTL_MINUTES,
+                "refresh_on_read": True,
+            },
+            checkpoint_prefix="velune:starsea:checkpoint",
+            checkpoint_write_prefix="velune:starsea:checkpoint_write",
+        )
+        _checkpointer = await _checkpointer_context.__aenter__()
     return _checkpointer
 
 
-def get_starsea_checkpointer() -> AsyncPostgresSaver:
+def get_starsea_checkpointer() -> AsyncRedisSaver:
     if _checkpointer is None:
         raise RuntimeError("Starsea checkpoint not initialized; app lifespan did not run")
     return _checkpointer
 
 
-def reset_starsea_checkpoint() -> None:
-    global _checkpointer
+async def close_starsea_checkpoint() -> None:
+    global _checkpointer, _checkpointer_context
+    if _checkpointer_context is not None:
+        await _checkpointer_context.__aexit__(None, None, None)
     _checkpointer = None
+    _checkpointer_context = None
+
+
+def reset_starsea_checkpoint() -> None:
+    global _checkpointer, _checkpointer_context
+    _checkpointer = None
+    _checkpointer_context = None

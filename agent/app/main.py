@@ -8,7 +8,7 @@ from app.api.routes import router
 from app.core.config import get_settings
 from app.repositories.auth_client import init_supabase_auth
 from app.repositories.database import close_database, open_database
-from app.services.starsea.checkpoint import init_starsea_checkpoint, reset_starsea_checkpoint
+from app.services.starsea.checkpoint import close_starsea_checkpoint, init_starsea_checkpoint
 from app.services.starsea.graph import reset_graph
 from app.tasks import broker
 
@@ -28,7 +28,7 @@ async def lifespan(_app: FastAPI):
         if not broker.is_worker_process:
             await broker.shutdown()
         reset_graph()
-        reset_starsea_checkpoint()
+        await close_starsea_checkpoint()
         await close_database()
 
 

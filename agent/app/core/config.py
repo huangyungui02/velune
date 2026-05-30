@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     REDIS_URL: str = "redis://127.0.0.1:6379/0"
     TASKIQ_QUEUE_NAME: str = "souler_resolution"
+    LANGGRAPH_CHECKPOINT_TTL_MINUTES: int = 1440
 
     SUPABASE_URL: str
     SUPABASE_SERVICE_ROLE_KEY: str
