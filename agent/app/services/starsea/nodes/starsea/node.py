@@ -11,7 +11,7 @@ from app.services.starsea.llm import create_chat_model
 from app.services.starsea.messages import format_messages
 from app.services.starsea.tools import match_thought_voices
 
-from .prompt import SYSTEM_PROMPT
+from .prompt import system_prompt
 
 if TYPE_CHECKING:
     from app.services.starsea.state import State
@@ -22,12 +22,13 @@ STARSEA_TOOLS = [match_thought_voices]
 
 
 def starsea_node(state: State) -> dict[str, Any]:
+    lang = _state_lang(state)
     model = create_chat_model(
         model=STARSEA_MODEL,
         temperature=STARSEA_TEMPERATURE,
     ).bind_tools(STARSEA_TOOLS)
     messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
+        SystemMessage(content=system_prompt(lang)),
         *state["messages"],
     ]
     response = _stream_ai_message(model, messages)
@@ -97,7 +98,8 @@ def _run_starsea_tools(
     tools_by_name = {tool.name: tool for tool in STARSEA_TOOLS}
     tool_messages: list[ToolMessage] = []
     resonance_matches: list[Any] = []
-    conversation = format_messages(state["messages"])
+    lang = _state_lang(state)
+    conversation = format_messages(state["messages"], lang)
 
     for tool_call in response.tool_calls:
         selected_tool = tools_by_name.get(tool_call["name"])
@@ -112,6 +114,7 @@ def _run_starsea_tools(
 
         args = dict(tool_call.get("args") or {})
         args["conversation"] = args.get("conversation") or conversation
+        args["lang"] = lang
         try:
             tool_message = selected_tool.invoke({**tool_call, "args": args})
         except Exception as exc:
@@ -135,6 +138,10 @@ def _run_starsea_tools(
         tool_messages.append(tool_message)
 
     return tool_messages, resonance_matches
+
+
+def _state_lang(state: State) -> str:
+    return "zh" if state.get("metadata", {}).get("lang") == "zh" else "en"
 
 
 def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:

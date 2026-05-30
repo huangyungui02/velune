@@ -10,6 +10,7 @@ from app.repositories.auth_client import init_supabase_auth
 from app.repositories.database import close_database, open_database
 from app.services.starsea.checkpoint import init_starsea_checkpoint, reset_starsea_checkpoint
 from app.services.starsea.graph import reset_graph
+from app.tasks import broker
 
 settings = get_settings()
 
@@ -19,9 +20,13 @@ async def lifespan(_app: FastAPI):
     await open_database()
     await init_starsea_checkpoint()
     await init_supabase_auth()
+    if not broker.is_worker_process:
+        await broker.startup()
     try:
         yield
     finally:
+        if not broker.is_worker_process:
+            await broker.shutdown()
         reset_graph()
         reset_starsea_checkpoint()
         await close_database()

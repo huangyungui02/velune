@@ -11,6 +11,17 @@ enum StarSeaStreamService {
         var id: String { "\(name)-\(line)" }
         var name: String
         var line: String
+        var soulerId: UUID?
+        var resolutionRequestId: UUID?
+        var resolutionStatus: String?
+    }
+
+    struct ResolutionStatus: Decodable {
+        var status: String
+        var requestId: UUID
+        var name: String
+        var soulerId: UUID?
+        var error: String?
     }
 
     struct SettledGlimmer: Identifiable, Hashable, Decodable {
@@ -61,7 +72,10 @@ enum StarSeaStreamService {
             content: content,
             intent: intent
         )
-        let payloadDataStream = APISSEClient.stream(path: "/starsea", body: request)
+        let payloadDataStream = APISSEClient.stream(
+            path: "\(AppLanguage.current.apiLanguageCode)/starsea",
+            body: request
+        )
 
         return AsyncThrowingStream { continuation in
             let task = Task {
@@ -97,7 +111,10 @@ enum StarSeaStreamService {
             approved: approved,
             content: content
         )
-        let payloadDataStream = APISSEClient.stream(path: "/starsea/resume", body: request)
+        let payloadDataStream = APISSEClient.stream(
+            path: "\(AppLanguage.current.apiLanguageCode)/starsea/resume",
+            body: request
+        )
 
         return AsyncThrowingStream { continuation in
             let task = Task {
@@ -121,6 +138,39 @@ enum StarSeaStreamService {
                 task.cancel()
             }
         }
+    }
+
+    static func resolutionStatus(requestId: UUID) async throws -> ResolutionStatus {
+        let accessToken = await MainActor.run { AuthManager.shared.currentAccessToken }
+        guard let accessToken else {
+            throw NSError(
+                domain: domain,
+                code: 401,
+                userInfo: [NSLocalizedDescriptionKey: "Missing Supabase access token"]
+            )
+        }
+
+        let endpoint = try Backend.requireAPIBaseURL()
+            .appending(path: "\(AppLanguage.current.apiLanguageCode)/soulers/resolutions/\(requestId.uuidString)")
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode)
+        else {
+            throw NSError(
+                domain: domain,
+                code: (response as? HTTPURLResponse)?.statusCode ?? -1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "matching.error.unknown")]
+            )
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode(ResolutionStatus.self, from: data)
     }
 
     private static func mapEvent(_ payload: StreamEvent) throws -> Event? {

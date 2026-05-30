@@ -127,6 +127,11 @@
 "souler.load.failed" = "加载失败";
 "souler.bio.empty.body" = "暂无简介。";
 "souler.action.chat" = "聊天";
+"souler.resolution.status.preparing" = "正在准备这个页面…";
+"souler.resolution.status.queued" = "这个页面正在等待生成。";
+"souler.resolution.status.processing" = "这个页面正在生成中。";
+"souler.resolution.status.complete" = "正在打开这个页面…";
+"souler.resolution.status.failed" = "这个页面暂时没有准备好。";
 "echo.reply.placeholder" = "回应这段回响…";
 
 "resonance.title" = "共鸣";

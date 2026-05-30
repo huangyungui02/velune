@@ -22,7 +22,35 @@ struct StarSeaResonanceMatchesView: View {
 private struct StarSeaResonanceMatchRow: View {
     let match: StarSeaStreamService.ResonanceMatch
 
+    @State private var destination: SoulerDestination?
+    @State private var errorMessage: String?
+
     var body: some View {
+        Button {
+            Task { await openSouler() }
+        } label: {
+            rowContent
+        }
+        .buttonStyle(.plain)
+        .navigationDestination(item: $destination) { destination in
+            switch destination {
+            case let .souler(id):
+                SoulerView(soulerId: id)
+            case let .resolution(requestId, name):
+                SoulerResolutionView(requestId: requestId, name: name)
+            }
+        }
+        .alert("matching.error.title", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text(errorMessage ?? String(localized: "matching.error.unknown"))
+        }
+    }
+
+    private var rowContent: some View {
         HStack(spacing: 16) {
             avatar
 
@@ -42,6 +70,10 @@ private struct StarSeaResonanceMatchRow: View {
             }
 
             Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .light))
+                .foregroundStyle(UITheme.tertiaryText.opacity(0.6))
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -74,6 +106,20 @@ private struct StarSeaResonanceMatchRow: View {
         }
     }
 
+    private func openSouler() async {
+        if let soulerId = match.soulerId {
+            destination = .souler(id: soulerId)
+            return
+        }
+
+        if let requestId = match.resolutionRequestId {
+            destination = .resolution(requestId: requestId, name: match.name)
+            return
+        }
+
+        errorMessage = String(localized: "matching.error.unknown")
+    }
+
     private var avatar: some View {
         let initial = String(match.name.prefix(1))
         let hue = Double(abs(match.name.hashValue) % 360) / 360.0
@@ -102,5 +148,19 @@ private struct StarSeaResonanceMatchRow: View {
         }
         .frame(width: 45, height: 60)
         .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+    }
+}
+
+private enum SoulerDestination: Identifiable, Hashable {
+    case souler(id: UUID)
+    case resolution(requestId: UUID, name: String)
+
+    var id: String {
+        switch self {
+        case let .souler(id):
+            "souler-\(id.uuidString)"
+        case let .resolution(requestId, _):
+            "resolution-\(requestId.uuidString)"
+        }
     }
 }

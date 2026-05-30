@@ -8,20 +8,17 @@ class Glimmer {
     var userId: String
     var content: String
     var createdAt: Date
-    var status: String
 
     init(
         id: UUID = UUID(),
         userId: String = "",
         content: String,
-        createdAt: Date = .now,
-        status: String = "pending"
+        createdAt: Date = .now
     ) {
         self.id = id
         self.userId = userId
         self.content = content
         self.createdAt = createdAt
-        self.status = status
     }
 
 }
@@ -36,13 +33,11 @@ extension Glimmer {
         var id: UUID
         var content: String
         var createdAt: Date
-        var status: String
 
         enum CodingKeys: String, CodingKey {
             case id
             case content
             case createdAt = "created_at"
-            case status
         }
     }
 
@@ -50,7 +45,7 @@ extension Glimmer {
         let supabase = try Backend.requireSupabase()
         let response: Response = try await supabase
             .from("glimmers")
-            .select("id, content, created_at, status")
+            .select("id, content, created_at")
             .eq("id", value: glimmerId)
             .single()
             .execute()
@@ -61,8 +56,7 @@ extension Glimmer {
             id: response.id,
             userId: userId.uuidString,
             content: response.content,
-            createdAt: response.createdAt,
-            status: response.status
+            createdAt: response.createdAt
         )
     }
 
@@ -75,7 +69,7 @@ extension Glimmer {
         let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("glimmers")
-            .select("id, content, created_at, status")
+            .select("id, content, created_at")
             .eq("user_id", value: userId.uuidString)
             .order("created_at", ascending: false)
             .range(from: pageOffset, to: upperBound)
@@ -87,8 +81,7 @@ extension Glimmer {
                 id: response.id,
                 userId: userId.uuidString,
                 content: response.content,
-                createdAt: response.createdAt,
-                status: response.status
+                createdAt: response.createdAt
             )
         }
 
@@ -101,7 +94,7 @@ extension Glimmer {
         let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("glimmers")
-            .select("id, content, created_at, status")
+            .select("id, content, created_at")
             .eq("user_id", value: userId.uuidString)
             .order("created_at", ascending: false)
             .execute()
@@ -112,26 +105,23 @@ extension Glimmer {
                 id: response.id,
                 userId: userId.uuidString,
                 content: response.content,
-                createdAt: response.createdAt,
-                status: response.status
+                createdAt: response.createdAt
             )
         }
     }
 
-    static func create(_ glimmer: Glimmer, status: String = "pending") async throws {
+    static func create(_ glimmer: Glimmer) async throws {
         struct Data: Codable {
             var id: UUID
             var userId: UUID
             var content: String
             var createdAt: Date
-            var status: String
 
             enum CodingKeys: String, CodingKey {
                 case id
                 case userId = "user_id"
                 case content
                 case createdAt = "created_at"
-                case status
             }
         }
 
@@ -140,8 +130,7 @@ extension Glimmer {
             id: glimmer.id,
             userId: userId,
             content: glimmer.content,
-            createdAt: glimmer.createdAt,
-            status: status
+            createdAt: glimmer.createdAt
         )
 
         let supabase = try Backend.requireSupabase()

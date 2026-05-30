@@ -5,25 +5,25 @@ from typing import Any
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
 
 
-def format_messages(messages: list[AnyMessage]) -> str:
+def format_messages(messages: list[AnyMessage], lang: str = "zh") -> str:
     lines: list[str] = []
     for message in messages:
         content = _content_to_text(message.content)
         if not content:
             continue
 
-        lines.append(f"{_role_name(message)}：{content}")
+        lines.append(f"{_role_name(message, lang)}：{content}")
 
     return "\n\n".join(lines)
 
 
-def _role_name(message: AnyMessage) -> str:
+def _role_name(message: AnyMessage, lang: str) -> str:
     if isinstance(message, HumanMessage):
-        return "用户"
+        return "用户" if lang == "zh" else "User"
     if isinstance(message, AIMessage):
         return "AI"
     if isinstance(message, ToolMessage):
-        return "工具"
+        return "工具" if lang == "zh" else "Tool"
 
     return message.type
 

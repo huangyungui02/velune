@@ -12,7 +12,6 @@ class Glimmer(TypedDict):
     user_id: str
     content: str
     created_at: str
-    status: str
 
 
 class GlimmerMessageDraft(TypedDict):
@@ -25,7 +24,7 @@ class GlimmerMessageDraft(TypedDict):
 async def get_glimmer_by_id(user_id: str, glimmer_id: str) -> Glimmer | None:
     row = await fetch_one(
         """
-        SELECT id, user_id, content, created_at, status
+        SELECT id, user_id, content, created_at
         FROM public.glimmers
         WHERE id = CAST(%(glimmer_id)s AS uuid)
           AND user_id = CAST(%(user_id)s AS uuid)
@@ -40,23 +39,20 @@ async def get_glimmer_by_id(user_id: str, glimmer_id: str) -> Glimmer | None:
         "user_id": str(row.get("user_id", "")),
         "content": str(row.get("content", "")),
         "created_at": str(row.get("created_at", "")),
-        "status": str(row.get("status", "")),
     }
 
 
 async def create_glimmer(
     user_id: str,
     content: str,
-    *,
-    status: str = "complete",
 ) -> Glimmer:
     row = await execute_fetch_one(
         """
-        INSERT INTO public.glimmers (user_id, content, status)
-        VALUES (CAST(%(user_id)s AS uuid), %(content)s, %(status)s::glimmer_status)
-        RETURNING id, user_id, content, created_at, status
+        INSERT INTO public.glimmers (user_id, content)
+        VALUES (CAST(%(user_id)s AS uuid), %(content)s)
+        RETURNING id, user_id, content, created_at
         """,
-        {"user_id": user_id, "content": content, "status": status},
+        {"user_id": user_id, "content": content},
     )
     if not row:
         raise RuntimeError("Failed to create glimmer")
@@ -66,7 +62,6 @@ async def create_glimmer(
         "user_id": str(row.get("user_id", "")),
         "content": str(row.get("content", "")),
         "created_at": str(row.get("created_at", "")),
-        "status": str(row.get("status", "")),
     }
 
 
@@ -74,8 +69,6 @@ async def create_glimmer_with_messages(
     user_id: str,
     content: str,
     messages: list[GlimmerMessageDraft],
-    *,
-    status: str = "complete",
 ) -> Glimmer:
     if not messages:
         raise ValueError("Glimmer archive messages cannot be empty")
@@ -85,11 +78,11 @@ async def create_glimmer_with_messages(
             async with connection.cursor() as cursor:
                 await cursor.execute(
                     """
-                    INSERT INTO public.glimmers (user_id, content, status)
-                    VALUES (CAST(%(user_id)s AS uuid), %(content)s, %(status)s::glimmer_status)
-                    RETURNING id, user_id, content, created_at, status
+                    INSERT INTO public.glimmers (user_id, content)
+                    VALUES (CAST(%(user_id)s AS uuid), %(content)s)
+                    RETURNING id, user_id, content, created_at
                     """,
-                    {"user_id": user_id, "content": content, "status": status},
+                    {"user_id": user_id, "content": content},
                 )
                 row = await cursor.fetchone()
                 if not row:
@@ -136,5 +129,4 @@ async def create_glimmer_with_messages(
         "user_id": str(row.get("user_id", "")),
         "content": str(row.get("content", "")),
         "created_at": str(row.get("created_at", "")),
-        "status": str(row.get("status", "")),
     }

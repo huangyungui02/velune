@@ -9,9 +9,12 @@ from langgraph.graph.message import add_messages
 RouterAction = Literal["starsea", "collect"]
 
 
-class ThoughtMatchPreview(TypedDict):
+class ThoughtMatchPreview(TypedDict, total=False):
     name: str
     line: str
+    soulerId: str | None
+    resolutionRequestId: str | None
+    resolutionStatus: str | None
 
 
 class StarseaDisplay(TypedDict):

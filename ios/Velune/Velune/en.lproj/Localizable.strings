@@ -127,6 +127,11 @@
 "souler.load.failed" = "Failed to load";
 "souler.bio.empty.body" = "No bio yet.";
 "souler.action.chat" = "Chat";
+"souler.resolution.status.preparing" = "Preparing this page…";
+"souler.resolution.status.queued" = "This page is waiting to be shaped.";
+"souler.resolution.status.processing" = "This page is being shaped.";
+"souler.resolution.status.complete" = "Opening this page…";
+"souler.resolution.status.failed" = "This page could not be prepared yet.";
 "echo.reply.placeholder" = "Reply to this echo…";
 
 "resonance.title" = "Resonances";

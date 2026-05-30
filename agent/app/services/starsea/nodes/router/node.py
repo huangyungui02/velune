@@ -8,7 +8,7 @@ from langgraph.types import Command
 from app.services.starsea.llm import create_chat_model
 
 from .model import RouterDecision
-from .prompt import SYSTEM_PROMPT
+from .prompt import system_prompt
 
 if TYPE_CHECKING:
     from app.services.starsea.state import State
@@ -21,12 +21,13 @@ def router_node(state: State) -> Command[Literal["starsea", "collect"]]:
     if state.get("metadata", {}).get("intent") == "collect":
         return Command(goto="collect")
 
+    lang = _state_lang(state)
     model = create_chat_model(model=ROUTER_MODEL, temperature=ROUTER_TEMPERATURE)
     structured_model = model.with_structured_output(RouterDecision, method="json_mode")
     decision = structured_model.invoke(
         [
-            SystemMessage(content=SYSTEM_PROMPT),
-            HumanMessage(content=f"用户最新一句话：{_latest_user_message(state)}"),
+            SystemMessage(content=system_prompt(lang)),
+            HumanMessage(content=_latest_message_prompt(_latest_user_message(state), lang)),
         ]
     )
 
@@ -39,3 +40,13 @@ def _latest_user_message(state: State) -> str:
             return str(message.content).strip()
 
     return ""
+
+
+def _state_lang(state: State) -> str:
+    return "zh" if state.get("metadata", {}).get("lang") == "zh" else "en"
+
+
+def _latest_message_prompt(message: str, lang: str) -> str:
+    if lang == "zh":
+        return f"用户最新一句话：{message}"
+    return f"User's latest message: {message}"

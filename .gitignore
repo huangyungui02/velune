@@ -42,8 +42,6 @@ agent/.env.*
 !agent/.env.example
 !agent/.env.sample
 !agent/.env.template
-!agent/.env.development.example
-!agent/.env.production.example
 
 # Python
 __pycache__/

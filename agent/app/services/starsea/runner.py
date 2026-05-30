@@ -8,9 +8,9 @@ from uuid import uuid4
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 
+from app.core import Lang, normalize_lang
 from app.services.starsea.graph import build_graph
 from app.services.starsea.state import ArchiveEvent, State
-from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +21,12 @@ async def run_graph(
     thread_id: str | None = None,
     intent: str | None = None,
     user_id: str | None = None,
+    lang: Lang = "zh",
 ) -> dict[str, Any]:
     thread_id = thread_id or str(uuid4())
     config = {"configurable": {"thread_id": thread_id}}
     result = await build_graph().ainvoke(
-        _initial_state(user_input, metadata, intent, user_id=user_id),
+        _initial_state(user_input, metadata, intent, user_id=user_id, lang=lang),
         config,
     )
 
@@ -44,6 +45,7 @@ async def stream_graph(
     thread_id: str | None = None,
     intent: str | None = None,
     user_id: str | None = None,
+    lang: Lang = "zh",
 ) -> AsyncIterator[dict[str, Any]]:
     thread_id = thread_id or str(uuid4())
     config = {"configurable": {"thread_id": thread_id}}
@@ -51,7 +53,7 @@ async def stream_graph(
 
     try:
         async for chunk in graph.astream(
-            _initial_state(user_input, metadata, intent, user_id=user_id),
+            _initial_state(user_input, metadata, intent, user_id=user_id, lang=lang),
             config,
             stream_mode="custom",
         ):
@@ -102,12 +104,14 @@ async def resume_graph(
     user_id: str,
     approved: bool,
     content: str | None,
+    lang: Lang = "zh",
 ) -> AsyncIterator[dict[str, Any]]:
     config = {"configurable": {"thread_id": thread_id}}
     graph = build_graph()
     resume_payload = {
         "approved": approved,
         "content": content or "",
+        "lang": normalize_lang(lang),
     }
 
     try:
@@ -178,12 +182,14 @@ def _initial_state(
     intent: str | None = None,
     *,
     user_id: str | None = None,
+    lang: Lang = "zh",
 ) -> State:
-    settings = get_settings()
+    normalized_lang = normalize_lang(lang)
     runtime_metadata = {
-        "app_env": settings.APP_ENV,
+        "lang": normalized_lang,
         **(metadata or {}),
     }
+    runtime_metadata["lang"] = normalize_lang(str(runtime_metadata.get("lang") or normalized_lang))
     if user_id is not None:
         runtime_metadata["user_id"] = user_id
     if intent is not None:

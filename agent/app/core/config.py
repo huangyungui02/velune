@@ -1,31 +1,20 @@
-import os
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-def _current_app_env() -> str:
-    return os.getenv("APP_ENV", "development").strip().lower()
-
-
-def _env_files() -> tuple[str, ...]:
-    app_env = _current_app_env()
-    if app_env in {"production", "prod"}:
-        return (".env", ".env.production")
-    return (".env", ".env.development")
-
-
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=_env_files(),
+        env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
 
-    APP_ENV: str = _current_app_env()
     APP_NAME: str = "velune-agent"
 
     DATABASE_URL: str
+    REDIS_URL: str = "redis://127.0.0.1:6379/0"
+    TASKIQ_QUEUE_NAME: str = "souler_resolution"
 
     SUPABASE_URL: str
     SUPABASE_SERVICE_ROLE_KEY: str

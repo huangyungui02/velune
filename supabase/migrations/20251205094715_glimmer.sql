@@ -1,14 +1,9 @@
--- Create diaries table
--- status: pending, processing, completed, failed
-CREATE TYPE glimmer_status AS ENUM ('pending', 'processing', 'complete', 'incomplete', 'failed');
-
 CREATE TABLE IF NOT EXISTS glimmers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    status glimmer_status NOT NULL DEFAULT 'pending'
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Create index on user_id

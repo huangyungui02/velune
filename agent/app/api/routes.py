@@ -21,6 +21,7 @@ from app.repositories import get_user_id_from_auth_header
 from app.services.chat import handle_chat
 from app.services.chat.chapters import start_chapter_session
 from app.services.chat.preferences import normalize_reply_length
+from app.services.souler_resolution import get_resolution_status, resolve_or_enqueue_souler
 from app.services.starsea import resume_graph, stream_graph
 
 logger = logging.getLogger(__name__)
@@ -44,9 +45,10 @@ async def require_user_id(request: Request) -> str:
         raise HTTPException(status_code=400, detail=error_message(error)) from error
 
 
-@router.post("/starsea")
+@router.post("/{lang}/starsea")
 async def starsea(
     request: Request,
+    normalized_lang: Lang = Depends(require_lang),
     user_id: str = Depends(require_user_id),
 ):
     try:
@@ -66,7 +68,7 @@ async def starsea(
         if intent != "collect" and not content:
             raise ValueError("content cannot be empty")
 
-        return sse_response(_stream_starsea(content, metadata, thread_id, user_id, intent))
+        return sse_response(_stream_starsea(content, metadata, thread_id, user_id, intent, normalized_lang))
     except ValueError as error:
         return error_response(str(error))
     except Exception as error:  # noqa: BLE001
@@ -74,9 +76,10 @@ async def starsea(
         return sse_response(_emit_starsea_error(error_message(error)))
 
 
-@router.post("/starsea/resume")
+@router.post("/{lang}/starsea/resume")
 async def starsea_resume(
     request: Request,
+    normalized_lang: Lang = Depends(require_lang),
     user_id: str = Depends(require_user_id),
 ):
     try:
@@ -94,7 +97,7 @@ async def starsea_resume(
         if approved and not content:
             raise ValueError("content cannot be empty")
 
-        return sse_response(_stream_starsea_resume(thread_id, user_id, approved, content))
+        return sse_response(_stream_starsea_resume(thread_id, user_id, approved, content, normalized_lang))
     except ValueError as error:
         return error_response(str(error))
     except Exception as error:  # noqa: BLE001
@@ -109,6 +112,18 @@ async def chat(
     user_id: str = Depends(require_user_id),
 ):
     return await handle_chat(normalized_lang, user_id, request)
+
+
+@router.get("/{lang}/soulers/resolutions/{request_id}")
+async def souler_resolution_status(
+    request_id: UUID,
+    _normalized_lang: Lang = Depends(require_lang),
+    _user_id: str = Depends(require_user_id),
+):
+    payload = await get_resolution_status(str(request_id))
+    if payload is None:
+        raise HTTPException(status_code=404, detail="Resolution request not found")
+    return JSONResponse(payload, status_code=200)
 
 
 def _optional_uuid(value: Any, field: str) -> str | None:
@@ -134,6 +149,7 @@ async def _stream_starsea(
     thread_id: str,
     user_id: str,
     intent: str | None,
+    lang: Lang,
 ) -> AsyncIterator[str]:
     yield sse_event({"type": "ready", "threadId": thread_id})
     async for event in stream_graph(
@@ -142,9 +158,10 @@ async def _stream_starsea(
         thread_id=thread_id,
         intent=intent,
         user_id=user_id,
+        lang=lang,
     ):
         try:
-            payload = await _starsea_payload(event)
+            payload = await _starsea_payload(event, lang)
         except Exception as error:  # noqa: BLE001
             logger.error("Failed to map starsea stream event: %s", error_log_payload(error))
             payload = {"type": "error", "message": error_message(error)}
@@ -156,6 +173,7 @@ async def _stream_starsea_resume(
     user_id: str,
     approved: bool,
     content: str,
+    lang: Lang,
 ) -> AsyncIterator[str]:
     yield sse_event({"type": "ready", "threadId": thread_id})
     async for event in resume_graph(
@@ -163,9 +181,10 @@ async def _stream_starsea_resume(
         user_id=user_id,
         approved=approved,
         content=content,
+        lang=lang,
     ):
         try:
-            payload = await _starsea_payload(event)
+            payload = await _starsea_payload(event, lang)
         except Exception as error:  # noqa: BLE001
             logger.error("Failed to map starsea resume event: %s", error_log_payload(error))
             payload = {"type": "error", "message": error_message(error)}
@@ -176,7 +195,7 @@ async def _emit_starsea_error(message: str) -> AsyncIterator[str]:
     yield sse_event({"type": "error", "message": message})
 
 
-async def _starsea_payload(event: dict[str, Any]) -> dict[str, Any]:
+async def _starsea_payload(event: dict[str, Any], lang: Lang) -> dict[str, Any]:
     event_name = str(event.get("event") or "")
     thread_id = str(event.get("thread_id") or "")
     data = event.get("data")
@@ -184,7 +203,7 @@ async def _starsea_payload(event: dict[str, Any]) -> dict[str, Any]:
     if event_name == "message_delta" and isinstance(data, dict):
         return {"type": "delta", "delta": str(data.get("delta") or "")}
     if event_name == "resonance_match":
-        return {"type": "resonance_match", "matches": _resonance_matches(data)}
+        return {"type": "resonance_match", "matches": await _resonance_matches(data, lang)}
     if event_name == "confirm_required" and isinstance(data, dict):
         return {
             "type": "confirm_required",
@@ -206,7 +225,7 @@ async def _starsea_payload(event: dict[str, Any]) -> dict[str, Any]:
     return {"type": "event", "threadId": thread_id, "data": data}
 
 
-def _resonance_matches(data: Any) -> list[dict[str, str]]:
+async def _resonance_matches(data: Any, lang: Lang) -> list[dict[str, str]]:
     if not isinstance(data, list):
         return []
 
@@ -217,7 +236,21 @@ def _resonance_matches(data: Any) -> list[dict[str, str]]:
         name = str(item.get("name") or "").strip()
         line = str(item.get("line") or item.get("whisper") or "").strip()
         if name and line:
-            matches.append({"name": name, "line": line})
+            try:
+                resolved = await resolve_or_enqueue_souler(name, lang)
+            except Exception as error:  # noqa: BLE001
+                logger.warning(
+                    "Failed to resolve resonance match %s: %s",
+                    name,
+                    error_log_payload(error),
+                )
+                resolved = {"status": "unavailable"}
+            match = {"name": name, "line": line, "resolutionStatus": str(resolved.get("status") or "")}
+            if resolved.get("soulerId"):
+                match["soulerId"] = str(resolved["soulerId"])
+            if resolved.get("requestId"):
+                match["resolutionRequestId"] = str(resolved["requestId"])
+            matches.append(match)
     return matches
 
 

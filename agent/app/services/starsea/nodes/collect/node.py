@@ -7,7 +7,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from app.services.starsea.llm import create_chat_model
 from app.services.starsea.messages import format_messages
 
-from .prompt import SYSTEM_PROMPT
+from .prompt import system_prompt
 
 if TYPE_CHECKING:
     from app.services.starsea.state import State
@@ -17,11 +17,12 @@ COLLECT_TEMPERATURE = 0.45
 
 
 def collect_node(state: State) -> dict[str, Any]:
+    lang = _state_lang(state)
     model = create_chat_model(model=COLLECT_MODEL, temperature=COLLECT_TEMPERATURE)
     response = model.invoke(
         [
-            SystemMessage(content=SYSTEM_PROMPT),
-            HumanMessage(content=f"完整对话：\n\n{format_messages(state['messages'])}"),
+            SystemMessage(content=system_prompt(lang)),
+            HumanMessage(content=_conversation_prompt(format_messages(state["messages"], lang), lang)),
         ]
     )
     content = str(response.content).strip()
@@ -35,3 +36,13 @@ def collect_node(state: State) -> dict[str, Any]:
             "content": content,
         },
     }
+
+
+def _state_lang(state: State) -> str:
+    return "zh" if state.get("metadata", {}).get("lang") == "zh" else "en"
+
+
+def _conversation_prompt(conversation: str, lang: str) -> str:
+    if lang == "zh":
+        return f"完整对话：\n\n{conversation}"
+    return f"Full conversation:\n\n{conversation}"

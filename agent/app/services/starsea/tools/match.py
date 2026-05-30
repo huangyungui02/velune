@@ -11,7 +11,8 @@ from app.services.starsea.llm import create_chat_model
 MATCH_MODEL = "qwen3.5-flash"
 MATCH_TEMPERATURE = 0.45
 
-MATCH_PROMPT = """
+MATCH_PROMPTS = {
+    "zh": """
 # 角色
 你是星海内部的思想与灵魂匹配工具。
 
@@ -37,7 +38,35 @@ JSON 结构：
     }
   ]
 }
-"""
+""",
+    "en": """
+# Role
+You are StarSea's internal tool for matching thoughts and souls.
+
+# Task
+Based on the current conversation, match 3 public-domain historical figures who can resonate most deeply with the user's situation.
+
+# Requirements
+1. The goal is not to teach facts, but to find why this person can accompany the user through this moment.
+2. resonance should explain how the figure mirrors the user's present state.
+3. whisper is one short response this figure might leave for the user.
+4. Figures must be real people and in the public domain.
+
+# Output
+Output pure JSON only. No Markdown.
+
+JSON structure:
+{
+  "voices": [
+    {
+      "name": "Person name",
+      "resonance": "How this person resonates with the user's present state",
+      "whisper": "A short whispered response"
+    }
+  ]
+}
+""",
+}
 
 
 class ThoughtVoice(BaseModel):
@@ -56,15 +85,22 @@ class ThoughtMatch(BaseModel):
 
 
 @tool
-def match_thought_voices(conversation: str) -> str:
+def match_thought_voices(conversation: str, lang: str = "zh") -> str:
     """寻找星海中能够与当前用户处境共鸣的灵魂。"""
+    normalized_lang = "zh" if lang == "zh" else "en"
     model = create_chat_model(model=MATCH_MODEL, temperature=MATCH_TEMPERATURE)
     structured_model = model.with_structured_output(ThoughtMatch, method="json_mode")
     match = structured_model.invoke(
         [
-            SystemMessage(content=MATCH_PROMPT),
-            HumanMessage(content=f"对话内容：\n\n{conversation}"),
+            SystemMessage(content=MATCH_PROMPTS[normalized_lang]),
+            HumanMessage(content=_conversation_prompt(conversation, normalized_lang)),
         ]
     )
 
     return json.dumps(match.model_dump(mode="json"), ensure_ascii=False)
+
+
+def _conversation_prompt(conversation: str, lang: str) -> str:
+    if lang == "zh":
+        return f"对话内容：\n\n{conversation}"
+    return f"Conversation:\n\n{conversation}"

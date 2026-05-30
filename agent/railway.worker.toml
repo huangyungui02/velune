@@ -1,0 +1,8 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "taskiq worker app.tasks.broker:broker app.tasks.souler_resolution"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
