@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import require_lang, require_user_id
-from app.core import Lang
+from app.schemas.common import Lang
 from app.services.soulers.resolution import get_resolution_status
 
 router = APIRouter()

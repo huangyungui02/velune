@@ -10,9 +10,9 @@ from starlette.requests import ClientDisconnect
 
 from app.core.config import get_settings
 from app.core.errors import error_log_payload, error_message
-from app.core.llm import DEFAULT_MODEL, stream_text
 from app.core.sse import sse_event
 from app.schemas.entities import Session
+from app.core.llm import DEFAULT_MODEL, stream_text
 from app.services.chat.chapters.response import (
     ChapterStreamState,
     consume_chapter_stream_delta,

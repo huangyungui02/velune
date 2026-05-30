@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from app.core import Lang
+from app.schemas.common import Lang
 from app.services.chat.chapters.response import JSON_CLOSE, JSON_OPEN
 
 

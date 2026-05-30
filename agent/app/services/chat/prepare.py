@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from app.core import Lang
 from app.repositories import get_recent_messages, insert_message
+from app.schemas.common import Lang
 from app.services.chat.preferences import ReplyLength
 from app.services.chat.prompts import build_prompt_messages
 from app.services.chat.session import resolve_session

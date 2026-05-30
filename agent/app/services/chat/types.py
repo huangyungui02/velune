@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.core import Lang
+from app.schemas.common import Lang
 from app.schemas.entities import Session
 
 

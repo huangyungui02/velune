@@ -6,9 +6,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import require_lang, require_user_id
-from app.core import Lang
 from app.core.errors import error_log_payload, error_message
 from app.schemas.chapters import ChapterStartRequest
+from app.schemas.common import Lang
 from app.services.chat.chapters import start_chapter_session
 from app.services.chat.preferences import DEFAULT_REPLY_LENGTH
 

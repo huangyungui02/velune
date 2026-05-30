@@ -6,9 +6,9 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import require_lang, require_user_id
-from app.core import Lang
 from app.core.errors import error_log_payload, error_message
 from app.core.sse import sse_response
+from app.schemas.common import Lang
 from app.schemas.starsea import StarseaRequest, StarseaResumeRequest
 from app.services.starsea import emit_starsea_error, resume_starsea_stream, start_starsea_stream
 

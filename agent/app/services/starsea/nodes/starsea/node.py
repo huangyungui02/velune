@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from langchain_core.messages import AIMessage, AIMessageChunk, SystemMessage, ToolMessage
 from langgraph.config import get_stream_writer
 
-from app.services.starsea.llm import create_chat_model
+from app.core.llm import create_chat_model
 from app.services.starsea.messages import format_messages
 from app.services.starsea.tools import match_thought_voices
 

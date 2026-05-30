@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.core import Lang
+from app.schemas.common import Lang
 from app.schemas.entities import Chapter
 from app.services.chat.chapters.format import build_chapter_system_prompt
 from app.services.chat.preferences import ReplyLength, apply_reply_length_prompt

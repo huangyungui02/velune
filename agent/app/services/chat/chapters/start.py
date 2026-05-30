@@ -4,14 +4,14 @@ import logging
 from uuid import UUID
 
 from app.core.config import get_settings
-from app.core import Lang
 from app.core.errors import error_log_payload
-from app.core.llm import DEFAULT_MODEL, complete_text
 from app.repositories import delete_session, insert_message
+from app.schemas.common import Lang
 from app.services.chat.chapters.prompt import build_chapter_opening_messages
 from app.services.chat.chapters.response import parse_chapter_response
 from app.services.chat.preferences import ReplyLength
 from app.services.chat.session import create_chapter_session, load_chapter_pair, sync_session_activity
+from app.core.llm import DEFAULT_MODEL, complete_text
 
 logger = logging.getLogger(__name__)
 settings = get_settings()

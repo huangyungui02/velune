@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from pydantic import AliasChoices, BaseModel, Field
 
-from app.services.starsea.llm import create_chat_model
+from app.core.llm import create_chat_model
 
 MATCH_MODEL = "qwen3.5-flash"
 MATCH_TEMPERATURE = 0.45

@@ -3,8 +3,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import require_lang, require_user_id
-from app.core import Lang
 from app.core.errors import error_message
+from app.schemas.common import Lang
 from app.schemas.chat import ChatRequest
 from app.services.chat import handle_chat
 

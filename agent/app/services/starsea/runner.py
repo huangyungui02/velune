@@ -8,7 +8,7 @@ from uuid import uuid4
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 
-from app.core import Lang, normalize_lang
+from app.schemas.common import Lang, validate_lang
 from app.services.starsea.graph import build_graph
 from app.services.starsea.state import ArchiveEvent, State
 
@@ -111,7 +111,7 @@ async def resume_graph(
     resume_payload = {
         "approved": approved,
         "content": content or "",
-        "lang": normalize_lang(lang),
+        "lang": validate_lang(lang),
     }
 
     try:
@@ -184,12 +184,12 @@ def _initial_state(
     user_id: str | None = None,
     lang: Lang = "zh",
 ) -> State:
-    normalized_lang = normalize_lang(lang)
+    normalized_lang = validate_lang(lang)
     runtime_metadata = {
         "lang": normalized_lang,
         **(metadata or {}),
     }
-    runtime_metadata["lang"] = normalize_lang(str(runtime_metadata.get("lang") or normalized_lang))
+    runtime_metadata["lang"] = validate_lang(str(runtime_metadata.get("lang") or normalized_lang))
     if user_id is not None:
         runtime_metadata["user_id"] = user_id
     if intent is not None:

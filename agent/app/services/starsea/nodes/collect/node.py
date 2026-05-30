@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from app.services.starsea.llm import create_chat_model
+from app.core.llm import create_chat_model
 from app.services.starsea.messages import format_messages
 
 from .prompt import system_prompt

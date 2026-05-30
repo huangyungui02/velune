@@ -1,64 +1,32 @@
 from __future__ import annotations
 
-import json
-from typing import Any, cast
+from collections.abc import AsyncIterator
+from typing import Any
 
-from openai import AsyncOpenAI, AsyncStream
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
+from langchain_openai import ChatOpenAI
 
 from app.core.config import get_settings
 
 DEFAULT_MODEL = "qwen3.5-flash"
-
-settings = get_settings()
-_client = AsyncOpenAI(
-    api_key=settings.DASHSCOPE_API_KEY,
-    base_url=settings.DASHSCOPE_BASE_URL,
-)
+NO_THINKING_MODELS = {"qwen3.5-flash"}
 
 
-def _build_model_extra_body(model: str) -> dict[str, Any]:
-    if model.strip().lower().startswith("qwen"):
-        return {"enable_thinking": False}
-    return {}
+def create_chat_model(model: str, **model_kwargs: Any) -> ChatOpenAI:
+    settings = get_settings()
+    if not settings.DASHSCOPE_API_KEY:
+        raise RuntimeError("DASHSCOPE_API_KEY is required to call DashScope models.")
 
+    if model in NO_THINKING_MODELS:
+        extra_body = dict(model_kwargs.pop("extra_body", {}) or {})
+        extra_body["enable_thinking"] = False
+        model_kwargs["extra_body"] = extra_body
 
-def _build_chat_request(
-    messages: list[dict[str, str]],
-    *,
-    model: str,
-    temperature: float,
-    **extra: Any,
-) -> dict[str, Any]:
-    request: dict[str, Any] = {
-        "model": model,
-        "messages": messages,
-        "temperature": temperature,
-        **extra,
-    }
-    extra_body = _build_model_extra_body(model)
-    if extra_body:
-        request["extra_body"] = extra_body
-    return request
-
-
-def _normalize_content(content: Any) -> str:
-    if isinstance(content, str):
-        return content
-
-    if isinstance(content, list):
-        parts: list[str] = []
-        for item in content:
-            if isinstance(item, str):
-                parts.append(item)
-                continue
-            if isinstance(item, dict):
-                text = item.get("text")
-                if isinstance(text, str):
-                    parts.append(text)
-        return "".join(parts)
-
-    return ""
+    return ChatOpenAI(
+        api_key=settings.DASHSCOPE_API_KEY,
+        base_url=settings.DASHSCOPE_BASE_URL,
+        model=model,
+        **model_kwargs,
+    )
 
 
 async def complete_text(
@@ -67,14 +35,8 @@ async def complete_text(
     model: str,
     temperature: float,
 ) -> str:
-    request = _build_chat_request(
-        messages,
-        model=model,
-        temperature=temperature,
-    )
-    completion = cast(ChatCompletion, await _client.chat.completions.create(**request))
-    content = completion.choices[0].message.content
-    return _normalize_content(content).strip()
+    response = await create_chat_model(model=model, temperature=temperature).ainvoke(messages)
+    return str(response.content).strip()
 
 
 async def complete_json(
@@ -84,26 +46,16 @@ async def complete_json(
     schema_name: str,
     schema: dict[str, Any],
     temperature: float,
-) -> Any:
-    request = _build_chat_request(
-        messages,
-        model=model,
-        temperature=temperature,
-        response_format={
-            "type": "json_schema",
-            "json_schema": {
-                "name": schema_name,
-                "strict": True,
-                "schema": schema,
-            },
-        },
+) -> dict[str, Any]:
+    structured_model = create_chat_model(model=model, temperature=temperature).with_structured_output(
+        {"title": schema_name, **schema},
+        method="json_schema",
+        strict=True,
     )
-
-    completion = cast(ChatCompletion, await _client.chat.completions.create(**request))
-    content = _normalize_content(completion.choices[0].message.content).strip()
-    if not content:
-        raise ValueError("Model returned empty JSON content")
-    return json.loads(content)
+    response = await structured_model.ainvoke(messages)
+    if not isinstance(response, dict):
+        raise ValueError("Model returned invalid JSON content")
+    return response
 
 
 async def stream_text(
@@ -111,27 +63,7 @@ async def stream_text(
     *,
     model: str,
     temperature: float,
-):
-    request = _build_chat_request(
-        messages,
-        model=model,
-        temperature=temperature,
-        stream=True,
-    )
-    stream = cast(
-        AsyncStream[ChatCompletionChunk],
-        await _client.chat.completions.create(**request),
-    )
-    async for chunk in stream:
-        if not chunk.choices:
-            continue
-
-        delta = chunk.choices[0].delta.content
-        if isinstance(delta, str) and delta:
-            yield delta
-            continue
-
-        if isinstance(delta, list):
-            text = _normalize_content(delta)
-            if text:
-                yield text
+) -> AsyncIterator[str]:
+    async for chunk in create_chat_model(model=model, temperature=temperature).astream(messages):
+        if chunk.content:
+            yield str(chunk.content)

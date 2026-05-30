@@ -5,9 +5,9 @@ import logging
 
 from fastapi.responses import StreamingResponse
 
-from app.core import Lang
 from app.core.errors import error_log_payload, error_message
 from app.core.sse import emit_once, sse_response
+from app.schemas.common import Lang
 from app.services.chat.preferences import ReplyLength
 from app.services.chat.prepare import prepare_chat
 from app.services.chat.streaming import stream_chat_events

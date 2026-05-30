@@ -3,19 +3,20 @@ from __future__ import annotations
 import logging
 
 from fastapi import HTTPException, Request
+from pydantic import ValidationError
 
-from app.core import Lang, normalize_lang
 from app.core.errors import UnauthorizedError, error_log_payload, error_message
 from app.repositories import get_user_id_from_auth_header
+from app.schemas.common import Lang, validate_lang
 
 logger = logging.getLogger(__name__)
 
 
 async def require_lang(lang: str) -> Lang:
     try:
-        return normalize_lang(lang)
-    except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+        return validate_lang(lang)
+    except ValidationError as error:
+        raise HTTPException(status_code=400, detail="Invalid lang, must be one of: en, zh") from error
 
 
 async def require_user_id(request: Request) -> str:

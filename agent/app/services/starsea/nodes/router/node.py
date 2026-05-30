@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.types import Command
 
-from app.services.starsea.llm import create_chat_model
+from app.core.llm import create_chat_model
 
 from .model import RouterDecision
 from .prompt import system_prompt

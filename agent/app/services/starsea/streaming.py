@@ -6,9 +6,9 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from app.core import Lang
 from app.core.errors import error_log_payload, error_message
 from app.core.sse import sse_event
+from app.schemas.common import Lang
 from app.schemas.starsea_events import (
     CompletedData,
     ConfirmRequiredData,
