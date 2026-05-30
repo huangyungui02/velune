@@ -4,7 +4,7 @@ from typing import Any, TypedDict
 
 from psycopg.types.json import Jsonb
 
-from .database import execute_fetch_one, fetch_one, get_pool
+from app.db.session import execute_fetch_one, fetch_one, get_pool
 
 
 class Glimmer(TypedDict):

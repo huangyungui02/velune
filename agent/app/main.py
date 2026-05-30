@@ -4,10 +4,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.routes import router
+from app.api.router import router
 from app.core.config import get_settings
+from app.db.session import close_database, open_database
 from app.repositories.auth_client import init_supabase_auth
-from app.repositories.database import close_database, open_database
 from app.services.starsea.checkpoint import close_starsea_checkpoint, init_starsea_checkpoint
 from app.services.starsea.graph import reset_graph
 from app.tasks import broker

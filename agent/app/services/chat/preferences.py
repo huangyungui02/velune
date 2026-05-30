@@ -5,10 +5,11 @@ from typing import Literal
 from app.core import Lang
 
 ReplyLength = Literal["standard", "concise"]
+DEFAULT_REPLY_LENGTH: ReplyLength = "standard"
 
 
 def normalize_reply_length(value: object) -> ReplyLength:
-    return "concise" if value == "concise" else "standard"
+    return "concise" if value == "concise" else DEFAULT_REPLY_LENGTH
 
 
 def apply_reply_length_prompt(

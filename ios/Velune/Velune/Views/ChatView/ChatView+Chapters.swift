@@ -128,7 +128,7 @@ extension ChatView {
     }
 
     func chapterSessionStartPath(for chapterId: UUID) -> String {
-        "\(AppLanguage.current.apiLanguageCode)/soulers/\(soulerId.uuidString)/chapters/\(chapterId.uuidString)/start"
+        "api/v1/\(AppLanguage.current.apiLanguageCode)/soulers/\(soulerId.uuidString)/chapters/\(chapterId.uuidString)/start"
     }
 
     func normalizeChapterOptions(_ options: [String]) -> [String] {

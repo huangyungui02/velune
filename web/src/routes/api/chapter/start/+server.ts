@@ -37,7 +37,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const message = err instanceof Error ? err.message : 'Missing agent base url';
 		return json({ error: message }, { status: 500 });
 	}
-	const endpoint = `${baseUrl}/${lang}/soulers/${payload.soulerId}/chapters/${payload.chapterId}/start`;
+	const endpoint = `${baseUrl}/api/v1/${lang}/soulers/${payload.soulerId}/chapters/${payload.chapterId}/start`;
 
 	const upstream = await fetch(endpoint, {
 		method: 'POST',

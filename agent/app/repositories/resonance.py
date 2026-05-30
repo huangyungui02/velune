@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .database import execute
+from app.db.session import execute
 
 
 async def create_or_update_resonance(

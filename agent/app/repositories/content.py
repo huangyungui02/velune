@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from app.domain import Chapter, Souler
 
-from .database import fetch_one
+from app.db.session import fetch_one
 from .parsers import to_chapter, to_souler
 
 

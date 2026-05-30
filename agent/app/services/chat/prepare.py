@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from app.core import Lang, normalize_uuid
+from app.core import Lang
 from app.repositories import get_recent_messages, insert_message
-from app.services.chat.preferences import normalize_reply_length
+from app.services.chat.preferences import ReplyLength
 from app.services.chat.prompts import build_prompt_messages
 from app.services.chat.session import resolve_session
 from app.services.chat.types import PreparedChat
@@ -14,22 +14,13 @@ async def prepare_chat(
     *,
     user_id: str,
     lang: Lang,
-    body: dict[str, object],
+    session_id: str,
+    souler_id: str,
+    chapter_id: str,
+    content: str,
+    reply_length: ReplyLength,
     log_stage: Callable[[str], None],
 ) -> PreparedChat:
-    try:
-        session_id = normalize_uuid(str(body.get("sessionId", "")))
-        souler_id = normalize_uuid(str(body.get("soulerId", "")))
-        chapter_id = normalize_uuid(str(body.get("chapterId", "")))
-    except ValueError as error:
-        raise ValueError("Invalid UUID in request body") from error
-
-    content = str(body.get("content", "")).strip()
-    if not content:
-        raise ValueError("Missing content")
-
-    reply_length = normalize_reply_length(body.get("replyLength"))
-
     resolved = await resolve_session(
         user_id,
         session_id=session_id,
@@ -49,7 +40,13 @@ async def prepare_chat(
     )
     log_stage("user_message_inserted")
 
-    prompt_messages = build_prompt_messages(session, history, content, lang, reply_length)
+    prompt_messages = build_prompt_messages(
+        session,
+        history,
+        content,
+        lang,
+        reply_length,
+    )
     log_stage("prompt_ready")
 
     return PreparedChat(

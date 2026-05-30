@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .database import execute, execute_fetch_one, fetch_one, get_pool
+from app.db.session import execute, execute_fetch_one, fetch_one, get_pool
 
 
 def normalize_name_key(name: str) -> str:

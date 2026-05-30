@@ -3,7 +3,7 @@ from __future__ import annotations
 from app.domain import UnauthorizedError
 
 from .auth_client import get_supabase_auth
-from .database import await_repo
+from app.db.session import await_repo
 
 
 async def get_user_id_from_auth_header(authorization: str | None) -> str:
