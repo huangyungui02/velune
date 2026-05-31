@@ -8,6 +8,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk, SystemMessage, To
 from langgraph.config import get_stream_writer
 
 from app.core.llm import create_chat_model
+from app.soulers.services.resolution import resolve_or_enqueue_souler
 from app.starsea.messages import format_messages
 from app.starsea.tools import match_thought_voices
 
@@ -21,7 +22,7 @@ STARSEA_TEMPERATURE = 0.5
 STARSEA_TOOLS = [match_thought_voices]
 
 
-def starsea_node(state: State) -> dict[str, Any]:
+async def starsea_node(state: State) -> dict[str, Any]:
     lang = _state_lang(state)
     model = create_chat_model(
         model=STARSEA_MODEL,
@@ -31,15 +32,15 @@ def starsea_node(state: State) -> dict[str, Any]:
         SystemMessage(content=system_prompt(lang)),
         *state["messages"],
     ]
-    response = _stream_ai_message(model, messages)
+    response = await _stream_ai_message(model, messages)
     returned_messages: list[Any] = [response]
     final_response = response
     resonance_matches: list[Any] = []
 
     if isinstance(response, AIMessage) and response.tool_calls:
-        tool_messages, resonance_matches = _run_starsea_tools(response, state)
+        tool_messages, resonance_matches = await _run_starsea_tools(response, state)
         returned_messages.extend(tool_messages)
-        final_response = _stream_ai_message(model, [*messages, response, *tool_messages])
+        final_response = await _stream_ai_message(model, [*messages, response, *tool_messages])
         returned_messages.append(final_response)
 
     return {
@@ -49,22 +50,21 @@ def starsea_node(state: State) -> dict[str, Any]:
             "content": str(final_response.content).strip(),
             "resonance_matches": resonance_matches,
         },
-        "archive_events": _archive_events(final_response.content, resonance_matches),
+        "archive_events": _archive_events(
+            response.content if resonance_matches else None,
+            resonance_matches,
+            final_response.content,
+        ),
     }
 
 
-def _archive_events(content: Any, resonance_matches: list[Any]) -> list[dict[str, Any]]:
+def _archive_events(
+    before_matches_content: Any,
+    resonance_matches: list[Any],
+    after_matches_content: Any,
+) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
-    visible_reply = _strip_options_markup(str(content).strip())
-    if visible_reply:
-        events.append(
-            {
-                "type": "message",
-                "role": "assistant",
-                "content": visible_reply,
-                "payload": {},
-            }
-        )
+    _append_visible_message(events, before_matches_content)
 
     if resonance_matches:
         events.append(
@@ -79,7 +79,24 @@ def _archive_events(content: Any, resonance_matches: list[Any]) -> list[dict[str
             }
         )
 
+    _append_visible_message(events, after_matches_content)
+
     return events
+
+
+def _append_visible_message(events: list[dict[str, Any]], content: Any) -> None:
+    visible_reply = _strip_options_markup(str(content or "").strip())
+    if not visible_reply:
+        return
+
+    events.append(
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": visible_reply,
+            "payload": {},
+        }
+    )
 
 
 def _strip_options_markup(content: str) -> str:
@@ -91,7 +108,7 @@ def _strip_options_markup(content: str) -> str:
     ).strip()
 
 
-def _run_starsea_tools(
+async def _run_starsea_tools(
     response: AIMessage,
     state: State,
 ) -> tuple[list[ToolMessage], list[Any]]:
@@ -132,21 +149,50 @@ def _run_starsea_tools(
 
         if selected_tool.name == match_thought_voices.name:
             tool_message, previews = _prepare_match_tool_message(tool_message)
-            resonance_matches.extend(previews)
-            _stream_resonance_matches(previews)
+            resolved_previews = await _resolve_match_previews(previews, lang)
+            resonance_matches.extend(resolved_previews)
+            _stream_resonance_matches(resolved_previews)
 
         tool_messages.append(tool_message)
 
     return tool_messages, resonance_matches
 
 
+async def _resolve_match_previews(
+    previews: list[dict[str, str]],
+    lang: str,
+) -> list[dict[str, Any]]:
+    resolved_previews: list[dict[str, Any]] = []
+    for preview in previews:
+        name = preview["name"]
+        resolved: dict[str, Any]
+        try:
+            resolved = await resolve_or_enqueue_souler(name, lang)
+        except Exception:  # noqa: BLE001
+            resolved = {"status": "unavailable"}
+
+        enriched: dict[str, Any] = {
+            "name": name,
+            "line": preview["line"],
+            "resolutionStatus": resolved.get("status") or "unavailable",
+        }
+        if resolved.get("soulerId"):
+            enriched["soulerId"] = resolved["soulerId"]
+        if resolved.get("requestId"):
+            enriched["resolutionRequestId"] = resolved["requestId"]
+
+        resolved_previews.append(enriched)
+
+    return resolved_previews
+
+
 def _state_lang(state: State) -> str:
     return "zh" if state.get("metadata", {}).get("lang") == "zh" else "en"
 
 
-def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
+async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
     final_chunk: AIMessageChunk | None = None
-    for chunk in model.stream(messages):
+    async for chunk in model.astream(messages):
         if not isinstance(chunk, AIMessageChunk):
             continue
 

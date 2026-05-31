@@ -26,12 +26,18 @@ private struct StarSeaResonanceMatchRow: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        Button {
-            Task { await openSouler() }
-        } label: {
-            rowContent
+        Group {
+            if canOpen {
+                Button {
+                    Task { await openSouler() }
+                } label: {
+                    rowContent
+                }
+                .buttonStyle(.plain)
+            } else {
+                rowContent
+            }
         }
-        .buttonStyle(.plain)
         .navigationDestination(item: $destination) { destination in
             switch destination {
             case let .souler(id):
@@ -48,6 +54,10 @@ private struct StarSeaResonanceMatchRow: View {
         } message: {
             Text(errorMessage ?? String(localized: "matching.error.unknown"))
         }
+    }
+
+    private var canOpen: Bool {
+        match.soulerId != nil || match.resolutionRequestId != nil
     }
 
     private var rowContent: some View {
@@ -71,9 +81,11 @@ private struct StarSeaResonanceMatchRow: View {
 
             Spacer(minLength: 0)
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .light))
-                .foregroundStyle(UITheme.tertiaryText.opacity(0.6))
+            if canOpen {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .light))
+                    .foregroundStyle(UITheme.tertiaryText.opacity(0.6))
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)

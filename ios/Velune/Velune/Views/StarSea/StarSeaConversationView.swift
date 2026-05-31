@@ -5,13 +5,13 @@ struct StarSeaConversationView: View {
     let onLeave: () -> Void
 
     @State private var threadId: String?
-    @State private var messages: [StarSeaMessage] = []
+    @State private var timelineEvents: [StarSeaTimelineEvent] = []
     @State private var inputText = ""
     @State private var isStreaming = false
     @State private var isSettling = false
     @State private var errorMessage: String?
     @State private var hasStarted = false
-    @State private var resonanceMatches: [StarSeaStreamService.ResonanceMatch] = []
+    @State private var currentAssistantMessageId: UUID?
     @State private var shouldPauseAutoScrollDuringStreaming = false
     @State private var activeTask: Task<Void, Never>?
     @State private var isLeaveConfirmationPresented = false
@@ -112,8 +112,7 @@ struct StarSeaConversationView: View {
 
     private var messageList: some View {
         StarSeaConversationMessageList(
-            messages: messages,
-            resonanceMatches: resonanceMatches,
+            events: timelineEvents,
             isOptionsDisabled: isStreaming || isSettling || threadId == nil,
             isStreaming: isStreaming,
             shouldPauseAutoScrollDuringStreaming: $shouldPauseAutoScrollDuringStreaming,
@@ -252,7 +251,7 @@ struct StarSeaConversationView: View {
         let content = openingText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty else { return }
 
-        messages.append(StarSeaMessage(role: .user, content: content))
+        timelineEvents.append(.message(StarSeaMessage(role: .user, content: content)))
         await streamTurn(content: content)
     }
 
@@ -261,8 +260,7 @@ struct StarSeaConversationView: View {
         guard !content.isEmpty, threadId != nil, !isAwaitingSettlementConfirmation else { return }
 
         inputText = ""
-        resonanceMatches = []
-        messages.append(StarSeaMessage(role: .user, content: content))
+        timelineEvents.append(.message(StarSeaMessage(role: .user, content: content)))
         await streamTurn(content: content)
     }
 
@@ -277,8 +275,7 @@ struct StarSeaConversationView: View {
         isStreaming = true
         shouldPauseAutoScrollDuringStreaming = false
         errorMessage = nil
-        messages.append(StarSeaMessage(role: .assistant, content: ""))
-        let assistantId = messages.last?.id
+        currentAssistantMessageId = nil
 
         activeTask?.cancel()
         activeTask = Task {
@@ -288,12 +285,12 @@ struct StarSeaConversationView: View {
                     content: content
                 ) {
                     await MainActor.run {
-                        handle(event, assistantId: assistantId)
+                        handle(event)
                     }
                 }
             } catch {
                 await MainActor.run {
-                    showStreamFailure(error.localizedDescription, assistantId: assistantId)
+                    showStreamFailure(error.localizedDescription)
                 }
             }
 
@@ -349,20 +346,21 @@ struct StarSeaConversationView: View {
         isSettling = false
     }
 
-    private func handle(_ event: StarSeaStreamService.Event, assistantId: UUID?) {
+    private func handle(_ event: StarSeaStreamService.Event) {
         switch event {
         case let .ready(threadId):
             self.threadId = threadId
         case let .delta(delta):
-            append(delta: delta, to: assistantId)
+            appendAssistant(delta: delta)
         case let .resonanceMatch(matches):
-            resonanceMatches = matches
+            appendResonanceMatches(matches)
         case let .done(threadId):
             if let threadId {
                 self.threadId = threadId
             }
         case let .settled(glimmer):
-            removeEmptyAssistantMessage(id: assistantId)
+            removeEmptyAssistantMessage(id: currentAssistantMessageId)
+            currentAssistantMessageId = nil
             settlementText = glimmer.content
             isSettlementReady = true
             isAwaitingSettlementConfirmation = true
@@ -386,21 +384,40 @@ struct StarSeaConversationView: View {
         }
     }
 
-    private func append(delta: String, to messageId: UUID?) {
-        guard let messageId, let index = messages.firstIndex(where: { $0.id == messageId }) else { return }
-        messages[index].content += delta
+    private func appendAssistant(delta: String) {
+        if let messageId = currentAssistantMessageId,
+           let index = timelineEvents.firstMessageIndex(id: messageId) {
+            timelineEvents[index].appendMessageContent(delta)
+            return
+        }
+
+        let message = StarSeaMessage(role: .assistant, content: delta)
+        currentAssistantMessageId = message.id
+        timelineEvents.append(.message(message))
+    }
+
+    private func appendResonanceMatches(_ matches: [StarSeaStreamService.ResonanceMatch]) {
+        removeEmptyAssistantMessage(id: currentAssistantMessageId)
+        currentAssistantMessageId = nil
+
+        guard !matches.isEmpty else { return }
+        timelineEvents.append(.resonanceMatches(id: UUID(), matches: matches))
     }
 
     private func removeEmptyAssistantMessage(id: UUID?) {
         guard let id else { return }
-        messages.removeAll { $0.id == id && $0.content.isEmpty }
+        timelineEvents.removeAll { event in
+            guard case let .message(message) = event else { return false }
+            return message.id == id && message.content.isEmpty
+        }
     }
 
-    private func showStreamFailure(_ message: String, assistantId: UUID?) {
-        if let assistantId, let index = messages.firstIndex(where: { $0.id == assistantId }) {
-            messages[index].content = message
+    private func showStreamFailure(_ message: String) {
+        if let messageId = currentAssistantMessageId,
+           let index = timelineEvents.firstMessageIndex(id: messageId) {
+            timelineEvents[index].replaceMessageContent(message)
         } else {
-            messages.append(StarSeaMessage(role: .assistant, content: message))
+            timelineEvents.append(.message(StarSeaMessage(role: .assistant, content: message)))
         }
         errorMessage = message
     }
@@ -432,5 +449,28 @@ struct StarSeaConversationView: View {
             await Task.yield()
             onLeave()
         }
+    }
+}
+
+private extension [StarSeaTimelineEvent] {
+    func firstMessageIndex(id: UUID) -> Index? {
+        firstIndex { event in
+            guard case let .message(message) = event else { return false }
+            return message.id == id
+        }
+    }
+}
+
+private extension StarSeaTimelineEvent {
+    mutating func appendMessageContent(_ content: String) {
+        guard case var .message(message) = self else { return }
+        message.content += content
+        self = .message(message)
+    }
+
+    mutating func replaceMessageContent(_ content: String) {
+        guard case var .message(message) = self else { return }
+        message.content = content
+        self = .message(message)
     }
 }

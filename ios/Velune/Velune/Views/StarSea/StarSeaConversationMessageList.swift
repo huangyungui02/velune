@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct StarSeaConversationMessageList: View {
-    let messages: [StarSeaMessage]
-    let resonanceMatches: [StarSeaStreamService.ResonanceMatch]
+    let events: [StarSeaTimelineEvent]
     let isOptionsDisabled: Bool
     let isStreaming: Bool
     @Binding var shouldPauseAutoScrollDuringStreaming: Bool
@@ -14,11 +13,11 @@ struct StarSeaConversationMessageList: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    let lastMessageId = messages.last?.id
+                    let lastAssistantMessageId = events.lastAssistantMessage?.id
 
-                    ForEach(messages) { message in
-                        messageRow(message, lastMessageId: lastMessageId)
-                            .id(message.id)
+                    ForEach(events) { event in
+                        eventRow(event, lastAssistantMessageId: lastAssistantMessageId)
+                            .id(event.id)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -28,14 +27,11 @@ struct StarSeaConversationMessageList: View {
             .scrollDismissesKeyboard(.interactively)
             .contentShape(.rect)
             .onTapGesture(perform: onDismissComposerFocus)
-            .onChange(of: messages.count) { _, _ in
+            .onChange(of: events.count) { _, _ in
                 scrollToLatest(with: proxy, animated: true, reason: .countChanged)
             }
-            .onChange(of: messages.last?.content) { _, _ in
+            .onChange(of: events.lastMessageContent) { _, _ in
                 scrollToLatest(with: proxy, animated: false, reason: .contentChanged)
-            }
-            .onChange(of: resonanceMatches) { _, _ in
-                scrollToLatest(with: proxy, animated: true, reason: .resonanceChanged)
             }
             .simultaneousGesture(
                 DragGesture(minimumDistance: 0)
@@ -48,21 +44,27 @@ struct StarSeaConversationMessageList: View {
         }
     }
 
-    private func messageRow(_ message: StarSeaMessage, lastMessageId: UUID?) -> some View {
+    @ViewBuilder
+    private func eventRow(_ event: StarSeaTimelineEvent, lastAssistantMessageId: UUID?) -> some View {
+        switch event {
+        case let .message(message):
+            messageRow(message, lastAssistantMessageId: lastAssistantMessageId)
+        case let .resonanceMatches(_, matches):
+            StarSeaResonanceMatchesView(matches: matches)
+                .padding(.vertical, 2)
+        }
+    }
+
+    private func messageRow(_ message: StarSeaMessage, lastAssistantMessageId: UUID?) -> some View {
         VStack(spacing: 8) {
             let payload = payload(for: message)
-
-            if shouldShowResonanceMatches(for: message, lastMessageId: lastMessageId) {
-                StarSeaResonanceMatchesView(matches: resonanceMatches)
-                    .padding(.bottom, 2)
-            }
 
             ConversationMessageRow(
                 role: message.role == .user ? .user : .assistant,
                 content: payload.body
             )
 
-            if showsOptions, message.id == lastMessageId, !payload.options.isEmpty {
+            if showsOptions, message.id == lastAssistantMessageId, !payload.options.isEmpty {
                 ConversationOptionsView(
                     options: payload.options,
                     isDisabled: isOptionsDisabled,
@@ -81,16 +83,9 @@ struct StarSeaConversationMessageList: View {
         return ConversationOptionParser.parse(message.content)
     }
 
-    private func shouldShowResonanceMatches(for message: StarSeaMessage, lastMessageId: UUID?) -> Bool {
-        message.role == .assistant
-            && message.id == lastMessageId
-            && !resonanceMatches.isEmpty
-    }
-
     private enum ScrollTrigger {
         case countChanged
         case contentChanged
-        case resonanceChanged
     }
 
     private func scrollToLatest(with proxy: ScrollViewProxy, animated: Bool, reason: ScrollTrigger? = nil) {
@@ -98,7 +93,7 @@ struct StarSeaConversationMessageList: View {
             return
         }
 
-        guard let target = messages.last?.id else { return }
+        guard let target = events.last?.id else { return }
 
         if animated {
             withAnimation(.easeOut(duration: 0.2)) {
@@ -107,5 +102,15 @@ struct StarSeaConversationMessageList: View {
         } else {
             proxy.scrollTo(target, anchor: .bottom)
         }
+    }
+}
+
+private extension [StarSeaTimelineEvent] {
+    var lastAssistantMessage: StarSeaMessage? {
+        reversed().compactMap(\.message).first { $0.role == .assistant }
+    }
+
+    var lastMessageContent: String? {
+        reversed().compactMap(\.message).first?.content
     }
 }

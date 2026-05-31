@@ -6,6 +6,7 @@ struct GlimmerConversationHistoryView: View {
     @State private var messages: [GlimmerMessage] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var shouldPauseAutoScrollDuringStreaming = false
 
     var body: some View {
         ZStack {
@@ -20,15 +21,15 @@ struct GlimmerConversationHistoryView: View {
                     systemImage: "clock.arrow.circlepath"
                 )
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(messages) { message in
-                            GlimmerHistoryEventRow(message: message)
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 24)
-                }
+                StarSeaConversationMessageList(
+                    events: timelineEvents,
+                    isOptionsDisabled: true,
+                    isStreaming: false,
+                    shouldPauseAutoScrollDuringStreaming: $shouldPauseAutoScrollDuringStreaming,
+                    showsOptions: false,
+                    onDismissComposerFocus: {},
+                    onSelectOption: { _ in }
+                )
             }
         }
         .navigationTitle(Text("glimmerHistory.history.title"))
@@ -59,25 +60,26 @@ struct GlimmerConversationHistoryView: View {
             errorMessage = error.localizedDescription
         }
     }
-}
 
-private struct GlimmerHistoryEventRow: View {
-    let message: GlimmerMessage
-
-    var body: some View {
-        Group {
+    private var timelineEvents: [StarSeaTimelineEvent] {
+        messages.compactMap { message in
             if message.type == "message", let role = message.role {
-                ConversationMessageRow(
-                    role: role == "user" ? .user : .assistant,
-                    content: message.content ?? ""
+                return .message(
+                    StarSeaMessage(
+                        id: message.id,
+                        role: role == "user" ? .user : .assistant,
+                        content: message.content ?? ""
+                    )
                 )
-            } else if message.type == "tool_result", resonanceMatches.isEmpty == false {
-                StarSeaResonanceMatchesView(matches: resonanceMatches)
             }
+
+            let matches = resonanceMatches(for: message)
+            guard message.type == "tool_result", !matches.isEmpty else { return nil }
+            return .resonanceMatches(id: message.id, matches: matches)
         }
     }
 
-    private var resonanceMatches: [StarSeaStreamService.ResonanceMatch] {
+    private func resonanceMatches(for message: GlimmerMessage) -> [StarSeaStreamService.ResonanceMatch] {
         guard
             let object = message.payload.objectValue,
             object["tool"]?.stringValue == "resonance_match",
@@ -91,7 +93,27 @@ private struct GlimmerHistoryEventRow: View {
             let name = object["name"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let line = object["line"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             guard !name.isEmpty, !line.isEmpty else { return nil }
-            return StarSeaStreamService.ResonanceMatch(name: name, line: line)
+            return StarSeaStreamService.ResonanceMatch(
+                name: name,
+                line: line,
+                soulerId: uuidValue(for: ["soulerId", "souler_id"], in: object),
+                resolutionRequestId: uuidValue(
+                    for: ["resolutionRequestId", "resolution_request_id"],
+                    in: object
+                ),
+                resolutionStatus: stringValue(for: ["resolutionStatus", "resolution_status"], in: object)
+            )
         }
+    }
+
+    private func uuidValue(for keys: [String], in object: [String: JSONValue]) -> UUID? {
+        guard let value = stringValue(for: keys, in: object) else { return nil }
+        return UUID(uuidString: value)
+    }
+
+    private func stringValue(for keys: [String], in object: [String: JSONValue]) -> String? {
+        keys
+            .compactMap { object[$0]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { !$0.isEmpty }
     }
 }
