@@ -10,25 +10,25 @@ _TRAILING_COMMA_RE = re.compile(r",(\s*[\]}])")
 
 
 @dataclass
-class ChapterStreamState:
+class ChatStreamState:
     raw_chunks: list[str]
     output_chunks: list[str]
     pending: str
     phase: str
 
 
-def parse_chapter_response(raw_content: str) -> tuple[str, list[str]]:
+def parse_chat_response(raw_content: str) -> tuple[str, list[str]]:
     content = raw_content.strip()
     if not content:
-        raise ValueError("Empty chapter response")
+        raise ValueError("Empty chat response")
 
     open_index = content.find(JSON_OPEN)
     if open_index < 0:
-        raise ValueError("Missing chapter JSON block")
+        raise ValueError("Missing chat JSON block")
 
     close_index = content.find(JSON_CLOSE, open_index + len(JSON_OPEN))
     if close_index < 0:
-        raise ValueError("Missing chapter JSON end marker")
+        raise ValueError("Missing chat JSON end marker")
 
     content_body = content[:open_index].strip()
     if not content_body:
@@ -36,7 +36,7 @@ def parse_chapter_response(raw_content: str) -> tuple[str, list[str]]:
 
     json_block = content[open_index + len(JSON_OPEN) : close_index].strip()
     if not json_block:
-        raise ValueError("Empty chapter JSON block")
+        raise ValueError("Empty chat JSON block")
 
     try:
         options_payload: object = json.loads(json_block)
@@ -45,22 +45,22 @@ def parse_chapter_response(raw_content: str) -> tuple[str, list[str]]:
         options_payload = json.loads(normalized_json_block)
 
     if not isinstance(options_payload, dict):
-        raise ValueError("Invalid chapter JSON payload")
+        raise ValueError("Invalid chat JSON payload")
 
     options_raw = options_payload.get("options")
     if not isinstance(options_raw, list):
-        raise ValueError("Chapter options must be a list")
+        raise ValueError("Chat options must be a list")
 
     options = [
         " ".join(str(item).strip().split()) for item in options_raw if str(item).strip()
     ]
     if len(options) != 4:
-        raise ValueError("Chapter options must contain exactly 4 items")
+        raise ValueError("Chat options must contain exactly 4 items")
 
     return content_body, options
 
 
-def consume_chapter_stream_delta(state: ChapterStreamState, delta: str) -> str:
+def consume_chat_stream_delta(state: ChatStreamState, delta: str) -> str:
     state.raw_chunks.append(delta)
     state.pending += delta
     visible_parts: list[str] = []
@@ -94,6 +94,6 @@ def consume_chapter_stream_delta(state: ChapterStreamState, delta: str) -> str:
                 visible_parts.append(visible)
             break
 
-        raise ValueError(f"Unknown chapter stream phase: {state.phase}")
+        raise ValueError(f"Unknown chat stream phase: {state.phase}")
 
     return "".join(visible_parts)

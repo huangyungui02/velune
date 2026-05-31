@@ -11,10 +11,10 @@ from app.core.errors import error_log_payload, error_message
 from app.core.sse import sse_event
 from app.core.llm import DEFAULT_MODEL, stream_text
 
-from app.chat.chapter_response import (
-    ChapterStreamState,
-    consume_chapter_stream_delta,
-    parse_chapter_response,
+from app.chat.chat_response import (
+    ChatStreamState,
+    consume_chat_stream_delta,
+    parse_chat_response,
 )
 from app.chat.services.types import (
     PreparedChat,
@@ -35,48 +35,34 @@ def stream_events(
             yield sse_event({"type": "ready", "sessionId": prepared.session["id"]})
             log_stage("stream_opened")
 
-            chapter_state: ChapterStreamState | None = None
-            if prepared.session.get("chapter"):
-                chapter_state = ChapterStreamState(
-                    raw_chunks=[],
-                    output_chunks=[],
-                    pending="",
-                    phase="streaming_content",
-                )
-
-            plain_chunks: list[str] = []
+            option_state = ChatStreamState(
+                raw_chunks=[],
+                output_chunks=[],
+                pending="",
+                phase="streaming_content",
+            )
             async for delta in stream_text(
                 prepared.prompt_messages,
                 model=DEFAULT_MODEL,
                 temperature=settings.CHAT_TEMPERATURE,
             ):
-                if chapter_state is None:
-                    plain_chunks.append(delta)
-                    yield sse_event({"type": "delta", "delta": delta})
-                    continue
-
-                visible_delta = consume_chapter_stream_delta(chapter_state, delta)
+                visible_delta = consume_chat_stream_delta(option_state, delta)
                 if visible_delta:
                     yield sse_event({"type": "delta", "delta": visible_delta})
 
-            if chapter_state is None:
-                final_content = "".join(plain_chunks).strip()
-                storage_content = final_content
-                options: list[str] = []
-            else:
-                storage_content = "".join(chapter_state.raw_chunks).strip()
-                final_content, options = parse_chapter_response(storage_content)
-                streamed_content = "".join(chapter_state.output_chunks)
+            storage_content = "".join(option_state.raw_chunks).strip()
+            final_content, options = parse_chat_response(storage_content)
+            streamed_content = "".join(option_state.output_chunks)
 
-                if final_content.startswith(streamed_content):
-                    tail_delta = final_content[len(streamed_content) :]
-                    if tail_delta:
-                        yield sse_event({"type": "delta", "delta": tail_delta})
-                else:
-                    logger.warning(
-                        "Chapter stream output mismatch: session_id=%s",
-                        prepared.session["id"],
-                    )
+            if final_content.startswith(streamed_content):
+                tail_delta = final_content[len(streamed_content) :]
+                if tail_delta:
+                    yield sse_event({"type": "delta", "delta": tail_delta})
+            else:
+                logger.warning(
+                    "Chat stream output mismatch: session_id=%s",
+                    prepared.session["id"],
+                )
 
             if not final_content or not storage_content:
                 raise ValueError("Empty assistant response")

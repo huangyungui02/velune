@@ -7,7 +7,7 @@ from app.core.common import Lang
 from app.core.config import get_settings
 from app.core.errors import error_log_payload
 from app.core.llm import DEFAULT_MODEL, complete_text
-from app.chat.chapter_response import parse_chapter_response
+from app.chat.chat_response import parse_chat_response
 from app.chat.preferences import (
     DEFAULT_REPLY_LENGTH,
     ReplyLength,
@@ -63,7 +63,7 @@ async def start_chapter(
             model=DEFAULT_MODEL,
             temperature=settings.CHAT_TEMPERATURE,
         )
-        _, options = parse_chapter_response(opening_raw)
+        _, options = parse_chat_response(opening_raw)
         opening_content = opening_raw.strip()
         if not opening_content:
             raise ValueError("Empty chapter opening response")

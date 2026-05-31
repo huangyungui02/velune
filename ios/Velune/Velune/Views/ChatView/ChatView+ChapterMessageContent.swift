@@ -1,7 +1,7 @@
 import Foundation
 
 extension ChatView {
-    var inlineChapterOptions: [String] {
+    var inlineConversationOptions: [String] {
         guard let lastMessage = messages.last, lastMessage.role == .assistant else {
             return []
         }
@@ -14,14 +14,14 @@ extension ChatView {
             return message.content
         }
 
-        return chapterMessageBody(from: message.content)
+        return conversationMessageBody(from: message.content)
     }
 
-    func chapterMessageBody(from content: String) -> String {
+    func conversationMessageBody(from content: String) -> String {
         ConversationOptionParser.parse(content).body
     }
 
-    func chapterMessageStorageContent(body: String, options: [String]) -> String {
+    func conversationMessageStorageContent(body: String, options: [String]) -> String {
         ConversationOptionParser.storageContent(body: body, options: options)
     }
 }

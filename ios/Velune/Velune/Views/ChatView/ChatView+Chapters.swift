@@ -44,7 +44,7 @@ extension ChatView {
             )
             let assistantCreatedAt = parseServerDate(payload.assistantMessage.createdAt) ?? .now
             let fullAssistantContent = payload.assistantMessage.content
-            let openingBody = chapterMessageBody(from: fullAssistantContent)
+            let openingBody = conversationMessageBody(from: fullAssistantContent)
 
             var startedSession = ChatSession(
                 id: payload.sessionId,

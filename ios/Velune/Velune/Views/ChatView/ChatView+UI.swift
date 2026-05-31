@@ -26,7 +26,7 @@ extension ChatView {
             ScrollView {
                 LazyVStack(spacing: 12) {
                     let lastMessageId = messages.last?.id
-                    let inlineOptions = inlineChapterOptions
+                    let inlineOptions = inlineConversationOptions
 
                     ForEach(messages) { message in
                         VStack(spacing: 8) {

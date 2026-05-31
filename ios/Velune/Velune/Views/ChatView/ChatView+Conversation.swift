@@ -61,8 +61,8 @@ extension ChatView {
                     }
                 case let .options(options):
                     if let index = messages.firstIndex(where: { $0.id == assistantLocalId }) {
-                        let currentBody = chapterMessageBody(from: messages[index].content)
-                        messages[index].content = chapterMessageStorageContent(
+                        let currentBody = conversationMessageBody(from: messages[index].content)
+                        messages[index].content = conversationMessageStorageContent(
                             body: currentBody,
                             options: options
                         )
