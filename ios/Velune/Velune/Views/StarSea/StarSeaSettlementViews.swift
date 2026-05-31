@@ -32,38 +32,12 @@ struct StarSeaSettlementSheet: View {
 
     private var content: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 18) {
-                    if text.isEmpty && isGenerating {
-                        HStack(spacing: 10) {
-                            ProgressView()
-                                .tint(UITheme.primaryText)
-                            Text("starsea.settlement.generating")
-                                .font(.subheadline)
-                                .foregroundStyle(UITheme.secondaryText)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        Text(text)
-                            .font(.body)
-                            .lineSpacing(7)
-                            .foregroundStyle(UITheme.primaryText)
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .animation(.easeOut(duration: 0.16), value: text)
-                    }
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.white.opacity(0.055), in: .rect(cornerRadius: 24))
-                .glassEffect(in: .rect(cornerRadius: 24))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(.white.opacity(0.10), lineWidth: 0.5)
-                }
-            }
+            GlimmerCardView(
+                content: text,
+                isGenerating: isGenerating
+            )
             .padding(.horizontal, 18)
-            .padding(.top, 14)
+            .padding(.top, 22)
             .padding(.bottom, 28)
         }
     }
