@@ -1,10 +1,10 @@
 # 代码风格
 
-原生，干净，简洁，优雅，像诗一样。
+原生，干净，简洁。
 
 # UI风格
 
-简约，优雅，高级，界面干净整洁。
+简约，优雅，高级。
 
 # 文档查询
 
@@ -16,4 +16,4 @@
 - Web端: bun, sveltekit, svelte5, tailwindcss, shadcn-svelte(https://www.shadcn-svelte.com/llms.txt)
 - 产品官网：astro5
 - 数据库：supabase
-- Agent: python3.14, fastapi, langchain/langgraph
+- Agent: python3.14, fastapi, langchain/langgraph, taskiq
