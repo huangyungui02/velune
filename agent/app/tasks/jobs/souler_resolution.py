@@ -4,7 +4,7 @@ import logging
 
 from app.db.session import database_manager
 from app.soulers.repositories.resolution import (
-    add_souler_alias,
+    add_souler_aliases,
     complete_resolution,
     create_souler_with_profile,
     fail_resolution,
@@ -33,7 +33,7 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
         by_canonical = await find_souler_by_canonical_name(canonical_name, lang)
         if by_canonical is not None:
             souler_id = str(by_canonical["id"])
-            await add_souler_alias(souler_id, name)
+            await add_souler_aliases(souler_id, [name, canonical_name])
             await complete_resolution(
                 request_id,
                 souler_id=souler_id,
@@ -47,7 +47,7 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
             by_wiki = await find_souler_by_wiki_id(wiki_id, lang)
             if by_wiki is not None:
                 souler_id = str(by_wiki["id"])
-                await add_souler_alias(souler_id, name)
+                await add_souler_aliases(souler_id, [name, canonical_name])
                 await complete_resolution(
                     request_id,
                     souler_id=souler_id,

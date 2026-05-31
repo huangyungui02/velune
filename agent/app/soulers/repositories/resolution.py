@@ -9,41 +9,22 @@ def normalize_name_key(name: str) -> str:
     return " ".join(name.strip().lower().split())
 
 
-async def find_souler_by_name_or_alias(name: str, lang: str) -> dict[str, Any] | None:
+async def find_souler_by_alias(alias: str, lang: str) -> dict[str, Any] | None:
     return await fetch_one(
         """
         SELECT id, name, canonical_name, wiki_id
-        FROM (
-            SELECT s.id, s.name, s.canonical_name, s.wiki_id, 0 AS rank
-            FROM public.soulers s
-            WHERE s.lang = %(lang)s
-                AND lower(trim(s.name)) = %(name_key)s
-            UNION ALL
-            SELECT s.id, s.name, s.canonical_name, s.wiki_id, 1 AS rank
-            FROM public.souler_aliases a
-            INNER JOIN public.soulers s ON s.id = a.souler_id
-            WHERE s.lang = %(lang)s
-                AND lower(trim(a.alias)) = %(name_key)s
-        ) candidates
-        ORDER BY rank
+        FROM public.souler_aliases a
+        INNER JOIN public.soulers s ON s.id = a.souler_id
+        WHERE s.lang = %(lang)s
+            AND lower(trim(a.alias)) = %(alias_key)s
         LIMIT 1
         """,
-        {"name_key": normalize_name_key(name), "lang": lang},
+        {"alias_key": normalize_name_key(alias), "lang": lang},
     )
 
 
 async def find_souler_by_canonical_name(canonical_name: str, lang: str) -> dict[str, Any] | None:
-    return await fetch_one(
-        """
-        SELECT id, name, canonical_name, wiki_id
-        FROM public.soulers
-        WHERE lang = %(lang)s
-            AND canonical_name IS NOT NULL
-            AND lower(trim(canonical_name)) = %(canonical_key)s
-        LIMIT 1
-        """,
-        {"canonical_key": normalize_name_key(canonical_name), "lang": lang},
-    )
+    return await find_souler_by_alias(canonical_name, lang)
 
 
 async def find_souler_by_wiki_id(wiki_id: str, lang: str) -> dict[str, Any] | None:
@@ -71,6 +52,11 @@ async def add_souler_alias(souler_id: str, alias: str) -> None:
         """,
         {"souler_id": souler_id, "alias": cleaned},
     )
+
+
+async def add_souler_aliases(souler_id: str, aliases: list[str | None]) -> None:
+    for alias in dict.fromkeys((item or "").strip() for item in aliases):
+        await add_souler_alias(souler_id, alias)
 
 
 async def upsert_resolution_request(name: str, lang: str) -> dict[str, Any]:
@@ -223,14 +209,7 @@ async def create_souler_with_profile(
                         raise RuntimeError("Failed to resolve existing souler after wiki_id conflict")
 
                     souler_id = str(souler["id"])
-                    await cursor.execute(
-                        """
-                        INSERT INTO public.souler_aliases (souler_id, alias)
-                        VALUES (CAST(%(souler_id)s AS uuid), %(alias)s)
-                        ON CONFLICT (souler_id, alias) DO NOTHING
-                        """,
-                        {"souler_id": souler_id, "alias": cleaned_name},
-                    )
+                    await _insert_souler_aliases(cursor, souler_id, [cleaned_name, canonical_name])
                     await cursor.execute(
                         """
                         UPDATE public.souler_resolution_requests
@@ -258,14 +237,7 @@ async def create_souler_with_profile(
                     }
 
                 souler_id = str(souler["id"])
-                await cursor.execute(
-                    """
-                    INSERT INTO public.souler_aliases (souler_id, alias)
-                    VALUES (CAST(%(souler_id)s AS uuid), %(alias)s)
-                    ON CONFLICT (souler_id, alias) DO NOTHING
-                    """,
-                    {"souler_id": souler_id, "alias": cleaned_name},
-                )
+                await _insert_souler_aliases(cursor, souler_id, [cleaned_name, canonical_name])
 
                 keyword_ids: dict[str, str] = {}
                 for item in keywords:
@@ -371,3 +343,17 @@ async def create_souler_with_profile(
                     "canonical_name": souler["canonical_name"],
                     "wiki_id": souler["wiki_id"],
                 }
+
+
+async def _insert_souler_aliases(cursor: Any, souler_id: str, aliases: list[str | None]) -> None:
+    for alias in dict.fromkeys((item or "").strip() for item in aliases):
+        if not alias:
+            continue
+        await cursor.execute(
+            """
+            INSERT INTO public.souler_aliases (souler_id, alias)
+            VALUES (CAST(%(souler_id)s AS uuid), %(alias)s)
+            ON CONFLICT (souler_id, alias) DO NOTHING
+            """,
+            {"souler_id": souler_id, "alias": alias},
+        )

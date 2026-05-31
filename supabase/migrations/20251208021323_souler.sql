@@ -83,6 +83,28 @@ CREATE TRIGGER handle_souler_insert_create_status
     FOR EACH ROW
     EXECUTE FUNCTION create_souler_status();
 
+CREATE OR REPLACE FUNCTION sync_souler_name_alias()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO souler_aliases (souler_id, alias)
+    VALUES (NEW.id, trim(NEW.name))
+    ON CONFLICT (souler_id, alias) DO NOTHING;
+
+    IF NEW.canonical_name IS NOT NULL AND trim(NEW.canonical_name) <> '' THEN
+        INSERT INTO souler_aliases (souler_id, alias)
+        VALUES (NEW.id, trim(NEW.canonical_name))
+        ON CONFLICT (souler_id, alias) DO NOTHING;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SET search_path = public;
+
+CREATE TRIGGER handle_souler_insert_sync_name_alias
+    AFTER INSERT ON soulers
+    FOR EACH ROW
+    EXECUTE FUNCTION sync_souler_name_alias();
+
 CREATE TRIGGER handle_soulers_updated_at
     BEFORE UPDATE ON soulers
     FOR EACH ROW

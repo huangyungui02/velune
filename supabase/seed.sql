@@ -21,7 +21,17 @@ INSERT INTO public.souler_avatars (wiki_id, image_path, created_at, updated_at) 
 INSERT INTO public.souler_avatars (wiki_id, image_path, created_at, updated_at) VALUES ('Q9358', 'soulers/Q9358.png', '2026-04-24T09:10:33.943237+00:00', '2026-04-24T09:10:33.943237+00:00') ON CONFLICT (wiki_id) DO UPDATE SET image_path = EXCLUDED.image_path, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
 INSERT INTO public.souler_avatars (wiki_id, image_path, created_at, updated_at) VALUES ('Q9364', 'soulers/Q9364.png', '2026-04-28T08:48:21.657089+00:00', '2026-04-28T08:48:21.657089+00:00') ON CONFLICT (wiki_id) DO UPDATE SET image_path = EXCLUDED.image_path, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;
 
--- souler_aliases: 0 rows
+-- souler_aliases: 10 rows
+INSERT INTO public.souler_aliases (souler_id, alias) VALUES ('d91e3cb8-7a8e-48ff-aa48-112be199d580', '加缪') ON CONFLICT (souler_id, alias) DO NOTHING;
+INSERT INTO public.souler_aliases (souler_id, alias) VALUES ('d91e3cb8-7a8e-48ff-aa48-112be199d580', '阿尔贝·加缪') ON CONFLICT (souler_id, alias) DO NOTHING;
+INSERT INTO public.souler_aliases (souler_id, alias) VALUES ('3dfa0019-6de0-42d1-a01a-0853fd6d679b', '卡夫卡') ON CONFLICT (souler_id, alias) DO NOTHING;
+INSERT INTO public.souler_aliases (souler_id, alias) VALUES ('3dfa0019-6de0-42d1-a01a-0853fd6d679b', '弗兰兹·卡夫卡') ON CONFLICT (souler_id, alias) DO NOTHING;
+INSERT INTO public.souler_aliases (souler_id, alias) VALUES ('f9c7c63f-0c0a-4287-b6a2-63040078c2de', '尼采') ON CONFLICT (souler_id, alias) DO NOTHING;
+INSERT INTO public.souler_aliases (souler_id, alias) VALUES ('f9c7c63f-0c0a-4287-b6a2-63040078c2de', '弗里德里希·尼采') ON CONFLICT (souler_id, alias) DO NOTHING;
+INSERT INTO public.souler_aliases (souler_id, alias) VALUES ('a0ea4fec-1db5-48c3-8b3e-e4f0180dccda', '海德格尔') ON CONFLICT (souler_id, alias) DO NOTHING;
+INSERT INTO public.souler_aliases (souler_id, alias) VALUES ('a0ea4fec-1db5-48c3-8b3e-e4f0180dccda', '马丁·海德格尔') ON CONFLICT (souler_id, alias) DO NOTHING;
+INSERT INTO public.souler_aliases (souler_id, alias) VALUES ('bc6e92a2-2d0e-4313-a121-7ed9220d0bce', '萨特') ON CONFLICT (souler_id, alias) DO NOTHING;
+INSERT INTO public.souler_aliases (souler_id, alias) VALUES ('bc6e92a2-2d0e-4313-a121-7ed9220d0bce', '让-保罗·萨特') ON CONFLICT (souler_id, alias) DO NOTHING;
 
 -- souler_status: 5 rows
 INSERT INTO public.souler_status (souler_id, bio_status, chapters_status, bio_error, chapters_error, created_at, updated_at) VALUES ('3dfa0019-6de0-42d1-a01a-0853fd6d679b', 'complete', 'complete', NULL, NULL, '2026-04-24T10:21:38.65411+00:00', '2026-05-21T11:27:29.426969+00:00') ON CONFLICT (souler_id) DO UPDATE SET bio_status = EXCLUDED.bio_status, chapters_status = EXCLUDED.chapters_status, bio_error = EXCLUDED.bio_error, chapters_error = EXCLUDED.chapters_error, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at;

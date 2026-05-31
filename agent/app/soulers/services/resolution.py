@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.soulers.repositories.resolution import (
-    find_souler_by_name_or_alias,
+    find_souler_by_alias,
     get_resolution_request,
     set_resolution_task_id,
     upsert_resolution_request,
@@ -22,7 +22,7 @@ async def resolve_or_enqueue_souler(name: str, lang: str | None = None) -> dict[
         return {"status": "failed", "error": "name is empty"}
 
     normalized_lang = normalize_resolution_lang(lang)
-    existing = await find_souler_by_name_or_alias(cleaned, normalized_lang)
+    existing = await find_souler_by_alias(cleaned, normalized_lang)
     if existing is not None:
         return {
             "status": "existing",
