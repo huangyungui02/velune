@@ -268,8 +268,7 @@
 					<h3 class="text-lg text-destructive">删除人物</h3>
 					<p class="text-sm text-muted-foreground">
 						删除后会级联清理
-						resonances、chapters、sessions、messages、souler_status、souler_keyword、souler_aliases
-						等关联数据。
+						resonances、chapters、sessions、messages、souler_keyword、souler_aliases 等关联数据。
 					</p>
 					<form
 						method="POST"

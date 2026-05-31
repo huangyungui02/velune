@@ -1,7 +1,0 @@
-{
-  "lock": false,
-  "imports": {
-    "@openai/openai": "jsr:@openai/openai",
-    "@supabase/supabase-js": "jsr:@supabase/supabase-js"
-  }
-}

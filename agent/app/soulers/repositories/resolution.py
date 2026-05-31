@@ -299,26 +299,6 @@ async def create_souler_with_profile(
 
                 await cursor.execute(
                     """
-                    INSERT INTO public.souler_status (
-                        souler_id,
-                        bio_status,
-                        bio_error,
-                        chapters_status,
-                        chapters_error
-                    )
-                    VALUES (CAST(%(souler_id)s AS uuid), 'complete', NULL, 'complete', NULL)
-                    ON CONFLICT (souler_id)
-                    DO UPDATE SET
-                        bio_status = EXCLUDED.bio_status,
-                        bio_error = EXCLUDED.bio_error,
-                        chapters_status = EXCLUDED.chapters_status,
-                        chapters_error = EXCLUDED.chapters_error
-                    """,
-                    {"souler_id": souler_id},
-                )
-
-                await cursor.execute(
-                    """
                     UPDATE public.souler_resolution_requests
                     SET
                         status = 'complete',
