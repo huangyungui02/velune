@@ -29,9 +29,6 @@ class Settings(BaseSettings):
     MODEL_M_TEMPERATURE: float = 0.5
     MODEL_L_TEMPERATURE: float = 0.75
     REPO_TIMEOUT_SECONDS: float = 12.0
-    LLM_FIRST_TOKEN_TIMEOUT_SECONDS: float = 25.0
-    LLM_STREAM_IDLE_TIMEOUT_SECONDS: float = 20.0
-    POST_STREAM_TIMEOUT_SECONDS: float = 10.0
     CHAT_HISTORY_LIMIT: int = 30
 
 

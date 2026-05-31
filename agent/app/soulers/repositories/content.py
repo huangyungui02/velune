@@ -1,0 +1,37 @@
+from __future__ import annotations
+
+from typing import Any
+from app.db.session import fetch_one
+from app.core.entities import Souler
+
+
+def to_souler(raw: Any) -> Souler:
+    souler = raw[0] if isinstance(raw, list) and raw else raw
+    if not isinstance(souler, dict):
+        raise ValueError("Souler not found")
+
+    souler_id = str(souler.get("id", "")).strip()
+    name = str(souler.get("name", "")).strip()
+    if not souler_id or not name:
+        raise ValueError("Souler not found")
+
+    bio = souler.get("bio")
+    return {
+        "id": souler_id,
+        "name": name,
+        "bio": str(bio) if isinstance(bio, str) else None,
+    }
+
+
+async def get_souler_by_id(souler_id: str) -> Souler:
+    row = await fetch_one(
+        """
+        SELECT id, name, bio
+        FROM public.soulers
+        WHERE id = CAST(%(souler_id)s AS uuid)
+        """,
+        {"souler_id": souler_id},
+    )
+    if not row:
+        raise ValueError("Souler not found")
+    return to_souler(row)

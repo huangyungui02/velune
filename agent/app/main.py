@@ -7,9 +7,9 @@ from fastapi import FastAPI
 from app.api.router import router
 from app.core.config import get_settings
 from app.db.session import close_database, open_database
-from app.repositories.auth_client import init_supabase_auth
-from app.services.starsea.checkpoint import close_starsea_checkpoint, init_starsea_checkpoint
-from app.services.starsea.graph import reset_graph
+from app.auth.client import init_supabase_auth
+from app.seastar.checkpoint import close_starsea_checkpoint, init_starsea_checkpoint
+from app.seastar.graph import reset_graph
 from app.tasks import broker
 
 settings = get_settings()

@@ -41,7 +41,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       SUPABASE_URL: ${DOCKER_SUPABASE_URL:-http://host.docker.internal:54321}
       TASKIQ_QUEUE_NAME: souler_resolution
-    command: ["taskiq", "worker", "app.tasks.broker:broker", "app.tasks.souler_resolution"]
+    command: ["taskiq", "worker", "app.tasks.broker:broker", "app.tasks.jobs.souler_resolution"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
