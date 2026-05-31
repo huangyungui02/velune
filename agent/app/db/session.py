@@ -11,17 +11,38 @@ from psycopg_pool import AsyncConnectionPool
 
 from app.core.config import get_settings
 
-settings = get_settings()
-
 T = TypeVar("T")
 
-_pool: AsyncConnectionPool | None = None
 
+class DatabaseManager:
+    def __init__(self) -> None:
+        self._pool: AsyncConnectionPool | None = None
 
-def init_database() -> AsyncConnectionPool:
-    global _pool
-    if _pool is None:
-        _pool = AsyncConnectionPool(
+    async def open(self) -> AsyncConnectionPool:
+        pool = self._ensure_pool()
+        await pool.open(wait=True)
+        return pool
+
+    async def close(self) -> None:
+        if self._pool is None:
+            return
+
+        await self._pool.close()
+        self._pool = None
+
+    def get_pool(self) -> AsyncConnectionPool:
+        if self._pool is None:
+            raise RuntimeError("Database pool not initialized; app lifespan did not run")
+        return self._pool
+
+    def _ensure_pool(self) -> AsyncConnectionPool:
+        if self._pool is None:
+            self._pool = self._create_pool()
+        return self._pool
+
+    def _create_pool(self) -> AsyncConnectionPool:
+        settings = get_settings()
+        return AsyncConnectionPool(
             settings.DATABASE_URL,
             kwargs={
                 "autocommit": True,
@@ -32,28 +53,9 @@ def init_database() -> AsyncConnectionPool:
             timeout=settings.REPO_TIMEOUT_SECONDS,
             open=False,
         )
-    return _pool
 
 
-async def close_database() -> None:
-    global _pool
-    if _pool is None:
-        return
-
-    await _pool.close()
-    _pool = None
-
-
-async def open_database() -> AsyncConnectionPool:
-    pool = init_database()
-    await pool.open(wait=True)
-    return pool
-
-
-def get_pool() -> AsyncConnectionPool:
-    if _pool is None:
-        raise RuntimeError("Database pool not initialized; app lifespan did not run")
-    return _pool
+database_manager = DatabaseManager()
 
 
 def _json_ready(value: Any) -> Any:
@@ -77,6 +79,7 @@ async def await_repo(
     *,
     timeout: float | None = None,
 ) -> T:
+    settings = get_settings()
     try:
         return await asyncio.wait_for(
             awaitable,
@@ -93,7 +96,7 @@ async def fetch_one(
     timeout: float | None = None,
 ) -> dict[str, Any] | None:
     async def run() -> dict[str, Any] | None:
-        async with get_pool().connection() as connection:
+        async with database_manager.get_pool().connection() as connection:
             async with connection.cursor() as cursor:
                 await cursor.execute(sql, params or {})
                 row = await cursor.fetchone()
@@ -109,7 +112,7 @@ async def fetch_all(
     timeout: float | None = None,
 ) -> list[dict[str, Any]]:
     async def run() -> list[dict[str, Any]]:
-        async with get_pool().connection() as connection:
+        async with database_manager.get_pool().connection() as connection:
             async with connection.cursor() as cursor:
                 await cursor.execute(sql, params or {})
                 rows = await cursor.fetchall()
@@ -125,7 +128,7 @@ async def execute(
     timeout: float | None = None,
 ) -> None:
     async def run() -> None:
-        async with get_pool().connection() as connection:
+        async with database_manager.get_pool().connection() as connection:
             async with connection.cursor() as cursor:
                 await cursor.execute(sql, params or {})
 
@@ -139,7 +142,7 @@ async def execute_fetch_one(
     timeout: float | None = None,
 ) -> dict[str, Any] | None:
     async def run() -> dict[str, Any] | None:
-        async with get_pool().connection() as connection:
+        async with database_manager.get_pool().connection() as connection:
             async with connection.cursor() as cursor:
                 await cursor.execute(sql, params or {})
                 row = await cursor.fetchone()

@@ -4,7 +4,7 @@ from functools import lru_cache
 
 from langgraph.graph import END, START, StateGraph
 
-from app.starsea.checkpoint import get_starsea_checkpointer
+from app.starsea.checkpoint import checkpoint_manager
 from app.starsea.nodes import (
     collect_node,
     glimmer_node,
@@ -25,7 +25,7 @@ def build_graph():
     graph.add_edge("collect", "glimmer")
     graph.add_edge("glimmer", END)
 
-    return graph.compile(checkpointer=get_starsea_checkpointer())
+    return graph.compile(checkpointer=checkpoint_manager.get())
 
 
 def reset_graph() -> None:

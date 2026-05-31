@@ -1,48 +1,60 @@
 from __future__ import annotations
 
-from contextlib import AbstractAsyncContextManager
+from contextlib import AbstractAsyncContextManager, AsyncExitStack
 
-from langgraph.checkpoint.redis.aio import AsyncRedisSaver
+from langgraph.checkpoint.redis.ashallow import AsyncShallowRedisSaver
 
 from app.core.config import get_settings
 
 
-_checkpointer_context: AbstractAsyncContextManager[AsyncRedisSaver] | None = None
-_checkpointer: AsyncRedisSaver | None = None
+class StarseaCheckpointManager:
+    def __init__(self) -> None:
+        self._stack: AsyncExitStack | None = None
+        self._checkpointer: AsyncShallowRedisSaver | None = None
 
+    async def startup(self) -> AsyncShallowRedisSaver:
+        if self._checkpointer is None:
+            stack = AsyncExitStack()
+            try:
+                checkpointer = await stack.enter_async_context(self._create_checkpointer())
+                await checkpointer.asetup()
+            except Exception:
+                await stack.aclose()
+                raise
 
-async def init_starsea_checkpoint() -> AsyncRedisSaver:
-    global _checkpointer, _checkpointer_context
-    if _checkpointer is None:
+            self._stack = stack
+            self._checkpointer = checkpointer
+        return self._checkpointer
+
+    def get(self) -> AsyncShallowRedisSaver:
+        if self._checkpointer is None:
+            raise RuntimeError("Starsea checkpoint not initialized; app lifespan did not run")
+        return self._checkpointer
+
+    async def close(self) -> None:
+        try:
+            if self._stack is not None:
+                await self._stack.aclose()
+        finally:
+            self.reset()
+
+    def reset(self) -> None:
+        self._checkpointer = None
+        self._stack = None
+
+    def _create_checkpointer(self) -> AbstractAsyncContextManager[AsyncShallowRedisSaver]:
         settings = get_settings()
-        _checkpointer_context = AsyncRedisSaver.from_conn_string(
-            settings.REDIS_URL,
-            ttl={
-                "default_ttl": settings.LANGGRAPH_CHECKPOINT_TTL_MINUTES,
-                "refresh_on_read": True,
-            },
-            checkpoint_prefix="velune:starsea:checkpoint",
-            checkpoint_write_prefix="velune:starsea:checkpoint_write",
+        return (
+            AsyncShallowRedisSaver.from_conn_string(
+                settings.REDIS_URL,
+                ttl={
+                    "default_ttl": settings.LANGGRAPH_CHECKPOINT_TTL_MINUTES,
+                    "refresh_on_read": True,
+                },
+                checkpoint_prefix="velune:starsea:checkpoint",
+                checkpoint_write_prefix="velune:starsea:checkpoint_write",
+            )
         )
-        _checkpointer = await _checkpointer_context.__aenter__()
-    return _checkpointer
 
 
-def get_starsea_checkpointer() -> AsyncRedisSaver:
-    if _checkpointer is None:
-        raise RuntimeError("Starsea checkpoint not initialized; app lifespan did not run")
-    return _checkpointer
-
-
-async def close_starsea_checkpoint() -> None:
-    global _checkpointer, _checkpointer_context
-    if _checkpointer_context is not None:
-        await _checkpointer_context.__aexit__(None, None, None)
-    _checkpointer = None
-    _checkpointer_context = None
-
-
-def reset_starsea_checkpoint() -> None:
-    global _checkpointer, _checkpointer_context
-    _checkpointer = None
-    _checkpointer_context = None
+checkpoint_manager = StarseaCheckpointManager()

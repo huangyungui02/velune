@@ -6,9 +6,9 @@ from fastapi import FastAPI
 
 from app.api.router import router
 from app.core.config import get_settings
-from app.db.session import close_database, open_database
-from app.auth.client import init_supabase_auth
-from app.starsea.checkpoint import close_starsea_checkpoint, init_starsea_checkpoint
+from app.db.session import database_manager
+from app.auth.client import supabase_auth_manager
+from app.starsea.checkpoint import checkpoint_manager
 from app.starsea.graph import reset_graph
 from app.tasks import broker
 
@@ -17,9 +17,9 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    await open_database()
-    await init_starsea_checkpoint()
-    await init_supabase_auth()
+    await database_manager.open()
+    await checkpoint_manager.startup()
+    await supabase_auth_manager.startup()
     if not broker.is_worker_process:
         await broker.startup()
     try:
@@ -28,8 +28,8 @@ async def lifespan(_app: FastAPI):
         if not broker.is_worker_process:
             await broker.shutdown()
         reset_graph()
-        await close_starsea_checkpoint()
-        await close_database()
+        await checkpoint_manager.close()
+        await database_manager.close()
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)

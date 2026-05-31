@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.db.session import execute, execute_fetch_one, fetch_one, get_pool
+from app.db.session import database_manager, execute, execute_fetch_one, fetch_one
 
 
 def normalize_name_key(name: str) -> str:
@@ -186,7 +186,7 @@ async def create_souler_with_profile(
 ) -> dict[str, Any]:
     cleaned_name = name.strip()
     cleaned_wiki_id = wiki_id.strip().upper() if wiki_id else None
-    async with get_pool().connection() as connection:
+    async with database_manager.get_pool().connection() as connection:
         async with connection.transaction():
             async with connection.cursor() as cursor:
                 await cursor.execute(

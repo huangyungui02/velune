@@ -4,7 +4,7 @@ from typing import Any, TypedDict
 
 from psycopg.types.json import Jsonb
 
-from app.db.session import execute_fetch_one, fetch_one, get_pool
+from app.db.session import database_manager, execute_fetch_one, fetch_one
 
 
 class Glimmer(TypedDict):
@@ -73,7 +73,7 @@ async def create_glimmer_with_messages(
     if not messages:
         raise ValueError("Glimmer archive messages cannot be empty")
 
-    async with get_pool().connection() as connection:
+    async with database_manager.get_pool().connection() as connection:
         async with connection.transaction():
             async with connection.cursor() as cursor:
                 await cursor.execute(

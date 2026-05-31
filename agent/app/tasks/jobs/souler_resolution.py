@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from app.db.session import get_pool, open_database
+from app.db.session import database_manager
 from app.soulers.repositories.resolution import (
     add_souler_alias,
     complete_resolution,
@@ -81,9 +81,9 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
 
 async def _ensure_database() -> None:
     try:
-        get_pool()
+        database_manager.get_pool()
     except RuntimeError:
-        await open_database()
+        await database_manager.open()
 
 
 def _normalize_lang(lang: str) -> str:

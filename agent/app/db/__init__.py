@@ -1,7 +1,5 @@
-from app.db.session import close_database, get_pool, open_database
+from app.db.session import database_manager
 
 __all__ = [
-    "close_database",
-    "get_pool",
-    "open_database",
+    "database_manager",
 ]
