@@ -17,6 +17,36 @@ export function normalizeOptions(raw: string[] | undefined) {
 }
 
 export function parseAssistantMessage(rawContent: string): ParsedAssistantMessage {
+	return parseTaggedOptionsMessage(rawContent) ?? parseJsonOptionsMessage(rawContent);
+}
+
+function parseTaggedOptionsMessage(rawContent: string): ParsedAssistantMessage | null {
+	const startMarker = '<options>';
+	const endMarker = '</options>';
+	const startIndex = rawContent.lastIndexOf(startMarker);
+
+	if (startIndex < 0) {
+		return null;
+	}
+
+	const endIndex = rawContent.indexOf(endMarker, startIndex + startMarker.length);
+	if (endIndex < 0) {
+		return null;
+	}
+
+	const body = rawContent.slice(0, startIndex).trim();
+	const optionsRaw = rawContent.slice(startIndex, endIndex + endMarker.length);
+	const options = Array.from(optionsRaw.matchAll(/<opt>([\s\S]*?)<\/opt>/gi), (match) =>
+		decodeXmlText(match[1].trim())
+	);
+
+	return {
+		content: body,
+		options: normalizeOptions(options)
+	};
+}
+
+function parseJsonOptionsMessage(rawContent: string): ParsedAssistantMessage {
 	const jsonStartMarker = '---JSON---';
 	const jsonEndMarker = '---END_JSON---';
 	const startIndex = rawContent.lastIndexOf(jsonStartMarker);
@@ -57,6 +87,15 @@ export function parseAssistantMessage(rawContent: string): ParsedAssistantMessag
 			options: []
 		};
 	}
+}
+
+function decodeXmlText(raw: string) {
+	return raw
+		.replaceAll('&lt;', '<')
+		.replaceAll('&gt;', '>')
+		.replaceAll('&amp;', '&')
+		.replaceAll('&quot;', '"')
+		.replaceAll('&apos;', "'");
 }
 
 export function hydrateConversation(rawMessages: ConversationMessage[]) {

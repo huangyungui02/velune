@@ -6,8 +6,8 @@ struct ConversationOptionPayload: Equatable {
 }
 
 enum ConversationOptionParser {
-    static let openMarker = "---JSON---"
-    static let closeMarker = "---END_JSON---"
+    static let openMarker = "<options>"
+    static let closeMarker = "</options>"
 
     static func parse(_ content: String) -> ConversationOptionPayload {
         guard let openRange = content.range(of: openMarker) else {
@@ -24,15 +24,15 @@ enum ConversationOptionParser {
             return ConversationOptionPayload(body: body, options: [])
         }
 
-        let jsonBlock = String(content[openRange.upperBound ..< closeRange.lowerBound])
+        let optionsBlock = String(content[openRange.lowerBound ..< closeRange.upperBound])
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !jsonBlock.isEmpty else {
+        guard !optionsBlock.isEmpty else {
             return ConversationOptionPayload(body: body, options: [])
         }
 
         return ConversationOptionPayload(
             body: body,
-            options: parseOptions(from: jsonBlock)
+            options: parseOptions(from: optionsBlock)
         )
     }
 
@@ -44,15 +44,11 @@ enum ConversationOptionParser {
             return resolvedBody
         }
 
-        let payload: [String: Any] = ["options": normalizedOptions]
-        guard
-            let data = try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted]),
-            let jsonBlock = String(data: data, encoding: .utf8)
-        else {
-            return resolvedBody
-        }
+        let optionsBlock = normalizedOptions
+            .map { "  <opt>\(escapeOptionText($0))</opt>" }
+            .joined(separator: "\n")
 
-        return "\(resolvedBody)\n\n\(openMarker)\n\(jsonBlock)\n\(closeMarker)"
+        return "\(resolvedBody)\n\n\(openMarker)\n\(optionsBlock)\n\(closeMarker)"
     }
 
     static func normalize(_ options: [String]) -> [String] {
@@ -73,24 +69,39 @@ enum ConversationOptionParser {
         return normalized
     }
 
-    private static func parseOptions(from jsonBlock: String) -> [String] {
-        let normalized = jsonBlock.replacingOccurrences(
-            of: #",\s*([\]}])"#,
-            with: "$1",
-            options: .regularExpression
-        )
-
-        guard let data = normalized.data(using: .utf8) else {
+    private static func parseOptions(from optionsBlock: String) -> [String] {
+        guard let expression = try? NSRegularExpression(
+            pattern: #"<opt>([\s\S]*?)</opt>"#,
+            options: [.caseInsensitive]
+        ) else {
             return []
         }
 
-        guard
-            let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let rawOptions = object["options"] as? [Any]
-        else {
-            return []
+        let range = NSRange(optionsBlock.startIndex ..< optionsBlock.endIndex, in: optionsBlock)
+        let rawOptions = expression.matches(in: optionsBlock, range: range).compactMap { match -> String? in
+            guard
+                match.numberOfRanges > 1,
+                let matchRange = Range(match.range(at: 1), in: optionsBlock)
+            else {
+                return nil
+            }
+            return unescapeOptionText(String(optionsBlock[matchRange]))
         }
 
-        return normalize(rawOptions.compactMap { $0 as? String })
+        return normalize(rawOptions)
+    }
+
+    private static func escapeOptionText(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+    }
+
+    private static func unescapeOptionText(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&amp;", with: "&")
     }
 }

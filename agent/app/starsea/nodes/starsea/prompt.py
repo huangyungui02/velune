@@ -15,16 +15,12 @@ SYSTEM_PROMPTS = {
 ```
 这是一段正文的输出示例。
 
----JSON---
-{
-  "options": [
-    "这是第一个选项",
-    "这是第二个选项",
-    "这是第三个选项",
-    "这是第四个选项"
-  ]
-}
----END_JSON---
+<options>
+  <opt>这是第一个选项</opt>
+  <opt>这是第二个选项</opt>
+  <opt>这是第三个选项</opt>
+  <opt>这是第四个选项</opt>
+</options>
 ```
 
 # Ending
@@ -44,16 +40,12 @@ Use this exact format:
 ```
 This is an example body response.
 
----JSON---
-{
-  "options": [
-    "First option",
-    "Second option",
-    "Third option",
-    "Fourth option"
-  ]
-}
----END_JSON---
+<options>
+  <opt>First option</opt>
+  <opt>Second option</opt>
+  <opt>Third option</opt>
+  <opt>Fourth option</opt>
+</options>
 ```
 
 # Ending

@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import json
-import re
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk, SystemMessage, ToolMessage
 from langgraph.config import get_stream_writer
 
+from app.core.conversation_options import (
+    ConversationOptionStreamState,
+    consume_conversation_options_stream_delta,
+    strip_conversation_options_markup,
+)
 from app.core.llm import create_chat_model
 from app.soulers.services.resolution import resolve_or_enqueue_souler
 from app.starsea.messages import format_messages
@@ -85,7 +89,7 @@ def _archive_events(
 
 
 def _append_visible_message(events: list[dict[str, Any]], content: Any) -> None:
-    visible_reply = _strip_options_markup(str(content or "").strip())
+    visible_reply = strip_conversation_options_markup(str(content or "").strip())
     if not visible_reply:
         return
 
@@ -97,15 +101,6 @@ def _append_visible_message(events: list[dict[str, Any]], content: Any) -> None:
             "payload": {},
         }
     )
-
-
-def _strip_options_markup(content: str) -> str:
-    return re.sub(
-        r"\n*---JSON---.*?---END_JSON---\s*",
-        "",
-        content,
-        flags=re.DOTALL,
-    ).strip()
 
 
 async def _run_starsea_tools(
@@ -192,12 +187,22 @@ def _state_lang(state: State) -> str:
 
 async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
     final_chunk: AIMessageChunk | None = None
+    option_state = ConversationOptionStreamState(
+        raw_chunks=[],
+        output_chunks=[],
+        pending="",
+        phase="streaming_content",
+    )
     async for chunk in model.astream(messages):
         if not isinstance(chunk, AIMessageChunk):
             continue
 
         final_chunk = chunk if final_chunk is None else final_chunk + chunk
-        _stream_message_delta(_content_text(chunk.content))
+        visible_delta = consume_conversation_options_stream_delta(
+            option_state,
+            _content_text(chunk.content),
+        )
+        _stream_message_delta(visible_delta)
 
     if final_chunk is None:
         return AIMessage(content="")
