@@ -23,17 +23,12 @@ class StarseaDisplay(TypedDict):
     resonance_matches: list[ThoughtMatchPreview]
 
 
-class CollectDisplay(TypedDict):
-    type: Literal["collect"]
-    content: str
-
-
 class GlimmerDisplay(TypedDict):
     type: Literal["glimmer"]
     glimmer: dict[str, str]
 
 
-Display = StarseaDisplay | CollectDisplay | GlimmerDisplay
+Display = StarseaDisplay | GlimmerDisplay
 
 
 class ArchiveEvent(TypedDict):
@@ -47,7 +42,5 @@ class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     display: Display | None
     archive_events: Annotated[list[ArchiveEvent], operator.add]
-    pending_glimmer: str | None
-    confirmed_glimmer: str | None
-    created_glimmer_id: str | None
+    glimmer_content: str | None
     metadata: dict[str, Any]

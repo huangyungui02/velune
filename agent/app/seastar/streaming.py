@@ -11,10 +11,7 @@ from app.core.sse import sse_event
 from app.core.common import Lang
 from app.seastar.schemas.events import (
     CompletedData,
-    ConfirmRequiredData,
-    ConfirmRequiredPayload,
     DeltaPayload,
-    DiscardedPayload,
     DonePayload,
     ErrorData,
     ErrorPayload,
@@ -29,7 +26,7 @@ from app.seastar.schemas.events import (
     UnknownEventPayload,
 )
 from app.soulers.services.resolution import resolve_or_enqueue_souler
-from app.seastar.runner import resume_graph, stream_graph
+from app.seastar.runner import stream_graph
 
 logger = logging.getLogger(__name__)
 
@@ -55,25 +52,6 @@ async def start_starsea_stream(
         yield sse_event(await _starsea_payload(event, lang))
 
 
-async def resume_starsea_stream(
-    *,
-    thread_id: str,
-    user_id: str,
-    approved: bool,
-    content: str,
-    lang: Lang,
-) -> AsyncIterator[str]:
-    yield sse_event(ReadyPayload(thread_id=thread_id).model_dump(by_alias=True))
-    async for event in resume_graph(
-        thread_id=thread_id,
-        user_id=user_id,
-        approved=approved,
-        content=content,
-        lang=lang,
-    ):
-        yield sse_event(await _starsea_payload(event, lang))
-
-
 async def emit_starsea_error(message: str) -> AsyncIterator[str]:
     yield sse_event(ErrorPayload(message=message).model_dump())
 
@@ -94,14 +72,8 @@ async def _map_starsea_payload(event: StarseaGraphEvent, lang: Lang) -> dict[str
         case "resonance_match":
             payload = StarseaMatchesPayload(matches=await _resonance_matches(event.data, lang))
             return payload.model_dump(by_alias=True, exclude_none=True)
-        case "confirm_required":
-            data = ConfirmRequiredData.model_validate(_dict_data(event.data))
-            payload = ConfirmRequiredPayload(thread_id=event.thread_id, content=data.content)
-            return payload.model_dump(by_alias=True)
         case "completed":
             return _completed_payload(event)
-        case "discarded":
-            return DiscardedPayload(thread_id=event.thread_id).model_dump(by_alias=True)
         case "error":
             data = ErrorData.model_validate(_dict_data(event.data))
             return ErrorPayload(message=data.message).model_dump()

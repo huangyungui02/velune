@@ -6,7 +6,6 @@ from typing import Any
 from uuid import uuid4
 
 from langchain_core.messages import HumanMessage
-from langgraph.types import Command
 
 from app.core.common import Lang, validate_lang
 from app.seastar.graph import build_graph
@@ -52,6 +51,10 @@ async def stream_graph(
     graph = build_graph()
 
     try:
+        if user_id is not None:
+            snapshot = await graph.aget_state(config)
+            _ensure_thread_owner(snapshot.values, user_id)
+
         async for chunk in graph.astream(
             _initial_state(user_input, metadata, intent, user_id=user_id, lang=lang),
             config,
@@ -60,23 +63,15 @@ async def stream_graph(
             yield _event_from_chunk(chunk, thread_id)
 
         snapshot = await graph.aget_state(config)
-        interrupt_payload = _interrupt_payload(snapshot)
-        if interrupt_payload is not None:
-            yield {
-                "event": "confirm_required",
-                "thread_id": thread_id,
-                "data": interrupt_payload,
-            }
-            return
-
         result = snapshot.values
+        display = _display_from_result(result)
         yield {
             "event": "completed",
             "thread_id": thread_id,
             "data": {
                 "status": "completed",
                 "thread_id": thread_id,
-                "display": _display_from_result(result),
+                "display": display,
             },
         }
     except Exception as exc:
@@ -94,84 +89,6 @@ async def stream_graph(
                 "thread_id": thread_id,
                 "error": type(exc).__name__,
                 "message": str(exc) or "LangGraph stream failed.",
-            },
-        }
-
-
-async def resume_graph(
-    *,
-    thread_id: str,
-    user_id: str,
-    approved: bool,
-    content: str | None,
-    lang: Lang = "zh",
-) -> AsyncIterator[dict[str, Any]]:
-    config = {"configurable": {"thread_id": thread_id}}
-    graph = build_graph()
-    resume_payload = {
-        "approved": approved,
-        "content": content or "",
-        "lang": validate_lang(lang),
-    }
-
-    try:
-        snapshot = await graph.aget_state(config)
-        _ensure_thread_owner(snapshot.values, user_id)
-
-        async for chunk in graph.astream(
-            Command(resume=resume_payload),
-            config,
-            stream_mode="custom",
-        ):
-            yield _event_from_chunk(chunk, thread_id)
-
-        snapshot = await graph.aget_state(config)
-        interrupt_payload = _interrupt_payload(snapshot)
-        if interrupt_payload is not None:
-            yield {
-                "event": "confirm_required",
-                "thread_id": thread_id,
-                "data": interrupt_payload,
-            }
-            return
-
-        result = snapshot.values
-        display = result.get("display")
-        if isinstance(display, dict) and display.get("type") == "glimmer":
-            yield {
-                "event": "completed",
-                "thread_id": thread_id,
-                "data": {
-                    "status": "completed",
-                    "thread_id": thread_id,
-                    "display": display,
-                },
-            }
-            return
-
-        yield {
-            "event": "discarded",
-            "thread_id": thread_id,
-            "data": {
-                "status": "discarded",
-                "thread_id": thread_id,
-            },
-        }
-    except Exception as exc:
-        logger.warning(
-            "LangGraph resume failed for thread %s: %s: %s",
-            thread_id,
-            type(exc).__name__,
-            exc,
-        )
-        yield {
-            "event": "error",
-            "thread_id": thread_id,
-            "data": {
-                "status": "failed",
-                "thread_id": thread_id,
-                "error": type(exc).__name__,
-                "message": str(exc) or "LangGraph resume failed.",
             },
         }
 
@@ -212,9 +129,7 @@ def _initial_state(
         "messages": messages,
         "display": None,
         "archive_events": archive_events,
-        "pending_glimmer": None,
-        "confirmed_glimmer": None,
-        "created_glimmer_id": None,
+        "glimmer_content": None,
         "metadata": runtime_metadata,
     }
 
@@ -244,21 +159,13 @@ def _event_from_chunk(chunk: Any, thread_id: str) -> dict[str, Any]:
     }
 
 
-def _interrupt_payload(snapshot: Any) -> Any | None:
-    for task in getattr(snapshot, "tasks", ()) or ():
-        for interrupt in getattr(task, "interrupts", ()) or ():
-            return getattr(interrupt, "value", None)
-
-    return None
-
-
 def _ensure_thread_owner(values: dict[str, Any], user_id: str) -> None:
     metadata = values.get("metadata")
     if not isinstance(metadata, dict):
-        raise ValueError("Starsea thread is not resumable")
+        return
 
     owner_id = str(metadata.get("user_id") or "").strip()
-    if owner_id != user_id:
+    if owner_id and owner_id != user_id:
         raise PermissionError("Starsea thread does not belong to the current user")
 
 

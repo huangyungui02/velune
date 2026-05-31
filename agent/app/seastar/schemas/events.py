@@ -17,10 +17,6 @@ class MessageDeltaData(BaseModel):
     delta: str = ""
 
 
-class ConfirmRequiredData(BaseModel):
-    content: str = ""
-
-
 class CompletedData(BaseModel):
     display: Any = None
 
@@ -89,14 +85,6 @@ class StarseaMatchesPayload(BaseModel):
     matches: list[ResonanceMatchPayload]
 
 
-class ConfirmRequiredPayload(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    type: Literal["confirm_required"] = "confirm_required"
-    thread_id: str = Field(alias="threadId")
-    content: str
-
-
 class SettledPayload(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -111,13 +99,6 @@ class DonePayload(BaseModel):
     type: Literal["done"] = "done"
     thread_id: str = Field(alias="threadId")
     display: Any = None
-
-
-class DiscardedPayload(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    type: Literal["discarded"] = "discarded"
-    thread_id: str = Field(alias="threadId")
 
 
 class ErrorPayload(BaseModel):

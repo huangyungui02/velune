@@ -34,22 +34,14 @@ enum StarSeaStreamService {
         case ready(threadId: String)
         case delta(String)
         case resonanceMatch([ResonanceMatch])
-        case confirmRequired(threadId: String, content: String)
         case done(threadId: String?)
         case settled(SettledGlimmer)
-        case discarded
     }
 
     private struct SendRequest: Encodable {
         var threadId: String?
         var content: String?
         var intent: Intent?
-    }
-
-    private struct ResumeRequest: Encodable {
-        var threadId: String
-        var approved: Bool
-        var content: String?
     }
 
     private struct StreamEvent: Decodable {
@@ -74,45 +66,6 @@ enum StarSeaStreamService {
         )
         let payloadDataStream = APISSEClient.stream(
             path: "api/v1/\(AppLanguage.current.apiLanguageCode)/starsea",
-            body: request
-        )
-
-        return AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    for try await payloadData in payloadDataStream {
-                        let payload = try APISSEClient.decode(
-                            StreamEvent.self,
-                            from: payloadData,
-                            domain: domain
-                        )
-                        guard let event = try mapEvent(payload) else { continue }
-                        continuation.yield(event)
-                    }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-
-            continuation.onTermination = { _ in
-                task.cancel()
-            }
-        }
-    }
-
-    static func resume(
-        threadId: String,
-        approved: Bool,
-        content: String?
-    ) -> AsyncThrowingStream<Event, Error> {
-        let request = ResumeRequest(
-            threadId: threadId,
-            approved: approved,
-            content: content
-        )
-        let payloadDataStream = APISSEClient.stream(
-            path: "api/v1/\(AppLanguage.current.apiLanguageCode)/starsea/resume",
             body: request
         )
 
@@ -183,16 +136,11 @@ enum StarSeaStreamService {
             return .delta(delta)
         case "resonance_match":
             return .resonanceMatch(payload.matches ?? [])
-        case "confirm_required":
-            guard let threadId = payload.threadId else { return nil }
-            return .confirmRequired(threadId: threadId, content: payload.content ?? "")
         case "done":
             return .done(threadId: payload.threadId)
         case "settled":
             guard let glimmer = payload.glimmer else { return nil }
             return .settled(glimmer)
-        case "discarded":
-            return .discarded
         case "error":
             throw streamError(for: payload)
         default:

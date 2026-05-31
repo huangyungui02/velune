@@ -9,8 +9,8 @@ from app.auth.dependencies import require_lang, require_user_id
 from app.core.errors import error_log_payload, error_message
 from app.core.sse import sse_response
 from app.core.common import Lang
-from app.seastar.schemas.starsea import StarseaRequest, StarseaResumeRequest
-from app.seastar import emit_starsea_error, resume_starsea_stream, start_starsea_stream
+from app.seastar.schemas.starsea import StarseaRequest
+from app.seastar import emit_starsea_error, start_starsea_stream
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -36,25 +36,4 @@ async def starsea(
         )
     except Exception as error:  # noqa: BLE001
         logger.error("Failed before starsea stream start: %s", error_log_payload(error))
-        return sse_response(emit_starsea_error(error_message(error)))
-
-
-@router.post("/{lang}/starsea/resume")
-async def starsea_resume(
-    body: StarseaResumeRequest,
-    normalized_lang: Lang = Depends(require_lang),
-    user_id: str = Depends(require_user_id),
-):
-    try:
-        return sse_response(
-            resume_starsea_stream(
-                thread_id=body.thread_id,
-                user_id=user_id,
-                approved=body.approved,
-                content=body.cleaned_content,
-                lang=normalized_lang,
-            )
-        )
-    except Exception as error:  # noqa: BLE001
-        logger.error("Failed before starsea resume stream start: %s", error_log_payload(error))
         return sse_response(emit_starsea_error(error_message(error)))
