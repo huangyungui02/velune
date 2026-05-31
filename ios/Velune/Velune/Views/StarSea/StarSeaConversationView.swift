@@ -17,7 +17,7 @@ struct StarSeaConversationView: View {
     @State private var isLeaveConfirmationPresented = false
     @State private var settlementText = ""
     @State private var isAwaitingSettlementConfirmation = false
-    @State private var isSettlementSheetPresented = false
+    @State private var isShowingImmersiveSettlement = false
     @State private var isSettlementReady = false
     @State private var pulseScale: CGFloat = 1.0
     @State private var isLeaving = false
@@ -27,14 +27,28 @@ struct StarSeaConversationView: View {
     var body: some View {
         ZStack {
             StarryBackgroundView()
+                .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 messageList
-                if isAwaitingSettlementConfirmation {
+                if isAwaitingSettlementConfirmation && !isShowingImmersiveSettlement {
                     glimmerAccessoryView
-                } else {
+                } else if !isShowingImmersiveSettlement {
                     composer
                 }
+            }
+            .opacity(isShowingImmersiveSettlement ? 0 : 1)
+            .blur(radius: isShowingImmersiveSettlement ? 12 : 0)
+            .animation(.easeInOut(duration: 0.8), value: isShowingImmersiveSettlement)
+
+            if isShowingImmersiveSettlement {
+                ImmersiveSettlementView(
+                    text: settlementText,
+                    isGenerating: isSettling,
+                    isReady: isSettlementReady,
+                    onExit: requestLeave
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
         }
         .overlay(alignment: .leading) {
@@ -46,6 +60,7 @@ struct StarSeaConversationView: View {
         .navigationBarBackButtonHidden(true)
         .navigationTitle("app.tab.starsea")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(isShowingImmersiveSettlement ? .hidden : .visible, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -83,18 +98,6 @@ struct StarSeaConversationView: View {
             Button("common.ok", role: .cancel) {}
         } message: {
             Text(errorMessage ?? String(localized: "matching.error.unknown"))
-        }
-        .sheet(isPresented: $isSettlementSheetPresented) {
-            StarSeaSettlementSheet(
-                text: settlementText,
-                isGenerating: isSettling,
-                isReady: isSettlementReady,
-                onExit: requestLeave
-            )
-            .interactiveDismissDisabled(!isSettlementReady)
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
-            .presentationCornerRadius(28)
         }
         .task {
             guard !hasStarted else { return }
@@ -137,7 +140,9 @@ struct StarSeaConversationView: View {
 
     private var glimmerAccessoryView: some View {
         Button(action: {
-            isSettlementSheetPresented = true
+            withAnimation(.spring(response: 0.75, dampingFraction: 0.82)) {
+                isShowingImmersiveSettlement = true
+            }
         }) {
             HStack(spacing: 14) {
                 ZStack {
@@ -149,7 +154,7 @@ struct StarSeaConversationView: View {
                             .easeInOut(duration: 2.0).repeatForever(autoreverses: true),
                             value: pulseScale
                         )
-                    
+
                     Circle()
                         .stroke(
                             LinearGradient(
@@ -160,7 +165,7 @@ struct StarSeaConversationView: View {
                             lineWidth: 1
                         )
                         .frame(width: 36, height: 36)
-                    
+
                     Image(systemName: "sparkles")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(
@@ -171,19 +176,19 @@ struct StarSeaConversationView: View {
                             )
                         )
                 }
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text("starsea.settlement.readyTitle")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
-                    
+
                     Text("starsea.settlement.clickToView")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.55))
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.35))
@@ -237,6 +242,7 @@ struct StarSeaConversationView: View {
     private var backSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 24, coordinateSpace: .local)
             .onEnded { value in
+                guard !isShowingImmersiveSettlement else { return }
                 guard value.startLocation.x < 24, value.translation.width > 60 else { return }
                 requestLeave()
             }
@@ -309,7 +315,9 @@ struct StarSeaConversationView: View {
         settlementText = ""
         isSettlementReady = false
         isAwaitingSettlementConfirmation = true
-        isSettlementSheetPresented = true
+        withAnimation(.spring(response: 0.75, dampingFraction: 0.82)) {
+            isShowingImmersiveSettlement = true
+        }
         isComposerFocused = false
         activeTask?.cancel()
 
@@ -326,12 +334,16 @@ struct StarSeaConversationView: View {
             if !isSettlementReady {
                 errorMessage = String(localized: "starsea.leave.settleFailed")
                 isAwaitingSettlementConfirmation = false
-                isSettlementSheetPresented = false
+                withAnimation {
+                    isShowingImmersiveSettlement = false
+                }
             }
         } catch {
             errorMessage = error.localizedDescription
             isAwaitingSettlementConfirmation = false
-            isSettlementSheetPresented = false
+            withAnimation {
+                isShowingImmersiveSettlement = false
+            }
         }
 
         isSettling = false
@@ -354,7 +366,9 @@ struct StarSeaConversationView: View {
             settlementText = glimmer.content
             isSettlementReady = true
             isAwaitingSettlementConfirmation = true
-            isSettlementSheetPresented = true
+            withAnimation(.spring(response: 0.75, dampingFraction: 0.82)) {
+                isShowingImmersiveSettlement = true
+            }
         }
     }
 
@@ -412,7 +426,7 @@ struct StarSeaConversationView: View {
         activeTask = nil
         isComposerFocused = false
         isLeaveConfirmationPresented = false
-        isSettlementSheetPresented = false
+        isShowingImmersiveSettlement = false
 
         Task { @MainActor in
             await Task.yield()
