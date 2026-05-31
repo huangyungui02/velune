@@ -4,13 +4,13 @@ from functools import lru_cache
 
 from langgraph.graph import END, START, StateGraph
 
-from app.seastar.checkpoint import get_starsea_checkpointer
-from app.seastar.nodes import (
+from app.starsea.checkpoint import get_starsea_checkpointer
+from app.starsea.nodes import (
     collect_node,
     glimmer_node,
     starsea_node,
 )
-from app.seastar.state import RouterAction, State
+from app.starsea.state import RouterAction, State
 
 
 @lru_cache(maxsize=1)

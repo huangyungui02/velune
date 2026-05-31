@@ -6,7 +6,7 @@ from app.core.entities import Chapter, Session, Souler
 from app.chat.repositories.chapters import get_chapter_by_id
 from app.chat.repositories.session import create_session, get_session_by_id, touch_session
 from app.chat.services.types import SessionResolution
-from app.seastar.repositories.resonance import create_or_update_resonance
+from app.starsea.repositories.resonance import create_or_update_resonance
 from app.soulers.repositories.content import get_souler_by_id
 
 

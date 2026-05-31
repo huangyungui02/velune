@@ -24,6 +24,7 @@ MATCH_PROMPTS = {
 2. resonance 要说明这个人物如何映照用户当下。
 3. whisper 是这个人物可以留给用户的一句回应。
 4. 人物必须是真实存在的，并且属于public domain。
+5. 人物名必须是简体中文。
 
 # 输出
 仅输出纯 JSON，不要 Markdown。
@@ -51,6 +52,7 @@ Based on the current conversation, match 3 public-domain historical figures who 
 2. resonance should explain how the figure mirrors the user's present state.
 3. whisper is one short response this figure might leave for the user.
 4. Figures must be real people and in the public domain.
+5. Figure names must be in English.
 
 # Output
 Output pure JSON only. No Markdown.

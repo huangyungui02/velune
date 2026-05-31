@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from app.core.errors import error_log_payload, error_message
 from app.core.sse import sse_event
 from app.core.common import Lang
-from app.seastar.schemas.events import (
+from app.starsea.schemas.events import (
     CompletedData,
     DeltaPayload,
     DonePayload,
@@ -26,7 +26,7 @@ from app.seastar.schemas.events import (
     UnknownEventPayload,
 )
 from app.soulers.services.resolution import resolve_or_enqueue_souler
-from app.seastar.runner import stream_graph
+from app.starsea.runner import stream_graph
 
 logger = logging.getLogger(__name__)
 

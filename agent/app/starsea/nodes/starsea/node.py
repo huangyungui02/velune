@@ -8,13 +8,13 @@ from langchain_core.messages import AIMessage, AIMessageChunk, SystemMessage, To
 from langgraph.config import get_stream_writer
 
 from app.core.llm import create_chat_model
-from app.seastar.messages import format_messages
-from app.seastar.tools import match_thought_voices
+from app.starsea.messages import format_messages
+from app.starsea.tools import match_thought_voices
 
 from .prompt import system_prompt
 
 if TYPE_CHECKING:
-    from app.seastar.state import State
+    from app.starsea.state import State
 
 STARSEA_MODEL = "qwen3.5-flash"
 STARSEA_TEMPERATURE = 0.5

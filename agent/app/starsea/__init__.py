@@ -1,7 +1,7 @@
-from app.seastar.graph import build_graph
-from app.seastar.runner import run_graph, stream_graph
-from app.seastar.state import State
-from app.seastar.streaming import (
+from app.starsea.graph import build_graph
+from app.starsea.runner import run_graph, stream_graph
+from app.starsea.state import State
+from app.starsea.streaming import (
     emit_starsea_error,
     start_starsea_stream,
 )

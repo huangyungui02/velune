@@ -9,8 +9,8 @@ from app.auth.dependencies import require_lang, require_user_id
 from app.core.errors import error_log_payload, error_message
 from app.core.sse import sse_response
 from app.core.common import Lang
-from app.seastar.schemas.starsea import StarseaRequest
-from app.seastar import emit_starsea_error, start_starsea_stream
+from app.starsea.schemas.starsea import StarseaRequest
+from app.starsea import emit_starsea_error, start_starsea_stream
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

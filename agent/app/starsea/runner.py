@@ -8,8 +8,8 @@ from uuid import uuid4
 from langchain_core.messages import HumanMessage
 
 from app.core.common import Lang, validate_lang
-from app.seastar.graph import build_graph
-from app.seastar.state import ArchiveEvent, State
+from app.starsea.graph import build_graph
+from app.starsea.state import ArchiveEvent, State
 
 logger = logging.getLogger(__name__)
 

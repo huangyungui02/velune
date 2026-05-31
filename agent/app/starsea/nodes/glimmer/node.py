@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from app.seastar.repositories.glimmers import create_glimmer_with_messages
+from app.starsea.repositories.glimmers import create_glimmer_with_messages
 
 if TYPE_CHECKING:
-    from app.seastar.state import State
+    from app.starsea.state import State
 
 
 async def glimmer_node(state: State) -> dict[str, Any]:

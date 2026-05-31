@@ -6,12 +6,12 @@ from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, Sys
 from langgraph.config import get_stream_writer
 
 from app.core.llm import create_chat_model
-from app.seastar.messages import format_messages
+from app.starsea.messages import format_messages
 
 from .prompt import system_prompt
 
 if TYPE_CHECKING:
-    from app.seastar.state import State
+    from app.starsea.state import State
 
 COLLECT_MODEL = "qwen3.5-flash"
 COLLECT_TEMPERATURE = 0.45
