@@ -4,35 +4,13 @@ struct GlimmerDaySection<Content: View>: View {
     let section: GlimmerDayGroup
     @ViewBuilder var content: (Glimmer, Bool) -> Content
 
-    private var dayString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd"
-        return formatter.string(from: section.day)
-    }
-
-    private var monthYearString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM / yyyy"
-        return formatter.string(from: section.day)
-    }
-
-    private var isTodayOrYesterday: String? {
-        let calendar = Calendar.current
-        if calendar.isDateInToday(section.day) {
-            return String(localized: "glimmerHistory.section.today")
-        } else if calendar.isDateInYesterday(section.day) {
-            return String(localized: "glimmerHistory.section.yesterday")
-        }
-        return nil
+    private var dateString: String {
+        section.day.formatted(.dateTime.year().month(.wide).day())
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            GlimmerDayHeader(
-                dayString: dayString,
-                monthYearString: monthYearString,
-                relativeTag: isTodayOrYesterday
-            )
+            GlimmerDayHeader(dateString: dateString)
 
             LazyVStack(spacing: 12) {
                 ForEach(Array(section.glimmers.enumerated()), id: \.element.id) { index, glimmer in
@@ -62,37 +40,14 @@ struct GlimmerTimelineRow: View {
 }
 
 private struct GlimmerDayHeader: View {
-    let dayString: String
-    let monthYearString: String
-    let relativeTag: String?
+    let dateString: String
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(dayString)
-                .font(.system(size: 34, weight: .light, design: .serif))
-                .foregroundStyle(UITheme.primaryText)
-
-            Text(monthYearString)
-                .font(.system(size: 11, weight: .medium, design: .serif))
-                .tracking(2.0)
-                .foregroundStyle(UITheme.tertiaryText)
-
-            if let relativeTag {
-                Text(relativeTag)
-                    .font(.system(size: 9, weight: .semibold))
-                    .tracking(0.5)
-                    .foregroundStyle(UITheme.glimmerGlow)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3.5)
-                    .background(UITheme.glimmerGlow.opacity(0.12), in: .capsule)
-                    .overlay {
-                        Capsule()
-                            .stroke(UITheme.glimmerGlow.opacity(0.24), lineWidth: 0.5)
-                    }
-                    .padding(.leading, 6)
-            }
-        }
-        .padding(.leading, 58)
+        Text(dateString)
+            .font(.system(size: 15, weight: .light, design: .serif))
+            .tracking(1.0)
+            .foregroundStyle(UITheme.primaryText.opacity(0.85))
+            .padding(.leading, 58)
     }
 }
 
