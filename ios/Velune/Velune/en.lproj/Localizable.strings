@@ -55,7 +55,6 @@
 "app.tab.starsea" = "Stars";
 "app.tab.chat" = "Chat";
 "app.tab.reading" = "Folio";
-"app.tab.resonance" = "Resonance";
 "app.tab.map" = "Map";
 "app.tab.profile" = "Haven";
 
@@ -68,8 +67,6 @@
 
 "anonymous.restricted.glimmerHistory.title" = "Unlock Haven";
 "anonymous.restricted.glimmerHistory.description" = "Sign in to view, keep, and revisit your glimmers.";
-"anonymous.restricted.resonance.title" = "Open Resonance Threads";
-"anonymous.restricted.resonance.description" = "Sign in to browse resonances and return to each conversation.";
 
 "glimmerHistory.empty.noGlimmers" = "No glimmers yet";
 "glimmerHistory.title" = "Haven";
@@ -83,10 +80,7 @@
 
 "starsea.hero.verse" = "A glimmer in the heart, and the universe unfolds.";
 "starsea.prompt.glimmerWithin" = "What glimmers within you";
-"starsea.action.writeGlimmer" = "Write a glimmer";
 "starsea.action.history" = "History";
-"starsea.empty.resonanceTitle" = "No resonances yet";
-"starsea.empty.resonanceSubtitle" = "Write your first glimmer, and listen for the first echo.";
 "starsea.chat.placeholder" = "Keep going…";
 "starsea.chat.subtitle" = "Inner tide";
 "starsea.resonance.title" = "Resonances";
@@ -114,9 +108,6 @@
 "flow.status.listening" = "Listening";
 "flow.coda.line" = "Some people have entered a similar place.";
 "flow.coda.continue" = "Continue↓";
-"flow.resonance.status" = "Finding resonance";
-"flow.resonance.enter" = "Enter";
-"flow.resonance.error.empty" = "No resonant figures were found.";
 "flow.error.title" = "Error";
 "flow.error.empty" = "No themes were found.";
 "flow.error.unknown" = "The flow could not be completed.";
@@ -137,11 +128,6 @@
 "souler.resolution.status.failed" = "This page could not be prepared yet.";
 "echo.reply.placeholder" = "Reply to this echo…";
 
-"resonance.title" = "Resonances";
-"resonance.empty" = "No resonances yet";
-"resonance.load.failed" = "Failed to load resonances";
-"resonance.sort.title" = "Sort";
-"resonance.sort.updatedAt" = "Most recent";
 "resonance.chat.placeholder" = "Say something…";
 "resonance.chat.empty" = "Start a deep conversation";
 "resonance.chat.sessions.empty" = "No conversations yet";

@@ -55,7 +55,6 @@
 "app.tab.starsea" = "星海";
 "app.tab.chat" = "聊天";
 "app.tab.reading" = "一席";
-"app.tab.resonance" = "共鸣";
 "app.tab.map" = "地图";
 "app.tab.profile" = "心舍";
 
@@ -68,8 +67,6 @@
 
 "anonymous.restricted.glimmerHistory.title" = "登录后开启心舍";
 "anonymous.restricted.glimmerHistory.description" = "登录后，可查看、保存并回望你的心澜。";
-"anonymous.restricted.resonance.title" = "登录后开启共鸣";
-"anonymous.restricted.resonance.description" = "登录后，可浏览共鸣并回到每段会话。";
 
 "glimmerHistory.empty.noGlimmers" = "暂无心澜";
 "glimmerHistory.title" = "心舍";
@@ -83,10 +80,7 @@
 
 "starsea.hero.verse" = "心有微澜\n宇宙自现";
 "starsea.prompt.glimmerWithin" = "此刻，有什么在你心中泛起";
-"starsea.action.writeGlimmer" = "写下心澜";
 "starsea.action.history" = "历史记录";
-"starsea.empty.resonanceTitle" = "还没有共鸣";
-"starsea.empty.resonanceSubtitle" = "写下第一道心澜，静候第一声回响。";
 "starsea.chat.placeholder" = "继续说下去…";
 "starsea.chat.subtitle" = "沉入内在潮汐";
 "starsea.resonance.title" = "共鸣人物";
@@ -114,9 +108,6 @@
 "flow.status.listening" = "正在辨认";
 "flow.coda.line" = "有一些人曾走进过类似的地方。";
 "flow.coda.continue" = "继续↓";
-"flow.resonance.status" = "正在寻找共鸣";
-"flow.resonance.enter" = "进入";
-"flow.resonance.error.empty" = "还没有找到可以共鸣的人。";
 "flow.error.title" = "错误";
 "flow.error.empty" = "还没有辨认出主题。";
 "flow.error.unknown" = "暂时无法继续这段流动。";
@@ -137,11 +128,6 @@
 "souler.resolution.status.failed" = "这个页面暂时没有准备好。";
 "echo.reply.placeholder" = "回应这段回响…";
 
-"resonance.title" = "共鸣";
-"resonance.empty" = "暂无共鸣";
-"resonance.load.failed" = "加载共鸣失败";
-"resonance.sort.title" = "排序";
-"resonance.sort.updatedAt" = "最近共鸣";
 "resonance.chat.placeholder" = "对Ta说点什么…";
 "resonance.chat.empty" = "开始一段深入对话";
 "resonance.chat.sessions.empty" = "暂无对话";
