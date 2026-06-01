@@ -54,7 +54,7 @@
 
 "app.tab.starsea" = "星海";
 "app.tab.chat" = "聊天";
-"app.tab.reading" = "一隅";
+"app.tab.reading" = "一席";
 "app.tab.resonance" = "共鸣";
 "app.tab.map" = "地图";
 "app.tab.profile" = "心舍";
@@ -92,8 +92,8 @@
 "starsea.chat.subtitle" = "沉入内在潮汐";
 "starsea.resonance.title" = "共鸣人物";
 "starsea.leave.title" = "离开星海？";
-"starsea.leave.message" = "可以先让这段星海流动汇聚为一道心澜，也可以直接离开。";
-"starsea.leave.settle" = "生成并保存心澜";
+"starsea.leave.message" = "你可以将这段对话生成心澜，也可以直接离开。";
+"starsea.leave.settle" = "生成心澜";
 "starsea.leave.direct" = "直接离开";
 "starsea.leave.settleFailed" = "心澜未能如期凝聚，请稍后再试。";
 "starsea.settlement.title" = "心澜";
@@ -184,7 +184,7 @@
 "paywall.restore.signInRequired.description" = "匿名账号暂不支持恢复购买。请先登录。";
 "souler.introduction.empty.title" = "当前页面正在完善中";
 "common.refresh" = "刷新";
-"reading.title" = "一隅";
+"reading.title" = "一席";
 "reading.tab.featured" = "精选";
 "reading.tab.latest" = "最新";
 "reading.tab.bookshelf" = "书架";

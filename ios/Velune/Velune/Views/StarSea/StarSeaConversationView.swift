@@ -65,8 +65,6 @@ struct StarSeaConversationView: View {
                     leaveDirectly()
                 }
             }
-
-            Button("common.cancel", role: .cancel) {}
         } message: {
             Text(leaveConfirmationMessage)
         }

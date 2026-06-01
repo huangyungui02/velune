@@ -52,7 +52,7 @@
 "network.error.timeout" = "The request timed out. Please check your connection and try again.";
 "network.error.serverUnavailable" = "The server is unavailable. Please try again later.";
 
-"app.tab.starsea" = "Starsea";
+"app.tab.starsea" = "Stars";
 "app.tab.chat" = "Chat";
 "app.tab.reading" = "Folio";
 "app.tab.resonance" = "Resonance";
@@ -75,8 +75,8 @@
 "glimmerHistory.empty.noGlimmers.subtitle" = "Write your first glimmer, and listen for the first echo.";
 "glimmerHistory.title" = "Haven";
 "glimmerHistory.detail.title" = "Glimmer";
-"glimmerHistory.history.title" = "Starsea History";
-"glimmerHistory.history.empty" = "No Starsea history";
+"glimmerHistory.history.title" = "Stars History";
+"glimmerHistory.history.empty" = "No Stars history";
 "glimmerHistory.section.today" = "Today";
 "glimmerHistory.section.yesterday" = "Yesterday";
 "glimmerHistory.section.pastWeek" = "Past Week";
@@ -91,9 +91,9 @@
 "starsea.chat.placeholder" = "Keep going…";
 "starsea.chat.subtitle" = "Inner tide";
 "starsea.resonance.title" = "Resonances";
-"starsea.leave.title" = "Leave Starsea?";
-"starsea.leave.message" = "You can gather this flow into a heart-ripple (glimmer), or leave directly.";
-"starsea.leave.settle" = "Generate and Save Glimmer";
+"starsea.leave.title" = "Leave Stars?";
+"starsea.leave.message" = "You can generate a glimmer from this conversation, or leave directly.";
+"starsea.leave.settle" = "Generate Glimmer";
 "starsea.leave.direct" = "Leave Directly";
 "starsea.leave.settleFailed" = "The glimmer could not be gathered as expected. Please try again.";
 "starsea.settlement.title" = "Glimmer";
@@ -105,7 +105,7 @@
 "starsea.settlement.exit" = "Exit";
 "starsea.settlement.exit.title" = "Forget this glimmer?";
 "starsea.settlement.exit.message" = "If you exit, this unsaved glimmer will dissolve into the starsea.";
-"starsea.settlement.discardConfirm" = "Let it dissolve, return to Starsea";
+"starsea.settlement.discardConfirm" = "Let it dissolve, return to Stars";
 "starsea.settlement.editor" = "Edit glimmer";
 "starsea.settlement.clickToView" = "Tap to view";
 

@@ -39,6 +39,12 @@ struct GlimmerDaySection<Content: View>: View {
                     content(glimmer, index == 0)
                 }
             }
+            .background(alignment: .leading) {
+                Rectangle()
+                    .fill(UITheme.primaryText.opacity(0.08))
+                    .frame(width: 0.5)
+                    .padding(.leading, 21)
+            }
         }
     }
 }
@@ -86,7 +92,7 @@ private struct GlimmerDayHeader: View {
                     .padding(.leading, 6)
             }
         }
-        .padding(.leading, 46)
+        .padding(.leading, 58)
     }
 }
 
@@ -94,46 +100,42 @@ private struct GlimmerTimelineCard: View {
     let glimmer: Glimmer
     let isFeatured: Bool
 
-    private var cornerRadius: CGFloat {
-        isFeatured ? 18 : 14
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(glimmer.content)
-                .font(.system(size: isFeatured ? 15.5 : 14, weight: .light, design: .serif))
-                .lineSpacing(isFeatured ? 8 : 6.5)
+                .font(.system(size: 14.5, weight: .light, design: .serif))
+                .lineSpacing(7.0)
                 .tracking(0.8)
-                .foregroundStyle(UITheme.primaryText.opacity(isFeatured ? 0.95 : 0.82))
-                .lineLimit(isFeatured ? 3 : 2)
+                .foregroundStyle(UITheme.primaryText.opacity(0.88))
+                .lineLimit(3)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             GlimmerKeywordChips(keywords: Array(glimmer.keywords.prefix(3)))
         }
-        .padding(.vertical, isFeatured ? 18 : 14)
+        .padding(.vertical, 15)
         .padding(.horizontal, 16)
         .background(
-            .ultraThinMaterial.opacity(isFeatured ? 0.32 : 0.18),
-            in: .rect(cornerRadius: cornerRadius, style: .continuous)
+            .ultraThinMaterial.opacity(0.2),
+            in: .rect(cornerRadius: 16, style: .continuous)
         )
         .background {
             RadialGradient(
                 colors: [
-                    UITheme.glimmerGlow.opacity(isFeatured ? 0.06 : 0.025),
+                    UITheme.glimmerGlow.opacity(0.03),
                     .clear
                 ],
                 center: .topLeading,
                 startRadius: 0,
                 endRadius: 150
             )
-            .clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
+            .clipShape(.rect(cornerRadius: 16, style: .continuous))
         }
         .overlay {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(
                     LinearGradient(
                         colors: [
-                            .white.opacity(isFeatured ? 0.05 : 0.025),
+                            .white.opacity(0.03),
                             .white.opacity(0.005)
                         ],
                         startPoint: .topLeading,
@@ -142,7 +144,7 @@ private struct GlimmerTimelineCard: View {
                     lineWidth: 0.5
                 )
         }
-        .shadow(color: .black.opacity(isFeatured ? 0.10 : 0.05), radius: isFeatured ? 12 : 6, x: 0, y: isFeatured ? 6 : 3)
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
     }
 }
 
@@ -261,32 +263,24 @@ private struct TimelineStamp: View {
                 .frame(width: 38, alignment: .trailing)
 
             ZStack {
-                Circle()
-                    .fill(UITheme.glimmerGlow.opacity(isFeatured ? 0.35 : 0.12))
-                    .frame(width: isFeatured ? 14 : 10, height: isFeatured ? 14 : 10)
-                    .blur(radius: isFeatured ? 2.5 : 1.5)
-
-                Circle()
-                    .fill(isFeatured ? UITheme.glimmerGlow : UITheme.primaryText.opacity(0.6))
-                    .frame(width: isFeatured ? 5 : 3.5, height: isFeatured ? 5 : 3.5)
+                if isFeatured {
+                    Circle()
+                        .stroke(UITheme.glimmerGlow.opacity(0.3), lineWidth: 1)
+                        .frame(width: 10, height: 10)
+                    
+                    Circle()
+                        .fill(UITheme.glimmerGlow)
+                        .frame(width: 5, height: 5)
+                } else {
+                    Circle()
+                        .fill(UITheme.primaryText.opacity(0.35))
+                        .frame(width: 3.5, height: 3.5)
+                }
             }
-            .frame(height: 14)
+            .frame(width: 14, height: 14)
             .padding(.vertical, 2)
-
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            UITheme.primaryText.opacity(isFeatured ? 0.15 : 0.08),
-                            UITheme.primaryText.opacity(0.01)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 0.5, height: isFeatured ? 64 : 48)
         }
         .frame(width: 42)
-        .padding(.top, isFeatured ? 12 : 8)
+        .padding(.top, 9)
     }
 }
