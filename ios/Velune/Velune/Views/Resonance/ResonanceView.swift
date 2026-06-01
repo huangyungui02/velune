@@ -120,13 +120,13 @@ struct ResonanceView: View {
                     }
                 } else if displayedResonances.isEmpty {
                     if resonances.isEmpty, !hasActiveResonanceSearch {
-                        SereneContentUnavailableView(
-                            title: "starsea.empty.resonanceTitle",
-                            symbol: "bubble.left.and.bubble.right",
-                            subtitle: "starsea.empty.resonanceSubtitle",
-                            actionTitle: "starsea.action.writeGlimmer",
-                            action: onOpenGlimmerComposer
-                        )
+                        ContentUnavailableView {
+                            Label("starsea.empty.resonanceTitle", systemImage: "bubble.left.and.bubble.right")
+                        } description: {
+                            Text("starsea.empty.resonanceSubtitle")
+                        } actions: {
+                            Button("starsea.action.writeGlimmer", action: onOpenGlimmerComposer)
+                        }
                     } else if hasActiveResonanceSearch {
                         ContentUnavailableView.search(text: resonanceSearchText)
                             .contentShape(.rect)

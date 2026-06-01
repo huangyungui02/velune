@@ -12,11 +12,9 @@ struct ReadingFeaturedSectionsView: View {
                 }
             }
         } else if sections.isEmpty {
-            SereneContentUnavailableView(
-                title: "reading.empty.featured",
-                symbol: "safari",
-                actionTitle: "common.refresh",
-                actionIcon: "arrow.clockwise"
+            ContentUnavailableView(
+                "reading.empty.featured",
+                systemImage: "safari"
             )
             .padding(.horizontal, 20)
         } else {
@@ -70,11 +68,9 @@ struct ReadingLatestSoulersView: View {
         if isLoading && items.isEmpty {
             ReadingSoulerBookSkeletonGrid(columns: gridColumns)
         } else if items.isEmpty {
-            SereneContentUnavailableView(
-                title: "reading.empty.latest",
-                symbol: "clock",
-                actionTitle: "common.refresh",
-                actionIcon: "arrow.clockwise"
+            ContentUnavailableView(
+                "reading.empty.latest",
+                systemImage: "clock"
             )
             .padding(.horizontal, 20)
         } else {

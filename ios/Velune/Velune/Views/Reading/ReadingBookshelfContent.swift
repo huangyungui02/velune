@@ -30,9 +30,9 @@ struct ReadingBookshelfContent: View {
             }
             .redacted(reason: .placeholder)
         } else if items.isEmpty {
-            SereneContentUnavailableView(
-                title: "reading.empty.bookshelf",
-                symbol: "books.vertical"
+            ContentUnavailableView(
+                "reading.empty.bookshelf",
+                systemImage: "books.vertical"
             )
             .frame(minHeight: 320)
         } else {

@@ -15,8 +15,7 @@ struct GlimmerRecordsView: View {
             } else if glimmers.isEmpty {
                 ContentUnavailableView(
                     "glimmerHistory.empty.noGlimmers",
-                    systemImage: "sparkles",
-                    description: Text("glimmerHistory.empty.noGlimmers.subtitle")
+                    systemImage: "sparkles"
                 )
             } else {
                 ScrollView {

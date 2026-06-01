@@ -72,7 +72,6 @@
 "anonymous.restricted.resonance.description" = "Sign in to browse resonances and return to each conversation.";
 
 "glimmerHistory.empty.noGlimmers" = "No glimmers yet";
-"glimmerHistory.empty.noGlimmers.subtitle" = "Write your first glimmer, and listen for the first echo.";
 "glimmerHistory.title" = "Haven";
 "glimmerHistory.detail.title" = "Glimmer";
 "glimmerHistory.history.title" = "Stars History";

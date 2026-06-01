@@ -72,7 +72,6 @@
 "anonymous.restricted.resonance.description" = "登录后，可浏览共鸣并回到每段会话。";
 
 "glimmerHistory.empty.noGlimmers" = "暂无心澜";
-"glimmerHistory.empty.noGlimmers.subtitle" = "写下第一道心澜，静候第一声回响。";
 "glimmerHistory.title" = "心舍";
 "glimmerHistory.detail.title" = "心澜";
 "glimmerHistory.history.title" = "星海回望";
