@@ -275,7 +275,9 @@ struct StarSeaConversationView: View {
         isStreaming = true
         shouldPauseAutoScrollDuringStreaming = false
         errorMessage = nil
-        currentAssistantMessageId = nil
+        let placeholderMessage = StarSeaMessage(role: .assistant, content: "")
+        currentAssistantMessageId = placeholderMessage.id
+        timelineEvents.append(.message(placeholderMessage))
 
         activeTask?.cancel()
         activeTask = Task {

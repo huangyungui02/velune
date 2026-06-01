@@ -13,10 +13,10 @@ struct StarSeaConversationMessageList: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    let lastAssistantMessageId = events.lastAssistantMessage?.id
+                    let lastVisibleMessageId = events.last?.message?.id
 
                     ForEach(events) { event in
-                        eventRow(event, lastAssistantMessageId: lastAssistantMessageId)
+                        eventRow(event, lastVisibleMessageId: lastVisibleMessageId)
                             .id(event.id)
                     }
                 }
@@ -45,20 +45,20 @@ struct StarSeaConversationMessageList: View {
     }
 
     @ViewBuilder
-    private func eventRow(_ event: StarSeaTimelineEvent, lastAssistantMessageId: UUID?) -> some View {
+    private func eventRow(_ event: StarSeaTimelineEvent, lastVisibleMessageId: UUID?) -> some View {
         switch event {
         case let .message(message):
-            messageRow(message, lastAssistantMessageId: lastAssistantMessageId)
+            messageRow(message, lastVisibleMessageId: lastVisibleMessageId)
         case let .resonanceMatches(_, matches):
             StarSeaResonanceMatchesView(matches: matches)
                 .padding(.vertical, 2)
         }
     }
 
-    private func messageRow(_ message: StarSeaMessage, lastAssistantMessageId: UUID?) -> some View {
+    private func messageRow(_ message: StarSeaMessage, lastVisibleMessageId: UUID?) -> some View {
         let payload = payload(for: message)
         let hasInlineOptions = showsOptions
-            && message.id == lastAssistantMessageId
+            && message.id == lastVisibleMessageId
             && !payload.options.isEmpty
 
         return VStack(spacing: 8) {
@@ -109,10 +109,6 @@ struct StarSeaConversationMessageList: View {
 }
 
 private extension [StarSeaTimelineEvent] {
-    var lastAssistantMessage: StarSeaMessage? {
-        reversed().compactMap(\.message).first { $0.role == .assistant }
-    }
-
     var lastMessageContent: String? {
         reversed().compactMap(\.message).first?.content
     }
