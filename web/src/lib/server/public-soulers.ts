@@ -6,6 +6,7 @@ type PublicSoulerRow = {
 	name: string;
 	introduction: string | null;
 	wiki_id: string | null;
+	checked: boolean;
 };
 
 type ChapterRow = SoulerChapter;
@@ -52,7 +53,7 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 	const { user } = await locals.safeGetSession();
 	const { data: soulerRaw, error } = await locals.supabase
 		.from('soulers')
-		.select('id, name, introduction, wiki_id')
+		.select('id, name, introduction, wiki_id, checked')
 		.eq('id', soulerId)
 		.single();
 
@@ -146,7 +147,8 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 			id: souler.id,
 			name: souler.name,
 			introduction: souler.introduction ?? '',
-			imageUrl: await avatarResolver.get(wikiId)
+			imageUrl: await avatarResolver.get(wikiId),
+			checked: souler.checked
 		},
 		keywords,
 		chapters: chapters.map((chapter) => ({

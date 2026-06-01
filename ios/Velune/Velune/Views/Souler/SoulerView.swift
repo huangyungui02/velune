@@ -30,7 +30,7 @@ struct SoulerView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
-            if let souler {
+            if let souler, souler.checked {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         ChatView(

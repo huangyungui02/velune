@@ -55,6 +55,7 @@ export type PublicSoulerDetail = {
 		name: string;
 		introduction: string;
 		imageUrl: string | null;
+		checked: boolean;
 	};
 	keywords: string[];
 	chapters: SoulerChapter[];

@@ -43,7 +43,6 @@
 	onMount(() => {
 		scrollMainContainerToTop();
 	});
-
 </script>
 
 <svelte:head>
@@ -79,7 +78,9 @@
 	</header>
 
 	<section>
-		{#if data.chapters.length}
+		{#if !data.souler.checked}
+			<div class="px-4 py-8 text-sm text-muted-foreground/70">人物尚未审核，暂不能聊天。</div>
+		{:else if data.chapters.length}
 			<div class="divide-y divide-border/45">
 				{#each data.chapters as chapter (chapter.id)}
 					<a

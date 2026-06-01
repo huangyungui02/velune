@@ -7,19 +7,22 @@ struct Souler: Identifiable, Codable, Equatable {
     var introduction: String
     var imageURL: URL?
     var keywords: [String]
+    var checked: Bool
 
     init(
         id: UUID = UUID(),
         name: String,
         introduction: String,
         imageURL: URL? = nil,
-        keywords: [String] = []
+        keywords: [String] = [],
+        checked: Bool = false
     ) {
         self.id = id
         self.name = name
         self.introduction = introduction
         self.imageURL = imageURL
         self.keywords = keywords
+        self.checked = checked
     }
 }
 
@@ -29,12 +32,14 @@ extension Souler {
         var name: String
         var introduction: String?
         var wikiId: String?
+        var checked: Bool
 
         enum CodingKeys: String, CodingKey {
             case id
             case name
             case introduction
             case wikiId = "wiki_id"
+            case checked
         }
     }
 
@@ -74,7 +79,7 @@ extension Souler {
         let supabase = try Backend.requireSupabase()
         let response: Response = try await supabase
             .from("soulers")
-            .select("id, name, introduction, wiki_id")
+            .select("id, name, introduction, wiki_id, checked")
             .eq("id", value: soulerId)
             .single()
             .execute()
@@ -88,7 +93,8 @@ extension Souler {
             name: response.name.trimmingCharacters(in: .whitespacesAndNewlines),
             introduction: response.introduction?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
             imageURL: imageURL,
-            keywords: keywords
+            keywords: keywords,
+            checked: response.checked
         )
     }
 

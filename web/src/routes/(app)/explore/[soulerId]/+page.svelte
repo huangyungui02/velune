@@ -4,7 +4,6 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import PageBackToolbar from '$lib/components/ui/page-back-toolbar.svelte';
 	import PageTopToolbar from '$lib/components/ui/page-top-toolbar.svelte';
-	import { Separator } from '$lib/components/ui/separator/index.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -32,7 +31,6 @@
 	onMount(() => {
 		scrollMainContainerToTop();
 	});
-
 </script>
 
 <svelte:head>
@@ -42,8 +40,6 @@
 <section class="mx-auto max-w-5xl space-y-10 pt-[calc(env(safe-area-inset-top)+3.4rem)] md:pt-0">
 	<PageTopToolbar title={data.souler.name} backHref={exploreHref} class="md:hidden" />
 	<PageBackToolbar title={data.souler.name} backHref={exploreHref} />
-
-
 
 	<section
 		class="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-6 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-x-12"
@@ -124,7 +120,9 @@
 	</section>
 
 	<section class="max-w-3xl border-t border-border/45 pt-4" aria-label="章节">
-		{#if data.chapters.length}
+		{#if !data.souler.checked}
+			<div class="px-1 py-4 text-sm text-muted-foreground/70">人物尚未审核，暂不能聊天。</div>
+		{:else if data.chapters.length}
 			<div class="divide-y divide-border/45">
 				{#each data.chapters as chapter (chapter.id)}
 					<a
