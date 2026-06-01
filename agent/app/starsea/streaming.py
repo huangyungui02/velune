@@ -39,6 +39,7 @@ async def start_starsea_stream(
     metadata: dict[str, Any],
     thread_id: str,
     user_id: str,
+    is_premium: bool,
     intent: str | None,
     lang: Lang,
 ) -> AsyncIterator[str]:
@@ -49,6 +50,7 @@ async def start_starsea_stream(
         thread_id=thread_id,
         intent=intent,
         user_id=user_id,
+        is_premium=is_premium,
         lang=lang,
     ):
         yield sse_event(await _starsea_payload(event, lang))

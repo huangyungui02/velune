@@ -5,9 +5,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.auth.billing import is_user_premium
 from app.auth.dependencies import require_lang, require_user_id
 from app.core.errors import error_log_payload, error_message
 from app.core.common import Lang
+from app.core.llm import model_for_premium
 from app.chat.schemas.chat import ChatRequest
 from app.chat.schemas.chapters import ChapterStartRequest
 from app.chat.services import create_chat_response
@@ -52,6 +54,7 @@ async def start_chapter_session_route(
             souler_id=souler_id,
             chapter_id=chapter_id,
             lang=normalized_lang,
+            model=model_for_premium(await is_user_premium(user_id)),
             reply_length=body.reply_length if body else DEFAULT_REPLY_LENGTH,
         )
         return payload

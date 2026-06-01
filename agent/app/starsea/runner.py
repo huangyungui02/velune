@@ -8,6 +8,7 @@ from uuid import uuid4
 from langchain_core.messages import HumanMessage
 
 from app.core.common import Lang, validate_lang
+from app.core.llm import model_for_premium
 from app.starsea.graph import build_graph
 from app.starsea.state import ArchiveEvent, State
 
@@ -20,12 +21,20 @@ async def run_graph(
     thread_id: str | None = None,
     intent: str | None = None,
     user_id: str | None = None,
+    is_premium: bool = False,
     lang: Lang = "zh",
 ) -> dict[str, Any]:
     thread_id = thread_id or str(uuid4())
     config = {"configurable": {"thread_id": thread_id}}
     result = await build_graph().ainvoke(
-        _initial_state(user_input, metadata, intent, user_id=user_id, lang=lang),
+        _initial_state(
+            user_input,
+            metadata,
+            intent,
+            user_id=user_id,
+            is_premium=is_premium,
+            lang=lang,
+        ),
         config,
     )
 
@@ -44,6 +53,7 @@ async def stream_graph(
     thread_id: str | None = None,
     intent: str | None = None,
     user_id: str | None = None,
+    is_premium: bool = False,
     lang: Lang = "zh",
 ) -> AsyncIterator[dict[str, Any]]:
     thread_id = thread_id or str(uuid4())
@@ -56,7 +66,14 @@ async def stream_graph(
             _ensure_thread_owner(snapshot.values, user_id)
 
         async for chunk in graph.astream(
-            _initial_state(user_input, metadata, intent, user_id=user_id, lang=lang),
+            _initial_state(
+                user_input,
+                metadata,
+                intent,
+                user_id=user_id,
+                is_premium=is_premium,
+                lang=lang,
+            ),
             config,
             stream_mode="custom",
         ):
@@ -99,6 +116,7 @@ def _initial_state(
     intent: str | None = None,
     *,
     user_id: str | None = None,
+    is_premium: bool = False,
     lang: Lang = "zh",
 ) -> State:
     normalized_lang = validate_lang(lang)
@@ -111,6 +129,7 @@ def _initial_state(
         runtime_metadata["user_id"] = user_id
     if intent is not None:
         runtime_metadata["intent"] = intent
+    runtime_metadata["model"] = model_for_premium(is_premium)
 
     content = user_input.strip()
     messages = [HumanMessage(content=content)] if content else []

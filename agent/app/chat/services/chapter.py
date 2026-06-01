@@ -32,6 +32,7 @@ async def start_chapter(
     souler_id: UUID,
     chapter_id: UUID,
     lang: Lang,
+    model: str = DEFAULT_MODEL,
     reply_length: ReplyLength = DEFAULT_REPLY_LENGTH,
 ) -> dict[str, object]:
     created_session_id: str | None = None
@@ -60,7 +61,7 @@ async def start_chapter(
                 },
                 {"role": "user", "content": CHAPTER_OPENING[lang]},
             ],
-            model=DEFAULT_MODEL,
+            model=model,
             temperature=settings.CHAT_TEMPERATURE,
         )
         _, options = parse_chat_response(opening_raw)

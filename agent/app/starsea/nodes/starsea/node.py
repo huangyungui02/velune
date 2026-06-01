@@ -12,7 +12,7 @@ from app.core.conversation_options import (
     parse_conversation_options_response,
     strip_conversation_options_markup,
 )
-from app.core.llm import create_chat_model
+from app.core.llm import DEFAULT_MODEL, create_chat_model
 from app.soulers.services.resolution import resolve_or_enqueue_souler
 from app.starsea.messages import format_messages
 from app.starsea.tools import match_thought_voices
@@ -22,7 +22,7 @@ from .prompt import system_prompt
 if TYPE_CHECKING:
     from app.starsea.state import State
 
-STARSEA_MODEL = "qwen3.5-flash"
+STARSEA_MODEL = DEFAULT_MODEL
 STARSEA_TEMPERATURE = 0.5
 STARSEA_TOOLS = [match_thought_voices]
 
@@ -30,7 +30,7 @@ STARSEA_TOOLS = [match_thought_voices]
 async def starsea_node(state: State) -> dict[str, Any]:
     lang = _state_lang(state)
     model = create_chat_model(
-        model=STARSEA_MODEL,
+        model=_state_model(state),
         temperature=STARSEA_TEMPERATURE,
     ).bind_tools(STARSEA_TOOLS)
     messages = [
@@ -186,6 +186,11 @@ async def _resolve_match_previews(
 
 def _state_lang(state: State) -> str:
     return "zh" if state.get("metadata", {}).get("lang") == "zh" else "en"
+
+
+def _state_model(state: State) -> str:
+    model = str(state.get("metadata", {}).get("model") or "").strip()
+    return model or STARSEA_MODEL
 
 
 async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:

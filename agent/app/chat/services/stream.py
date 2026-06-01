@@ -9,7 +9,7 @@ from starlette.requests import ClientDisconnect
 from app.core.config import get_settings
 from app.core.errors import error_log_payload, error_message
 from app.core.sse import sse_event
-from app.core.llm import DEFAULT_MODEL, stream_text
+from app.core.llm import stream_text
 
 from app.chat.chat_response import (
     ChatStreamState,
@@ -43,7 +43,7 @@ def stream_events(
             )
             async for delta in stream_text(
                 prepared.prompt_messages,
-                model=DEFAULT_MODEL,
+                model=prepared.model,
                 temperature=settings.CHAT_TEMPERATURE,
             ):
                 visible_delta = consume_chat_stream_delta(option_state, delta)

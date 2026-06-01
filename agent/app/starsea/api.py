@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends
 
+from app.auth.billing import is_user_premium
 from app.auth.dependencies import require_lang, require_user_id
 from app.core.errors import error_log_payload, error_message
 from app.core.sse import sse_response
@@ -30,6 +31,7 @@ async def starsea(
                 metadata=body.safe_metadata,
                 thread_id=thread_id,
                 user_id=user_id,
+                is_premium=await is_user_premium(user_id),
                 intent=body.intent,
                 lang=normalized_lang,
             )

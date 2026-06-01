@@ -9,8 +9,16 @@ from pydantic import BaseModel
 from app.core.config import get_settings
 
 DEFAULT_MODEL = "qwen3.5-flash"
-NO_THINKING_MODELS = {"qwen3.5-flash"}
+PREMIUM_MODEL = "qwen3.5-plus"
 StructuredOutputT = TypeVar("StructuredOutputT", bound=BaseModel)
+
+
+def model_for_premium(is_premium: bool) -> str:
+    return PREMIUM_MODEL if is_premium else DEFAULT_MODEL
+
+
+def _is_qwen_model(model: str) -> bool:
+    return model.strip().lower().startswith("qwen")
 
 
 def create_chat_model(model: str, **model_kwargs: Any) -> ChatOpenAI:
@@ -18,7 +26,7 @@ def create_chat_model(model: str, **model_kwargs: Any) -> ChatOpenAI:
     if not settings.DASHSCOPE_API_KEY:
         raise RuntimeError("DASHSCOPE_API_KEY is required to call DashScope models.")
 
-    if model in NO_THINKING_MODELS:
+    if _is_qwen_model(model):
         extra_body = dict(model_kwargs.pop("extra_body", {}) or {})
         extra_body["enable_thinking"] = False
         model_kwargs["extra_body"] = extra_body

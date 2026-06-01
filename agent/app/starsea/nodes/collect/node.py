@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, SystemMessage
 from langgraph.config import get_stream_writer
 
-from app.core.llm import create_chat_model
+from app.core.llm import DEFAULT_MODEL, create_chat_model
 from app.starsea.messages import format_messages
 
 from .prompt import system_prompt
@@ -14,7 +14,7 @@ from .prompt import system_prompt
 if TYPE_CHECKING:
     from app.starsea.state import State
 
-COLLECT_MODEL = "qwen3.5-flash"
+COLLECT_MODEL = DEFAULT_MODEL
 COLLECT_TEMPERATURE = 0.45
 META_START = "<glimmer_meta>"
 META_END = "</glimmer_meta>"
@@ -22,7 +22,7 @@ META_END = "</glimmer_meta>"
 
 def collect_node(state: State) -> dict[str, Any]:
     lang = _state_lang(state)
-    model = create_chat_model(model=COLLECT_MODEL, temperature=COLLECT_TEMPERATURE)
+    model = create_chat_model(model=_state_model(state), temperature=COLLECT_TEMPERATURE)
     response = _stream_ai_message(
         model,
         [
@@ -42,6 +42,11 @@ def collect_node(state: State) -> dict[str, Any]:
 
 def _state_lang(state: State) -> str:
     return "zh" if state.get("metadata", {}).get("lang") == "zh" else "en"
+
+
+def _state_model(state: State) -> str:
+    model = str(state.get("metadata", {}).get("model") or "").strip()
+    return model or COLLECT_MODEL
 
 
 def _conversation_prompt(conversation: str, lang: str) -> str:

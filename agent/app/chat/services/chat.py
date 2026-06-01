@@ -5,7 +5,9 @@ import logging
 
 from fastapi.responses import StreamingResponse
 
+from app.auth.billing import is_user_premium
 from app.core.errors import error_log_payload, error_message
+from app.core.llm import model_for_premium
 from app.core.sse import emit_once, sse_response
 from app.core.common import Lang
 from app.chat.preferences import ReplyLength
@@ -32,9 +34,11 @@ async def create_chat_response(
         logger.info("chat stage=%s elapsed_ms=%s", stage, elapsed_ms)
 
     try:
+        model = model_for_premium(await is_user_premium(user_id))
         prepared = await prepare_chat(
             user_id=user_id,
             lang=lang,
+            model=model,
             session_id=session_id,
             souler_id=souler_id,
             chapter_id=chapter_id,

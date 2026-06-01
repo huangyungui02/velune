@@ -15,6 +15,7 @@ class PreparedChat:
     session: Session
     lang: Lang
     content: str
+    model: str
     is_new_session: bool
     should_generate_title: bool
     prompt_messages: list[dict[str, str]]
