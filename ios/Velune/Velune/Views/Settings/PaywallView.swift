@@ -129,8 +129,7 @@ struct PaywallView: View {
                                             PackageCard(
                                                 package: package,
                                                 isSelected: isSelected,
-                                                onSelect: { selectedPackage = package },
-                                                comparePrice: isAnnual ? monthlyPackage?.storeProduct.localizedPriceString : nil
+                                                onSelect: { selectedPackage = package }
                                             )
                                             
                                             if isAnnual, let discount = annualDiscountPercentage {
@@ -250,15 +249,23 @@ struct PaywallView: View {
                 }
                 .onChange(of: subscriptionManager.availablePackages) { _, newPackages in
                     let packages = sortedDepthPackages(newPackages)
-                    if let selectedPackage, !packages.contains(where: { $0.identifier == selectedPackage.identifier }) {
-                        self.selectedPackage = packages.first
-                    } else if selectedPackage == nil, let first = packages.first {
-                        selectedPackage = first
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        if let selectedPackage, !packages.contains(where: { $0.identifier == selectedPackage.identifier }) {
+                            self.selectedPackage = packages.first
+                        } else if selectedPackage == nil, let first = packages.first {
+                            selectedPackage = first
+                        }
                     }
                 }
                 .onAppear {
                     if selectedPackage == nil, let first = depthPackages.first {
-                        selectedPackage = first
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) {
+                            selectedPackage = first
+                        }
                     }
                 }
                 .sheet(isPresented: $showSignInSheet) {
@@ -365,7 +372,6 @@ private struct PackageCard: View {
     let package: RevenueCat.Package
     let isSelected: Bool
     let onSelect: () -> Void
-    let comparePrice: String?
     
     @Environment(\.colorScheme) private var colorScheme
     
@@ -377,22 +383,12 @@ private struct PackageCard: View {
         isAnnual ? "paywall.tier.annual.label" : "paywall.tier.monthly.label"
     }
     
-    private var monthlyPriceString: String {
-        let product = package.storeProduct
-        if isAnnual {
-            let price = product.price
-            let monthlyPrice = price / 12
-            if let formatter = product.priceFormatter {
-                return formatter.string(from: monthlyPrice as NSDecimalNumber) ?? ""
-            }
-            return String(format: "$%.2f", NSDecimalNumber(decimal: monthlyPrice).doubleValue)
-        } else {
-            return product.localizedPriceString
-        }
+    private var priceString: String {
+        package.storeProduct.localizedPriceString
     }
     
     private var priceSuffix: String {
-        String(localized: "billing.price.perMonthSuffix")
+        isAnnual ? NSLocalizedString("billing.price.perYearSuffix", comment: "") : NSLocalizedString("billing.price.perMonthSuffix", comment: "")
     }
     
     var body: some View {
@@ -409,7 +405,7 @@ private struct PackageCard: View {
                 // Pricing Area
                 VStack(spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
-                        Text(monthlyPriceString)
+                        Text(priceString)
                             .font(.system(size: 23, weight: .bold, design: .rounded))
                             .foregroundStyle(isSelected ? .white : UITheme.primaryText)
                         
@@ -417,33 +413,12 @@ private struct PackageCard: View {
                             .font(.system(size: 11))
                             .foregroundStyle(UITheme.secondaryText)
                     }
-                    
-                    // Comparison crossed out price if annual
-                    if isAnnual, let comparePrice = comparePrice {
-                        HStack(spacing: 2) {
-                            Text(comparePrice)
-                                .strikethrough()
-                                .font(.system(size: 12))
-                                .foregroundStyle(UITheme.tertiaryText)
-                            Text(priceSuffix)
-                                .font(.system(size: 10))
-                                .foregroundStyle(UITheme.tertiaryText)
-                        }
-                    } else {
-                        // Invisible placeholder to keep heights and baseline alignments 100% identical!
-                        HStack(spacing: 2) {
-                            Text(" ")
-                                .font(.system(size: 12))
-                            Text(" ")
-                                .font(.system(size: 10))
-                        }
-                    }
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .padding(.horizontal, 10)
-            .frame(height: 116) // Fully restored to balanced height for premium breathing room!
+            .frame(height: 98) // Sized to match premium clean styling without subtext!
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color.white.opacity(isSelected ? 0.08 : 0.03))
@@ -456,8 +431,6 @@ private struct PackageCard: View {
                     )
             )
             .shadow(color: isSelected ? UITheme.glimmerGlow.opacity(0.08) : Color.clear, radius: 8, x: 0, y: 3)
-            .scaleEffect(isSelected ? 1.02 : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         }
         .buttonStyle(.plain)
     }
