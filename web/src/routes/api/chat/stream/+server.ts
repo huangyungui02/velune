@@ -51,7 +51,7 @@ export const POST: RequestHandler = async ({ request, url, locals }) => {
 		return json({ error: message }, { status: 500 });
 	}
 
-	const endpoint = `${baseUrl}/api/v1/${lang}/chat`;
+	const endpoint = `${baseUrl}/v1/${lang}/chat`;
 	const upstream = await fetch(endpoint, {
 		method: 'POST',
 		headers: {

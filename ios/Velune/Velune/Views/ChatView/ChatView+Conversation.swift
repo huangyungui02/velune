@@ -51,7 +51,7 @@ extension ChatView {
                 sessionId: isDraftSession ? nil : activeSessionId,
                 soulerId: soulerId,
                 soulerName: soulerName,
-                path: "api/v1/\(AppLanguage.current.apiLanguageCode)/chat",
+                path: "v1/\(AppLanguage.current.apiLanguageCode)/chat",
                 content: content
             ) {
                 switch event {

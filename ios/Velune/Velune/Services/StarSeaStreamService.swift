@@ -68,7 +68,7 @@ enum StarSeaStreamService {
             intent: intent
         )
         let payloadDataStream = APISSEClient.stream(
-            path: "api/v1/\(AppLanguage.current.apiLanguageCode)/starsea",
+            path: "v1/\(AppLanguage.current.apiLanguageCode)/starsea",
             body: request
         )
 
@@ -107,7 +107,7 @@ enum StarSeaStreamService {
         }
 
         let endpoint = try Backend.requireAPIBaseURL()
-            .appending(path: "api/v1/\(AppLanguage.current.apiLanguageCode)/soulers/resolutions/\(requestId.uuidString)")
+            .appending(path: "v1/\(AppLanguage.current.apiLanguageCode)/soulers/resolutions/\(requestId.uuidString)")
         var request = URLRequest(url: endpoint)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")

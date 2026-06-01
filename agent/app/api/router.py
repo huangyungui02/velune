@@ -11,4 +11,4 @@ v1_router.include_router(starsea_router)
 v1_router.include_router(chat_router)
 v1_router.include_router(soulers_router)
 
-router.include_router(v1_router, prefix="/api/v1")
+router.include_router(v1_router, prefix="/v1")
