@@ -3,7 +3,6 @@
 "settings.section.legal" = "法律";
 "settings.section.support" = "支持";
 "settings.section.billing" = "订阅";
-"settings.section.ai" = "AI";
 "settings.section.about" = "关于";
 "settings.account" = "账号";
 "settings.manageAccount" = "管理账号";
@@ -34,9 +33,6 @@
 "settings.signOut.confirm.message" = "你将需要重新登录后才能继续使用。";
 "settings.delete.confirm.title" = "确认永久删除账号？";
 "settings.delete.confirm.message" = "此操作不可撤销。你的账号与相关数据将被永久删除。";
-"settings.aiReplyLength.title" = "AI 回复长度";
-"settings.aiReplyLength.standard" = "标准";
-"settings.aiReplyLength.concise" = "简洁";
 
 "common.cancel" = "取消";
 "common.clear" = "清空";

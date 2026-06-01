@@ -24,9 +24,7 @@ enum ChapterSessionStartService {
         var options: [String]?
     }
 
-    private struct RequestBody: Encodable {
-        var replyLength: String
-    }
+    private struct RequestBody: Encodable {}
 
     static func start(
         soulerId: UUID,
@@ -44,11 +42,7 @@ enum ChapterSessionStartService {
 
         var request = URLRequest(url: try Backend.requireAPIBaseURL().appending(path: path))
         request.httpMethod = "POST"
-        request.httpBody = try JSONEncoder().encode(
-            RequestBody(
-                replyLength: UserDefaults.standard.string(forKey: AIReplyLength.storageKey) ?? AIReplyLength.standard.rawValue
-            )
-        )
+        request.httpBody = try JSONEncoder().encode(RequestBody())
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")

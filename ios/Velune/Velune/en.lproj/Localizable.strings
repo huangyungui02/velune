@@ -3,7 +3,6 @@
 "settings.section.legal" = "Legal";
 "settings.section.support" = "Support";
 "settings.section.billing" = "Subscription";
-"settings.section.ai" = "AI";
 "settings.section.about" = "About";
 "settings.account" = "Account";
 "settings.manageAccount" = "Manage Account";
@@ -34,9 +33,6 @@
 "settings.signOut.confirm.message" = "You’ll need to sign in again to continue using the app.";
 "settings.delete.confirm.title" = "Delete account permanently?";
 "settings.delete.confirm.message" = "This action cannot be undone. Your account and related data will be permanently deleted.";
-"settings.aiReplyLength.title" = "AI Reply Length";
-"settings.aiReplyLength.standard" = "Standard";
-"settings.aiReplyLength.concise" = "Concise";
 
 "common.cancel" = "Cancel";
 "common.clear" = "Clear";

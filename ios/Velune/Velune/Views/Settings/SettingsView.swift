@@ -13,7 +13,6 @@ struct SettingsView: View {
     @State private var signInSheetDescriptionKey = "paywall.restore.signInRequired.description"
     @State private var feedbackTitleKey = "settings.error.title"
     @State private var feedbackMessage: String?
-    @AppStorage(AIReplyLength.storageKey) private var aiReplyLength = AIReplyLength.standard.rawValue
     @Environment(\.dismiss) private var dismiss
     @Environment(\.requestReview) private var requestReview
 
@@ -103,20 +102,6 @@ struct SettingsView: View {
                             .font(.footnote)
                             .foregroundStyle(UITheme.secondaryText)
                     }
-                }
-
-                Section {
-                    Picker(selection: $aiReplyLength) {
-                        ForEach(AIReplyLength.allCases) { option in
-                            Text(LocalizedStringKey(option.localizedTitleKey))
-                                .tag(option.rawValue)
-                        }
-                    } label: {
-                        settingsRowLabel("settings.aiReplyLength.title", systemImage: "text.bubble")
-                    }
-                    .pickerStyle(.segmented)
-                } header: {
-                    sectionHeader("settings.section.ai")
                 }
 
                 Section {
