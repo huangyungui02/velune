@@ -4,7 +4,6 @@ struct StarSeaConversationView: View {
     let onLeave: () -> Void
 
     @State private var session: StarSeaConversationSession
-    @State private var pulseScale: CGFloat = 1.0
     @FocusState private var isComposerFocused: Bool
 
     init(openingText: String, onLeave: @escaping () -> Void) {
@@ -88,9 +87,7 @@ struct StarSeaConversationView: View {
         VStack(spacing: 0) {
             messageList
 
-            if session.isAwaitingSettlementConfirmation && !session.isShowingImmersiveSettlement {
-                glimmerAccessoryView
-            } else if !session.isShowingImmersiveSettlement {
+            if !session.isShowingImmersiveSettlement {
                 composer
             }
         }
@@ -126,11 +123,7 @@ struct StarSeaConversationView: View {
         .padding(.bottom, 16)
     }
 
-    private var glimmerAccessoryView: some View {
-        StarSeaGlimmerAccessoryView(pulseScale: $pulseScale) {
-            session.showImmersiveSettlement()
-        }
-    }
+
 
     private var leaveConfirmationTitle: LocalizedStringKey {
         "starsea.leave.title"
