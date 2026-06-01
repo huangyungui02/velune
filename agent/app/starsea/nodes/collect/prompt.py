@@ -19,7 +19,7 @@ SYSTEM_PROMPTS = {
 5. **接纳与抱持**：不必强求积极的结局，可以承认疲惫、未解的困惑、微小的动摇、或一刹那的释怀。
 
 # Format & Length
-- 先输出一段纯文本正文，字数在 120 到 200 字之间，不要包含任何标题、Markdown 标记或修饰语。
+- 先输出一段纯文本正文，字数在 120 到 150 字之间，不要包含任何标题、Markdown 标记或修饰语。
 - 正文之后，必须另起一行输出隐藏元数据块，格式严格如下：
 <glimmer_meta>
 {"keywords":["关键词1","关键词2","关键词3"]}
@@ -44,7 +44,7 @@ It should act as a mirror of their inner landscape during this exchange, capturi
 5. **No Summary Jargon**: Do not mention "the user," "the assistant," "in this chat," or analyze the structure of the dialogue.
 
 # Format & Length
-- First output one pure text paragraph, 70 to 130 English words. Do not include titles, markdown styling, or introductory text.
+- First output one pure text paragraph, 60 to 80 English words. Do not include titles, markdown styling, or introductory text.
 - After the paragraph, output a hidden metadata block on a new line with this exact shape:
 <glimmer_meta>
 {"keywords":["keyword one","keyword two","keyword three"]}
