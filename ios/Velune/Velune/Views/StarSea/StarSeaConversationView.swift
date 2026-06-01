@@ -78,9 +78,6 @@ struct StarSeaConversationView: View {
         .task {
             await session.startIfNeeded()
         }
-        .onDisappear {
-            session.cancelActiveTask()
-        }
     }
 
     private var conversationSurface: some View {
