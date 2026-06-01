@@ -152,6 +152,14 @@ def _event_from_chunk(chunk: Any, thread_id: str) -> dict[str, Any]:
             "thread_id": thread_id,
             "data": chunk["matches"],
         }
+    if isinstance(chunk, dict) and chunk.get("type") == "conversation_options":
+        return {
+            "event": "conversation_options",
+            "thread_id": thread_id,
+            "data": {
+                "options": chunk.get("options", []),
+            },
+        }
     return {
         "event": "custom",
         "thread_id": thread_id,

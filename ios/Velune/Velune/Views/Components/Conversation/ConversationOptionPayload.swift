@@ -11,11 +11,10 @@ enum ConversationOptionParser {
 
     static func parse(_ content: String) -> ConversationOptionPayload {
         guard let openRange = content.range(of: openMarker) else {
-            return ConversationOptionPayload(body: content, options: [])
+            return ConversationOptionPayload(body: trimmedBody(content), options: [])
         }
 
-        let body = String(content[..<openRange.lowerBound])
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let body = trimmedBody(String(content[..<openRange.lowerBound]))
 
         guard let closeRange = content.range(
             of: closeMarker,
@@ -37,7 +36,7 @@ enum ConversationOptionParser {
     }
 
     static func storageContent(body: String, options: [String]) -> String {
-        let normalizedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedBody = trimmedBody(body)
         let resolvedBody = normalizedBody.isEmpty ? body : normalizedBody
         let normalizedOptions = normalize(options)
         guard !normalizedOptions.isEmpty else {
@@ -67,6 +66,10 @@ enum ConversationOptionParser {
         }
 
         return normalized
+    }
+
+    private static func trimmedBody(_ body: String) -> String {
+        body.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private static func parseOptions(from optionsBlock: String) -> [String] {

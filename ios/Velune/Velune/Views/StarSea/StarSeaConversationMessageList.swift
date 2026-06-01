@@ -56,15 +56,18 @@ struct StarSeaConversationMessageList: View {
     }
 
     private func messageRow(_ message: StarSeaMessage, lastAssistantMessageId: UUID?) -> some View {
-        VStack(spacing: 8) {
-            let payload = payload(for: message)
+        let payload = payload(for: message)
+        let hasInlineOptions = showsOptions
+            && message.id == lastAssistantMessageId
+            && !payload.options.isEmpty
 
+        return VStack(spacing: 8) {
             ConversationMessageRow(
                 role: message.role == .user ? .user : .assistant,
                 content: payload.body
             )
 
-            if showsOptions, message.id == lastAssistantMessageId, !payload.options.isEmpty {
+            if hasInlineOptions {
                 ConversationOptionsView(
                     options: payload.options,
                     isDisabled: isOptionsDisabled,

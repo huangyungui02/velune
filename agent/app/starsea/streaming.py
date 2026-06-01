@@ -11,6 +11,8 @@ from app.core.sse import sse_event
 from app.core.common import Lang
 from app.starsea.schemas.events import (
     CompletedData,
+    ConversationOptionsData,
+    ConversationOptionsPayload,
     DeltaPayload,
     DonePayload,
     ErrorData,
@@ -72,6 +74,9 @@ async def _map_starsea_payload(event: StarseaGraphEvent, lang: Lang) -> dict[str
         case "resonance_match":
             payload = StarseaMatchesPayload(matches=await _resonance_matches(event.data, lang))
             return payload.model_dump(by_alias=True, exclude_none=True)
+        case "conversation_options":
+            data = ConversationOptionsData.model_validate(_dict_data(event.data))
+            return ConversationOptionsPayload(options=data.options).model_dump()
         case "completed":
             return _completed_payload(event)
         case "error":

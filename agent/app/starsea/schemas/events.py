@@ -21,6 +21,25 @@ class CompletedData(BaseModel):
     display: Any = None
 
 
+class ConversationOptionsData(BaseModel):
+    options: list[str] = []
+
+    @model_validator(mode="after")
+    def clean_options(self) -> ConversationOptionsData:
+        seen: set[str] = set()
+        normalized: list[str] = []
+        for option in self.options:
+            cleaned = option.strip()
+            if not cleaned or cleaned in seen:
+                continue
+            seen.add(cleaned)
+            normalized.append(cleaned)
+            if len(normalized) == 4:
+                break
+        self.options = normalized
+        return self
+
+
 class ErrorData(BaseModel):
     message: str = "Starsea failed"
 
@@ -83,6 +102,11 @@ class ReadyPayload(BaseModel):
 class StarseaMatchesPayload(BaseModel):
     type: Literal["resonance_match"] = "resonance_match"
     matches: list[ResonanceMatchPayload]
+
+
+class ConversationOptionsPayload(BaseModel):
+    type: Literal["options"] = "options"
+    options: list[str]
 
 
 class SettledPayload(BaseModel):

@@ -9,6 +9,7 @@ from langgraph.config import get_stream_writer
 from app.core.conversation_options import (
     ConversationOptionStreamState,
     consume_conversation_options_stream_delta,
+    parse_conversation_options_response,
     strip_conversation_options_markup,
 )
 from app.core.llm import create_chat_model
@@ -46,6 +47,8 @@ async def starsea_node(state: State) -> dict[str, Any]:
         returned_messages.extend(tool_messages)
         final_response = await _stream_ai_message(model, [*messages, response, *tool_messages])
         returned_messages.append(final_response)
+
+    _stream_conversation_options(final_response.content)
 
     return {
         "messages": returned_messages,
@@ -291,6 +294,25 @@ def _stream_resonance_matches(previews: list[dict[str, str]]) -> None:
         {
             "type": "resonance_match",
             "matches": previews,
+        }
+    )
+
+
+def _stream_conversation_options(content: Any) -> None:
+    try:
+        _, options = parse_conversation_options_response(_content_text(content))
+    except ValueError:
+        return
+
+    try:
+        writer = get_stream_writer()
+    except RuntimeError:
+        return
+
+    writer(
+        {
+            "type": "conversation_options",
+            "options": options,
         }
     )
 

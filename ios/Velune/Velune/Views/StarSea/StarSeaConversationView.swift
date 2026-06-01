@@ -352,6 +352,8 @@ struct StarSeaConversationView: View {
             self.threadId = threadId
         case let .delta(delta):
             appendAssistant(delta: delta)
+        case let .options(options):
+            appendConversationOptions(options)
         case let .resonanceMatch(matches):
             appendResonanceMatches(matches)
         case let .done(threadId):
@@ -379,7 +381,7 @@ struct StarSeaConversationView: View {
         case let .settled(glimmer):
             settlementText = glimmer.content
             isSettlementReady = true
-        case .resonanceMatch, .done:
+        case .options, .resonanceMatch, .done:
             break
         }
     }
@@ -394,6 +396,21 @@ struct StarSeaConversationView: View {
         let message = StarSeaMessage(role: .assistant, content: delta)
         currentAssistantMessageId = message.id
         timelineEvents.append(.message(message))
+    }
+
+    private func appendConversationOptions(_ options: [String]) {
+        let targetMessageId = currentAssistantMessageId ?? timelineEvents.lastAssistantMessageId
+        guard let targetMessageId,
+              let index = timelineEvents.firstMessageIndex(id: targetMessageId)
+        else {
+            return
+        }
+
+        let currentContent = timelineEvents[index].message?.content ?? ""
+        let body = ConversationOptionParser.parse(currentContent).body
+        timelineEvents[index].replaceMessageContent(
+            ConversationOptionParser.storageContent(body: body, options: options)
+        )
     }
 
     private func appendResonanceMatches(_ matches: [StarSeaStreamService.ResonanceMatch]) {
@@ -458,6 +475,10 @@ private extension [StarSeaTimelineEvent] {
             guard case let .message(message) = event else { return false }
             return message.id == id
         }
+    }
+
+    var lastAssistantMessageId: UUID? {
+        reversed().compactMap(\.message).first { $0.role == .assistant }?.id
     }
 }
 

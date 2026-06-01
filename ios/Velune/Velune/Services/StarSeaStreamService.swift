@@ -33,6 +33,7 @@ enum StarSeaStreamService {
     enum Event {
         case ready(threadId: String)
         case delta(String)
+        case options([String])
         case resonanceMatch([ResonanceMatch])
         case done(threadId: String?)
         case settled(SettledGlimmer)
@@ -49,6 +50,7 @@ enum StarSeaStreamService {
         var threadId: String?
         var delta: String?
         var matches: [ResonanceMatch]?
+        var options: [String]?
         var glimmer: SettledGlimmer?
         var content: String?
         var message: String?
@@ -134,6 +136,11 @@ enum StarSeaStreamService {
         case "delta":
             guard let delta = payload.delta, !delta.isEmpty else { return nil }
             return .delta(delta)
+        case "options":
+            guard let options = payload.options else { return nil }
+            let normalized = normalizeOptions(options)
+            guard !normalized.isEmpty else { return nil }
+            return .options(normalized)
         case "resonance_match":
             return .resonanceMatch(payload.matches ?? [])
         case "done":
@@ -146,6 +153,12 @@ enum StarSeaStreamService {
         default:
             return nil
         }
+    }
+
+    private static func normalizeOptions(_ options: [String]) -> [String] {
+        options
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
     }
 
     private static func streamError(for payload: StreamEvent) -> NSError {

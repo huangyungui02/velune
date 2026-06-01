@@ -29,13 +29,15 @@ extension ChatView {
                     let inlineOptions = inlineConversationOptions
 
                     ForEach(messages) { message in
+                        let hasInlineOptions = message.id == lastMessageId && !inlineOptions.isEmpty
+
                         VStack(spacing: 8) {
                             ConversationMessageRow(
                                 role: message.role == .user ? .user : .assistant,
                                 content: visibleContent(for: message)
                             )
 
-                            if message.id == lastMessageId, !inlineOptions.isEmpty {
+                            if hasInlineOptions {
                                 chapterOptionsInlineView(options: inlineOptions)
                             }
                         }
