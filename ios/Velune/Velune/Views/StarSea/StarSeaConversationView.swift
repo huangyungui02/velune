@@ -113,6 +113,7 @@ struct StarSeaConversationView: View {
             canSend: session.canSendMessage,
             placeholderKey: "starsea.chat.placeholder"
         ) {
+            isComposerFocused = false
             await session.sendFollowUp()
         }
         .padding(.horizontal, 20)

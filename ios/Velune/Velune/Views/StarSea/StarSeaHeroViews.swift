@@ -23,7 +23,7 @@ struct FloatingWriteButton: View {
                 .foregroundStyle(UITheme.primaryText)
                 .frame(width: 56, height: 56)
                 .contentShape(Circle())
-                .glassEffect(.regular.tint(UITheme.accent.opacity(0.22)).interactive(), in: .circle)
+                .glassEffect(.regular.interactive(), in: .circle)
                 .shadow(color: .black.opacity(0.16), radius: 16, x: 0, y: 8)
         }
         .buttonStyle(.plain)
