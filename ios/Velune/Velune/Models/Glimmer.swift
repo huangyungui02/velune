@@ -7,17 +7,20 @@ class Glimmer {
     @Attribute(.unique) var id: UUID
     var userId: String
     var content: String
+    var keywords: [String] = []
     var createdAt: Date
 
     init(
         id: UUID = UUID(),
         userId: String = "",
         content: String,
+        keywords: [String] = [],
         createdAt: Date = .now
     ) {
         self.id = id
         self.userId = userId
         self.content = content
+        self.keywords = keywords
         self.createdAt = createdAt
     }
 
@@ -32,11 +35,13 @@ extension Glimmer {
     nonisolated struct Response: Identifiable, Codable, Sendable {
         var id: UUID
         var content: String
+        var keywords: [String]
         var createdAt: Date
 
         enum CodingKeys: String, CodingKey {
             case id
             case content
+            case keywords
             case createdAt = "created_at"
         }
     }
@@ -45,7 +50,7 @@ extension Glimmer {
         let supabase = try Backend.requireSupabase()
         let response: Response = try await supabase
             .from("glimmers")
-            .select("id, content, created_at")
+            .select("id, content, keywords, created_at")
             .eq("id", value: glimmerId)
             .single()
             .execute()
@@ -56,6 +61,7 @@ extension Glimmer {
             id: response.id,
             userId: userId.uuidString,
             content: response.content,
+            keywords: response.keywords,
             createdAt: response.createdAt
         )
     }
@@ -69,7 +75,7 @@ extension Glimmer {
         let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("glimmers")
-            .select("id, content, created_at")
+            .select("id, content, keywords, created_at")
             .eq("user_id", value: userId.uuidString)
             .order("created_at", ascending: false)
             .range(from: pageOffset, to: upperBound)
@@ -81,6 +87,7 @@ extension Glimmer {
                 id: response.id,
                 userId: userId.uuidString,
                 content: response.content,
+                keywords: response.keywords,
                 createdAt: response.createdAt
             )
         }
@@ -94,7 +101,7 @@ extension Glimmer {
         let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("glimmers")
-            .select("id, content, created_at")
+            .select("id, content, keywords, created_at")
             .eq("user_id", value: userId.uuidString)
             .order("created_at", ascending: false)
             .execute()
@@ -105,6 +112,7 @@ extension Glimmer {
                 id: response.id,
                 userId: userId.uuidString,
                 content: response.content,
+                keywords: response.keywords,
                 createdAt: response.createdAt
             )
         }
@@ -115,12 +123,14 @@ extension Glimmer {
             var id: UUID
             var userId: UUID
             var content: String
+            var keywords: [String]
             var createdAt: Date
 
             enum CodingKeys: String, CodingKey {
                 case id
                 case userId = "user_id"
                 case content
+                case keywords
                 case createdAt = "created_at"
             }
         }
@@ -130,6 +140,7 @@ extension Glimmer {
             id: glimmer.id,
             userId: userId,
             content: glimmer.content,
+            keywords: glimmer.keywords,
             createdAt: glimmer.createdAt
         )
 

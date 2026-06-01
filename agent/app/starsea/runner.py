@@ -130,6 +130,7 @@ def _initial_state(
         "display": None,
         "archive_events": archive_events,
         "glimmer_content": None,
+        "glimmer_keywords": [],
         "metadata": runtime_metadata,
     }
 

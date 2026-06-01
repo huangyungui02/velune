@@ -25,7 +25,7 @@ class StarseaDisplay(TypedDict):
 
 class GlimmerDisplay(TypedDict):
     type: Literal["glimmer"]
-    glimmer: dict[str, str]
+    glimmer: dict[str, Any]
 
 
 Display = StarseaDisplay | GlimmerDisplay
@@ -43,4 +43,5 @@ class State(TypedDict):
     display: Display | None
     archive_events: Annotated[list[ArchiveEvent], operator.add]
     glimmer_content: str | None
+    glimmer_keywords: list[str]
     metadata: dict[str, Any]

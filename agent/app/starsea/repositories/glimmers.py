@@ -11,6 +11,7 @@ class Glimmer(TypedDict):
     id: str
     user_id: str
     content: str
+    keywords: list[str]
     created_at: str
 
 
@@ -24,7 +25,7 @@ class GlimmerMessageDraft(TypedDict):
 async def get_glimmer_by_id(user_id: str, glimmer_id: str) -> Glimmer | None:
     row = await fetch_one(
         """
-        SELECT id, user_id, content, created_at
+        SELECT id, user_id, content, keywords, created_at
         FROM public.glimmers
         WHERE id = CAST(%(glimmer_id)s AS uuid)
           AND user_id = CAST(%(user_id)s AS uuid)
@@ -38,6 +39,7 @@ async def get_glimmer_by_id(user_id: str, glimmer_id: str) -> Glimmer | None:
         "id": str(row.get("id", "")),
         "user_id": str(row.get("user_id", "")),
         "content": str(row.get("content", "")),
+        "keywords": _row_keywords(row.get("keywords")),
         "created_at": str(row.get("created_at", "")),
     }
 
@@ -45,14 +47,15 @@ async def get_glimmer_by_id(user_id: str, glimmer_id: str) -> Glimmer | None:
 async def create_glimmer(
     user_id: str,
     content: str,
+    keywords: list[str] | None = None,
 ) -> Glimmer:
     row = await execute_fetch_one(
         """
-        INSERT INTO public.glimmers (user_id, content)
-        VALUES (CAST(%(user_id)s AS uuid), %(content)s)
-        RETURNING id, user_id, content, created_at
+        INSERT INTO public.glimmers (user_id, content, keywords)
+        VALUES (CAST(%(user_id)s AS uuid), %(content)s, %(keywords)s)
+        RETURNING id, user_id, content, keywords, created_at
         """,
-        {"user_id": user_id, "content": content},
+        {"user_id": user_id, "content": content, "keywords": _clean_keywords(keywords)},
     )
     if not row:
         raise RuntimeError("Failed to create glimmer")
@@ -61,6 +64,7 @@ async def create_glimmer(
         "id": str(row.get("id", "")),
         "user_id": str(row.get("user_id", "")),
         "content": str(row.get("content", "")),
+        "keywords": _row_keywords(row.get("keywords")),
         "created_at": str(row.get("created_at", "")),
     }
 
@@ -68,6 +72,7 @@ async def create_glimmer(
 async def create_glimmer_with_messages(
     user_id: str,
     content: str,
+    keywords: list[str],
     messages: list[GlimmerMessageDraft],
 ) -> Glimmer:
     if not messages:
@@ -78,11 +83,15 @@ async def create_glimmer_with_messages(
             async with connection.cursor() as cursor:
                 await cursor.execute(
                     """
-                    INSERT INTO public.glimmers (user_id, content)
-                    VALUES (CAST(%(user_id)s AS uuid), %(content)s)
-                    RETURNING id, user_id, content, created_at
+                    INSERT INTO public.glimmers (user_id, content, keywords)
+                    VALUES (CAST(%(user_id)s AS uuid), %(content)s, %(keywords)s)
+                    RETURNING id, user_id, content, keywords, created_at
                     """,
-                    {"user_id": user_id, "content": content},
+                    {
+                        "user_id": user_id,
+                        "content": content,
+                        "keywords": _clean_keywords(keywords),
+                    },
                 )
                 row = await cursor.fetchone()
                 if not row:
@@ -128,5 +137,26 @@ async def create_glimmer_with_messages(
         "id": str(row.get("id", "")),
         "user_id": str(row.get("user_id", "")),
         "content": str(row.get("content", "")),
+        "keywords": _row_keywords(row.get("keywords")),
         "created_at": str(row.get("created_at", "")),
     }
+
+
+def _clean_keywords(keywords: list[str] | None) -> list[str]:
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for keyword in keywords or []:
+        value = str(keyword).strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        cleaned.append(value)
+        if len(cleaned) == 3:
+            break
+    return cleaned
+
+
+def _row_keywords(value: Any) -> list[str]:
+    if not isinstance(value, list | tuple):
+        return []
+    return _clean_keywords([str(item) for item in value])

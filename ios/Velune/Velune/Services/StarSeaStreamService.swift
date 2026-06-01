@@ -27,6 +27,7 @@ enum StarSeaStreamService {
     struct SettledGlimmer: Identifiable, Hashable, Decodable {
         var id: UUID
         var content: String
+        var keywords: [String]
         var createdAt: String
     }
 

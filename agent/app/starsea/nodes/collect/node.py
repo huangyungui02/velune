@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, SystemMessage
@@ -15,6 +16,8 @@ if TYPE_CHECKING:
 
 COLLECT_MODEL = "qwen3.5-flash"
 COLLECT_TEMPERATURE = 0.45
+META_START = "<glimmer_meta>"
+META_END = "</glimmer_meta>"
 
 
 def collect_node(state: State) -> dict[str, Any]:
@@ -27,12 +30,13 @@ def collect_node(state: State) -> dict[str, Any]:
             HumanMessage(content=_conversation_prompt(format_messages(state["messages"], lang), lang)),
         ],
     )
-    content = _content_text(response.content).strip()
+    content, keywords = _parse_collect_output(_content_text(response.content))
     message = AIMessage(content=content)
 
     return {
         "messages": [message],
         "glimmer_content": content,
+        "glimmer_keywords": keywords,
     }
 
 
@@ -48,12 +52,16 @@ def _conversation_prompt(conversation: str, lang: str) -> str:
 
 def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
     final_chunk: AIMessageChunk | None = None
+    filter_state = _CollectStreamFilter()
     for chunk in model.stream(messages):
         if not isinstance(chunk, AIMessageChunk):
             continue
 
         final_chunk = chunk if final_chunk is None else final_chunk + chunk
-        _stream_message_delta(_content_text(chunk.content))
+        visible_delta = filter_state.push(_content_text(chunk.content))
+        _stream_message_delta(visible_delta)
+
+    _stream_message_delta(filter_state.finish())
 
     if final_chunk is None:
         return AIMessage(content="")
@@ -97,3 +105,76 @@ def _content_text(content: Any) -> str:
                 parts.append(item["text"])
         return "".join(parts)
     return ""
+
+
+def _parse_collect_output(raw_content: str) -> tuple[str, list[str]]:
+    start_index = raw_content.find(META_START)
+    if start_index < 0:
+        return raw_content.strip(), []
+
+    visible_content = raw_content[:start_index].strip()
+    meta_start_index = start_index + len(META_START)
+    end_index = raw_content.find(META_END, meta_start_index)
+    if end_index < 0:
+        return visible_content, []
+
+    meta_text = raw_content[meta_start_index:end_index].strip()
+    try:
+        payload = json.loads(meta_text)
+    except json.JSONDecodeError:
+        return visible_content, []
+
+    keywords = _clean_keywords(payload.get("keywords"))
+    return visible_content, keywords
+
+
+def _clean_keywords(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+
+    keywords: list[str] = []
+    seen: set[str] = set()
+    for item in value:
+        keyword = str(item).strip() if item is not None else ""
+        if not keyword or keyword in seen:
+            continue
+        seen.add(keyword)
+        keywords.append(keyword)
+        if len(keywords) == 3:
+            break
+
+    return keywords
+
+
+class _CollectStreamFilter:
+    def __init__(self) -> None:
+        self._buffer = ""
+        self._hidden = False
+
+    def push(self, delta: str) -> str:
+        if not delta or self._hidden:
+            return ""
+
+        self._buffer += delta
+        start_index = self._buffer.find(META_START)
+        if start_index >= 0:
+            visible = self._buffer[:start_index].rstrip()
+            self._buffer = ""
+            self._hidden = True
+            return visible
+
+        keep = len(META_START) - 1
+        if len(self._buffer) <= keep:
+            return ""
+
+        visible = self._buffer[:-keep]
+        self._buffer = self._buffer[-keep:]
+        return visible
+
+    def finish(self) -> str:
+        if self._hidden:
+            return ""
+
+        visible = self._buffer
+        self._buffer = ""
+        return visible

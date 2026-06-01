@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 async def glimmer_node(state: State) -> dict[str, Any]:
     user_id = str(state.get("metadata", {}).get("user_id") or "").strip()
     content = str(state.get("glimmer_content") or "").strip()
+    keywords = _clean_keywords(state.get("glimmer_keywords") or [])
     archive_events = _clean_archive_events(state.get("archive_events") or [])
 
     if not user_id:
@@ -20,7 +21,7 @@ async def glimmer_node(state: State) -> dict[str, Any]:
     if not archive_events:
         raise ValueError("Glimmer archive messages cannot be empty")
 
-    glimmer = await create_glimmer_with_messages(user_id, content, archive_events)
+    glimmer = await create_glimmer_with_messages(user_id, content, keywords, archive_events)
 
     return {
         "display": {
@@ -28,10 +29,25 @@ async def glimmer_node(state: State) -> dict[str, Any]:
             "glimmer": {
                 "id": glimmer["id"],
                 "content": glimmer["content"],
+                "keywords": glimmer["keywords"],
                 "createdAt": glimmer["created_at"],
             },
         },
     }
+
+
+def _clean_keywords(value: list[Any]) -> list[str]:
+    keywords: list[str] = []
+    seen: set[str] = set()
+    for item in value:
+        keyword = str(item).strip()
+        if not keyword or keyword in seen:
+            continue
+        seen.add(keyword)
+        keywords.append(keyword)
+        if len(keywords) == 3:
+            break
+    return keywords
 
 
 def _clean_archive_events(events: list[Any]) -> list[dict[str, Any]]:

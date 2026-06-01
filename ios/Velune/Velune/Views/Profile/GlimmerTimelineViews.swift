@@ -99,7 +99,7 @@ private struct GlimmerTimelineCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 12) {
             Text(glimmer.content)
                 .font(.system(size: isFeatured ? 15.5 : 14, weight: .light, design: .serif))
                 .lineSpacing(isFeatured ? 8 : 6.5)
@@ -107,6 +107,8 @@ private struct GlimmerTimelineCard: View {
                 .foregroundStyle(UITheme.primaryText.opacity(isFeatured ? 0.95 : 0.82))
                 .lineLimit(isFeatured ? 3 : 2)
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            GlimmerKeywordChips(keywords: Array(glimmer.keywords.prefix(3)))
         }
         .padding(.vertical, isFeatured ? 18 : 14)
         .padding(.horizontal, 16)
@@ -142,6 +144,108 @@ private struct GlimmerTimelineCard: View {
         }
         .shadow(color: .black.opacity(isFeatured ? 0.10 : 0.05), radius: isFeatured ? 12 : 6, x: 0, y: isFeatured ? 6 : 3)
     }
+}
+
+struct GlimmerKeywordChips: View {
+    let keywords: [String]
+
+    var body: some View {
+        if !keywords.isEmpty {
+            FlowLayout(spacing: 6, lineSpacing: 6) {
+                ForEach(keywords, id: \.self) { keyword in
+                    Text(keyword)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(UITheme.glimmerGlow.opacity(0.82))
+                        .lineLimit(1)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(UITheme.glimmerGlow.opacity(0.08), in: .capsule)
+                        .overlay {
+                            Capsule()
+                                .stroke(UITheme.glimmerGlow.opacity(0.15), lineWidth: 0.5)
+                        }
+                }
+            }
+        }
+    }
+}
+
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+    var lineSpacing: CGFloat = 8
+
+    func sizeThatFits(
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout Void
+    ) -> CGSize {
+        let rows = rows(for: subviews, proposal: proposal)
+        return CGSize(
+            width: proposal.width ?? rows.map(\.width).max() ?? 0,
+            height: rows.last.map { $0.y + $0.height } ?? 0
+        )
+    }
+
+    func placeSubviews(
+        in bounds: CGRect,
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout Void
+    ) {
+        for row in rows(for: subviews, proposal: ProposedViewSize(width: bounds.width, height: proposal.height)) {
+            for item in row.items {
+                subviews[item.index].place(
+                    at: CGPoint(x: bounds.minX + item.x, y: bounds.minY + row.y),
+                    proposal: ProposedViewSize(item.size)
+                )
+            }
+        }
+    }
+
+    private func rows(for subviews: Subviews, proposal: ProposedViewSize) -> [FlowRow] {
+        let maxWidth = proposal.width ?? .greatestFiniteMagnitude
+        var rows: [FlowRow] = []
+        var currentItems: [FlowItem] = []
+        var currentWidth: CGFloat = 0
+        var currentHeight: CGFloat = 0
+        var y: CGFloat = 0
+
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let nextWidth = currentItems.isEmpty ? size.width : currentWidth + spacing + size.width
+
+            if nextWidth > maxWidth, !currentItems.isEmpty {
+                rows.append(FlowRow(y: y, width: currentWidth, height: currentHeight, items: currentItems))
+                y += currentHeight + lineSpacing
+                currentItems = [FlowItem(index: index, x: 0, size: size)]
+                currentWidth = size.width
+                currentHeight = size.height
+            } else {
+                currentItems.append(FlowItem(index: index, x: currentItems.isEmpty ? 0 : currentWidth + spacing, size: size))
+                currentWidth = nextWidth
+                currentHeight = max(currentHeight, size.height)
+            }
+        }
+
+        if !currentItems.isEmpty {
+            rows.append(FlowRow(y: y, width: currentWidth, height: currentHeight, items: currentItems))
+        }
+
+        return rows
+    }
+}
+
+private struct FlowRow {
+    var y: CGFloat
+    var width: CGFloat
+    var height: CGFloat
+    var items: [FlowItem]
+}
+
+private struct FlowItem {
+    var index: Int
+    var x: CGFloat
+    var size: CGSize
 }
 
 private struct TimelineStamp: View {
