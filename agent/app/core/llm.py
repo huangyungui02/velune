@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, TypeVar, cast
 
 from langchain_openai import ChatOpenAI
+from pydantic import BaseModel
 
 from app.core.config import get_settings
 
 DEFAULT_MODEL = "qwen3.5-flash"
 NO_THINKING_MODELS = {"qwen3.5-flash"}
+StructuredOutputT = TypeVar("StructuredOutputT", bound=BaseModel)
 
 
 def create_chat_model(model: str, **model_kwargs: Any) -> ChatOpenAI:
@@ -39,23 +41,19 @@ async def complete_text(
     return str(response.content).strip()
 
 
-async def complete_json(
+async def complete_structured(
     messages: list[dict[str, str]],
     *,
     model: str,
-    schema_name: str,
-    schema: dict[str, Any],
+    schema: type[StructuredOutputT],
     temperature: float,
-) -> dict[str, Any]:
+) -> StructuredOutputT:
     structured_model = create_chat_model(model=model, temperature=temperature).with_structured_output(
-        {"title": schema_name, **schema},
-        method="json_schema",
-        strict=True,
+        schema,
+        method="json_mode",
     )
     response = await structured_model.ainvoke(messages)
-    if not isinstance(response, dict):
-        raise ValueError("Model returned invalid JSON content")
-    return response
+    return cast(StructuredOutputT, response)
 
 
 async def stream_text(

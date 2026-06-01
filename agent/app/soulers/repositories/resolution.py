@@ -166,7 +166,7 @@ async def create_souler_with_profile(
     canonical_name: str | None,
     wiki_id: str | None,
     lang: str,
-    bio: str,
+    introduction: str,
     keywords: list[dict[str, Any]],
     chapters: list[dict[str, str]],
 ) -> dict[str, Any]:
@@ -177,8 +177,8 @@ async def create_souler_with_profile(
             async with connection.cursor() as cursor:
                 await cursor.execute(
                     """
-                    INSERT INTO public.soulers (name, canonical_name, wiki_id, lang, bio, checked)
-                    VALUES (%(name)s, %(canonical_name)s, %(wiki_id)s, %(lang)s, %(bio)s, false)
+                    INSERT INTO public.soulers (name, canonical_name, wiki_id, lang, introduction, checked)
+                    VALUES (%(name)s, %(canonical_name)s, %(wiki_id)s, %(lang)s, %(introduction)s, false)
                     ON CONFLICT (wiki_id, lang) WHERE wiki_id IS NOT NULL DO NOTHING
                     RETURNING id, name, canonical_name, wiki_id
                     """,
@@ -187,7 +187,7 @@ async def create_souler_with_profile(
                         "canonical_name": canonical_name,
                         "wiki_id": cleaned_wiki_id,
                         "lang": lang,
-                        "bio": bio,
+                        "introduction": introduction,
                     },
                 )
                 souler = await cursor.fetchone()

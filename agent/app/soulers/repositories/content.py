@@ -15,18 +15,18 @@ def to_souler(raw: Any) -> Souler:
     if not souler_id or not name:
         raise ValueError("Souler not found")
 
-    bio = souler.get("bio")
+    introduction = souler.get("introduction")
     return {
         "id": souler_id,
         "name": name,
-        "bio": str(bio) if isinstance(bio, str) else None,
+        "introduction": str(introduction) if isinstance(introduction, str) else None,
     }
 
 
 async def get_souler_by_id(souler_id: str) -> Souler:
     row = await fetch_one(
         """
-        SELECT id, name, bio
+        SELECT id, name, introduction
         FROM public.soulers
         WHERE id = CAST(%(souler_id)s AS uuid)
         """,

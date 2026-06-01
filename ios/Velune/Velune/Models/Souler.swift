@@ -4,20 +4,20 @@ import Supabase
 struct Souler: Identifiable, Codable, Equatable {
     var id: UUID
     var name: String
-    var bio: String
+    var introduction: String
     var imageURL: URL?
     var keywords: [String]
 
     init(
         id: UUID = UUID(),
         name: String,
-        bio: String,
+        introduction: String,
         imageURL: URL? = nil,
         keywords: [String] = []
     ) {
         self.id = id
         self.name = name
-        self.bio = bio
+        self.introduction = introduction
         self.imageURL = imageURL
         self.keywords = keywords
     }
@@ -27,13 +27,13 @@ extension Souler {
     private struct Response: Codable {
         var id: UUID
         var name: String
-        var bio: String?
+        var introduction: String?
         var wikiId: String?
 
         enum CodingKeys: String, CodingKey {
             case id
             case name
-            case bio
+            case introduction
             case wikiId = "wiki_id"
         }
     }
@@ -74,7 +74,7 @@ extension Souler {
         let supabase = try Backend.requireSupabase()
         let response: Response = try await supabase
             .from("soulers")
-            .select("id, name, bio, wiki_id")
+            .select("id, name, introduction, wiki_id")
             .eq("id", value: soulerId)
             .single()
             .execute()
@@ -86,7 +86,7 @@ extension Souler {
         return Souler(
             id: response.id,
             name: response.name.trimmingCharacters(in: .whitespacesAndNewlines),
-            bio: response.bio?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+            introduction: response.introduction?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
             imageURL: imageURL,
             keywords: keywords
         )

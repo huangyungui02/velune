@@ -8,7 +8,7 @@ Role = Literal["user", "assistant"]
 class Souler(TypedDict):
     id: str
     name: str
-    bio: str | None
+    introduction: str | None
 
 
 class Chapter(TypedDict):

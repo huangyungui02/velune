@@ -118,7 +118,7 @@ private struct SoulerProfileSection: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            Text(souler.bio.isEmpty ? String(localized: "souler.bio.empty.body") : souler.bio)
+            Text(souler.introduction.isEmpty ? String(localized: "souler.introduction.empty.body") : souler.introduction)
                 .font(.body)
                 .fontDesign(.serif)
                 .lineSpacing(7)

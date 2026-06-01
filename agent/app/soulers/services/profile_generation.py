@@ -1,65 +1,62 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-from app.core.llm import DEFAULT_MODEL, complete_json
+from pydantic import AliasChoices, BaseModel, Field, StringConstraints, field_validator
 
-BIO_KEYWORD_COUNT = 5
+from app.core.llm import DEFAULT_MODEL, complete_structured
+
+INTRODUCTION_KEYWORD_COUNT = 5
 MIN_CHAPTER_COUNT = 5
 MAX_CHAPTER_COUNT = 15
+NonEmptyString = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
-CANONICAL_NAME_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {"canonical_name": {"type": "string"}},
-    "required": ["canonical_name"],
-    "additionalProperties": False,
-}
 
-BIO_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "required": ["introduction", "keywords"],
-    "properties": {
-        "introduction": {"type": "string"},
-        "keywords": {
-            "type": "array",
-            "minItems": BIO_KEYWORD_COUNT,
-            "maxItems": BIO_KEYWORD_COUNT,
-            "items": {
-                "type": "object",
-                "required": ["word", "weight"],
-                "properties": {
-                    "word": {"type": "string"},
-                    "weight": {"type": "number", "minimum": 0, "maximum": 1},
-                },
-                "additionalProperties": False,
-            },
-        },
-    },
-    "additionalProperties": False,
-}
+class CanonicalName(BaseModel):
+    canonical_name: NonEmptyString
 
-CHAPTER_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "chapters": {
-            "type": "array",
-            "minItems": MIN_CHAPTER_COUNT,
-            "maxItems": MAX_CHAPTER_COUNT,
-            "items": {
-                "type": "object",
-                "properties": {
-                    "title": {"type": "string"},
-                    "subtitle": {"type": "string"},
-                    "task": {"type": "string"},
-                },
-                "required": ["title", "subtitle", "task"],
-                "additionalProperties": False,
-            },
-        }
-    },
-    "required": ["chapters"],
-    "additionalProperties": False,
-}
+
+class IntroductionKeyword(BaseModel):
+    word: NonEmptyString
+    weight: float = Field(ge=0, le=1)
+
+
+class SoulerIntroduction(BaseModel):
+    introduction: NonEmptyString = Field(
+        validation_alias=AliasChoices("introduction", "int"),
+    )
+    keywords: list[IntroductionKeyword] = Field(
+        min_length=INTRODUCTION_KEYWORD_COUNT,
+        max_length=INTRODUCTION_KEYWORD_COUNT,
+    )
+
+    @field_validator("keywords")
+    @classmethod
+    def require_unique_keywords(cls, keywords: list[IntroductionKeyword]) -> list[IntroductionKeyword]:
+        words = [keyword.word.lower() for keyword in keywords]
+        if len(words) != len(set(words)):
+            raise ValueError("keywords must be unique")
+        return keywords
+
+
+class SoulerChapter(BaseModel):
+    title: NonEmptyString
+    subtitle: NonEmptyString = Field(validation_alias=AliasChoices("subtitle", "subtitile"))
+    task: NonEmptyString
+
+
+class SoulerChapters(BaseModel):
+    chapters: list[SoulerChapter] = Field(
+        min_length=MIN_CHAPTER_COUNT,
+        max_length=MAX_CHAPTER_COUNT,
+    )
+
+
+class SoulerProfile(BaseModel):
+    introduction: NonEmptyString
+    keywords: list[IntroductionKeyword]
+    chapters: list[SoulerChapter]
+
 
 CANONICAL_PROMPTS = {
     "zh": (
@@ -72,9 +69,9 @@ CANONICAL_PROMPTS = {
     ),
 }
 
-BIO_PROMPTS = {
+INTRODUCTION_PROMPTS = {
     "zh": """# Task
-根据给定的人物，给出对应的简介（introduction），以及五个关键词（keywords），以JSON格式返回
+根据给定的人物，给出对应的简介（introduction），以及五个关键词（keywords），以 JSON 格式返回。
 
 # Input Example
 尼采
@@ -116,7 +113,7 @@ CHAPTER_PROMPTS = {
 章节数量应根据人物思想的复杂度自然决定，必须不少于5章且不多于15章。
 每一章必须包含：
 title：章节标题（具有象征性、文学性或哲学意味）
-subtitile: 章节的概要（面向用户的说明）
+subtitle: 章节的概要（面向用户的说明）
 task：AI在该章节的行为指令
 
 # 示例输入
@@ -183,7 +180,7 @@ Output strict JSON only. Do not include explanations.
 Choose the chapter count naturally according to the complexity of the figure's thought. It must be at least 5 and at most 15.
 Each chapter must include:
 title: Chapter title with symbolic, literary, or philosophical tone
-subtitile: Chapter summary (user-facing description)
+subtitle: Chapter summary (user-facing description)
 task: AI behavior instruction for this chapter
 
 # Sample Input
@@ -249,21 +246,16 @@ Nietzsche
 
 
 async def canonicalize_souler_name(name: str, lang: str) -> str:
-    payload = await complete_json(
+    payload = await complete_structured(
         [
             {"role": "system", "content": CANONICAL_PROMPTS[lang]},
             {"role": "user", "content": name},
         ],
         model=DEFAULT_MODEL,
-        schema_name="canonical_souler_name",
-        schema=CANONICAL_NAME_SCHEMA,
+        schema=CanonicalName,
         temperature=0.25,
     )
-    canonical_name = str(payload.get("canonical_name") or "").strip()
-    if not canonical_name:
-        raise ValueError("canonical_name is empty")
-    return canonical_name
-
+    return payload.canonical_name
 
 
 async def generate_profile_content(
@@ -271,83 +263,40 @@ async def generate_profile_content(
     canonical_name: str,
     fallback_name: str,
     lang: str,
-) -> dict[str, Any]:
-    bio_name = canonical_name.strip() or fallback_name.strip()
+) -> SoulerProfile:
+    introduction_name = canonical_name.strip() or fallback_name.strip()
     chapter_name = fallback_name.strip()
-    if not bio_name or not chapter_name:
+    if not introduction_name or not chapter_name:
         raise ValueError("souler name is empty")
-    bio_payload = await _generate_bio_payload(souler_name=bio_name, lang=lang)
+    introduction = await _generate_introduction(souler_name=introduction_name, lang=lang)
     chapters = await _generate_chapters_payload(souler_name=chapter_name, lang=lang)
-    return {**bio_payload, "chapters": chapters}
+    return SoulerProfile(
+        introduction=introduction.introduction,
+        keywords=introduction.keywords,
+        chapters=chapters,
+    )
 
 
-async def _generate_bio_payload(*, souler_name: str, lang: str) -> dict[str, Any]:
-    payload = await complete_json(
+async def _generate_introduction(*, souler_name: str, lang: str) -> SoulerIntroduction:
+    return await complete_structured(
         [
-            {"role": "system", "content": BIO_PROMPTS[lang]},
+            {"role": "system", "content": INTRODUCTION_PROMPTS[lang]},
             {"role": "user", "content": souler_name},
         ],
         model=DEFAULT_MODEL,
-        schema_name="souler_bio_keywords",
-        schema=BIO_SCHEMA,
+        schema=SoulerIntroduction,
         temperature=0.25,
     )
-    bio = str(payload.get("introduction") or "").strip()
-    keywords = _normalize_keywords(payload.get("keywords"))
-    if not bio:
-        raise ValueError("bio introduction is empty")
-    return {"bio": bio, "keywords": keywords}
 
 
-async def _generate_chapters_payload(*, souler_name: str, lang: str) -> list[dict[str, str]]:
-    payload = await complete_json(
+async def _generate_chapters_payload(*, souler_name: str, lang: str) -> list[SoulerChapter]:
+    payload = await complete_structured(
         [
             {"role": "system", "content": CHAPTER_PROMPTS[lang]},
             {"role": "user", "content": souler_name},
         ],
         model=DEFAULT_MODEL,
-        schema_name="souler_chapters",
-        schema=CHAPTER_SCHEMA,
+        schema=SoulerChapters,
         temperature=0.35,
     )
-    return _normalize_chapters(payload.get("chapters"))
-
-
-def _normalize_keywords(value: Any) -> list[dict[str, Any]]:
-    if not isinstance(value, list) or len(value) != BIO_KEYWORD_COUNT:
-        raise ValueError("expected exactly five keywords")
-    keywords: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    for index, item in enumerate(value):
-        if isinstance(item, str):
-            word = item.strip()
-            weight = round(1 - index * 0.1, 2)
-        elif isinstance(item, dict):
-            word = str(item.get("word") or "").strip()
-            raw_weight = item.get("weight")
-            weight = float(raw_weight) if raw_weight is not None else round(1 - index * 0.1, 2)
-        else:
-            raise ValueError("invalid keyword item")
-        if not word or word.lower() in seen or weight < 0 or weight > 1:
-            raise ValueError("invalid keyword payload")
-        seen.add(word.lower())
-        keywords.append({"word": word, "weight": weight})
-    return keywords
-
-
-def _normalize_chapters(value: Any) -> list[dict[str, str]]:
-    if not isinstance(value, list) or not (MIN_CHAPTER_COUNT <= len(value) <= MAX_CHAPTER_COUNT):
-        raise ValueError("invalid chapter count")
-    chapters: list[dict[str, str]] = []
-    for item in value:
-        if not isinstance(item, dict):
-            raise ValueError("invalid chapter item")
-        chapter = {
-            "title": str(item.get("title") or "").strip(),
-            "subtitle": str(item.get("subtitle") or "").strip(),
-            "task": str(item.get("task") or "").strip(),
-        }
-        if not all(chapter.values()):
-            raise ValueError("chapter fields cannot be empty")
-        chapters.append(chapter)
-    return chapters
+    return payload.chapters

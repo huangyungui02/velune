@@ -67,9 +67,9 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
             canonical_name=canonical_name,
             wiki_id=wiki_id,
             lang=lang,
-            bio=profile["bio"],
-            keywords=profile["keywords"],
-            chapters=profile["chapters"],
+            introduction=profile.introduction,
+            keywords=[keyword.model_dump() for keyword in profile.keywords],
+            chapters=[chapter.model_dump() for chapter in profile.chapters],
         )
         return {"status": "complete", "soulerId": str(souler["id"])}
     except Exception as error:  # noqa: BLE001

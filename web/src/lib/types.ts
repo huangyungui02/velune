@@ -53,7 +53,7 @@ export type PublicSoulerDetail = {
 	souler: {
 		id: string;
 		name: string;
-		bio: string;
+		introduction: string;
 		imageUrl: string | null;
 	};
 	keywords: string[];
@@ -85,7 +85,7 @@ export type AdminSoulerDetail = {
 	id: string;
 	name: string;
 	lang: string;
-	bio: string;
+	introduction: string;
 	checked: boolean;
 	canonicalName: string;
 	wikidata: string;

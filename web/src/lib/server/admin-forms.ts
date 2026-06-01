@@ -73,7 +73,7 @@ export function parseSaveSoulerForm(formData: FormData) {
 		soulerId: normalizeText(formData.get('souler_id')),
 		name: normalizeText(formData.get('name')),
 		canonicalName: normalizeText(formData.get('canonical_name')),
-		bio: normalizeText(formData.get('bio')),
+		introduction: normalizeText(formData.get('introduction')),
 		lang: normalizeText(formData.get('lang')) || 'zh',
 		wikidata: normalizeText(formData.get('wikidata')),
 		checked: formData.get('checked') === 'on',

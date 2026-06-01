@@ -160,8 +160,8 @@
 							<span class="text-xs text-muted-foreground">简介</span>
 							<Textarea
 								class="min-h-28 rounded-xl bg-background/72 text-sm leading-6"
-								name="bio"
-								value={data.souler.bio}
+								name="introduction"
+								value={data.souler.introduction}
 							/>
 						</label>
 

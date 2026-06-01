@@ -93,21 +93,21 @@
 			{/if}
 		</div>
 
-		<!-- Right Column: Bio & Tags -->
+		<!-- Right Column: Introduction & Tags -->
 		<div
 			class="col-span-2 space-y-4 md:col-span-1 md:col-start-2 md:row-start-1 md:space-y-6 md:pt-1"
 		>
 			<p
 				class="text-[0.95rem] leading-7 text-foreground/80 md:max-w-[64ch] md:text-[0.95rem] md:leading-8"
 			>
-				{#if data.souler.bio}
-					{data.souler.bio}
+				{#if data.souler.introduction}
+					{data.souler.introduction}
 				{:else}
 					暂无简介。
 				{/if}
 			</p>
 
-			<!-- Desktop Tags (Below bio) -->
+			<!-- Desktop Tags (Below introduction) -->
 			{#if data.keywords.length > 0}
 				<div class="hidden md:flex md:flex-wrap md:gap-2">
 					{#each data.keywords as word (word)}

@@ -4,7 +4,7 @@ import type { ChapterHistoryItem, ConversationMessage, SoulerChapter } from '$li
 type PublicSoulerRow = {
 	id: string;
 	name: string;
-	bio: string | null;
+	introduction: string | null;
 	wiki_id: string | null;
 };
 
@@ -52,7 +52,7 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 	const { user } = await locals.safeGetSession();
 	const { data: soulerRaw, error } = await locals.supabase
 		.from('soulers')
-		.select('id, name, bio, wiki_id')
+		.select('id, name, introduction, wiki_id')
 		.eq('id', soulerId)
 		.single();
 
@@ -145,7 +145,7 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 		souler: {
 			id: souler.id,
 			name: souler.name,
-			bio: souler.bio ?? '',
+			introduction: souler.introduction ?? '',
 			imageUrl: await avatarResolver.get(wikiId)
 		},
 		keywords,

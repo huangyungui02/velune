@@ -9,7 +9,7 @@ CREATE TABLE soulers (
     lang VARCHAR(16) NOT NULL,
     wiki_id VARCHAR(32),
     checked BOOLEAN NOT NULL DEFAULT FALSE,
-    bio TEXT,
+    introduction TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

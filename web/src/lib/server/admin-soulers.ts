@@ -28,7 +28,7 @@ type SoulerDetailRow = {
 	id: string;
 	name: string;
 	lang: string;
-	bio: string | null;
+	introduction: string | null;
 	checked: boolean;
 	canonical_name: string | null;
 	wiki_id: string | null;
@@ -120,7 +120,7 @@ export async function fetchSoulerCounts(locals: App.Locals) {
 export async function fetchSoulerDetail(locals: App.Locals, soulerId: string) {
 	const { data: soulerRaw } = await locals.supabase
 		.from('soulers')
-		.select('id, name, lang, bio, checked, canonical_name, wiki_id')
+		.select('id, name, lang, introduction, checked, canonical_name, wiki_id')
 		.eq('id', soulerId)
 		.maybeSingle();
 
@@ -160,7 +160,7 @@ export async function fetchSoulerDetail(locals: App.Locals, soulerId: string) {
 		id: souler.id,
 		name: souler.name?.trim() || '',
 		lang: souler.lang?.trim() || 'zh',
-		bio: souler.bio ?? '',
+		introduction: souler.introduction ?? '',
 		checked: souler.checked,
 		canonicalName: souler.canonical_name?.trim() || '',
 		wikidata: wikiId ?? '',
@@ -351,7 +351,7 @@ export async function saveSouler(
 		.update({
 			name: parsed.name,
 			canonical_name: parsed.canonicalName || null,
-			bio: parsed.bio,
+			introduction: parsed.introduction,
 			wiki_id: parsed.wikidata || null,
 			checked: parsed.checked
 		})

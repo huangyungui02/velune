@@ -129,7 +129,7 @@
 "glimmer.delete.progress" = "Deleting…";
 
 "souler.load.failed" = "Failed to load";
-"souler.bio.empty.body" = "No bio yet.";
+"souler.introduction.empty.body" = "No introduction yet.";
 "souler.action.chat" = "Chat";
 "souler.resolution.status.preparing" = "Preparing this page…";
 "souler.resolution.status.queued" = "This page is waiting to be shaped.";
@@ -182,7 +182,7 @@
 "paywall.signInRequired.title" = "Sign In Required";
 "paywall.signInRequired.description" = "Anonymous accounts can’t subscribe. Sign in to continue.";
 "paywall.restore.signInRequired.description" = "Anonymous accounts can’t restore purchases. Sign in to continue.";
-"souler.bio.empty.title" = "This page is being perfected";
+"souler.introduction.empty.title" = "This page is being perfected";
 "common.refresh" = "Refresh";
 "reading.title" = "Folio";
 "reading.tab.featured" = "Featured";

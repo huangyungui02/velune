@@ -21,7 +21,7 @@ async def get_session_by_id(user_id: str, session_id: str) -> Session:
             jsonb_build_object(
                 'id', s.id,
                 'name', s.name,
-                'bio', s.bio
+                'introduction', s.introduction
             ) AS souler,
             CASE
                 WHEN c.id IS NULL THEN NULL
