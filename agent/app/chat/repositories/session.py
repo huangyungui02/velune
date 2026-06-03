@@ -9,7 +9,7 @@ from app.chat.repositories.chapters import to_chapter
 from app.soulers.repositories.content import to_souler
 
 
-async def get_session_by_id(user_id: str, session_id: str) -> Session:
+async def get_session_by_id(user_id: str, session_id: str, lang: str = "zh") -> Session:
     row = await fetch_one(
         """
         SELECT
@@ -20,8 +20,8 @@ async def get_session_by_id(user_id: str, session_id: str) -> Session:
             sess.chapter_id,
             jsonb_build_object(
                 'id', s.id,
-                'name', s.name,
-                'introduction', s.introduction
+                'name', p.name,
+                'introduction', p.introduction
             ) AS souler,
             CASE
                 WHEN c.id IS NULL THEN NULL
@@ -37,12 +37,16 @@ async def get_session_by_id(user_id: str, session_id: str) -> Session:
         FROM public.sessions AS sess
         JOIN public.soulers AS s
             ON s.id = sess.souler_id
+        JOIN public.souler_profile AS p
+            ON p.souler_id = s.id
+            AND p.lang = %(lang)s
         LEFT JOIN public.chapters AS c
             ON c.id = sess.chapter_id
+            AND c.lang = %(lang)s
         WHERE sess.id = CAST(%(session_id)s AS uuid)
           AND sess.user_id = CAST(%(user_id)s AS uuid)
         """,
-        {"user_id": user_id, "session_id": session_id},
+        {"user_id": user_id, "session_id": session_id, "lang": lang},
     )
     if not row:
         raise ValueError("Session not found")

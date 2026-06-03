@@ -17,6 +17,7 @@ WIKIPEDIA_API_PARAMS = {
     "gsrlimit": "1",
     "prop": "pageprops",
 }
+WIKIDATA_API = "https://www.wikidata.org/w/api.php"
 
 
 async def search_wiki_id(name: str, lang: str) -> str | None:
@@ -32,6 +33,49 @@ async def search_wiki_id(name: str, lang: str) -> str | None:
         payload = response.json()
 
     return _extract_wikibase_item(payload)
+
+
+async def get_wikipedia_title_by_wiki_id(wiki_id: str, lang: str) -> str | None:
+    entity_id = wiki_id.strip().upper()
+    if not entity_id:
+        return None
+
+    params = {
+        "action": "wbgetentities",
+        "format": "json",
+        "ids": entity_id,
+        "props": "sitelinks|labels",
+        "sitefilter": f"{lang}wiki",
+        "languages": lang,
+    }
+    async with httpx.AsyncClient(timeout=8.0) as client:
+        response = await client.get(WIKIDATA_API, params=params, headers=WIKI_HEADERS)
+        response.raise_for_status()
+        payload = response.json()
+
+    if not _is_record(payload) or not _is_record(payload.get("entities")):
+        return None
+    entity = payload["entities"].get(entity_id)
+    if not _is_record(entity):
+        return None
+
+    sitelinks = entity.get("sitelinks")
+    if _is_record(sitelinks):
+        site = sitelinks.get(f"{lang}wiki")
+        if _is_record(site) and isinstance(site.get("title"), str):
+            title = site["title"].strip()
+            if title:
+                return title
+
+    labels = entity.get("labels")
+    if _is_record(labels):
+        label = labels.get(lang)
+        if _is_record(label) and isinstance(label.get("value"), str):
+            value = label["value"].strip()
+            if value:
+                return value
+
+    return None
 
 
 def _extract_wikibase_item(payload: Any) -> str | None:
@@ -54,4 +98,3 @@ def _extract_wikibase_item(payload: Any) -> str | None:
 
 def _is_record(value: Any) -> bool:
     return isinstance(value, dict)
-

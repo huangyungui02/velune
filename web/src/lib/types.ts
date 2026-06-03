@@ -91,6 +91,7 @@ export type AdminSoulerDetail = {
 	canonicalName: string;
 	wikidata: string;
 	imageUrl: string | null;
+	aliases: string[];
 	keywords: AdminSoulerKeyword[];
 	chapters: AdminSoulerChapter[];
 };

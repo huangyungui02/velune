@@ -10,6 +10,8 @@
 	let { data, form }: PageProps = $props();
 
 	const backHref = $derived(`/admin?tab=${data.tab}`);
+	const zhHref = $derived(`/admin/${encodeURIComponent(data.souler.id)}?tab=${data.tab}&lang=zh`);
+	const enHref = $derived(`/admin/${encodeURIComponent(data.souler.id)}?tab=${data.tab}&lang=en`);
 	const wikidataUrl = $derived(
 		data.souler.wikidata
 			? `https://www.wikidata.org/wiki/${encodeURIComponent(data.souler.wikidata)}`
@@ -33,9 +35,20 @@
 			>返回列表</Button
 		>
 		<h1 class="text-2xl leading-tight text-primary">编辑人物</h1>
-		<p class="text-sm text-muted-foreground">
-			{data.souler.canonicalName || '暂无 canonical name'}
-		</p>
+		<div class="flex gap-2">
+			<Button
+				href={zhHref}
+				variant={data.lang === 'zh' ? 'default' : 'outline'}
+				size="sm"
+				class="h-8 rounded-xl px-3 text-xs">中文</Button
+			>
+			<Button
+				href={enHref}
+				variant={data.lang === 'en' ? 'default' : 'outline'}
+				size="sm"
+				class="h-8 rounded-xl px-3 text-xs">English</Button
+			>
+		</div>
 		<Separator class="mt-3" />
 	</header>
 
@@ -124,16 +137,6 @@
 						</div>
 
 						<label class="grid gap-1.5">
-							<span class="text-xs text-muted-foreground">Canonical name</span>
-							<Input
-								class="h-10 rounded-xl bg-background/72 text-sm"
-								name="canonical_name"
-								value={data.souler.canonicalName}
-								placeholder="用于搜索与去重"
-							/>
-						</label>
-
-						<label class="grid gap-1.5">
 							<span class="text-xs text-muted-foreground">Wikidata</span>
 							<Input
 								class="h-10 rounded-xl bg-background/72 text-sm"
@@ -155,6 +158,18 @@
 								打开 Wikidata 条目
 							</Button>
 						{/if}
+
+						<label class="grid gap-1.5">
+							<span class="text-xs text-muted-foreground"
+								>Aliases（{data.souler.aliases.length}）</span
+							>
+							<Textarea
+								class="min-h-28 rounded-xl bg-background/72 text-sm leading-6"
+								name="aliases"
+								value={data.souler.aliases.join('\n')}
+								placeholder="每行一个 alias"
+							/>
+						</label>
 
 						<label class="grid gap-1.5">
 							<span class="text-xs text-muted-foreground">简介</span>
@@ -203,6 +218,7 @@
 				<Card.Content class="space-y-3 px-4">
 					<form method="POST" class="space-y-3">
 						<input type="hidden" name="souler_id" value={data.souler.id} />
+						<input type="hidden" name="lang" value={data.souler.lang} />
 						<input type="hidden" name="tab" value={data.tab} />
 
 						<div class="flex items-center justify-between">

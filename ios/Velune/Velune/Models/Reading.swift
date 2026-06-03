@@ -23,24 +23,29 @@ struct LatestReadingSoulersPage: Equatable, Sendable {
 extension ReadingSoulerItem {
     private struct SoulerRow: Decodable {
         var id: UUID
-        var name: String?
         var wikiId: String?
+        var profiles: [ProfileRow]?
 
         enum CodingKeys: String, CodingKey {
             case id
-            case name
             case wikiId = "wiki_id"
+            case profiles = "souler_profile"
         }
+    }
+
+    private struct ProfileRow: Decodable {
+        var name: String?
+        var lang: String?
     }
 
     private struct AvatarRow: Decodable {
         var wikiId: String
-        var imagePath: String?
+        var avatar: String?
         var updatedAt: Date?
 
         enum CodingKeys: String, CodingKey {
             case wikiId = "wiki_id"
-            case imagePath = "image_path"
+            case avatar
             case updatedAt = "updated_at"
         }
     }
@@ -55,8 +60,9 @@ extension ReadingSoulerItem {
         let supabase = try Backend.requireSupabase()
         let rows: [SoulerRow] = try await supabase
             .from("soulers")
-            .select("id, name, wiki_id")
+            .select("id, wiki_id, souler_profile!inner(name, lang)")
             .eq("checked", value: true)
+            .eq("souler_profile.lang", value: AppLanguage.current.apiLanguageCode)
             .order("updated_at", ascending: false)
             .range(from: from, to: to)
             .execute()
@@ -83,10 +89,11 @@ extension ReadingSoulerItem {
         let supabase = try Backend.requireSupabase()
         let prefixRows: [SoulerRow] = try await supabase
             .from("soulers")
-            .select("id, name, wiki_id")
+            .select("id, wiki_id, souler_profile!inner(name, lang)")
             .eq("checked", value: true)
-            .ilike("canonical_name", pattern: "\(safeQuery)%")
-            .order("canonical_name", ascending: true)
+            .eq("souler_profile.lang", value: AppLanguage.current.apiLanguageCode)
+            .ilike("souler_profile.name", pattern: "\(safeQuery)%")
+            .order("updated_at", ascending: false)
             .limit(boundedLimit)
             .execute()
             .value
@@ -95,10 +102,11 @@ extension ReadingSoulerItem {
         if rowsById.count < boundedLimit {
             let fuzzyRows: [SoulerRow] = try await supabase
                 .from("soulers")
-                .select("id, name, wiki_id")
+                .select("id, wiki_id, souler_profile!inner(name, lang)")
                 .eq("checked", value: true)
-                .ilike("canonical_name", pattern: "%\(safeQuery)%")
-                .order("canonical_name", ascending: true)
+                .eq("souler_profile.lang", value: AppLanguage.current.apiLanguageCode)
+                .ilike("souler_profile.name", pattern: "%\(safeQuery)%")
+                .order("updated_at", ascending: false)
                 .limit(boundedLimit)
                 .execute()
                 .value
@@ -118,8 +126,8 @@ extension ReadingSoulerItem {
 
         let supabase = try Backend.requireSupabase()
         let avatarRows: [AvatarRow] = try await supabase
-            .from("souler_avatars")
-            .select("wiki_id, image_path, updated_at")
+            .from("soulers")
+            .select("wiki_id, avatar, updated_at")
             .in("wiki_id", values: normalizedWikiIds)
             .execute()
             .value
@@ -127,7 +135,7 @@ extension ReadingSoulerItem {
         var result: [String: URL] = [:]
         for row in avatarRows {
             guard let wikiId = normalizeWikiId(row.wikiId),
-                  let imagePath = row.imagePath?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  let imagePath = row.avatar?.trimmingCharacters(in: .whitespacesAndNewlines),
                   !imagePath.isEmpty,
                   let url = try Backend.publicStorageURL(
                     bucket: "avatars",
@@ -142,8 +150,11 @@ extension ReadingSoulerItem {
 
     private static func mapRows(_ rows: [SoulerRow]) async throws -> [ReadingSoulerItem] {
         let avatarByWikiId = try await resolveImageURLs(wikiIds: rows.map(\.wikiId))
+        let nameBySoulerId = try await fetchProfileNames(soulerIds: rows.map(\.id))
         return rows.map { row in
-            let name = row.name?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let nestedName = row.profiles?.first?.name?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let profileName = nameBySoulerId[row.id]?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let name = nestedName?.isEmpty == false ? nestedName : profileName
             let wikiId = normalizeWikiId(row.wikiId)
             return ReadingSoulerItem(
                 id: row.id,
@@ -151,6 +162,31 @@ extension ReadingSoulerItem {
                 imageURL: wikiId.flatMap { avatarByWikiId[$0] }
             )
         }
+    }
+
+    private struct ProfileNameRow: Decodable {
+        var soulerId: UUID
+        var name: String
+
+        enum CodingKeys: String, CodingKey {
+            case soulerId = "souler_id"
+            case name
+        }
+    }
+
+    private static func fetchProfileNames(soulerIds: [UUID]) async throws -> [UUID: String] {
+        let ids = Array(Set(soulerIds))
+        guard !ids.isEmpty else { return [:] }
+
+        let rows: [ProfileNameRow] = try await Backend.requireSupabase()
+            .from("souler_profile")
+            .select("souler_id, name")
+            .in("souler_id", values: ids.map(\.uuidString))
+            .eq("lang", value: AppLanguage.current.apiLanguageCode)
+            .execute()
+            .value
+
+        return Dictionary(uniqueKeysWithValues: rows.map { ($0.soulerId, $0.name) })
     }
 
     private static func normalizeWikiId(_ value: String?) -> String? {
@@ -169,6 +205,15 @@ extension ReadingSoulerItem {
 extension ReadingSection {
     private struct SectionRow: Decodable {
         var id: UUID
+        var profiles: [SectionProfileRow]?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case profiles = "discover_section_profile"
+        }
+    }
+
+    private struct SectionProfileRow: Decodable {
         var lang: String
         var title: String
         var subtitle: String?
@@ -186,14 +231,19 @@ extension ReadingSection {
 
     private struct SoulerRow: Decodable {
         var id: UUID
-        var name: String?
         var wikiId: String?
+        var profiles: [SoulerProfileRow]?
 
         enum CodingKeys: String, CodingKey {
             case id
-            case name
             case wikiId = "wiki_id"
+            case profiles = "souler_profile"
         }
+    }
+
+    private struct SoulerProfileRow: Decodable {
+        var name: String?
+        var lang: String?
     }
 
     static func featured(preferredLang: String = AppLanguage.current.apiLanguageCode) async throws -> [ReadingSection] {
@@ -205,19 +255,19 @@ extension ReadingSection {
         if sectionRows.isEmpty {
             let allRows: [SectionRow] = try await supabase
                 .from("discover_sections")
-                .select("id, lang, title, subtitle")
+                .select("id, discover_section_profile!inner(lang, title, subtitle)")
                 .eq("is_active", value: true)
-                .order("lang", ascending: true)
+                .eq("discover_section_profile.lang", value: "zh")
                 .order("sort_order", ascending: true)
                 .order("updated_at", ascending: false)
                 .execute()
                 .value
 
-            if let fallbackLang = allRows.first?.lang.trimmingCharacters(in: .whitespacesAndNewlines),
+            if let fallbackLang = allRows.first?.profiles?.first?.lang.trimmingCharacters(in: .whitespacesAndNewlines),
                !fallbackLang.isEmpty
             {
                 sectionRows = allRows.filter {
-                    $0.lang.trimmingCharacters(in: .whitespacesAndNewlines) == fallbackLang
+                    $0.profiles?.first?.lang.trimmingCharacters(in: .whitespacesAndNewlines) == fallbackLang
                 }
             }
         }
@@ -238,15 +288,16 @@ extension ReadingSection {
 
         let soulerRows: [SoulerRow] = try await supabase
             .from("soulers")
-            .select("id, name, wiki_id")
+            .select("id, wiki_id, souler_profile!inner(name, lang)")
             .in("id", values: soulerIds.map(\.uuidString))
             .eq("checked", value: true)
+            .eq("souler_profile.lang", value: preferredLang)
             .execute()
             .value
 
         let avatarByWikiId = try await ReadingSoulerItem.resolveImageURLs(wikiIds: soulerRows.map(\.wikiId))
         let soulerById = Dictionary(uniqueKeysWithValues: soulerRows.map { row in
-            let name = row.name?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let name = row.profiles?.first?.name?.trimmingCharacters(in: .whitespacesAndNewlines)
             let wikiId = row.wikiId?.trimmingCharacters(in: .whitespacesAndNewlines)
             return (
                 row.id,
@@ -268,8 +319,8 @@ extension ReadingSection {
             guard !soulers.isEmpty else { return nil }
             return ReadingSection(
                 id: section.id,
-                title: section.title.trimmingCharacters(in: .whitespacesAndNewlines),
-                subtitle: section.subtitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+                title: section.profiles?.first?.title.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+                subtitle: section.profiles?.first?.subtitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
                 soulers: soulers
             )
         }
@@ -278,9 +329,9 @@ extension ReadingSection {
     private static func fetchSections(lang: String, supabase: SupabaseClient) async throws -> [SectionRow] {
         try await supabase
             .from("discover_sections")
-            .select("id, lang, title, subtitle")
+            .select("id, discover_section_profile!inner(lang, title, subtitle)")
             .eq("is_active", value: true)
-            .eq("lang", value: lang)
+            .eq("discover_section_profile.lang", value: lang)
             .order("sort_order", ascending: true)
             .order("updated_at", ascending: false)
             .execute()

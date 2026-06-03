@@ -10,10 +10,10 @@ from app.starsea.repositories.resonance import create_or_update_resonance
 from app.soulers.repositories.content import get_souler_by_id
 
 
-async def load_chapter_pair(souler_id: str, chapter_id: str) -> tuple[Souler, Chapter]:
+async def load_chapter_pair(souler_id: str, chapter_id: str, lang: str) -> tuple[Souler, Chapter]:
     souler, chapter = await asyncio.gather(
-        get_souler_by_id(souler_id),
-        get_chapter_by_id(chapter_id),
+        get_souler_by_id(souler_id, lang),
+        get_chapter_by_id(chapter_id, lang),
     )
     if chapter["souler_id"] != souler["id"]:
         raise ValueError("Chapter does not belong to souler")
@@ -46,10 +46,11 @@ async def resolve_session(
     session_id: str,
     souler_id: str,
     chapter_id: str,
+    lang: str,
 ) -> SessionResolution:
     if session_id:
         return SessionResolution(
-            session=await get_session_by_id(user_id, session_id),
+            session=await get_session_by_id(user_id, session_id, lang),
             is_new=False,
             should_generate_title=False,
         )
@@ -58,11 +59,11 @@ async def resolve_session(
         raise ValueError("Missing soulerId for new conversation")
 
     if chapter_id:
-        souler, chapter = await load_chapter_pair(souler_id, chapter_id)
+        souler, chapter = await load_chapter_pair(souler_id, chapter_id, lang)
         session = await create_chapter_session(user_id, souler, chapter)
         return SessionResolution(session=session, is_new=True, should_generate_title=False)
 
-    souler = await get_souler_by_id(souler_id)
+    souler = await get_souler_by_id(souler_id, lang)
     created_id = await create_session(user_id, souler["id"])
     session: Session = {
         "id": created_id,

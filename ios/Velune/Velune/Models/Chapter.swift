@@ -15,6 +15,7 @@ extension SoulerChapter {
             .from("chapters")
             .select("id, seq, title, subtitle")
             .eq("souler_id", value: soulerId.uuidString)
+            .eq("lang", value: AppLanguage.current.apiLanguageCode)
             .order("seq", ascending: true)
             .execute()
             .value

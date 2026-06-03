@@ -27,7 +27,7 @@ async def resolve_or_enqueue_souler(name: str, lang: str | None = None) -> dict[
         return {
             "status": "existing",
             "soulerId": existing["id"],
-            "name": existing["name"],
+            "name": cleaned,
         }
 
     request = await upsert_resolution_request(cleaned, normalized_lang)

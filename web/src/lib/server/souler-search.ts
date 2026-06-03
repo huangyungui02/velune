@@ -7,10 +7,13 @@ export type SoulerSearchItem = ExploreSoulerItem & {
 
 type SearchableSoulerRow = {
 	id: string;
-	name: string;
-	canonical_name: string | null;
-	lang: string | null;
 	wiki_id: string | null;
+	souler_profile:
+		| {
+				name: string;
+				lang: string;
+		  }[]
+		| null;
 };
 
 type SearchCheckedSoulersOptions = {
@@ -41,14 +44,14 @@ async function fetchSearchRows(
 ) {
 	let builder = locals.supabase
 		.from('soulers')
-		.select('id, name, canonical_name, lang, wiki_id')
+		.select('id, wiki_id, souler_profile!inner(name, lang)')
 		.eq('checked', true)
-		.ilike('canonical_name', options.pattern)
-		.order('canonical_name', { ascending: true })
+		.ilike('souler_profile.name', options.pattern)
+		.order('updated_at', { ascending: false })
 		.limit(options.limit);
 
 	if (options.lang) {
-		builder = builder.eq('lang', options.lang);
+		builder = builder.eq('souler_profile.lang', options.lang);
 	}
 
 	if (options.excludeIds.size > 0) {
@@ -112,8 +115,8 @@ export async function searchCheckedSoulers(
 		const wikiId = normalizeWikiId(row.wiki_id);
 		return {
 			id: row.id,
-			name: row.name?.trim() || '未命名人物',
-			lang: row.lang?.trim() || lang || 'zh',
+			name: row.souler_profile?.[0]?.name?.trim() || '未命名人物',
+			lang: row.souler_profile?.[0]?.lang?.trim() || lang || 'zh',
 			imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null,
 			tags: []
 		};

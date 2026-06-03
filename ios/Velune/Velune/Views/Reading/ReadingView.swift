@@ -22,6 +22,7 @@ enum ReadingTab: String, CaseIterable, Identifiable {
 }
 
 struct ReadingView: View {
+    @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var context
     @FocusState private var isSearchFocused: Bool
     @State private var selectedTab: ReadingTab = .featured
@@ -42,6 +43,7 @@ struct ReadingView: View {
     @State private var errorMessage: String?
     @State private var bookshelfErrorMessage: String?
     @State private var searchErrorMessage: String?
+    @State private var displayedLanguageCode = AppLanguage.current.apiLanguageCode
     
     @Namespace private var tabNamespace
 
@@ -72,6 +74,14 @@ struct ReadingView: View {
             return nil
         }
         return errorMessage
+    }
+
+    private var currentLanguageCode: String {
+        AppLanguage.current.apiLanguageCode
+    }
+
+    private var languageRefreshKey: String {
+        "\(locale.identifier)-\(currentLanguageCode)"
     }
 
     var body: some View {
@@ -121,7 +131,7 @@ struct ReadingView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .task {
+            .task(id: languageRefreshKey) {
                 await loadCachedReadingThenRefresh()
             }
             .onChange(of: selectedTab) { _, tab in
@@ -147,6 +157,7 @@ struct ReadingView: View {
 
     @MainActor
     private func loadCachedReadingThenRefresh() async {
+        resetLanguageScopedStateIfNeeded()
         await loadCachedReading()
 
         if selectedTab == .featured {
@@ -156,6 +167,22 @@ struct ReadingView: View {
         } else {
             await loadBookshelf()
         }
+    }
+
+    @MainActor
+    private func resetLanguageScopedStateIfNeeded() {
+        guard displayedLanguageCode != currentLanguageCode else { return }
+
+        displayedLanguageCode = currentLanguageCode
+        featuredSections = []
+        latestItems = []
+        searchResults = []
+        searchText = ""
+        latestPage = 0
+        latestHasMore = true
+        errorMessage = nil
+        searchErrorMessage = nil
+        searchTask?.cancel()
     }
 
     @MainActor
@@ -269,7 +296,6 @@ struct ReadingView: View {
             latestPage = page.page
             latestHasMore = page.hasNextPage
             latestItems = reset ? page.items : latestItems + page.items
-            saveReadingCache()
         } catch {
             if reset {
                 latestItems = previousItems
@@ -284,10 +310,8 @@ struct ReadingView: View {
     private func loadCachedReading() async {
         do {
             guard let payload = try ReadingCacheStore.shared.load() else { return }
+            guard payload.languageCode == currentLanguageCode else { return }
             featuredSections = payload.featuredSections
-            latestItems = payload.latestItems
-            latestPage = payload.latestPage
-            latestHasMore = payload.latestHasMore
             errorMessage = nil
         } catch {
             AppLogger.storage.debug("Failed to load Reading cache: \(error.localizedDescription, privacy: .public)")
@@ -307,10 +331,8 @@ struct ReadingView: View {
     private func saveReadingCache() {
         let payload = CachedReadingPayload(
             savedAt: Date(),
-            featuredSections: featuredSections,
-            latestItems: latestItems,
-            latestPage: latestPage,
-            latestHasMore: latestHasMore
+            languageCode: currentLanguageCode,
+            featuredSections: featuredSections
         )
 
         Task {

@@ -9,54 +9,29 @@ def normalize_name_key(name: str) -> str:
     return " ".join(name.strip().lower().split())
 
 
-async def find_souler_by_alias(alias: str, lang: str) -> dict[str, Any] | None:
+async def find_souler_by_alias(alias: str, _lang: str | None = None) -> dict[str, Any] | None:
     return await fetch_one(
         """
-        SELECT id, name, canonical_name, wiki_id
+        SELECT s.id, s.wiki_id
         FROM public.souler_aliases a
         INNER JOIN public.soulers s ON s.id = a.souler_id
-        WHERE s.lang = %(lang)s
-            AND lower(trim(a.alias)) = %(alias_key)s
+        WHERE lower(trim(a.alias)) = %(alias_key)s
         LIMIT 1
         """,
-        {"alias_key": normalize_name_key(alias), "lang": lang},
+        {"alias_key": normalize_name_key(alias)},
     )
 
 
-async def find_souler_by_canonical_name(canonical_name: str, lang: str) -> dict[str, Any] | None:
-    return await find_souler_by_alias(canonical_name, lang)
-
-
-async def find_souler_by_wiki_id(wiki_id: str, lang: str) -> dict[str, Any] | None:
+async def find_souler_by_wiki_id(wiki_id: str) -> dict[str, Any] | None:
     return await fetch_one(
         """
-        SELECT id, name, canonical_name, wiki_id
+        SELECT id, wiki_id
         FROM public.soulers
-        WHERE lang = %(lang)s
-            AND wiki_id = %(wiki_id)s
+        WHERE wiki_id = %(wiki_id)s
         LIMIT 1
         """,
-        {"wiki_id": wiki_id.strip().upper(), "lang": lang},
+        {"wiki_id": wiki_id.strip().upper()},
     )
-
-
-async def add_souler_alias(souler_id: str, alias: str) -> None:
-    cleaned = alias.strip()
-    if not cleaned:
-        return
-    await execute(
-        """
-        INSERT INTO public.souler_aliases (souler_id, alias)
-        VALUES (CAST(%(souler_id)s AS uuid), %(alias)s)
-        ON CONFLICT (souler_id, alias) DO NOTHING
-        """,
-        {"souler_id": souler_id, "alias": cleaned},
-    )
-
-
-async def add_souler_aliases(souler_id: str, aliases: list[str | None]) -> None:
-    for alias in dict.fromkeys((item or "").strip() for item in aliases):
-        await add_souler_alias(souler_id, alias)
 
 
 async def upsert_resolution_request(name: str, lang: str) -> dict[str, Any]:
@@ -120,14 +95,237 @@ async def mark_resolution_processing(request_id: str) -> dict[str, Any] | None:
     )
 
 
-async def complete_resolution(
+async def complete_existing_resolution_transactionally(
     request_id: str,
     *,
+    souler_id: str,
+    aliases: list[str | None],
+    canonical_name: str | None,
+    wiki_id: str | None,
+) -> None:
+    async with database_manager.get_pool().connection() as connection:
+        async with connection.transaction():
+            async with connection.cursor() as cursor:
+                await _insert_souler_aliases(cursor, souler_id, aliases)
+                await _complete_resolution(
+                    cursor,
+                    request_id=request_id,
+                    souler_id=souler_id,
+                    canonical_name=canonical_name,
+                    wiki_id=wiki_id,
+                )
+
+
+async def fail_resolution(request_id: str, error: str) -> None:
+    await execute(
+        """
+        UPDATE public.souler_resolution_requests
+        SET status = 'failed', error = left(%(error)s, 2000)
+        WHERE id = CAST(%(request_id)s AS uuid)
+        """,
+        {"request_id": request_id, "error": error},
+    )
+
+
+async def create_souler_with_profiles_transactionally(
+    *,
+    request_id: str,
+    wiki_id: str | None,
+    profiles: list[dict[str, Any]],
+    aliases: list[str | None],
+    canonical_name: str | None,
+) -> dict[str, Any]:
+    cleaned_wiki_id = wiki_id.strip().upper() if wiki_id else None
+    async with database_manager.get_pool().connection() as connection:
+        async with connection.transaction():
+            async with connection.cursor() as cursor:
+                souler = await _insert_souler(cursor, cleaned_wiki_id)
+                souler_id = str(souler["id"])
+
+                await _insert_souler_aliases(cursor, souler_id, aliases)
+
+                for profile in profiles:
+                    lang = str(profile["lang"]).strip()
+                    await cursor.execute(
+                        """
+                        INSERT INTO public.souler_profile (souler_id, lang, name, introduction)
+                        VALUES (
+                            CAST(%(souler_id)s AS uuid),
+                            %(lang)s,
+                            %(name)s,
+                            %(introduction)s
+                        )
+                        ON CONFLICT (souler_id, lang) DO NOTHING
+                        """,
+                        {
+                            "souler_id": souler_id,
+                            "lang": lang,
+                            "name": profile["name"],
+                            "introduction": profile["introduction"],
+                        },
+                    )
+
+                    await _insert_keywords(
+                        cursor,
+                        souler_id=souler_id,
+                        lang=lang,
+                        keywords=profile["keywords"],
+                    )
+                    await _insert_chapters(
+                        cursor,
+                        souler_id=souler_id,
+                        lang=lang,
+                        chapters=profile["chapters"],
+                    )
+
+                await _complete_resolution(
+                    cursor,
+                    request_id=request_id,
+                    souler_id=souler_id,
+                    canonical_name=canonical_name,
+                    wiki_id=cleaned_wiki_id,
+                )
+
+                return {
+                    "id": souler_id,
+                    "wiki_id": souler.get("wiki_id"),
+                }
+
+
+async def _insert_souler(cursor: Any, wiki_id: str | None) -> dict[str, Any]:
+    await cursor.execute(
+        """
+        INSERT INTO public.soulers (wiki_id, checked)
+        VALUES (%(wiki_id)s, false)
+        ON CONFLICT (wiki_id) WHERE wiki_id IS NOT NULL DO NOTHING
+        RETURNING id, wiki_id
+        """,
+        {"wiki_id": wiki_id},
+    )
+    souler = await cursor.fetchone()
+    if souler:
+        return dict(souler)
+
+    if wiki_id is None:
+        raise RuntimeError("Failed to create souler")
+
+    await cursor.execute(
+        """
+        SELECT id, wiki_id
+        FROM public.soulers
+        WHERE wiki_id = %(wiki_id)s
+        LIMIT 1
+        """,
+        {"wiki_id": wiki_id},
+    )
+    souler = await cursor.fetchone()
+    if not souler:
+        raise RuntimeError("Failed to resolve existing souler after wiki_id conflict")
+    return dict(souler)
+
+
+async def _insert_keywords(
+    cursor: Any,
+    *,
+    souler_id: str,
+    lang: str,
+    keywords: list[dict[str, Any]],
+) -> None:
+    keyword_ids: dict[str, str] = {}
+    for item in keywords:
+        await cursor.execute(
+            """
+            INSERT INTO public.keywords (word, language)
+            VALUES (%(word)s, %(lang)s)
+            ON CONFLICT (word, language)
+            DO UPDATE SET word = EXCLUDED.word
+            RETURNING id, word
+            """,
+            {"word": item["word"], "lang": lang},
+        )
+        keyword = await cursor.fetchone()
+        if not keyword:
+            raise RuntimeError(f"Failed to upsert keyword: {item['word']}")
+        keyword_ids[str(keyword["word"]).strip().lower()] = str(keyword["id"])
+
+    for item in keywords:
+        keyword_id = keyword_ids.get(str(item["word"]).strip().lower())
+        if not keyword_id:
+            raise RuntimeError(f"Missing keyword id for word: {item['word']}")
+        await cursor.execute(
+            """
+            INSERT INTO public.souler_keyword (souler_id, keyword_id, weight)
+            VALUES (
+                CAST(%(souler_id)s AS uuid),
+                CAST(%(keyword_id)s AS uuid),
+                %(weight)s
+            )
+            ON CONFLICT (souler_id, keyword_id) DO UPDATE SET
+                weight = EXCLUDED.weight
+            """,
+            {
+                "souler_id": souler_id,
+                "keyword_id": keyword_id,
+                "weight": item["weight"],
+            },
+        )
+
+
+async def _insert_chapters(
+    cursor: Any,
+    *,
+    souler_id: str,
+    lang: str,
+    chapters: list[dict[str, str]],
+) -> None:
+    for index, chapter in enumerate(chapters, start=1):
+        await cursor.execute(
+            """
+            INSERT INTO public.chapters (souler_id, lang, seq, title, subtitle, task)
+            VALUES (
+                CAST(%(souler_id)s AS uuid),
+                %(lang)s,
+                %(seq)s,
+                %(title)s,
+                %(subtitle)s,
+                %(task)s
+            )
+            ON CONFLICT (souler_id, lang, seq) DO NOTHING
+            """,
+            {
+                "souler_id": souler_id,
+                "lang": lang,
+                "seq": index,
+                "title": chapter["title"],
+                "subtitle": chapter["subtitle"],
+                "task": chapter["task"],
+            },
+        )
+
+
+async def _insert_souler_aliases(cursor: Any, souler_id: str, aliases: list[str | None]) -> None:
+    for alias in dict.fromkeys((item or "").strip() for item in aliases):
+        if not alias:
+            continue
+        await cursor.execute(
+            """
+            INSERT INTO public.souler_aliases (souler_id, alias)
+            VALUES (CAST(%(souler_id)s AS uuid), %(alias)s)
+            ON CONFLICT (alias) DO NOTHING
+            """,
+            {"souler_id": souler_id, "alias": alias},
+        )
+
+
+async def _complete_resolution(
+    cursor: Any,
+    *,
+    request_id: str,
     souler_id: str,
     canonical_name: str | None,
     wiki_id: str | None,
 ) -> None:
-    await execute(
+    await cursor.execute(
         """
         UPDATE public.souler_resolution_requests
         SET
@@ -146,194 +344,3 @@ async def complete_resolution(
             "wiki_id": wiki_id,
         },
     )
-
-
-async def fail_resolution(request_id: str, error: str) -> None:
-    await execute(
-        """
-        UPDATE public.souler_resolution_requests
-        SET status = 'failed', error = left(%(error)s, 2000)
-        WHERE id = CAST(%(request_id)s AS uuid)
-        """,
-        {"request_id": request_id, "error": error},
-    )
-
-
-async def create_souler_with_profile(
-    *,
-    request_id: str,
-    name: str,
-    canonical_name: str | None,
-    wiki_id: str | None,
-    lang: str,
-    introduction: str,
-    keywords: list[dict[str, Any]],
-    chapters: list[dict[str, str]],
-) -> dict[str, Any]:
-    cleaned_name = name.strip()
-    cleaned_wiki_id = wiki_id.strip().upper() if wiki_id else None
-    async with database_manager.get_pool().connection() as connection:
-        async with connection.transaction():
-            async with connection.cursor() as cursor:
-                await cursor.execute(
-                    """
-                    INSERT INTO public.soulers (name, canonical_name, wiki_id, lang, introduction, checked)
-                    VALUES (%(name)s, %(canonical_name)s, %(wiki_id)s, %(lang)s, %(introduction)s, false)
-                    ON CONFLICT (wiki_id, lang) WHERE wiki_id IS NOT NULL DO NOTHING
-                    RETURNING id, name, canonical_name, wiki_id
-                    """,
-                    {
-                        "name": cleaned_name,
-                        "canonical_name": canonical_name,
-                        "wiki_id": cleaned_wiki_id,
-                        "lang": lang,
-                        "introduction": introduction,
-                    },
-                )
-                souler = await cursor.fetchone()
-                if not souler:
-                    if cleaned_wiki_id is None:
-                        raise RuntimeError("Failed to create souler")
-                    await cursor.execute(
-                        """
-                        SELECT id, name, canonical_name, wiki_id
-                        FROM public.soulers
-                        WHERE wiki_id = %(wiki_id)s
-                            AND lang = %(lang)s
-                        LIMIT 1
-                        """,
-                        {"wiki_id": cleaned_wiki_id, "lang": lang},
-                    )
-                    souler = await cursor.fetchone()
-                    if not souler:
-                        raise RuntimeError("Failed to resolve existing souler after wiki_id conflict")
-
-                    souler_id = str(souler["id"])
-                    await _insert_souler_aliases(cursor, souler_id, [cleaned_name, canonical_name])
-                    await cursor.execute(
-                        """
-                        UPDATE public.souler_resolution_requests
-                        SET
-                            status = 'complete',
-                            souler_id = CAST(%(souler_id)s AS uuid),
-                            canonical_name = %(canonical_name)s,
-                            wiki_id = %(wiki_id)s,
-                            error = NULL,
-                            completed_at = NOW()
-                        WHERE id = CAST(%(request_id)s AS uuid)
-                        """,
-                        {
-                            "request_id": request_id,
-                            "souler_id": souler_id,
-                            "canonical_name": canonical_name,
-                            "wiki_id": cleaned_wiki_id,
-                        },
-                    )
-                    return {
-                        "id": souler_id,
-                        "name": souler["name"],
-                        "canonical_name": souler["canonical_name"],
-                        "wiki_id": souler["wiki_id"],
-                    }
-
-                souler_id = str(souler["id"])
-                await _insert_souler_aliases(cursor, souler_id, [cleaned_name, canonical_name])
-
-                keyword_ids: dict[str, str] = {}
-                for item in keywords:
-                    await cursor.execute(
-                        """
-                        INSERT INTO public.keywords (word, language)
-                        VALUES (%(word)s, %(lang)s)
-                        ON CONFLICT (word, language)
-                        DO UPDATE SET word = EXCLUDED.word
-                        RETURNING id, word
-                        """,
-                        {"word": item["word"], "lang": lang},
-                    )
-                    keyword = await cursor.fetchone()
-                    if not keyword:
-                        raise RuntimeError(f"Failed to upsert keyword: {item['word']}")
-                    keyword_ids[str(keyword["word"]).strip().lower()] = str(keyword["id"])
-
-                for item in keywords:
-                    keyword_id = keyword_ids.get(str(item["word"]).strip().lower())
-                    if not keyword_id:
-                        raise RuntimeError(f"Missing keyword id for word: {item['word']}")
-                    await cursor.execute(
-                        """
-                        INSERT INTO public.souler_keyword (souler_id, keyword_id, weight)
-                        VALUES (
-                            CAST(%(souler_id)s AS uuid),
-                            CAST(%(keyword_id)s AS uuid),
-                            %(weight)s
-                        )
-                        """,
-                        {
-                            "souler_id": souler_id,
-                            "keyword_id": keyword_id,
-                            "weight": item["weight"],
-                        },
-                    )
-
-                for index, chapter in enumerate(chapters, start=1):
-                    await cursor.execute(
-                        """
-                        INSERT INTO public.chapters (souler_id, seq, title, subtitle, task)
-                        VALUES (
-                            CAST(%(souler_id)s AS uuid),
-                            %(seq)s,
-                            %(title)s,
-                            %(subtitle)s,
-                            %(task)s
-                        )
-                        """,
-                        {
-                            "souler_id": souler_id,
-                            "seq": index,
-                            "title": chapter["title"],
-                            "subtitle": chapter["subtitle"],
-                            "task": chapter["task"],
-                        },
-                    )
-
-                await cursor.execute(
-                    """
-                    UPDATE public.souler_resolution_requests
-                    SET
-                        status = 'complete',
-                        souler_id = CAST(%(souler_id)s AS uuid),
-                        canonical_name = %(canonical_name)s,
-                        wiki_id = %(wiki_id)s,
-                        error = NULL,
-                        completed_at = NOW()
-                    WHERE id = CAST(%(request_id)s AS uuid)
-                    """,
-                    {
-                        "request_id": request_id,
-                        "souler_id": souler_id,
-                        "canonical_name": canonical_name,
-                        "wiki_id": cleaned_wiki_id,
-                    },
-                )
-
-                return {
-                    "id": souler_id,
-                    "name": souler["name"],
-                    "canonical_name": souler["canonical_name"],
-                    "wiki_id": souler["wiki_id"],
-                }
-
-
-async def _insert_souler_aliases(cursor: Any, souler_id: str, aliases: list[str | None]) -> None:
-    for alias in dict.fromkeys((item or "").strip() for item in aliases):
-        if not alias:
-            continue
-        await cursor.execute(
-            """
-            INSERT INTO public.souler_aliases (souler_id, alias)
-            VALUES (CAST(%(souler_id)s AS uuid), %(alias)s)
-            ON CONFLICT (souler_id, alias) DO NOTHING
-            """,
-            {"souler_id": souler_id, "alias": alias},
-        )

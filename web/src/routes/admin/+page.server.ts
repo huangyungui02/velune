@@ -35,12 +35,30 @@ export const actions: Actions = {
 			});
 		}
 
-		const result = await createSouler(locals, await request.formData());
+		const { session } = await locals.safeGetSession();
+		const accessToken = session?.access_token;
+		if (!accessToken) {
+			return fail(401, {
+				action: 'createSouler',
+				message: '登录状态已失效。',
+				name: '',
+				language: 'zh'
+			});
+		}
+
+		const result = await createSouler(await request.formData(), accessToken);
 		if (!result.ok) {
 			return fail(result.status, result.data);
 		}
 
-		redirect(303, `/admin/${encodeURIComponent(result.data.id ?? '')}?tab=create&ok=created`);
+		if (result.data.id) {
+			redirect(303, `/admin/${encodeURIComponent(result.data.id)}?tab=create&ok=created`);
+		}
+
+		return {
+			...result.data,
+			message: '人物正在创建中，请稍候。'
+		};
 	},
 
 	createSection: async ({ request, locals }) => {

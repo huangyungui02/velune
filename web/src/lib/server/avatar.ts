@@ -1,5 +1,5 @@
 type AvatarRow = {
-	wiki_id: string;
+	wiki_id?: string | null;
 	image_path: string | null;
 	updated_at: string | null;
 };
@@ -72,18 +72,19 @@ export async function fetchAvatarMap(
 	}
 
 	const { data: avatarRowsRaw } = await locals.supabase
-		.from('souler_avatars')
-		.select('wiki_id, image_path, updated_at')
+		.from('soulers')
+		.select('wiki_id, avatar, updated_at')
 		.in('wiki_id', wikiIds);
 
 	const avatarByWikiId = new Map<string, string | null>();
-	for (const row of (avatarRowsRaw ?? []) as AvatarRow[]) {
+	for (const rowRaw of avatarRowsRaw ?? []) {
+		const row = rowRaw as { wiki_id: string | null; avatar: string | null; updated_at: string | null };
 		const wikiId = normalizeWikiId(row.wiki_id);
 		if (!wikiId) {
 			continue;
 		}
 
-		avatarByWikiId.set(wikiId, resolveImageUrl(locals, row.image_path, row.updated_at));
+		avatarByWikiId.set(wikiId, resolveImageUrl(locals, row.avatar, row.updated_at));
 	}
 
 	return avatarByWikiId;

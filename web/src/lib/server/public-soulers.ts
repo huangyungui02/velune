@@ -3,10 +3,14 @@ import type { ChapterHistoryItem, ConversationMessage, SoulerChapter } from '$li
 
 type PublicSoulerRow = {
 	id: string;
-	name: string;
-	introduction: string | null;
 	wiki_id: string | null;
 	checked: boolean;
+	souler_profile:
+		| {
+				name: string;
+				introduction: string | null;
+		  }[]
+		| null;
 };
 
 type ChapterRow = SoulerChapter;
@@ -53,8 +57,9 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 	const { user } = await locals.safeGetSession();
 	const { data: soulerRaw, error } = await locals.supabase
 		.from('soulers')
-		.select('id, name, introduction, wiki_id, checked')
+		.select('id, wiki_id, checked, souler_profile!inner(name, introduction)')
 		.eq('id', soulerId)
+		.eq('souler_profile.lang', 'zh')
 		.single();
 
 	if (error || !soulerRaw) {
@@ -62,20 +67,23 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 	}
 
 	const souler = soulerRaw as PublicSoulerRow;
+	const profile = souler.souler_profile?.[0];
 	const wikiId = normalizeWikiId(souler.wiki_id);
 	const avatarResolver = createAvatarResolver(locals);
 
 	const [{ data: keywordRaw }, { data: chaptersRaw }] = await Promise.all([
 		locals.supabase
 			.from('souler_keyword')
-			.select('weight, keywords!inner(word)')
+			.select('weight, keywords!inner(word, language)')
 			.eq('souler_id', soulerId)
+			.eq('keywords.language', 'zh')
 			.order('weight', { ascending: false })
 			.limit(10),
 		locals.supabase
 			.from('chapters')
 			.select('id, seq, title, subtitle')
 			.eq('souler_id', soulerId)
+			.eq('lang', 'zh')
 			.order('seq', { ascending: true })
 	]);
 
@@ -145,8 +153,8 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 	return {
 		souler: {
 			id: souler.id,
-			name: souler.name,
-			introduction: souler.introduction ?? '',
+			name: profile?.name?.trim() || '未命名人物',
+			introduction: profile?.introduction ?? '',
 			imageUrl: await avatarResolver.get(wikiId),
 			checked: souler.checked
 		},
@@ -167,12 +175,18 @@ export async function fetchChapterConversation(
 ) {
 	const [{ data: soulerRaw, error: soulerError }, { data: chapterRaw, error: chapterError }] =
 		await Promise.all([
-			locals.supabase.from('soulers').select('id, name').eq('id', soulerId).single(),
+			locals.supabase
+				.from('souler_profile')
+				.select('souler_id, name')
+				.eq('souler_id', soulerId)
+				.eq('lang', 'zh')
+				.single(),
 			locals.supabase
 				.from('chapters')
 				.select('id, seq, title, subtitle')
 				.eq('id', chapterId)
 				.eq('souler_id', soulerId)
+				.eq('lang', 'zh')
 				.single()
 		]);
 
@@ -248,7 +262,10 @@ export async function fetchChapterConversation(
 	}
 
 	return {
-		souler: soulerRaw as ConversationSoulerRow,
+		souler: {
+			id: String((soulerRaw as { souler_id: string }).souler_id),
+			name: String((soulerRaw as { name: string }).name)
+		} satisfies ConversationSoulerRow,
 		chapter: chapterRaw as ConversationChapterRow,
 		initialSessionId,
 		initialMessages,

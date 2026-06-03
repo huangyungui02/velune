@@ -17,12 +17,16 @@ import type {
 
 type DiscoverSectionRow = {
 	id: string;
-	lang: string;
-	title: string;
-	subtitle: string | null;
 	sort_order: number;
 	is_active: boolean;
 	updated_at: string;
+	discover_section_profile:
+		| {
+				lang: string;
+				title: string;
+				subtitle: string | null;
+		  }[]
+		| null;
 };
 
 type DiscoverSectionItemRow = {
@@ -31,27 +35,39 @@ type DiscoverSectionItemRow = {
 	soulers:
 		| {
 				id: string;
-				name: string;
-				lang: string;
 				wiki_id: string | null;
 				checked: boolean;
+				souler_profile:
+					| {
+							name: string;
+							lang: string;
+					  }[]
+					| null;
 		  }[]
 		| {
 				id: string;
-				name: string;
-				lang: string;
 				wiki_id: string | null;
 				checked: boolean;
+				souler_profile:
+					| {
+							name: string;
+							lang: string;
+					  }[]
+					| null;
 		  }
 		| null;
 };
 
 type SoulerOptionRow = {
 	id: string;
-	name: string;
-	lang: string;
 	wiki_id: string | null;
 	checked: boolean;
+	souler_profile:
+		| {
+				name: string;
+				lang: string;
+		  }[]
+		| null;
 };
 
 const candidateSearchLimit = 12;
@@ -67,8 +83,8 @@ export async function fetchDiscoverSectionCount(locals: App.Locals) {
 export async function fetchDiscoverSections(locals: App.Locals) {
 	const { data: sectionsRaw } = await locals.supabase
 		.from('discover_sections')
-		.select('id, lang, title, subtitle, sort_order, is_active, updated_at')
-		.order('lang', { ascending: true })
+		.select('id, sort_order, is_active, updated_at, discover_section_profile!inner(lang, title, subtitle)')
+		.eq('discover_section_profile.lang', 'zh')
 		.order('sort_order', { ascending: true })
 		.order('updated_at', { ascending: false });
 
@@ -91,24 +107,28 @@ export async function fetchDiscoverSections(locals: App.Locals) {
 	}
 
 	return sections.map(
-		(section): AdminDiscoverSectionListItem => ({
-			id: section.id,
-			lang: section.lang?.trim() || 'zh',
-			title: section.title?.trim() || '未命名分组',
-			subtitle: section.subtitle?.trim() || '',
-			sortOrder: Number(section.sort_order ?? 0),
-			isActive: Boolean(section.is_active),
-			itemCount: counts.get(section.id) ?? 0,
-			updatedAt: section.updated_at
-		})
+		(section): AdminDiscoverSectionListItem => {
+			const profile = section.discover_section_profile?.[0];
+			return {
+				id: section.id,
+				lang: profile?.lang?.trim() || 'zh',
+				title: profile?.title?.trim() || '未命名分组',
+				subtitle: profile?.subtitle?.trim() || '',
+				sortOrder: Number(section.sort_order ?? 0),
+				isActive: Boolean(section.is_active),
+				itemCount: counts.get(section.id) ?? 0,
+				updatedAt: section.updated_at
+			};
+		}
 	);
 }
 
 export async function fetchDiscoverSectionDetail(locals: App.Locals, sectionId: string) {
 	const { data: sectionRaw } = await locals.supabase
 		.from('discover_sections')
-		.select('id, lang, title, subtitle, sort_order, is_active')
+		.select('id, sort_order, is_active, discover_section_profile!inner(lang, title, subtitle)')
 		.eq('id', sectionId)
+		.eq('discover_section_profile.lang', 'zh')
 		.maybeSingle();
 
 	if (!sectionRaw) {
@@ -116,10 +136,13 @@ export async function fetchDiscoverSectionDetail(locals: App.Locals, sectionId: 
 	}
 
 	const section = sectionRaw as Omit<DiscoverSectionRow, 'updated_at'>;
+	const sectionProfile = section.discover_section_profile?.[0];
+	const lang = sectionProfile?.lang?.trim() || 'zh';
 	const { data: itemsRaw } = await locals.supabase
 		.from('discover_section_items')
-		.select('souler_id, sort_order, soulers!inner(id, name, lang, wiki_id, checked)')
+		.select('souler_id, sort_order, soulers!inner(id, wiki_id, checked, souler_profile!inner(name, lang))')
 		.eq('section_id', sectionId)
+		.eq('soulers.souler_profile.lang', lang)
 		.order('sort_order', { ascending: true });
 
 	const itemRows = (itemsRaw ?? []) as DiscoverSectionItemRow[];
@@ -138,10 +161,11 @@ export async function fetchDiscoverSectionDetail(locals: App.Locals, sectionId: 
 			}
 
 			const wikiId = normalizeWikiId(souler.wiki_id);
+			const profile = souler.souler_profile?.[0];
 			return {
 				soulerId: souler.id,
-				soulerName: souler.name?.trim() || '未命名人物',
-				lang: souler.lang?.trim() || section.lang?.trim() || 'zh',
+				soulerName: profile?.name?.trim() || '未命名人物',
+				lang: profile?.lang?.trim() || lang,
 				sortOrder: Number(item.sort_order ?? 0),
 				imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null
 			};
@@ -150,9 +174,9 @@ export async function fetchDiscoverSectionDetail(locals: App.Locals, sectionId: 
 
 	return {
 		id: section.id,
-		lang: section.lang?.trim() || 'zh',
-		title: section.title?.trim() || '',
-		subtitle: section.subtitle?.trim() || '',
+		lang,
+		title: sectionProfile?.title?.trim() || '',
+		subtitle: sectionProfile?.subtitle?.trim() || '',
 		sortOrder: Number(section.sort_order ?? 0),
 		isActive: Boolean(section.is_active),
 		items,
@@ -172,15 +196,17 @@ export async function searchDiscoverSectionCandidates(
 
 	const { data: sectionRaw } = await locals.supabase
 		.from('discover_sections')
-		.select('id, lang')
+		.select('id, discover_section_profile!inner(lang)')
 		.eq('id', sectionId)
+		.eq('discover_section_profile.lang', 'zh')
 		.maybeSingle();
 
 	if (!sectionRaw) {
 		return null;
 	}
 
-	const section = sectionRaw as Pick<DiscoverSectionRow, 'id' | 'lang'>;
+	const section = sectionRaw as Pick<DiscoverSectionRow, 'id' | 'discover_section_profile'>;
+	const lang = section.discover_section_profile?.[0]?.lang?.trim() || 'zh';
 	const { data: itemRowsRaw } = await locals.supabase
 		.from('discover_section_items')
 		.select('souler_id')
@@ -193,7 +219,7 @@ export async function searchDiscoverSectionCandidates(
 
 	const candidates = await searchCheckedSoulers(locals, {
 		query: normalizedQuery,
-		lang: section.lang,
+		lang,
 		excludeIds: includedSoulerIds,
 		limit: candidateSearchLimit
 	});
@@ -202,7 +228,7 @@ export async function searchDiscoverSectionCandidates(
 		return {
 			id: row.id,
 			name: row.name,
-			lang: row.lang || section.lang?.trim() || 'zh',
+			lang: row.lang || lang,
 			imageUrl: row.imageUrl
 		};
 	});
@@ -240,9 +266,6 @@ export async function createSection(
 	const { data: insertedRaw, error } = await locals.supabase
 		.from('discover_sections')
 		.insert({
-			lang: parsed.lang,
-			title: parsed.title,
-			subtitle: parsed.subtitle || null,
 			sort_order: Math.floor(parsed.sortOrder),
 			is_active: true
 		})
@@ -257,7 +280,22 @@ export async function createSection(
 		};
 	}
 
-	return { ok: true, data: { ...draft, id: (insertedRaw as { id: string }).id } };
+	const sectionId = (insertedRaw as { id: string }).id;
+	const { error: profileError } = await locals.supabase.from('discover_section_profile').insert({
+		section_id: sectionId,
+		lang: parsed.lang,
+		title: parsed.title,
+		subtitle: parsed.subtitle || null
+	});
+	if (profileError) {
+		return {
+			ok: false,
+			status: 400,
+			data: { ...draft, message: profileError.message }
+		};
+	}
+
+	return { ok: true, data: { ...draft, id: sectionId } };
 }
 
 export async function saveSection(
@@ -294,9 +332,6 @@ export async function saveSection(
 	const { error } = await locals.supabase
 		.from('discover_sections')
 		.update({
-			lang: parsed.lang,
-			title: parsed.title,
-			subtitle: parsed.subtitle || null,
 			sort_order: parsed.sortOrder,
 			is_active: parsed.isActive
 		})
@@ -307,6 +342,23 @@ export async function saveSection(
 			ok: false,
 			status: 400,
 			data: { action: 'saveSection', message: error.message, sectionId: parsed.sectionId }
+		};
+	}
+
+	const { error: profileError } = await locals.supabase.from('discover_section_profile').upsert(
+		{
+			section_id: parsed.sectionId,
+			lang: parsed.lang,
+			title: parsed.title,
+			subtitle: parsed.subtitle || null
+		},
+		{ onConflict: 'section_id,lang' }
+	);
+	if (profileError) {
+		return {
+			ok: false,
+			status: 400,
+			data: { action: 'saveSection', message: profileError.message, sectionId: parsed.sectionId }
 		};
 	}
 

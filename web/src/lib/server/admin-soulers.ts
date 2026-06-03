@@ -12,26 +12,33 @@ import {
 	parseSaveSoulerForm,
 	parseSoulerIdForm
 } from '$lib/server/admin-forms';
+import { getAgentApiBaseUrl } from '$lib/server/agent';
 import { createAvatarResolver, ensureAvatarPath, normalizeWikiId } from '$lib/server/avatar';
-import { completeJson, type JsonSchema } from '$lib/server/llm';
 import type { AdminSoulerChapter, AdminSoulerDetail, AdminSoulerListItem } from '$lib/types';
 
 type SoulerListRow = {
 	id: string;
-	name: string;
-	lang: string;
 	checked: boolean;
 	wiki_id: string | null;
+	souler_profile:
+		| {
+				name: string;
+				lang: string;
+		  }[]
+		| null;
 };
 
 type SoulerDetailRow = {
 	id: string;
+	checked: boolean;
+	wiki_id: string | null;
+	avatar: string | null;
+};
+
+type ProfileRow = {
 	name: string;
 	lang: string;
 	introduction: string | null;
-	checked: boolean;
-	canonical_name: string | null;
-	wiki_id: string | null;
 };
 
 type KeywordRow = {
@@ -46,45 +53,13 @@ type KeywordRow = {
 		| null;
 };
 
-type CanonicalizeResponse = {
-	canonical_name?: string;
-};
-
-const CANONICAL_NAME_SCHEMA: JsonSchema = {
-	type: 'object',
-	properties: {
-		canonical_name: {
-			type: 'string'
-		}
-	},
-	required: ['canonical_name'],
-	additionalProperties: false
-};
-
-const CANONICAL_NAME_PROMPT = {
-	en:
-		'## Task\n' +
-		'Given a person name, return a canonical person name, as JSON format.\n\n' +
-		'## Example Input\n' +
-		'Nietzsche\n\n' +
-		'## Example Output\n' +
-		'{"canonical_name":"Friedrich Nietzsche"}',
-	zh:
-		'## Task\n' +
-		'将给定人物名，返回为规范人物名，以JSON格式返回。\n' +
-		'请使用大众最熟知的名字（例如：庄子而非庄周）。\n\n' +
-		'## Example Input\n' +
-		'尼采\n\n' +
-		'## Example Output\n' +
-		'{"canonical_name":"弗里德里希·尼采"}'
-} as const;
-
 export async function fetchSoulerListByStatus(locals: App.Locals, checked: boolean) {
 	const { data: rowsRaw } = await locals.supabase
 		.from('soulers')
-		.select('id, name, lang, checked, wiki_id')
+		.select('id, checked, wiki_id, souler_profile!inner(name, lang)')
 		.eq('checked', checked)
-		.order('name', { ascending: true });
+		.eq('souler_profile.lang', 'zh')
+		.order('updated_at', { ascending: false });
 
 	const rows = (rowsRaw ?? []) as SoulerListRow[];
 	const avatarResolver = createAvatarResolver(locals);
@@ -92,10 +67,11 @@ export async function fetchSoulerListByStatus(locals: App.Locals, checked: boole
 
 	return rows.map((row): AdminSoulerListItem => {
 		const wikiId = normalizeWikiId(row.wiki_id);
+		const profile = row.souler_profile?.[0];
 		return {
 			id: row.id,
-			name: row.name?.trim() || '未命名人物',
-			lang: row.lang?.trim() || 'zh',
+			name: profile?.name?.trim() || '未命名人物',
+			lang: profile?.lang?.trim() || 'zh',
 			checked: row.checked,
 			imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null
 		};
@@ -117,10 +93,10 @@ export async function fetchSoulerCounts(locals: App.Locals) {
 	};
 }
 
-export async function fetchSoulerDetail(locals: App.Locals, soulerId: string) {
+export async function fetchSoulerDetail(locals: App.Locals, soulerId: string, lang = 'zh') {
 	const { data: soulerRaw } = await locals.supabase
 		.from('soulers')
-		.select('id, name, lang, introduction, checked, canonical_name, wiki_id')
+		.select('id, checked, wiki_id, avatar')
 		.eq('id', soulerId)
 		.maybeSingle();
 
@@ -129,16 +105,38 @@ export async function fetchSoulerDetail(locals: App.Locals, soulerId: string) {
 	}
 
 	const souler = soulerRaw as SoulerDetailRow;
+	const normalizedLang = lang === 'en' ? 'en' : 'zh';
+	const [{ data: profileRaw }, { data: keywordRaw }, { data: chaptersRaw }, { data: aliasesRaw }] =
+		await Promise.all([
+			locals.supabase
+				.from('souler_profile')
+				.select('name, lang, introduction')
+				.eq('souler_id', soulerId)
+				.eq('lang', normalizedLang)
+				.maybeSingle(),
+			locals.supabase
+				.from('souler_keyword')
+				.select('weight, keywords!inner(word, language)')
+				.eq('souler_id', soulerId)
+				.eq('keywords.language', normalizedLang)
+				.order('weight', { ascending: false })
+				.limit(30),
+			locals.supabase
+				.from('chapters')
+				.select('id, seq, title, subtitle, task')
+				.eq('souler_id', soulerId)
+				.eq('lang', normalizedLang)
+				.order('seq', { ascending: true }),
+			locals.supabase
+				.from('souler_aliases')
+				.select('alias')
+				.eq('souler_id', soulerId)
+				.order('alias', { ascending: true })
+		]);
+
+	const profile = profileRaw as ProfileRow | null;
 	const wikiId = normalizeWikiId(souler.wiki_id);
 	const avatarResolver = createAvatarResolver(locals);
-
-	const { data: keywordRaw } = await locals.supabase
-		.from('souler_keyword')
-		.select('weight, keywords!inner(word)')
-		.eq('souler_id', soulerId)
-		.order('weight', { ascending: false })
-		.limit(30);
-
 	const keywords = ((keywordRaw ?? []) as KeywordRow[])
 		.map((item) => {
 			const keywordItem = Array.isArray(item.keywords) ? item.keywords[0] : item.keywords;
@@ -149,102 +147,33 @@ export async function fetchSoulerDetail(locals: App.Locals, soulerId: string) {
 		})
 		.filter((item) => item.word);
 
-	const { data: chaptersRaw } = await locals.supabase
-		.from('chapters')
-		.select('id, seq, title, subtitle, task')
-		.eq('souler_id', soulerId)
-		.order('seq', { ascending: true });
-
-	const chapters = (chaptersRaw ?? []) as AdminSoulerChapter[];
-	const detail: AdminSoulerDetail = {
+	return {
 		id: souler.id,
-		name: souler.name?.trim() || '',
-		lang: souler.lang?.trim() || 'zh',
-		introduction: souler.introduction ?? '',
+		name: profile?.name?.trim() || '',
+		lang: normalizedLang,
+		introduction: profile?.introduction ?? '',
 		checked: souler.checked,
-		canonicalName: souler.canonical_name?.trim() || '',
+		canonicalName: '',
 		wikidata: wikiId ?? '',
 		imageUrl: await avatarResolver.get(wikiId),
+		aliases: ((aliasesRaw ?? []) as { alias: string }[]).map((row) => row.alias),
 		keywords,
-		chapters
-	};
-
-	return detail;
-}
-
-export async function findPotentialDuplicate(
-	locals: App.Locals,
-	lang: string,
-	candidateName: string,
-	excludeSoulerId: string | null = null
-) {
-	const { data: soulersRaw, error } = await locals.supabase
-		.from('soulers')
-		.select('id, name, canonical_name, lang')
-		.eq('lang', lang);
-
-	if (error) {
-		return null;
-	}
-
-	const targetKey = normalizeNameKey(candidateName);
-	for (const row of soulersRaw ?? []) {
-		const soulerId = String((row as { id?: unknown }).id ?? '').trim();
-		if (!soulerId || (excludeSoulerId && soulerId === excludeSoulerId)) {
-			continue;
-		}
-
-		const rowName = normalizeNameKey(String((row as { name?: unknown }).name ?? ''));
-		const rowCanonical = normalizeNameKey(
-			String((row as { canonical_name?: unknown }).canonical_name ?? '')
-		);
-
-		if (rowName === targetKey || rowCanonical === targetKey) {
-			return {
-				id: soulerId,
-				name: String((row as { name?: unknown }).name ?? '').trim()
-			};
-		}
-	}
-
-	return null;
-}
-
-export async function canonicalizeWithLlm(lang: string, name: string): Promise<string> {
-	const cleanedName = name.trim();
-	if (!cleanedName) {
-		throw new Error('Souler name cannot be empty');
-	}
-	if (cleanedName.length > 128) {
-		throw new Error('Souler name is too long');
-	}
-
-	const prompt = lang === 'zh' ? CANONICAL_NAME_PROMPT.zh : CANONICAL_NAME_PROMPT.en;
-	const payload = await completeJson<CanonicalizeResponse>(
-		[
-			{ role: 'system', content: prompt },
-			{ role: 'user', content: cleanedName }
-		],
-		{
-			schemaName: 'canonical_souler_name',
-			schema: CANONICAL_NAME_SCHEMA,
-			temperature: 0.25
-		}
-	);
-
-	const canonicalName = payload?.canonical_name?.trim() ?? '';
-	if (!canonicalName) {
-		throw new Error('canonical name 为空');
-	}
-
-	return canonicalName;
+		chapters: (chaptersRaw ?? []) as AdminSoulerChapter[]
+	} satisfies AdminSoulerDetail;
 }
 
 export async function createSouler(
-	locals: App.Locals,
-	formData: FormData
+	formData: FormData,
+	accessToken: string
 ): Promise<
-	AdminActionResult<{ action: 'createSouler'; name: string; language: string; id?: string }>
+	AdminActionResult<{
+		action: 'createSouler';
+		name: string;
+		language: string;
+		id?: string;
+		requestId?: string;
+		status?: string;
+	}>
 > {
 	const { name, lang } = parseCreateSoulerForm(formData);
 	if (!name) {
@@ -255,63 +184,28 @@ export async function createSouler(
 		};
 	}
 
-	const duplicateByName = await findPotentialDuplicate(locals, lang, name);
-	if (duplicateByName) {
+	const response = await fetch(`${getAgentApiBaseUrl()}/v1/${lang}/soulers/resolve`, {
+		method: 'POST',
+		headers: {
+			authorization: `Bearer ${accessToken}`,
+			'content-type': 'application/json'
+		},
+		body: JSON.stringify({ name })
+	});
+	const payload = (await response.json().catch(() => null)) as {
+		status?: string;
+		soulerId?: string;
+		requestId?: string;
+		error?: string;
+	} | null;
+
+	if (!response.ok || !payload) {
 		return {
 			ok: false,
-			status: 409,
+			status: response.status || 400,
 			data: {
 				action: 'createSouler',
-				message: `已存在重复人物：${duplicateByName.name || duplicateByName.id}`,
-				name,
-				language: lang
-			}
-		};
-	}
-
-	let canonicalName: string;
-	try {
-		canonicalName = await canonicalizeWithLlm(lang, name);
-	} catch (err) {
-		return {
-			ok: false,
-			status: 400,
-			data: {
-				action: 'createSouler',
-				message: err instanceof Error ? err.message : 'canonical name 生成失败',
-				name,
-				language: lang
-			}
-		};
-	}
-
-	const duplicateByCanonical = await findPotentialDuplicate(locals, lang, canonicalName);
-	if (duplicateByCanonical) {
-		return {
-			ok: false,
-			status: 409,
-			data: {
-				action: 'createSouler',
-				message: `canonical 重复：${duplicateByCanonical.name || duplicateByCanonical.id}`,
-				name,
-				language: lang
-			}
-		};
-	}
-
-	const { data: insertedRaw, error } = await locals.supabase
-		.from('soulers')
-		.insert({ name, canonical_name: canonicalName, lang, checked: false })
-		.select('id')
-		.single();
-
-	if (error || !insertedRaw) {
-		return {
-			ok: false,
-			status: 400,
-			data: {
-				action: 'createSouler',
-				message: error?.message || '创建失败。',
+				message: payload?.error || '创建请求失败。',
 				name,
 				language: lang
 			}
@@ -320,7 +214,14 @@ export async function createSouler(
 
 	return {
 		ok: true,
-		data: { action: 'createSouler', name, language: lang, id: (insertedRaw as { id: string }).id }
+		data: {
+			action: 'createSouler',
+			name,
+			language: lang,
+			id: payload.soulerId,
+			requestId: payload.requestId,
+			status: payload.status
+		}
 	};
 }
 
@@ -346,12 +247,18 @@ export async function saveSouler(
 		};
 	}
 
+	const aliasResult = await saveAliases(locals, parsed.soulerId, parsed.aliases);
+	if (!aliasResult.ok) {
+		return {
+			ok: false,
+			status: 400,
+			data: { action: 'saveSouler', message: aliasResult.message, soulerId: parsed.soulerId }
+		};
+	}
+
 	const { error: soulerError } = await locals.supabase
 		.from('soulers')
 		.update({
-			name: parsed.name,
-			canonical_name: parsed.canonicalName || null,
-			introduction: parsed.introduction,
 			wiki_id: parsed.wikidata || null,
 			checked: parsed.checked
 		})
@@ -365,21 +272,60 @@ export async function saveSouler(
 		};
 	}
 
-	const { error: clearKeywordError } = await locals.supabase
-		.from('souler_keyword')
-		.delete()
-		.eq('souler_id', parsed.soulerId);
+	const { error: profileError } = await locals.supabase.from('souler_profile').upsert(
+		{
+			souler_id: parsed.soulerId,
+			lang: parsed.lang,
+			name: parsed.name,
+			introduction: parsed.introduction
+		},
+		{ onConflict: 'souler_id,lang' }
+	);
+	if (profileError) {
+		return {
+			ok: false,
+			status: 400,
+			data: { action: 'saveSouler', message: profileError.message, soulerId: parsed.soulerId }
+		};
+	}
 
-	if (clearKeywordError) {
+	const { data: currentKeywordRows, error: currentKeywordError } = await locals.supabase
+		.from('souler_keyword')
+		.select('keyword_id, keywords!inner(language)')
+		.eq('souler_id', parsed.soulerId)
+		.eq('keywords.language', parsed.lang);
+	if (currentKeywordError) {
 		return {
 			ok: false,
 			status: 400,
 			data: {
 				action: 'saveSouler',
-				message: clearKeywordError.message,
+				message: currentKeywordError.message,
 				soulerId: parsed.soulerId
 			}
 		};
+	}
+
+	const currentKeywordIds = ((currentKeywordRows ?? []) as { keyword_id: string }[]).map(
+		(row) => row.keyword_id
+	);
+	if (currentKeywordIds.length > 0) {
+		const { error: clearKeywordError } = await locals.supabase
+			.from('souler_keyword')
+			.delete()
+			.eq('souler_id', parsed.soulerId)
+			.in('keyword_id', currentKeywordIds);
+		if (clearKeywordError) {
+			return {
+				ok: false,
+				status: 400,
+				data: {
+					action: 'saveSouler',
+					message: clearKeywordError.message,
+					soulerId: parsed.soulerId
+				}
+			};
+		}
 	}
 
 	if (keywords.rows.length > 0) {
@@ -438,6 +384,62 @@ export async function saveSouler(
 	};
 }
 
+async function saveAliases(locals: App.Locals, soulerId: string, aliases: string[]) {
+	const { data: allAliasesRaw, error } = await locals.supabase
+		.from('souler_aliases')
+		.select('souler_id, alias');
+	if (error) {
+		return { ok: false as const, message: error.message };
+	}
+
+	const normalizedDesired = new Map(aliases.map((alias) => [normalizeNameKey(alias), alias]));
+	for (const row of (allAliasesRaw ?? []) as { souler_id: string; alias: string }[]) {
+		if (row.souler_id === soulerId) {
+			continue;
+		}
+		const aliasKey = normalizeNameKey(row.alias);
+		if (normalizedDesired.has(aliasKey)) {
+			return { ok: false as const, message: `Alias 已被其他人物使用：${row.alias}` };
+		}
+	}
+
+	const current = ((allAliasesRaw ?? []) as { souler_id: string; alias: string }[]).filter(
+		(row) => row.souler_id === soulerId
+	);
+	const currentKeys = new Map(current.map((row) => [normalizeNameKey(row.alias), row.alias]));
+	const aliasesToAdd = Array.from(normalizedDesired.entries())
+		.filter(([key, alias]) => currentKeys.get(key) !== alias)
+		.map(([, alias]) => alias);
+	const aliasesToRemove = current
+		.filter((row) => normalizedDesired.get(normalizeNameKey(row.alias)) !== row.alias)
+		.map((row) => row.alias);
+
+	if (aliasesToAdd.length > 0) {
+		const { error: insertError } = await locals.supabase.from('souler_aliases').insert(
+			aliasesToAdd.map((alias) => ({
+				souler_id: soulerId,
+				alias
+			}))
+		);
+		if (insertError) {
+			return { ok: false as const, message: insertError.message };
+		}
+	}
+
+	if (aliasesToRemove.length > 0) {
+		const { error: deleteError } = await locals.supabase
+			.from('souler_aliases')
+			.delete()
+			.eq('souler_id', soulerId)
+			.in('alias', aliasesToRemove);
+		if (deleteError) {
+			return { ok: false as const, message: deleteError.message };
+		}
+	}
+
+	return { ok: true as const };
+}
+
 export async function saveChapters(
 	locals: App.Locals,
 	formData: FormData
@@ -473,7 +475,8 @@ export async function saveChapters(
 			.from('chapters')
 			.update({ title, subtitle, task })
 			.eq('id', chapterId)
-			.eq('souler_id', parsed.soulerId);
+			.eq('souler_id', parsed.soulerId)
+			.eq('lang', parsed.lang);
 
 		if (error) {
 			return {
@@ -611,8 +614,9 @@ export async function uploadAvatar(
 	}
 
 	const { error } = await locals.supabase
-		.from('souler_avatars')
-		.upsert({ wiki_id: wikiId, image_path: filePath }, { onConflict: 'wiki_id' });
+		.from('soulers')
+		.update({ avatar: filePath })
+		.eq('id', soulerId);
 
 	if (error) {
 		return {

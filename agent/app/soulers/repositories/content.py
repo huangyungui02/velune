@@ -23,14 +23,17 @@ def to_souler(raw: Any) -> Souler:
     }
 
 
-async def get_souler_by_id(souler_id: str) -> Souler:
+async def get_souler_by_id(souler_id: str, lang: str = "zh") -> Souler:
     row = await fetch_one(
         """
-        SELECT id, name, introduction
-        FROM public.soulers
-        WHERE id = CAST(%(souler_id)s AS uuid)
+        SELECT s.id, p.name, p.introduction
+        FROM public.soulers s
+        JOIN public.souler_profile p
+            ON p.souler_id = s.id
+            AND p.lang = %(lang)s
+        WHERE s.id = CAST(%(souler_id)s AS uuid)
         """,
-        {"souler_id": souler_id},
+        {"souler_id": souler_id, "lang": lang},
     )
     if not row:
         raise ValueError("Souler not found")

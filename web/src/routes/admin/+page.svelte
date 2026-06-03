@@ -22,6 +22,32 @@
 	const sectionDraftTitle = $derived(sectionForm?.title ?? '');
 	const sectionDraftSubtitle = $derived(sectionForm?.subtitle ?? '');
 	const sectionDraftSortOrder = $derived(sectionForm?.sort_order ?? '0');
+	const pendingRequestId = $derived(form?.action === 'createSouler' ? form.requestId : null);
+
+	$effect(() => {
+		if (!pendingRequestId) {
+			return;
+		}
+
+		let cancelled = false;
+		const timer = window.setInterval(async () => {
+			const response = await fetch(
+				`/api/admin/souler-resolutions/${encodeURIComponent(String(pendingRequestId))}`
+			);
+			const payload = await response.json().catch(() => null);
+			if (cancelled || !payload) {
+				return;
+			}
+			if (payload.soulerId) {
+				window.location.href = `/admin/${encodeURIComponent(payload.soulerId)}?tab=create&ok=created`;
+			}
+		}, 1800);
+
+		return () => {
+			cancelled = true;
+			window.clearInterval(timer);
+		};
+	});
 
 	function detailHref(soulerId: string) {
 		return `/admin/${encodeURIComponent(soulerId)}?tab=${data.activeTab}`;
@@ -60,8 +86,14 @@
 	{/if}
 
 	{#if form?.message}
-		<Card.Root class="rounded-2xl bg-destructive/10 px-4 py-3 ring-1 ring-destructive/25">
-			<Card.Content class="p-0 text-sm text-destructive">{form.message}</Card.Content>
+		<Card.Root
+			class={pendingRequestId
+				? 'rounded-2xl bg-primary/9 px-4 py-3 ring-1 ring-primary/24'
+				: 'rounded-2xl bg-destructive/10 px-4 py-3 ring-1 ring-destructive/25'}
+		>
+			<Card.Content class={pendingRequestId ? 'p-0 text-sm text-primary' : 'p-0 text-sm text-destructive'}
+				>{form.message}</Card.Content
+			>
 		</Card.Root>
 	{/if}
 
@@ -92,7 +124,7 @@
 					</label>
 
 					<Button class="h-10 rounded-xl text-sm" type="submit" formaction="?/createSouler">
-						判断重复并创建
+						{pendingRequestId ? '正在创建' : '判断重复并创建'}
 					</Button>
 				</form>
 			</Card.Content>

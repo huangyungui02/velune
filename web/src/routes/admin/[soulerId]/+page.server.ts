@@ -21,7 +21,8 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 		error(404, 'Souler not found');
 	}
 
-	const souler = await fetchSoulerDetail(locals, soulerId);
+	const lang = url.searchParams.get('lang') === 'en' ? 'en' : 'zh';
+	const souler = await fetchSoulerDetail(locals, soulerId, lang);
 	if (!souler) {
 		error(404, 'Souler not found');
 	}
@@ -29,6 +30,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	return {
 		souler,
 		tab: normalizeAdminTab(url.searchParams.get('tab')),
+		lang,
 		notice: adminNoticeText(url.searchParams.get('ok'))
 	};
 };
@@ -39,14 +41,16 @@ export const actions: Actions = {
 			return fail(403, { action: 'saveSouler', message: '没有权限执行该操作。' });
 		}
 
-		const result = await saveSouler(locals, await request.formData());
+		const formData = await request.formData();
+		const lang = formDataLang(formData);
+		const result = await saveSouler(locals, formData);
 		if (!result.ok) {
 			return fail(result.status, result.data);
 		}
 
 		redirect(
 			303,
-			`/admin/${encodeURIComponent(result.data.soulerId)}?tab=${result.data.tab}&ok=saved`
+			`/admin/${encodeURIComponent(result.data.soulerId)}?tab=${result.data.tab}&lang=${encodeURIComponent(lang)}&ok=saved`
 		);
 	},
 
@@ -55,14 +59,16 @@ export const actions: Actions = {
 			return fail(403, { action: 'saveChapters', message: '没有权限执行该操作。' });
 		}
 
-		const result = await saveChapters(locals, await request.formData());
+		const formData = await request.formData();
+		const lang = formDataLang(formData);
+		const result = await saveChapters(locals, formData);
 		if (!result.ok) {
 			return fail(result.status, result.data);
 		}
 
 		redirect(
 			303,
-			`/admin/${encodeURIComponent(result.data.soulerId)}?tab=${result.data.tab}&ok=chapters`
+			`/admin/${encodeURIComponent(result.data.soulerId)}?tab=${result.data.tab}&lang=${encodeURIComponent(lang)}&ok=chapters`
 		);
 	},
 
@@ -95,3 +101,7 @@ export const actions: Actions = {
 		);
 	}
 };
+
+function formDataLang(formData: FormData) {
+	return formData.get('lang') === 'en' ? 'en' : 'zh';
+}

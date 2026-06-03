@@ -2,10 +2,8 @@ import Foundation
 
 struct CachedReadingPayload: Codable, Equatable, Sendable {
     var savedAt: Date
+    var languageCode: String?
     var featuredSections: [ReadingSection]
-    var latestItems: [ReadingSoulerItem]
-    var latestPage: Int
-    var latestHasMore: Bool
 }
 
 @MainActor

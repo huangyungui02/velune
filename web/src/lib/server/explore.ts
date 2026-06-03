@@ -3,17 +3,25 @@ import type { ExploreSection, ExploreSoulerItem } from '$lib/types';
 
 type SoulerRow = {
 	id: string;
-	name: string;
 	wiki_id: string | null;
 	updated_at: string;
-	lang: string | null;
+	souler_profile:
+		| {
+				name: string;
+				lang: string;
+		  }[]
+		| null;
 };
 
 type DiscoverSectionRow = {
 	id: string;
-	title: string;
-	subtitle: string | null;
 	sort_order: number;
+	discover_section_profile:
+		| {
+				title: string;
+				subtitle: string | null;
+		  }[]
+		| null;
 };
 
 type DiscoverSectionItemRow = {
@@ -29,7 +37,7 @@ function buildExploreSoulerItems(soulers: SoulerRow[], avatarByWikiId: Map<strin
 		const wikiId = normalizeWikiId(souler.wiki_id);
 		return {
 			id: souler.id,
-			name: souler.name?.trim() || '未命名人物',
+			name: souler.souler_profile?.[0]?.name?.trim() || '未命名人物',
 			imageUrl: wikiId ? (avatarByWikiId.get(wikiId) ?? null) : null,
 			tags: []
 		} satisfies ExploreSoulerItem;
@@ -39,9 +47,9 @@ function buildExploreSoulerItems(soulers: SoulerRow[], avatarByWikiId: Map<strin
 async function fetchSectionRowsByLang(locals: App.Locals, lang: string) {
 	const { data: rows } = await locals.supabase
 		.from('discover_sections')
-		.select('id, title, subtitle, sort_order')
+		.select('id, sort_order, discover_section_profile!inner(title, subtitle, lang)')
 		.eq('is_active', true)
-		.eq('lang', lang)
+		.eq('discover_section_profile.lang', lang)
 		.order('sort_order', { ascending: true })
 		.order('updated_at', { ascending: false });
 
@@ -73,10 +81,10 @@ export async function fetchFeaturedSections(locals: App.Locals) {
 
 	const { data: soulerRowsRaw } = await locals.supabase
 		.from('soulers')
-		.select('id, name, wiki_id, updated_at, lang')
+		.select('id, wiki_id, updated_at, souler_profile!inner(name, lang)')
 		.in('id', soulerIds)
 		.eq('checked', true)
-		.eq('lang', 'zh');
+		.eq('souler_profile.lang', 'zh');
 
 	const soulerRows = (soulerRowsRaw ?? []) as SoulerRow[];
 	const avatarByWikiId = await fetchAvatarMap(
@@ -99,6 +107,7 @@ export async function fetchFeaturedSections(locals: App.Locals) {
 
 	return sections
 		.map((section) => {
+			const profile = section.discover_section_profile?.[0];
 			const soulerIds = soulerIdsBySectionId.get(section.id) ?? [];
 			const soulers = soulerIds
 				.map((soulerId) => soulerById.get(soulerId))
@@ -106,8 +115,8 @@ export async function fetchFeaturedSections(locals: App.Locals) {
 
 			return {
 				id: section.id,
-				title: section.title?.trim() || '未命名分组',
-				subtitle: section.subtitle?.trim() || '',
+				title: profile?.title?.trim() || '未命名分组',
+				subtitle: profile?.subtitle?.trim() || '',
 				soulers
 			} satisfies ExploreSection;
 		})
@@ -120,9 +129,9 @@ export async function fetchLatestSoulersPage(locals: App.Locals, page: number) {
 	const to = from + LATEST_PAGE_SIZE - 1;
 	const { data: soulersRaw, count } = await locals.supabase
 		.from('soulers')
-		.select('id, name, wiki_id, updated_at, lang', { count: 'exact' })
+		.select('id, wiki_id, updated_at, souler_profile!inner(name, lang)', { count: 'exact' })
 		.eq('checked', true)
-		.eq('lang', 'zh')
+		.eq('souler_profile.lang', 'zh')
 		.order('updated_at', { ascending: false })
 		.range(from, to);
 

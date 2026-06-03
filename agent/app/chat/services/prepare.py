@@ -30,6 +30,7 @@ async def prepare_chat(
         session_id=session_id,
         souler_id=souler_id,
         chapter_id=chapter_id,
+        lang=lang,
     )
     session = resolved.session
     log_stage("session_ready")

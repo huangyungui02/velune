@@ -21,7 +21,6 @@ extension ChatSession {
         var soulerId: UUID
         var chapterId: UUID?
         var title: String
-        var souler: SoulerName?
         var updatedAt: Date
 
         enum CodingKeys: String, CodingKey {
@@ -29,23 +28,28 @@ extension ChatSession {
             case soulerId = "souler_id"
             case chapterId = "chapter_id"
             case title
-            case souler = "soulers"
             case updatedAt = "updated_at"
         }
     }
 
     private struct SoulerName: Codable {
+        var soulerId: UUID
         var name: String
+
+        enum CodingKeys: String, CodingKey {
+            case soulerId = "souler_id"
+            case name
+        }
     }
 
-    private static func mapResponse(_ response: [Response]) -> [ChatSession] {
+    private static func mapResponse(_ response: [Response], namesBySoulerId: [UUID: String]) -> [ChatSession] {
         let fallbackName = String(localized: "resonance.unknownSouler")
         return response.map { item in
             ChatSession(
                 id: item.id,
                 soulerId: item.soulerId,
                 chapterId: item.chapterId,
-                soulerName: item.souler?.name ?? fallbackName,
+                soulerName: namesBySoulerId[item.soulerId] ?? fallbackName,
                 title: item.title,
                 updatedAt: item.updatedAt
             )
@@ -67,7 +71,7 @@ extension ChatSession {
         if let soulerId {
             response = try await supabase
                 .from("sessions")
-                .select("id, souler_id, chapter_id, title, updated_at, soulers(name)")
+                .select("id, souler_id, chapter_id, title, updated_at")
                 .eq("souler_id", value: soulerId.uuidString)
                 .order("updated_at", ascending: false)
                 .range(from: offset, to: upperBound)
@@ -76,14 +80,18 @@ extension ChatSession {
         } else {
             response = try await supabase
                 .from("sessions")
-                .select("id, souler_id, chapter_id, title, updated_at, soulers(name)")
+                .select("id, souler_id, chapter_id, title, updated_at")
                 .order("updated_at", ascending: false)
                 .range(from: offset, to: upperBound)
                 .execute()
                 .value
         }
 
-        return mapResponse(response)
+        let namesBySoulerId = try await fetchSoulerNames(
+            soulerIds: Array(Set(response.map(\.soulerId))),
+            supabase: supabase
+        )
+        return mapResponse(response, namesBySoulerId: namesBySoulerId)
     }
 
     static func getLatest(soulerId: UUID) async throws -> ChatSession? {
@@ -114,13 +122,34 @@ extension ChatSession {
         let supabase = try Backend.requireSupabase()
         let response: [Response] = try await supabase
             .from("sessions")
-            .select("id, souler_id, chapter_id, title, updated_at, soulers(name)")
+            .select("id, souler_id, chapter_id, title, updated_at")
             .eq("id", value: id.uuidString)
             .limit(1)
             .execute()
             .value
 
-        return mapResponse(response).first
+        let namesBySoulerId = try await fetchSoulerNames(
+            soulerIds: Array(Set(response.map(\.soulerId))),
+            supabase: supabase
+        )
+        return mapResponse(response, namesBySoulerId: namesBySoulerId).first
+    }
+
+    private static func fetchSoulerNames(
+        soulerIds: [UUID],
+        supabase: SupabaseClient
+    ) async throws -> [UUID: String] {
+        guard !soulerIds.isEmpty else { return [:] }
+        let rows: [SoulerName] = try await supabase
+            .from("souler_profile")
+            .select("souler_id, name")
+            .in("souler_id", values: soulerIds.map(\.uuidString))
+            .eq("lang", value: AppLanguage.current.apiLanguageCode)
+            .execute()
+            .value
+        return Dictionary(uniqueKeysWithValues: rows.map {
+            ($0.soulerId, $0.name.trimmingCharacters(in: .whitespacesAndNewlines))
+        })
     }
 
     static func create(

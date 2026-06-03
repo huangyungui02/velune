@@ -4,19 +4,19 @@ import logging
 
 from app.db.session import database_manager
 from app.soulers.repositories.resolution import (
-    add_souler_aliases,
-    complete_resolution,
-    create_souler_with_profile,
+    complete_existing_resolution_transactionally,
+    create_souler_with_profiles_transactionally,
     fail_resolution,
-    find_souler_by_canonical_name,
+    find_souler_by_alias,
     find_souler_by_wiki_id,
     mark_resolution_processing,
 )
 from app.soulers.services.profile_generation import canonicalize_souler_name, generate_profile_content
-from app.soulers.services.wikipedia import search_wiki_id
+from app.soulers.services.wikipedia import get_wikipedia_title_by_wiki_id, search_wiki_id
 from app.tasks.broker import broker
 
 logger = logging.getLogger(__name__)
+SUPPORTED_LANGS = ["zh", "en"]
 
 
 @broker.task
@@ -29,14 +29,26 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
     name = str(request["requested_name"]).strip()
     lang = _normalize_lang(str(request["lang"]))
     try:
-        canonical_name = await canonicalize_souler_name(name, lang)
-        by_canonical = await find_souler_by_canonical_name(canonical_name, lang)
-        if by_canonical is not None:
-            souler_id = str(by_canonical["id"])
-            await add_souler_aliases(souler_id, [name, canonical_name])
-            await complete_resolution(
+        by_name = await find_souler_by_alias(name)
+        if by_name is not None:
+            souler_id = str(by_name["id"])
+            await complete_existing_resolution_transactionally(
                 request_id,
                 souler_id=souler_id,
+                aliases=[name],
+                canonical_name=None,
+                wiki_id=by_name.get("wiki_id"),
+            )
+            return {"status": "complete", "soulerId": souler_id}
+
+        canonical_name = await canonicalize_souler_name(name, lang)
+        by_canonical = await find_souler_by_alias(canonical_name)
+        if by_canonical is not None:
+            souler_id = str(by_canonical["id"])
+            await complete_existing_resolution_transactionally(
+                request_id,
+                souler_id=souler_id,
+                aliases=[name, canonical_name],
                 canonical_name=canonical_name,
                 wiki_id=by_canonical.get("wiki_id"),
             )
@@ -44,32 +56,51 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
 
         wiki_id = await search_wiki_id(canonical_name, lang)
         if wiki_id:
-            by_wiki = await find_souler_by_wiki_id(wiki_id, lang)
+            by_wiki = await find_souler_by_wiki_id(wiki_id)
             if by_wiki is not None:
                 souler_id = str(by_wiki["id"])
-                await add_souler_aliases(souler_id, [name, canonical_name])
-                await complete_resolution(
+                await complete_existing_resolution_transactionally(
                     request_id,
                     souler_id=souler_id,
+                    aliases=[name, canonical_name],
                     canonical_name=canonical_name,
                     wiki_id=wiki_id,
                 )
                 return {"status": "complete", "soulerId": souler_id}
 
-        profile = await generate_profile_content(
-            canonical_name=canonical_name,
-            fallback_name=name,
-            lang=lang,
-        )
-        souler = await create_souler_with_profile(
+        profiles = []
+        aliases: list[str | None] = [name, canonical_name]
+        for profile_lang in SUPPORTED_LANGS:
+            profile_name = canonical_name if profile_lang == lang else None
+            if wiki_id:
+                profile_name = profile_name or await get_wikipedia_title_by_wiki_id(
+                    wiki_id,
+                    profile_lang,
+                )
+            profile_name = (profile_name or canonical_name or name).strip()
+            aliases.append(profile_name)
+
+            profile = await generate_profile_content(
+                canonical_name=profile_name,
+                fallback_name=profile_name,
+                lang=profile_lang,
+            )
+            profiles.append(
+                {
+                    "lang": profile_lang,
+                    "name": profile_name,
+                    "introduction": profile.introduction,
+                    "keywords": [keyword.model_dump() for keyword in profile.keywords],
+                    "chapters": [chapter.model_dump() for chapter in profile.chapters],
+                }
+            )
+
+        souler = await create_souler_with_profiles_transactionally(
             request_id=request_id,
-            name=name,
-            canonical_name=canonical_name,
             wiki_id=wiki_id,
-            lang=lang,
-            introduction=profile.introduction,
-            keywords=[keyword.model_dump() for keyword in profile.keywords],
-            chapters=[chapter.model_dump() for chapter in profile.chapters],
+            profiles=profiles,
+            aliases=aliases,
+            canonical_name=canonical_name,
         )
         return {"status": "complete", "soulerId": str(souler["id"])}
     except Exception as error:  # noqa: BLE001

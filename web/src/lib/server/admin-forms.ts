@@ -2,6 +2,7 @@ import {
 	clampWeight,
 	normalizeAdminTab,
 	normalizeLang,
+	normalizeNameKey,
 	normalizeText,
 	type AdminTab
 } from '$lib/server/admin-common';
@@ -69,14 +70,25 @@ export function parseCreateSoulerForm(formData: FormData) {
 }
 
 export function parseSaveSoulerForm(formData: FormData) {
+	const aliasText = normalizeText(formData.get('aliases'));
+	const aliases = Array.from(
+		new Map(
+			aliasText
+				.split(/[\n,]/)
+				.map((item) => item.trim())
+				.filter(Boolean)
+				.map((alias) => [normalizeNameKey(alias), alias])
+		).values()
+	);
+
 	return {
 		soulerId: normalizeText(formData.get('souler_id')),
 		name: normalizeText(formData.get('name')),
-		canonicalName: normalizeText(formData.get('canonical_name')),
 		introduction: normalizeText(formData.get('introduction')),
 		lang: normalizeText(formData.get('lang')) || 'zh',
 		wikidata: normalizeText(formData.get('wikidata')),
 		checked: formData.get('checked') === 'on',
+		aliases,
 		tab: normalizeAdminTab(normalizeText(formData.get('tab')))
 	};
 }
@@ -84,6 +96,7 @@ export function parseSaveSoulerForm(formData: FormData) {
 export function parseSaveChaptersForm(formData: FormData) {
 	return {
 		soulerId: normalizeText(formData.get('souler_id')),
+		lang: normalizeLang(formData.get('lang')),
 		tab: normalizeAdminTab(normalizeText(formData.get('tab'))),
 		chapterIds: formData
 			.getAll('chapter_id')

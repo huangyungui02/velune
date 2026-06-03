@@ -29,18 +29,19 @@ struct Souler: Identifiable, Codable, Equatable {
 extension Souler {
     private struct Response: Codable {
         var id: UUID
-        var name: String
-        var introduction: String?
         var wikiId: String?
         var checked: Bool
 
         enum CodingKeys: String, CodingKey {
             case id
-            case name
-            case introduction
             case wikiId = "wiki_id"
             case checked
         }
+    }
+
+    private struct ProfileResponse: Codable {
+        var name: String
+        var introduction: String?
     }
 
     private struct KeywordRow: Decodable {
@@ -77,32 +78,42 @@ extension Souler {
 
     static func get(_ soulerId: UUID) async throws -> Souler {
         let supabase = try Backend.requireSupabase()
+        let lang = currentLanguage()
         let response: Response = try await supabase
             .from("soulers")
-            .select("id, name, introduction, wiki_id, checked")
+            .select("id, wiki_id, checked")
             .eq("id", value: soulerId)
             .single()
             .execute()
             .value
-        let keywords = (try? await fetchKeywords(soulerId, supabase: supabase)) ?? []
+        let profile: ProfileResponse = try await supabase
+            .from("souler_profile")
+            .select("name, introduction")
+            .eq("souler_id", value: soulerId.uuidString)
+            .eq("lang", value: lang)
+            .single()
+            .execute()
+            .value
+        let keywords = (try? await fetchKeywords(soulerId, lang: lang, supabase: supabase)) ?? []
         let wikiId = response.wikiId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let imageURL = try await ReadingSoulerItem.resolveImageURLs(wikiIds: [wikiId])[wikiId]
 
         return Souler(
             id: response.id,
-            name: response.name.trimmingCharacters(in: .whitespacesAndNewlines),
-            introduction: response.introduction?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+            name: profile.name.trimmingCharacters(in: .whitespacesAndNewlines),
+            introduction: profile.introduction?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
             imageURL: imageURL,
             keywords: keywords,
             checked: response.checked
         )
     }
 
-    private static func fetchKeywords(_ soulerId: UUID, supabase: SupabaseClient) async throws -> [String] {
+    private static func fetchKeywords(_ soulerId: UUID, lang: String, supabase: SupabaseClient) async throws -> [String] {
         let rows: [KeywordRow] = try await supabase
             .from("souler_keyword")
-            .select("weight, keywords!inner(word)")
+            .select("weight, keywords!inner(word, language)")
             .eq("souler_id", value: soulerId.uuidString)
+            .eq("keywords.language", value: lang)
             .order("weight", ascending: false)
             .limit(10)
             .execute()
@@ -111,5 +122,9 @@ extension Souler {
         return rows
             .compactMap { $0.keywords?.word?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
+    }
+
+    private static func currentLanguage() -> String {
+        Locale.preferredLanguages.first?.hasPrefix("zh") == true ? "zh" : "en"
     }
 }
