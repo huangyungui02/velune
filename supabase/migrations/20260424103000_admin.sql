@@ -28,15 +28,27 @@ CREATE POLICY "Allow admins to update soulers"
 CREATE POLICY "Allow admins to delete soulers"
     ON public.soulers FOR DELETE TO authenticated
     USING (public.is_admin());
-CREATE POLICY "Allow admins to insert souler avatars"
-    ON public.souler_avatars FOR INSERT TO authenticated
+
+CREATE POLICY "Allow admins to insert souler profile"
+    ON public.souler_profile FOR INSERT TO authenticated
     WITH CHECK (public.is_admin());
-CREATE POLICY "Allow admins to update souler avatars"
-    ON public.souler_avatars FOR UPDATE TO authenticated
+CREATE POLICY "Allow admins to update souler profile"
+    ON public.souler_profile FOR UPDATE TO authenticated
     USING (public.is_admin())
     WITH CHECK (public.is_admin());
-CREATE POLICY "Allow admins to delete souler avatars"
-    ON public.souler_avatars FOR DELETE TO authenticated
+CREATE POLICY "Allow admins to delete souler profile"
+    ON public.souler_profile FOR DELETE TO authenticated
+    USING (public.is_admin());
+
+CREATE POLICY "Allow admins to insert souler aliases"
+    ON public.souler_aliases FOR INSERT TO authenticated
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to update souler aliases"
+    ON public.souler_aliases FOR UPDATE TO authenticated
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to delete souler aliases"
+    ON public.souler_aliases FOR DELETE TO authenticated
     USING (public.is_admin());
 
 CREATE POLICY "Allow admins to insert chapters"

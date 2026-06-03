@@ -37,10 +37,13 @@ SELECT
     COALESCE(sess.title, '') AS last_session_title,
     r.created_at,
     r.updated_at,
-    s.name AS souler_name
+    COALESCE(p.name, '') AS souler_name
 FROM public.resonances AS r
 JOIN public.soulers AS s
     ON s.id = r.souler_id
+LEFT JOIN public.souler_profile AS p
+    ON p.souler_id = s.id
+    AND p.lang = 'zh'
 LEFT JOIN public.sessions AS sess
     ON sess.id = r.last_session_id;
 

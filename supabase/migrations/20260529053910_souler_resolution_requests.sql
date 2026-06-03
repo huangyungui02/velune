@@ -25,9 +25,6 @@ CREATE INDEX idx_souler_resolution_requests_souler_id
     ON souler_resolution_requests (souler_id)
     WHERE souler_id IS NOT NULL;
 
-CREATE INDEX idx_souler_aliases_alias_lower
-    ON souler_aliases (lower(trim(alias)));
-
 CREATE TRIGGER handle_souler_resolution_requests_updated_at
     BEFORE UPDATE ON souler_resolution_requests
     FOR EACH ROW

@@ -8,11 +8,12 @@ CREATE TABLE IF NOT EXISTS public.chapters (
     task TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT chapters_souler_seq_unique UNIQUE (souler_id, seq)
+    lang VARCHAR(16) NOT NULL,
+    CONSTRAINT chapters_souler_lang_seq_unique UNIQUE (souler_id, lang, seq)
 );
 
-CREATE INDEX IF NOT EXISTS idx_chapters_souler_seq
-    ON public.chapters (souler_id, seq);
+CREATE INDEX IF NOT EXISTS idx_chapters_souler_lang_seq
+    ON public.chapters (souler_id, lang, seq);
 
 ALTER TABLE public.chapters ENABLE ROW LEVEL SECURITY;
 
