@@ -8,6 +8,9 @@ struct SoulerView: View {
     @State private var errorMessage: String?
     @State private var feedbackSouler: Souler?
     @State private var feedbackMessage: String?
+    @State private var isBookmarked = false
+    @State private var isBookmarking = false
+    @State private var bookmarkErrorMessage: String?
 
     var body: some View {
         ZStack {
@@ -42,9 +45,11 @@ struct SoulerView: View {
                 if souler.checked {
                     ToolbarItem(placement: .bottomBar) {
                         Button {
+                            toggleBookmark()
                         } label: {
-                            Image(systemName: "bookmark")
+                            Image(systemName: isBookmarked ? "bookmark.fill" : "bookmark")
                         }
+                        .disabled(isBookmarking)
                         .accessibilityLabel(Text("souler.action.favorite"))
                     }
 
@@ -85,6 +90,14 @@ struct SoulerView: View {
         } message: {
             Text(feedbackMessage ?? "")
         }
+        .alert("souler.action.favorite", isPresented: Binding(
+            get: { bookmarkErrorMessage != nil },
+            set: { if !$0 { bookmarkErrorMessage = nil } }
+        )) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text(bookmarkErrorMessage ?? "")
+        }
         .task(id: soulerId) {
             await loadSouler()
         }
@@ -103,9 +116,31 @@ struct SoulerView: View {
         defer { isLoading = false }
 
         do {
-            souler = try await Souler.get(soulerId)
+            let loadedSouler = try await Souler.get(soulerId)
+            souler = loadedSouler
+            isBookmarked = (try? await SoulerBookmark.contains(soulerId: loadedSouler.id)) ?? false
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private func toggleBookmark() {
+        guard let souler, !isBookmarking else { return }
+
+        let nextValue = !isBookmarked
+        isBookmarked = nextValue
+        isBookmarking = true
+        bookmarkErrorMessage = nil
+
+        Task {
+            do {
+                try await SoulerBookmark.setBookmarked(nextValue, soulerId: souler.id)
+                NotificationCenter.default.post(name: .bookselfDidChange, object: nil)
+            } catch {
+                isBookmarked.toggle()
+                bookmarkErrorMessage = error.localizedDescription
+            }
+            isBookmarking = false
         }
     }
 }

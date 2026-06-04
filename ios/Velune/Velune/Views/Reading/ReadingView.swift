@@ -1,5 +1,4 @@
 import OSLog
-import SwiftData
 import SwiftUI
 
 enum ReadingTab: String, CaseIterable, Identifiable {
@@ -23,7 +22,6 @@ enum ReadingTab: String, CaseIterable, Identifiable {
 
 struct ReadingView: View {
     @Environment(\.locale) private var locale
-    @Environment(\.modelContext) private var context
     @FocusState private var isSearchFocused: Bool
     @State private var selectedTab: ReadingTab = .featured
     @State private var authManager = AuthManager.shared
@@ -149,6 +147,10 @@ struct ReadingView: View {
             .onChange(of: searchText) { _, _ in
                 scheduleSearch()
             }
+            .onReceive(NotificationCenter.default.publisher(for: .bookselfDidChange)) { _ in
+                guard selectedTab == .bookshelf else { return }
+                refreshBookshelf()
+            }
             .onDisappear {
                 searchTask?.cancel()
             }
@@ -230,42 +232,22 @@ struct ReadingView: View {
     private func loadBookshelf() async {
         if isLoadingBookshelf { return }
 
-        guard let userId = authManager.currentUserId?.uuidString else {
+        guard authManager.currentUserId != nil else {
             bookshelfItems = []
             bookshelfErrorMessage = nil
             return
         }
 
-        let hasLocalCache = loadLocalBookshelf(userId: userId)
-        isLoadingBookshelf = !hasLocalCache
+        isLoadingBookshelf = bookshelfItems.isEmpty
         bookshelfErrorMessage = nil
         defer { isLoadingBookshelf = false }
 
         do {
-            let remoteItems = try await BookshelfItem.fetch()
-            let hasChanges = try BookshelfItem.mergeCached(remoteItems, userId: userId, context: context)
-            if hasChanges || bookshelfItems.isEmpty {
-                bookshelfItems = try BookshelfItem.fetchCached(userId: userId, context: context)
-            }
+            bookshelfItems = try await BookshelfItem.fetch()
         } catch {
-            if !hasLocalCache && bookshelfItems.isEmpty {
+            if bookshelfItems.isEmpty {
                 bookshelfErrorMessage = error.localizedDescription
             }
-        }
-    }
-
-    @MainActor
-    @discardableResult
-    private func loadLocalBookshelf(userId: String) -> Bool {
-        do {
-            bookshelfItems = try BookshelfItem.fetchCached(userId: userId, context: context)
-            if !bookshelfItems.isEmpty {
-                bookshelfErrorMessage = nil
-            }
-            return !bookshelfItems.isEmpty
-        } catch {
-            bookshelfItems = []
-            return false
         }
     }
 

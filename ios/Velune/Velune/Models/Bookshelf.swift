@@ -14,21 +14,15 @@ struct BookshelfItem: Identifiable, Equatable {
 }
 
 extension BookshelfItem {
-    private struct ResonanceRow: Decodable {
-        var id: UUID
+    private struct BookselfRow: Decodable {
+        var userId: UUID
         var soulerId: UUID
-        var soulerName: String?
-        var lastSessionId: UUID?
-        var lastSessionTitle: String?
-        var updatedAt: Date
+        var createdAt: Date
 
         enum CodingKeys: String, CodingKey {
-            case id
+            case userId = "user_id"
             case soulerId = "souler_id"
-            case soulerName = "souler_name"
-            case lastSessionId = "last_session_id"
-            case lastSessionTitle = "last_session_title"
-            case updatedAt = "updated_at"
+            case createdAt = "created_at"
         }
     }
 
@@ -42,41 +36,42 @@ extension BookshelfItem {
         }
     }
 
-    private struct SessionChapterRow: Decodable {
-        var id: UUID
-        var chapterId: UUID?
+    private struct ProfileRow: Decodable {
+        var soulerId: UUID
+        var name: String
 
         enum CodingKeys: String, CodingKey {
-            case id
-            case chapterId = "chapter_id"
+            case soulerId = "souler_id"
+            case name
         }
     }
 
     static func fetch(limit: Int = 80) async throws -> [BookshelfItem] {
         let supabase = try Backend.requireSupabase()
-        let resonanceRows: [ResonanceRow] = try await supabase
-            .from("resonances_with_souler")
-            .select("id, souler_id, souler_name, last_session_id, last_session_title, updated_at")
-            .order("updated_at", ascending: false)
+        let userId = try AuthManager.shared.getUserId()
+        let bookselfRows: [BookselfRow] = try await supabase
+            .from("bookself")
+            .select("user_id, souler_id, created_at")
+            .eq("user_id", value: userId.uuidString)
+            .order("created_at", ascending: false)
             .limit(limit)
             .execute()
             .value
 
-        let soulerIds = Array(Set(resonanceRows.map(\.soulerId)))
-        let sessionIds = Array(Set(resonanceRows.compactMap(\.lastSessionId)))
+        let soulerIds = Array(Set(bookselfRows.map(\.soulerId)))
+        let nameBySoulerId = try await fetchNames(soulerIds: soulerIds, supabase: supabase)
         let imageBySoulerId = try await fetchImages(soulerIds: soulerIds, supabase: supabase)
-        let chapterBySessionId = try await fetchChapterIds(sessionIds: sessionIds, supabase: supabase)
 
-        return resonanceRows.map { row in
-            let name = row.soulerName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return bookselfRows.map { row in
+            let name = nameBySoulerId[row.soulerId]?.trimmingCharacters(in: .whitespacesAndNewlines)
             return BookshelfItem(
-                id: row.id,
+                id: row.soulerId,
                 soulerId: row.soulerId,
                 soulerName: name?.isEmpty == false ? name! : String(localized: "resonance.unknownSouler"),
-                lastSessionId: row.lastSessionId,
-                lastChapterId: row.lastSessionId.flatMap { chapterBySessionId[$0] ?? nil },
-                lastSessionTitle: row.lastSessionTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
-                updatedAt: row.updatedAt,
+                lastSessionId: nil,
+                lastChapterId: nil,
+                lastSessionTitle: "",
+                updatedAt: row.createdAt,
                 imageURL: imageBySoulerId[row.soulerId]
             )
         }
@@ -111,18 +106,16 @@ extension BookshelfItem {
         return result
     }
 
-    private static func fetchChapterIds(
-        sessionIds: [UUID],
-        supabase: SupabaseClient
-    ) async throws -> [UUID: UUID?] {
-        guard !sessionIds.isEmpty else { return [:] }
-        let rows: [SessionChapterRow] = try await supabase
-            .from("sessions")
-            .select("id, chapter_id")
-            .in("id", values: sessionIds.map(\.uuidString))
+    private static func fetchNames(soulerIds: [UUID], supabase: SupabaseClient) async throws -> [UUID: String] {
+        guard !soulerIds.isEmpty else { return [:] }
+        let rows: [ProfileRow] = try await supabase
+            .from("souler_profile")
+            .select("souler_id, name")
+            .in("souler_id", values: soulerIds.map(\.uuidString))
+            .eq("lang", value: AppLanguage.current.apiLanguageCode)
             .execute()
             .value
-        return Dictionary(uniqueKeysWithValues: rows.map { ($0.id, $0.chapterId) })
+        return Dictionary(uniqueKeysWithValues: rows.map { ($0.soulerId, $0.name) })
     }
 
     private init(resonance: Resonance) {
