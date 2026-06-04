@@ -115,7 +115,7 @@ extension ChatView {
 
     func selectConversationOption(_ option: String) {
         inputText = option
-        isComposerFocused = true
+        dismissComposer()
     }
 
     private var chapterUnavailableView: some View {

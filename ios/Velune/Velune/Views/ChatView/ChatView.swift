@@ -169,7 +169,7 @@ struct ChatView: View {
                             Image(systemName: "safari")
                             Text("resonance.chat.chapters.action.start")
                         }
-                            .padding(.horizontal, 8)
+                            .padding(.horizontal, 16)
                             .fixedSize(horizontal: true, vertical: false)
                     }
                     .buttonStyle(.borderless)

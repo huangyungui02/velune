@@ -67,12 +67,6 @@ struct StarSeaComposerCover: View {
                 .scrollIndicators(.hidden)
                 .contentMargins(0, for: .scrollContent)
                 .background(.clear)
-                .submitLabel(.done)
-                .onSubmit {
-                    if canFinish {
-                        onDone()
-                    }
-                }
                 .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
         }
     }

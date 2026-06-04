@@ -21,30 +21,22 @@ struct SereneChatComposer: View {
                 .tint(UITheme.primaryText)
                 .submitLabel(.send)
                 .padding(.leading, 18)
+                .padding(.trailing, canSend ? 0 : 18)
                 .padding(.vertical, 13)
 
-            Button {
-                Task { await onSend() }
-            } label: {
-                Image(systemName: "arrow.up")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(canSend ? Color(red: 0.03, green: 0.035, blue: 0.055) : UITheme.primaryText.opacity(0.24))
-                    .frame(width: 32, height: 32)
-                    .background(
-                        Circle()
-                            .fill(canSend ? Color.white : Color.clear)
-                    )
-                    .overlay {
-                        if !canSend {
-                            Circle()
-                                .strokeBorder(.white.opacity(0.06), lineWidth: 0.5)
-                        }
-                    }
+            if canSend {
+                Button {
+                    Task { await onSend() }
+                } label: {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Color(red: 0.03, green: 0.035, blue: 0.055))
+                        .frame(width: 32, height: 32)
+                        .background(Color.white, in: .circle)
+                }
+                .padding(.trailing, 8)
+                .transition(.scale(scale: 0.84).combined(with: .opacity))
             }
-            .disabled(!canSend)
-            .scaleEffect(canSend ? 1.0 : 0.88)
-            .padding(.trailing, 8)
-            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: canSend)
         }
         .frame(minHeight: 46)
         .background(Color(red: 0.03, green: 0.035, blue: 0.055).opacity(0.60), in: .capsule)
