@@ -4,11 +4,13 @@ import logging
 
 from app.db.session import database_manager
 from app.soulers.repositories.resolution import (
+    complete_souler_resolution_transactionally,
     complete_existing_resolution_transactionally,
-    create_souler_with_profiles_transactionally,
     fail_resolution,
     find_souler_by_alias,
     find_souler_by_wiki_id,
+    get_souler_lang_content_state,
+    is_souler_lang_content_complete,
     mark_resolution_processing,
 )
 from app.soulers.services.profile_generation import canonicalize_souler_name, generate_profile_content
@@ -16,7 +18,6 @@ from app.soulers.services.wikipedia import get_wikipedia_title_by_wiki_id, searc
 from app.tasks.broker import broker
 
 logger = logging.getLogger(__name__)
-SUPPORTED_LANGS = ["zh", "en"]
 
 
 @broker.task
@@ -55,50 +56,57 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
             return {"status": "complete", "soulerId": souler_id}
 
         wiki_id = await search_wiki_id(canonical_name, lang)
+        aliases: list[str | None] = [name, canonical_name]
         if wiki_id:
             by_wiki = await find_souler_by_wiki_id(wiki_id)
             if by_wiki is not None:
                 souler_id = str(by_wiki["id"])
-                await complete_existing_resolution_transactionally(
-                    request_id,
-                    souler_id=souler_id,
-                    aliases=[name, canonical_name],
-                    canonical_name=canonical_name,
+                state = await get_souler_lang_content_state(souler_id, lang)
+                if is_souler_lang_content_complete(state):
+                    await complete_souler_resolution_transactionally(
+                        request_id=request_id,
+                        souler_id=souler_id,
+                        wiki_id=wiki_id,
+                        lang=lang,
+                        profile=None,
+                        aliases=aliases,
+                        canonical_name=canonical_name,
+                    )
+                    return {"status": "complete", "soulerId": souler_id}
+
+                profile_name = await _profile_name_for_resolution(
                     wiki_id=wiki_id,
+                    canonical_name=canonical_name,
+                    fallback_name=name,
+                    lang=lang,
                 )
-                return {"status": "complete", "soulerId": souler_id}
-
-        profiles = []
-        aliases: list[str | None] = [name, canonical_name]
-        for profile_lang in SUPPORTED_LANGS:
-            profile_name = canonical_name if profile_lang == lang else None
-            if wiki_id:
-                profile_name = profile_name or await get_wikipedia_title_by_wiki_id(
-                    wiki_id,
-                    profile_lang,
+                aliases.append(profile_name)
+                profile = await _generate_current_lang_profile(profile_name, lang)
+                souler = await complete_souler_resolution_transactionally(
+                    request_id=request_id,
+                    souler_id=souler_id,
+                    wiki_id=wiki_id,
+                    lang=lang,
+                    profile=profile,
+                    aliases=aliases,
+                    canonical_name=canonical_name,
                 )
-            profile_name = (profile_name or canonical_name or name).strip()
-            aliases.append(profile_name)
+                return {"status": "complete", "soulerId": str(souler["id"])}
 
-            profile = await generate_profile_content(
-                canonical_name=profile_name,
-                fallback_name=profile_name,
-                lang=profile_lang,
-            )
-            profiles.append(
-                {
-                    "lang": profile_lang,
-                    "name": profile_name,
-                    "introduction": profile.introduction,
-                    "keywords": [keyword.model_dump() for keyword in profile.keywords],
-                    "chapters": [chapter.model_dump() for chapter in profile.chapters],
-                }
-            )
-
-        souler = await create_souler_with_profiles_transactionally(
-            request_id=request_id,
+        profile_name = await _profile_name_for_resolution(
             wiki_id=wiki_id,
-            profiles=profiles,
+            canonical_name=canonical_name,
+            fallback_name=name,
+            lang=lang,
+        )
+        aliases.append(profile_name)
+        profile = await _generate_current_lang_profile(profile_name, lang)
+        souler = await complete_souler_resolution_transactionally(
+            request_id=request_id,
+            souler_id=None,
+            wiki_id=wiki_id,
+            lang=lang,
+            profile=profile,
             aliases=aliases,
             canonical_name=canonical_name,
         )
@@ -119,3 +127,31 @@ async def _ensure_database() -> None:
 
 def _normalize_lang(lang: str) -> str:
     return "zh" if lang.strip().lower().startswith("zh") else "en"
+
+
+async def _profile_name_for_resolution(
+    *,
+    wiki_id: str | None,
+    canonical_name: str,
+    fallback_name: str,
+    lang: str,
+) -> str:
+    if wiki_id:
+        wiki_title = await get_wikipedia_title_by_wiki_id(wiki_id, lang)
+        if wiki_title:
+            return wiki_title.strip()
+    return (canonical_name or fallback_name).strip()
+
+
+async def _generate_current_lang_profile(profile_name: str, lang: str) -> dict[str, object]:
+    profile = await generate_profile_content(
+        canonical_name=profile_name,
+        fallback_name=profile_name,
+        lang=lang,
+    )
+    return {
+        "name": profile_name,
+        "introduction": profile.introduction,
+        "keywords": [keyword.model_dump() for keyword in profile.keywords],
+        "chapters": [chapter.model_dump() for chapter in profile.chapters],
+    }

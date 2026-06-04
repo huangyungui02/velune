@@ -39,7 +39,7 @@ async def start_chapter(
     assistant_written = False
 
     try:
-        souler, chapter = await load_chapter_pair(str(souler_id), str(chapter_id))
+        souler, chapter = await load_chapter_pair(str(souler_id), str(chapter_id), lang)
         session = await create_chapter_session(user_id, souler, chapter)
         created_session_id = session["id"]
 
