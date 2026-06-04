@@ -117,6 +117,12 @@
 "souler.load.failed" = "Failed to load";
 "souler.introduction.empty.body" = "No introduction yet.";
 "souler.action.chat" = "Chat";
+"souler.action.favorite" = "Favorite";
+"souler.action.more" = "More";
+"souler.action.showFolios" = "Show Folios";
+"souler.feedback.title" = "Feedback";
+"souler.feedback.prompt" = "Tell us what feels missing, inaccurate, or worth improving on this souler.";
+"souler.feedback.submitted" = "Thanks. Your feedback has been received.";
 "souler.resolution.status.preparing" = "Preparing this page…";
 "souler.resolution.status.queued" = "This page is waiting to be shaped.";
 "souler.resolution.status.processing" = "This page is being shaped.";

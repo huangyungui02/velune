@@ -6,6 +6,8 @@ struct SoulerView: View {
     @State private var souler: Souler?
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var feedbackSouler: Souler?
+    @State private var feedbackMessage: String?
 
     var body: some View {
         ZStack {
@@ -30,21 +32,58 @@ struct SoulerView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
-            if let souler, souler.checked {
+            if let souler {
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        ChatView(
-                            sessionId: nil,
-                            soulerId: souler.id,
-                            soulerName: souler.name,
-                            focusComposerOnAppear: false
-                        )
-                    } label: {
-                        Image(systemName: "bubble.left.and.bubble.right")
+                    SoulerActionMenu {
+                        feedbackSouler = souler
                     }
-                    .accessibilityLabel(Text("souler.action.chat"))
+                }
+
+                if souler.checked {
+                    ToolbarItem(placement: .bottomBar) {
+                        Button {
+                        } label: {
+                            Image(systemName: "bookmark")
+                        }
+                        .accessibilityLabel(Text("souler.action.favorite"))
+                    }
+
+                    ToolbarSpacer(.flexible, placement: .bottomBar)
+
+                    ToolbarItem(placement: .bottomBar) {
+                        NavigationLink {
+                            ChatView(
+                                sessionId: nil,
+                                soulerId: souler.id,
+                                soulerName: souler.name,
+                                focusComposerOnAppear: false
+                            )
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "list.bullet")
+                                Text("souler.action.showFolios")
+                            }
+                            .padding(.horizontal, 8)
+                            .fixedSize(horizontal: true, vertical: false)
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel(Text("souler.action.showFolios"))
+                    }
                 }
             }
+        }
+        .sheet(item: $feedbackSouler) { souler in
+            SoulerFeedbackSheet(souler: souler) {
+                feedbackMessage = String(localized: "souler.feedback.submitted")
+            }
+        }
+        .alert("souler.feedback.title", isPresented: Binding(
+            get: { feedbackMessage != nil },
+            set: { if !$0 { feedbackMessage = nil } }
+        )) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text(feedbackMessage ?? "")
         }
         .task(id: soulerId) {
             await loadSouler()
@@ -67,6 +106,107 @@ struct SoulerView: View {
             souler = try await Souler.get(soulerId)
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+private struct SoulerActionMenu: View {
+    let onFeedback: () -> Void
+
+    var body: some View {
+        Menu {
+            Button(action: onFeedback) {
+                Label("souler.feedback.title", systemImage: "text.bubble")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .font(.system(size: 18))
+                .foregroundStyle(UITheme.primaryText)
+        }
+        .accessibilityLabel(Text("souler.action.more"))
+    }
+}
+
+private struct SoulerFeedbackSheet: View {
+    let souler: Souler
+    let onSubmitted: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var content = ""
+    @State private var isSubmitting = false
+    @State private var errorMessage: String?
+
+    private var trimmedContent: String {
+        content.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("souler.feedback.prompt")
+                    .font(.subheadline)
+                    .foregroundStyle(UITheme.secondaryText)
+
+                TextEditor(text: $content)
+                    .font(.body)
+                    .scrollContentBackground(.hidden)
+                    .padding(12)
+                    .frame(minHeight: 180)
+                    .background(Color.white.opacity(0.06), in: .rect(cornerRadius: 12, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(.white.opacity(0.12), lineWidth: 0.7)
+                    }
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(.red.opacity(0.85))
+                }
+
+                Spacer()
+            }
+            .padding(20)
+            .background(BackgroundView())
+            .navigationTitle(Text("souler.feedback.title"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("common.cancel") {
+                        dismiss()
+                    }
+                    .disabled(isSubmitting)
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        submit()
+                    } label: {
+                        if isSubmitting {
+                            ProgressView()
+                        } else {
+                            Text("common.submit")
+                        }
+                    }
+                    .disabled(trimmedContent.isEmpty || isSubmitting)
+                }
+            }
+        }
+    }
+
+    private func submit() {
+        Task {
+            isSubmitting = true
+            errorMessage = nil
+            defer { isSubmitting = false }
+
+            do {
+                try await SoulerFeedback.submit(soulerId: souler.id, content: content)
+                onSubmitted()
+                dismiss()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }

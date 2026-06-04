@@ -117,6 +117,12 @@
 "souler.load.failed" = "加载失败";
 "souler.introduction.empty.body" = "暂无简介。";
 "souler.action.chat" = "聊天";
+"souler.action.favorite" = "收藏";
+"souler.action.more" = "更多";
+"souler.action.showFolios" = "查看章节";
+"souler.feedback.title" = "反馈";
+"souler.feedback.prompt" = "告诉我们这个 souler 哪里缺失、不准确，或值得改进。";
+"souler.feedback.submitted" = "已收到你的反馈。";
 "souler.resolution.status.preparing" = "正在准备这个页面…";
 "souler.resolution.status.queued" = "这个页面正在等待生成。";
 "souler.resolution.status.processing" = "这个页面正在生成中。";
