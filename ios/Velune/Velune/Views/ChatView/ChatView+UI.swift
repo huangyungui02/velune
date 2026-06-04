@@ -73,78 +73,23 @@ extension ChatView {
 
     @ViewBuilder
     var composer: some View {
-        if let chapter = selectedChapter {
-            HStack(spacing: 12) {
-                Button {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        self.selectedChapter = nil
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        self.isComposerFocused = true
-                    }
-                } label: {
-                    Text("resonance.chat.chapters.action.freeChat")
-                        .font(.body)
-                        .fontDesign(.serif)
-                        .foregroundStyle(UITheme.primaryText)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(.white.opacity(0.08), in: .rect(cornerRadius: 16))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
-                        }
-                }
-                .buttonStyle(.plain)
-                .disabled(isStartingChapterSession)
+        let canSend = !isSending
+            && !isStartingChapterSession
+            && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
-                Button {
-                    let selected = chapter
-                    withAnimation {
-                        self.selectedChapter = nil
-                    }
-                    Task {
-                        await startChapterSession(selected)
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        if isStartingChapterSession {
-                            ProgressView().tint(.black)
-                        } else {
-                            Text("resonance.chat.chapters.action.start")
-                        }
-                    }
-                    .font(.body.weight(.medium))
-                    .fontDesign(.serif)
-                    .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(UITheme.primaryText, in: .rect(cornerRadius: 16))
-                }
-                .buttonStyle(.plain)
-                .disabled(isStartingChapterSession)
-            }
-            .padding()
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        } else {
-            let canSend = !isSending
-                && !isStartingChapterSession
-                && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
-            SereneChatComposer(
-                text: $inputText,
-                isFocused: $isComposerFocused,
-                isBusy: isSending || isStartingChapterSession,
-                canSend: canSend,
-                placeholderKey: "resonance.chat.placeholder"
-            ) {
-                await sendMessage()
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 16)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
+        SereneChatComposer(
+            text: $inputText,
+            isFocused: $isComposerFocused,
+            isBusy: isSending || isStartingChapterSession,
+            canSend: canSend,
+            placeholderKey: "resonance.chat.placeholder"
+        ) {
+            await sendMessage()
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 16)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     var chapterPanel: some View {

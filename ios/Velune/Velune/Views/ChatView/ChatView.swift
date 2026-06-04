@@ -71,7 +71,9 @@ struct ChatView: View {
                     messageList
                 }
 
-                composer
+                if !messages.isEmpty {
+                    composer
+                }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -148,6 +150,34 @@ struct ChatView: View {
                 } label: {
                     Image(systemName: "clock.arrow.circlepath")
                 }
+            }
+
+            if messages.isEmpty, let selectedChapter {
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        let selected = selectedChapter
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            self.selectedChapter = nil
+                        }
+                        Task {
+                            await startChapterSession(selected)
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "safari")
+                            Text("resonance.chat.chapters.action.start")
+                        }
+                            .padding(.horizontal, 8)
+                            .fixedSize(horizontal: true, vertical: false)
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(isStartingChapterSession)
+                    .accessibilityLabel(Text("resonance.chat.chapters.action.start"))
+                }
+
+                ToolbarSpacer(.flexible, placement: .bottomBar)
             }
         }
         .alert("matching.error.title", isPresented: Binding(
