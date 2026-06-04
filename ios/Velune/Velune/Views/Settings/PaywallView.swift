@@ -79,11 +79,6 @@ struct PaywallView: View {
                                 .foregroundStyle(.white)
                                 .tracking(0.5)
                             
-                            Text("paywall.subtitle")
-                                .font(.system(.subheadline, design: .default))
-                                .foregroundStyle(UITheme.secondaryText)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 32)
                         }
                         
                         // Poetic & Spiritual Feature list in an elegant card container
