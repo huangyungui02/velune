@@ -58,6 +58,9 @@ CREATE POLICY "Allow admins to update chapters"
     ON public.chapters FOR UPDATE TO authenticated
     USING (public.is_admin())
     WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to view all chapters"
+    ON public.chapters FOR SELECT TO authenticated
+    USING (public.is_admin());
 
 CREATE POLICY "Allow admins to insert keywords"
     ON public.keywords FOR INSERT TO authenticated

@@ -102,6 +102,12 @@ export function parseSaveChaptersForm(formData: FormData) {
 			.getAll('chapter_id')
 			.map((item) => (typeof item === 'string' ? item.trim() : ''))
 			.filter(Boolean),
+		activeIds: new Set(
+			formData
+				.getAll('chapter_active')
+				.map((item) => (typeof item === 'string' ? item.trim() : ''))
+				.filter(Boolean)
+		),
 		titles: formData.getAll('chapter_title').map((item) => String(item ?? '').trim()),
 		subtitles: formData.getAll('chapter_subtitle').map((item) => String(item ?? '').trim()),
 		tasks: formData.getAll('chapter_task').map((item) => String(item ?? '').trim())

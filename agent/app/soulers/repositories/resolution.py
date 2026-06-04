@@ -290,7 +290,7 @@ async def _insert_chapters(
                 %(subtitle)s,
                 %(task)s
             )
-            ON CONFLICT (souler_id, lang, seq) DO NOTHING
+            ON CONFLICT (souler_id, lang, seq) WHERE active = TRUE DO NOTHING
             """,
             {
                 "souler_id": souler_id,

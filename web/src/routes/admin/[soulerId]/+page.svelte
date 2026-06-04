@@ -234,7 +234,22 @@
 									<Card.Root class="rounded-xl bg-card/75 py-3 ring-1 ring-border/70" size="sm">
 										<Card.Content class="grid gap-2 px-3">
 											<input type="hidden" name="chapter_id" value={chapter.id} />
-											<p class="text-xs text-muted-foreground">第 {chapter.seq} 章</p>
+											<div class="flex items-center justify-between gap-3">
+												<p class="text-xs text-muted-foreground">第 {chapter.seq} 章</p>
+												<label
+													class="flex items-center gap-2 text-xs text-muted-foreground"
+													title="关闭后 Web 和 iOS 用户侧不再显示此章节"
+												>
+													<input
+														class="size-4 accent-primary"
+														type="checkbox"
+														name="chapter_active"
+														value={chapter.id}
+														checked={chapter.active}
+													/>
+													显示
+												</label>
+											</div>
 											<Input
 												class="h-9 rounded-lg bg-background/72 text-sm"
 												name="chapter_title"

@@ -84,6 +84,7 @@ export async function fetchPublicSoulerDetail(locals: App.Locals, soulerId: stri
 			.select('id, seq, title, subtitle')
 			.eq('souler_id', soulerId)
 			.eq('lang', 'zh')
+			.eq('active', true)
 			.order('seq', { ascending: true })
 	]);
 
@@ -187,6 +188,7 @@ export async function fetchChapterConversation(
 				.eq('id', chapterId)
 				.eq('souler_id', soulerId)
 				.eq('lang', 'zh')
+				.eq('active', true)
 				.single()
 		]);
 

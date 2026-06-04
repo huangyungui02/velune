@@ -161,7 +161,7 @@ VALUES
     ('a0ea4fec-1db5-48c3-8b3e-e4f0180dccda', 'en', 1, 'The Question of Being', 'Hear the forgotten question again', 'Shift the user from things to Being itself, and reveal everyday fallenness.'),
     ('bc6e92a2-2d0e-4313-a121-7ed9220d0bce', 'zh', 1, '自由的重量', '承认选择无法被推卸', '要求用户面对自己的选择，并承担自由带来的责任。'),
     ('bc6e92a2-2d0e-4313-a121-7ed9220d0bce', 'en', 1, 'The Weight of Freedom', 'Admit that choice cannot be outsourced', 'Ask the user to face their choices and accept the responsibility of freedom.')
-ON CONFLICT (souler_id, lang, seq) DO UPDATE SET
+ON CONFLICT (souler_id, lang, seq) WHERE active = TRUE DO UPDATE SET
     title = EXCLUDED.title,
     subtitle = EXCLUDED.subtitle,
     task = EXCLUDED.task;

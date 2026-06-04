@@ -123,7 +123,7 @@ export async function fetchSoulerDetail(locals: App.Locals, soulerId: string, la
 				.limit(30),
 			locals.supabase
 				.from('chapters')
-				.select('id, seq, title, subtitle, task')
+				.select('id, seq, title, subtitle, task, active')
 				.eq('souler_id', soulerId)
 				.eq('lang', normalizedLang)
 				.order('seq', { ascending: true }),
@@ -458,6 +458,7 @@ export async function saveChapters(
 		const title = parsed.titles[index] ?? '';
 		const subtitle = parsed.subtitles[index] ?? '';
 		const task = parsed.tasks[index] ?? '';
+		const active = parsed.activeIds.has(chapterId);
 
 		if (!title || !subtitle || !task) {
 			return {
@@ -473,7 +474,7 @@ export async function saveChapters(
 
 		const { error } = await locals.supabase
 			.from('chapters')
-			.update({ title, subtitle, task })
+			.update({ title, subtitle, task, active })
 			.eq('id', chapterId)
 			.eq('souler_id', parsed.soulerId)
 			.eq('lang', parsed.lang);

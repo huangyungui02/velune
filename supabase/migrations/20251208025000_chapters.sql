@@ -6,20 +6,24 @@ CREATE TABLE IF NOT EXISTS public.chapters (
     title TEXT NOT NULL,
     subtitle TEXT NOT NULL,
     task TEXT NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    lang VARCHAR(16) NOT NULL,
-    CONSTRAINT chapters_souler_lang_seq_unique UNIQUE (souler_id, lang, seq)
+    lang VARCHAR(16) NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_chapters_souler_lang_seq
     ON public.chapters (souler_id, lang, seq);
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_chapters_active_souler_lang_seq_unique
+    ON public.chapters (souler_id, lang, seq)
+    WHERE active = TRUE;
+
 ALTER TABLE public.chapters ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow anyone to view chapters"
+CREATE POLICY "Allow anyone to view active chapters"
     ON public.chapters FOR SELECT TO PUBLIC
-    USING (true);
+    USING (active = TRUE);
 
 CREATE POLICY "Deny anyone from inserting chapters"
     ON public.chapters FOR INSERT TO PUBLIC

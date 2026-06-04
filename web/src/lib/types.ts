@@ -72,6 +72,7 @@ export type AdminSoulerChapter = {
 	title: string;
 	subtitle: string;
 	task: string;
+	active: boolean;
 };
 
 export type AdminSoulerListItem = {
