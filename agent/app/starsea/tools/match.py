@@ -7,12 +7,12 @@ from langchain_core.tools import tool
 from pydantic import AliasChoices, BaseModel, Field
 
 from app.core.llm import create_chat_model
+from app.core.prompts import apply_prompt_lang
 
 MATCH_MODEL = "qwen3.5-flash"
 MATCH_TEMPERATURE = 0.45
 
-MATCH_PROMPTS = {
-    "zh": """
+MATCH_PROMPT = """
 # 角色
 你是星海内部的思想与灵魂匹配工具。
 
@@ -23,8 +23,8 @@ MATCH_PROMPTS = {
 1. 重点不是讲知识，而是找到“这个人为什么能陪用户走过这一刻”。
 2. resonance 要说明这个人物如何映照用户当下。
 3. whisper 是这个人物可以留给用户的一句回应。
-4. 人物必须是真实存在的，并且属于public domain。
-5. 人物名必须是简体中文。
+4. 人物必须是真实存在的，并且属于公共领域。
+5. 人物名、resonance 和 whisper 使用最终输出语言。
 
 # 输出
 仅输出纯 JSON，不要 Markdown。
@@ -39,36 +39,7 @@ JSON 结构：
     }
   ]
 }
-""",
-    "en": """
-# Role
-You are StarSea's internal tool for matching thoughts and souls.
-
-# Task
-Based on the current conversation, match 3 public-domain historical figures who can resonate most deeply with the user's situation.
-
-# Requirements
-1. The goal is not to teach facts, but to find why this person can accompany the user through this moment.
-2. resonance should explain how the figure mirrors the user's present state.
-3. whisper is one short response this figure might leave for the user.
-4. Figures must be real people and in the public domain.
-5. Figure names must be in English.
-
-# Output
-Output pure JSON only. No Markdown.
-
-JSON structure:
-{
-  "voices": [
-    {
-      "name": "Person name",
-      "resonance": "How this person resonates with the user's present state",
-      "whisper": "A short whispered response"
-    }
-  ]
-}
-""",
-}
+"""
 
 
 class ThoughtVoice(BaseModel):
@@ -94,7 +65,7 @@ def match_thought_voices(conversation: str, lang: str = "zh") -> str:
     structured_model = model.with_structured_output(ThoughtMatch, method="json_mode")
     match = structured_model.invoke(
         [
-            SystemMessage(content=MATCH_PROMPTS[normalized_lang]),
+            SystemMessage(content=apply_prompt_lang(MATCH_PROMPT, normalized_lang)),
             HumanMessage(content=_conversation_prompt(conversation, normalized_lang)),
         ]
     )
@@ -102,7 +73,5 @@ def match_thought_voices(conversation: str, lang: str = "zh") -> str:
     return json.dumps(match.model_dump(mode="json"), ensure_ascii=False)
 
 
-def _conversation_prompt(conversation: str, lang: str) -> str:
-    if lang == "zh":
-        return f"对话内容：\n\n{conversation}"
-    return f"Conversation:\n\n{conversation}"
+def _conversation_prompt(conversation: str, _lang: str) -> str:
+    return f"对话内容：\n\n{conversation}"

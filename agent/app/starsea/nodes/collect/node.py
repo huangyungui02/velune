@@ -52,10 +52,8 @@ def _state_model(state: State) -> str:
     return model or COLLECT_MODEL
 
 
-def _conversation_prompt(conversation: str, lang: str) -> str:
-    if lang == "zh":
-        return f"完整对话：\n\n{conversation}"
-    return f"Full conversation:\n\n{conversation}"
+def _conversation_prompt(conversation: str, _lang: str) -> str:
+    return f"完整对话：\n\n{conversation}"
 
 
 def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
