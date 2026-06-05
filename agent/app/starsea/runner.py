@@ -15,38 +15,6 @@ from app.starsea.state import ArchiveEvent, State
 logger = logging.getLogger(__name__)
 
 
-async def run_graph(
-    user_input: str,
-    metadata: dict[str, Any] | None = None,
-    thread_id: str | None = None,
-    intent: str | None = None,
-    user_id: str | None = None,
-    is_premium: bool = False,
-    lang: Lang = "zh",
-) -> dict[str, Any]:
-    thread_id = thread_id or str(uuid4())
-    config = {"configurable": {"thread_id": thread_id}}
-    result = await build_graph().ainvoke(
-        _initial_state(
-            user_input,
-            metadata,
-            intent,
-            user_id=user_id,
-            is_premium=is_premium,
-            lang=lang,
-        ),
-        config,
-    )
-
-    payload: dict[str, Any] = {
-        "status": "completed",
-        "thread_id": thread_id,
-        "display": _display_from_result(result),
-    }
-
-    return payload
-
-
 async def stream_graph(
     user_input: str,
     metadata: dict[str, Any] | None = None,
@@ -81,14 +49,13 @@ async def stream_graph(
 
         snapshot = await graph.aget_state(config)
         result = snapshot.values
-        display = _display_from_result(result)
         yield {
             "event": "completed",
             "thread_id": thread_id,
             "data": {
                 "status": "completed",
                 "thread_id": thread_id,
-                "display": display,
+                "glimmer": result.get("glimmer"),
             },
         }
     except Exception as exc:
@@ -146,10 +113,8 @@ def _initial_state(
 
     initial_state: State = {
         "messages": messages,
-        "display": None,
         "archive_events": archive_events,
-        "glimmer_content": None,
-        "glimmer_keywords": [],
+        "glimmer": None,
         "metadata": runtime_metadata,
     }
 
@@ -195,12 +160,3 @@ def _ensure_thread_owner(values: dict[str, Any], user_id: str) -> None:
     owner_id = str(metadata.get("user_id") or "").strip()
     if owner_id and owner_id != user_id:
         raise PermissionError("Starsea thread does not belong to the current user")
-
-
-def _display_from_result(result: dict[str, Any]) -> dict[str, Any]:
-    display = result.get("display")
-    if display is not None:
-        return display
-
-    msg = "graph result must include a display payload"
-    raise ValueError(msg)

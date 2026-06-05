@@ -52,11 +52,6 @@ async def starsea_node(state: State) -> dict[str, Any]:
 
     return {
         "messages": returned_messages,
-        "display": {
-            "type": "starsea",
-            "content": str(final_response.content).strip(),
-            "resonance_matches": resonance_matches,
-        },
         "archive_events": _archive_events(
             response.content if resonance_matches else None,
             resonance_matches,

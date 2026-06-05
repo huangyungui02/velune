@@ -17,10 +17,6 @@ class MessageDeltaData(BaseModel):
     delta: str = ""
 
 
-class CompletedData(BaseModel):
-    display: Any = None
-
-
 class ConversationOptionsData(BaseModel):
     options: list[str] = []
 
@@ -122,7 +118,6 @@ class DonePayload(BaseModel):
 
     type: Literal["done"] = "done"
     thread_id: str = Field(alias="threadId")
-    display: Any = None
 
 
 class ErrorPayload(BaseModel):

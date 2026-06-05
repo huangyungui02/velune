@@ -24,11 +24,9 @@ enum StarSeaStreamService {
         var error: String?
     }
 
-    struct SettledGlimmer: Identifiable, Hashable, Decodable {
-        var id: UUID
+    struct SettledGlimmer: Hashable, Decodable {
         var content: String
         var keywords: [String]
-        var createdAt: String
     }
 
     enum Event {

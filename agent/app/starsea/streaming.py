@@ -10,7 +10,6 @@ from app.core.errors import error_log_payload, error_message
 from app.core.sse import sse_event
 from app.core.common import Lang
 from app.starsea.schemas.events import (
-    CompletedData,
     ConversationOptionsData,
     ConversationOptionsPayload,
     DeltaPayload,
@@ -90,15 +89,12 @@ async def _map_starsea_payload(event: StarseaGraphEvent, lang: Lang) -> dict[str
 
 
 def _completed_payload(event: StarseaGraphEvent) -> dict[str, Any]:
-    data = CompletedData.model_validate(_dict_data(event.data))
-    display = data.display
-    if isinstance(display, dict) and display.get("type") == "glimmer":
-        glimmer = display.get("glimmer")
-        if isinstance(glimmer, dict):
-            payload = SettledPayload(thread_id=event.thread_id, glimmer=glimmer)
-            return payload.model_dump(by_alias=True)
+    glimmer = _dict_data(event.data).get("glimmer")
+    if isinstance(glimmer, dict):
+        payload = SettledPayload(thread_id=event.thread_id, glimmer=glimmer)
+        return payload.model_dump(by_alias=True)
 
-    payload = DonePayload(thread_id=event.thread_id, display=display)
+    payload = DonePayload(thread_id=event.thread_id)
     return payload.model_dump(by_alias=True)
 
 

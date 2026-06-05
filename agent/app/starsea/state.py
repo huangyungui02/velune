@@ -9,28 +9,6 @@ from langgraph.graph.message import add_messages
 RouterAction = Literal["starsea", "collect"]
 
 
-class ThoughtMatchPreview(TypedDict, total=False):
-    name: str
-    line: str
-    soulerId: str | None
-    resolutionRequestId: str | None
-    resolutionStatus: str | None
-
-
-class StarseaDisplay(TypedDict):
-    type: Literal["starsea"]
-    content: str
-    resonance_matches: list[ThoughtMatchPreview]
-
-
-class GlimmerDisplay(TypedDict):
-    type: Literal["glimmer"]
-    glimmer: dict[str, Any]
-
-
-Display = StarseaDisplay | GlimmerDisplay
-
-
 class ArchiveEvent(TypedDict):
     type: str
     role: str | None
@@ -38,10 +16,13 @@ class ArchiveEvent(TypedDict):
     payload: dict[str, Any]
 
 
+class GlimmerState(TypedDict):
+    content: str
+    keywords: list[str]
+
+
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
-    display: Display | None
     archive_events: Annotated[list[ArchiveEvent], operator.add]
-    glimmer_content: str | None
-    glimmer_keywords: list[str]
+    glimmer: GlimmerState | None
     metadata: dict[str, Any]

@@ -35,8 +35,10 @@ def collect_node(state: State) -> dict[str, Any]:
 
     return {
         "messages": [message],
-        "glimmer_content": content,
-        "glimmer_keywords": keywords,
+        "glimmer": {
+            "content": content,
+            "keywords": keywords,
+        },
     }
 
 

@@ -10,8 +10,9 @@ if TYPE_CHECKING:
 
 async def glimmer_node(state: State) -> dict[str, Any]:
     user_id = str(state.get("metadata", {}).get("user_id") or "").strip()
-    content = str(state.get("glimmer_content") or "").strip()
-    keywords = _clean_keywords(state.get("glimmer_keywords") or [])
+    glimmer = state.get("glimmer") or {}
+    content = str(glimmer.get("content") or "").strip()
+    keywords = _clean_keywords(glimmer.get("keywords") or [])
     archive_events = _clean_archive_events(state.get("archive_events") or [])
 
     if not user_id:
@@ -21,17 +22,12 @@ async def glimmer_node(state: State) -> dict[str, Any]:
     if not archive_events:
         raise ValueError("Glimmer archive messages cannot be empty")
 
-    glimmer = await create_glimmer_with_messages(user_id, content, keywords, archive_events)
+    await create_glimmer_with_messages(user_id, content, keywords, archive_events)
 
     return {
-        "display": {
-            "type": "glimmer",
-            "glimmer": {
-                "id": glimmer["id"],
-                "content": glimmer["content"],
-                "keywords": glimmer["keywords"],
-                "createdAt": glimmer["created_at"],
-            },
+        "glimmer": {
+            "content": content,
+            "keywords": keywords,
         },
     }
 
