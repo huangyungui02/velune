@@ -35,7 +35,7 @@ struct GlimmerRecordsView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 18)
                     .padding(.top, 24)
                     .padding(.bottom, 108)
                 }

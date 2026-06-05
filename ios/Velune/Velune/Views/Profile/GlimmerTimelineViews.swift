@@ -21,7 +21,7 @@ struct GlimmerDaySection<Content: View>: View {
                 Rectangle()
                     .fill(UITheme.primaryText.opacity(0.08))
                     .frame(width: 0.5)
-                    .padding(.leading, 21)
+                    .padding(.leading, 18)
             }
         }
     }
@@ -32,7 +32,7 @@ struct GlimmerTimelineRow: View {
     let isFeatured: Bool
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: 12) {
             TimelineStamp(date: glimmer.createdAt, isFeatured: isFeatured)
             GlimmerTimelineCard(glimmer: glimmer, isFeatured: isFeatured)
         }
@@ -47,7 +47,7 @@ private struct GlimmerDayHeader: View {
             .font(.system(size: 15, weight: .light, design: .serif))
             .tracking(1.0)
             .foregroundStyle(UITheme.primaryText.opacity(0.85))
-            .padding(.leading, 58)
+            .padding(.leading, 48)
     }
 }
 
@@ -215,7 +215,7 @@ private struct TimelineStamp: View {
                 .font(.system(size: 10, weight: isFeatured ? .medium : .light, design: .serif))
                 .monospacedDigit()
                 .foregroundStyle(UITheme.secondaryText.opacity(isFeatured ? 0.9 : 0.6))
-                .frame(width: 38, alignment: .trailing)
+                .frame(width: 34, alignment: .trailing)
 
             ZStack {
                 if isFeatured {
@@ -232,10 +232,10 @@ private struct TimelineStamp: View {
                         .frame(width: 3.5, height: 3.5)
                 }
             }
-            .frame(width: 14, height: 14)
+            .frame(width: 12, height: 12)
             .padding(.vertical, 2)
         }
-        .frame(width: 42)
+        .frame(width: 36)
         .padding(.top, 9)
     }
 }
