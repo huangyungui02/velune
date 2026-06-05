@@ -9,6 +9,7 @@ from langchain_core.messages import HumanMessage
 
 from app.core.common import Lang, validate_lang
 from app.core.llm import model_for_premium
+from app.starsea.checkpoint import checkpoint_manager
 from app.starsea.graph import build_graph
 from app.starsea.state import ArchiveEvent, State
 
@@ -49,6 +50,9 @@ async def stream_graph(
 
         snapshot = await graph.aget_state(config)
         result = snapshot.values
+        if _should_delete_checkpoint(result):
+            await _delete_checkpoint(thread_id)
+
         yield {
             "event": "completed",
             "thread_id": thread_id,
@@ -160,3 +164,24 @@ def _ensure_thread_owner(values: dict[str, Any], user_id: str) -> None:
     owner_id = str(metadata.get("user_id") or "").strip()
     if owner_id and owner_id != user_id:
         raise PermissionError("Starsea thread does not belong to the current user")
+
+
+def _should_delete_checkpoint(values: dict[str, Any]) -> bool:
+    metadata = values.get("metadata")
+    return (
+        isinstance(metadata, dict)
+        and metadata.get("intent") == "collect"
+        and isinstance(values.get("glimmer"), dict)
+    )
+
+
+async def _delete_checkpoint(thread_id: str) -> None:
+    try:
+        await checkpoint_manager.get().adelete_thread(thread_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "Failed to delete starsea checkpoint for thread %s after glimmer archive: %s: %s",
+            thread_id,
+            type(exc).__name__,
+            exc,
+        )
