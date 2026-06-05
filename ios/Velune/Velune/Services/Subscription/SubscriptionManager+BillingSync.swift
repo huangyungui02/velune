@@ -9,9 +9,10 @@ extension SubscriptionManager {
         let hasProduct = payload.productId != nil
         let notExpired = expiration.map { $0 > Date() } ?? true
         let resolvedPlan = BillingConfig.resolvePlan(productId: payload.productId)
+        let hasActiveSubscription = hasProduct && notExpired
 
-        currentPlan = resolvedPlan
-        isPremium = (resolvedPlan != .free || hasProduct) && notExpired
+        currentPlan = hasActiveSubscription ? resolvedPlan : .free
+        isPremium = hasActiveSubscription
         entitlementExpiresAt = expiration
     }
 
