@@ -81,7 +81,6 @@ struct ReadingView: View {
                         searchText: $searchText,
                         isSearchFocused: $isSearchFocused,
                         selectedTab: $selectedTab,
-                        hasActiveSearch: hasActiveSearch,
                         tabNamespace: tabNamespace,
                         onClearSearch: clearSearch
                     )

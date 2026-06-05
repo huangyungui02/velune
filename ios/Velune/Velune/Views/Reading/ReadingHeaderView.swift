@@ -4,55 +4,73 @@ struct ReadingHeaderView: View {
     @Binding var searchText: String
     var isSearchFocused: FocusState<Bool>.Binding
     @Binding var selectedTab: ReadingTab
-    let hasActiveSearch: Bool
     let tabNamespace: Namespace.ID
     let onClearSearch: () -> Void
 
+    private var isSearchingMode: Bool {
+        isSearchFocused.wrappedValue || !searchText.isEmpty
+    }
+
     var body: some View {
-        VStack(spacing: 16) {
+        HStack(spacing: 8) {
+            if !isSearchingMode {
+                ForEach(ReadingTab.allCases) { tab in
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            selectedTab = tab
+                        }
+                    } label: {
+                        Text(tab.titleKey)
+                            .font(.system(size: 15, weight: selectedTab == tab ? .semibold : .medium))
+                            .foregroundStyle(selectedTab == tab ? UITheme.primaryText : UITheme.secondaryText)
+                            .padding(.horizontal, 16)
+                            .frame(height: 44)
+                            .background {
+                                if selectedTab == tab {
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.16))
+                                        .matchedGeometryEffect(id: "ActiveTabGlass", in: tabNamespace)
+                                }
+                            }
+                            .glassEffect(.clear, in: .capsule)
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .scale(scale: 0.85)),
+                        removal: .opacity.combined(with: .scale(scale: 0.85))
+                    ))
+                }
+            }
+
             ReadingSearchField(
                 text: $searchText,
                 isFocused: isSearchFocused,
                 onClear: onClearSearch
             )
-            .padding(.horizontal, 20)
 
-            if !hasActiveSearch {
-                HStack(spacing: 32) {
-                    ForEach(ReadingTab.allCases) { tab in
-                        Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                selectedTab = tab
-                            }
-                        } label: {
-                            VStack(spacing: 6) {
-                                Text(tab.titleKey)
-                                    .font(.title3)
-                                    .fontWeight(selectedTab == tab ? .semibold : .medium)
-                                    .fontDesign(.serif)
-                                    .foregroundStyle(selectedTab == tab ? UITheme.primaryText : UITheme.secondaryText)
-
-                                if selectedTab == tab {
-                                    Capsule()
-                                        .fill(UITheme.primaryText)
-                                        .frame(width: 24, height: 2)
-                                        .matchedGeometryEffect(id: "TabIndicator", in: tabNamespace)
-                                } else {
-                                    Color.clear
-                                        .frame(width: 24, height: 2)
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
+            if isSearchingMode {
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        onClearSearch()
                     }
-
-                    Spacer()
+                } label: {
+                    Text("common.cancel")
                 }
-                .padding(.horizontal, 20)
+                .buttonStyle(.plain)
+                .foregroundStyle(UITheme.primaryText)
+                .font(.system(size: 15, weight: .medium))
+                .padding(.leading, 4)
+                .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
+        .padding(.horizontal, 20)
         .padding(.top, 16)
         .padding(.bottom, 8)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isSearchingMode)
     }
 }
 
@@ -86,6 +104,10 @@ private struct ReadingSearchField: View {
         }
         .padding(.horizontal, 16)
         .frame(height: 44)
-        .glassEffect(in: .capsule)
+        .glassEffect(.clear, in: .capsule)
+        .overlay(
+            Capsule()
+                .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+        )
     }
 }
