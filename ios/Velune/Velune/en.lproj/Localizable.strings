@@ -80,10 +80,6 @@
 "starsea.chat.placeholder" = "Keep going…";
 "starsea.chat.subtitle" = "Inner tide";
 "starsea.resonance.title" = "Resonances";
-"starsea.leave.title" = "Leave Stars?";
-"starsea.leave.message" = "You can generate a glimmer from this conversation, or leave directly.";
-"starsea.leave.settle" = "Generate Glimmer";
-"starsea.leave.direct" = "Leave Directly";
 "starsea.leave.settleFailed" = "The glimmer could not be gathered as expected. Please try again.";
 "starsea.settlement.title" = "Glimmer";
 "starsea.settlement.glimmerTitle" = "Glimmer";

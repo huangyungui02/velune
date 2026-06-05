@@ -54,25 +54,6 @@ struct StarSeaConversationView: View {
                 .accessibilityLabel(Text("common.back"))
             }
         }
-        .confirmationDialog(
-            leaveConfirmationTitle,
-            isPresented: $session.isLeaveConfirmationPresented,
-            titleVisibility: .visible
-        ) {
-            if !session.isAwaitingSettlementConfirmation {
-                Button("starsea.leave.settle") {
-                    isComposerFocused = false
-                    Task { await session.settleAndLeave() }
-                }
-                .disabled(session.threadId == nil || session.isSettling)
-
-                Button("starsea.leave.direct", role: .destructive) {
-                    leaveDirectly()
-                }
-            }
-        } message: {
-            Text(leaveConfirmationMessage)
-        }
         .alert("matching.error.title", isPresented: Binding(
             get: { session.errorMessage != nil },
             set: { if !$0 { session.errorMessage = nil } }
@@ -132,16 +113,6 @@ struct StarSeaConversationView: View {
         .padding(.bottom, 16)
     }
 
-
-
-    private var leaveConfirmationTitle: LocalizedStringKey {
-        "starsea.leave.title"
-    }
-
-    private var leaveConfirmationMessage: LocalizedStringKey {
-        "starsea.leave.message"
-    }
-
     private var backSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 24, coordinateSpace: .local)
             .onEnded { value in
@@ -162,7 +133,8 @@ struct StarSeaConversationView: View {
             return
         }
 
-        session.isLeaveConfirmationPresented = true
+        isComposerFocused = false
+        Task { await session.settleAndLeave() }
     }
 
     private func leaveDirectly() {

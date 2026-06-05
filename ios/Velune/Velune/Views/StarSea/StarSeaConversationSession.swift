@@ -16,7 +16,6 @@ final class StarSeaConversationSession {
     var hasStarted = false
     var currentAssistantMessageId: UUID?
     var shouldPauseAutoScrollDuringStreaming = false
-    var isLeaveConfirmationPresented = false
     var settlementText = ""
     var settlementBlessing = ""
     var isAwaitingSettlementConfirmation = false
@@ -115,7 +114,6 @@ final class StarSeaConversationSession {
         guard !isLeaving else { return }
         isLeaving = true
         cancelActiveTask()
-        isLeaveConfirmationPresented = false
         isShowingImmersiveSettlement = false
     }
 

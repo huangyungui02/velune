@@ -80,10 +80,6 @@
 "starsea.chat.placeholder" = "继续说下去…";
 "starsea.chat.subtitle" = "沉入内在潮汐";
 "starsea.resonance.title" = "共鸣人物";
-"starsea.leave.title" = "离开星海？";
-"starsea.leave.message" = "你可以将这段对话生成心澜，也可以直接离开。";
-"starsea.leave.settle" = "生成心澜";
-"starsea.leave.direct" = "直接离开";
 "starsea.leave.settleFailed" = "心澜未能如期凝聚，请稍后再试。";
 "starsea.settlement.title" = "心澜";
 "starsea.settlement.glimmerTitle" = "心澜";
