@@ -40,7 +40,7 @@ struct GlimmerRecordsView: View {
                     .padding(.bottom, 108)
                 }
                 .refreshable {
-                    await loadGlimmers()
+                    refreshGlimmers()
                 }
             }
         }
@@ -78,10 +78,19 @@ struct GlimmerRecordsView: View {
             .sorted { $0.day > $1.day }
     }
 
+    private func refreshGlimmers() {
+        Task {
+            await loadGlimmers()
+        }
+    }
+
     private func loadGlimmers() async {
+        if isLoading { return }
+
         isLoading = true
         defer { isLoading = false }
 
+        errorMessage = nil
         do {
             glimmers = try await Glimmer.getAll()
         } catch {
