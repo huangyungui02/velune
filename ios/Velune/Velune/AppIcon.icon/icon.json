@@ -19,7 +19,7 @@
               "value" : "none"
             }
           ],
-          "glass" : true,
+          "glass" : false,
           "hidden" : false,
           "image-name" : "zen-circle-inner.svg",
           "name" : "zen-circle-inner",
@@ -56,7 +56,7 @@
               "value" : "none"
             }
           ],
-          "glass" : true,
+          "glass" : false,
           "hidden" : false,
           "image-name" : "zen-circle-outer.svg",
           "name" : "zen-circle-outer",
