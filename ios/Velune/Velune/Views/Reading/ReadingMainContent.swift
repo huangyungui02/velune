@@ -3,19 +3,14 @@ import SwiftUI
 struct ReadingMainContent: View {
     let selectedTab: ReadingTab
     let featuredSections: [ReadingSection]
-    let latestItems: [ReadingSoulerItem]
     let bookshelfItems: [BookshelfItem]
-    let latestHasMore: Bool
     let isLoadingFeatured: Bool
-    let isLoadingLatest: Bool
-    let isLoadingMoreLatest: Bool
     let isLoadingBookshelf: Bool
     let errorMessage: String?
     let bookshelfErrorMessage: String?
     let gridColumns: [GridItem]
     let onRefresh: () -> Void
     let onRetryBookshelf: () -> Void
-    let onLoadMoreLatest: () -> Void
 
     var body: some View {
         if selectedTab == .bookshelf {
@@ -38,15 +33,6 @@ struct ReadingMainContent: View {
                     ReadingFeaturedSectionsView(
                         sections: featuredSections,
                         isLoading: isLoadingFeatured
-                    )
-                } else if selectedTab == .latest {
-                    ReadingLatestSoulersView(
-                        items: latestItems,
-                        hasMore: latestHasMore,
-                        isLoading: isLoadingLatest,
-                        isLoadingMore: isLoadingMoreLatest,
-                        gridColumns: gridColumns,
-                        onLoadMore: onLoadMoreLatest
                     )
                 } else {
                     ReadingBookshelfContent(

@@ -169,11 +169,9 @@
 "common.refresh" = "Refresh";
 "reading.title" = "Folio";
 "reading.tab.featured" = "Featured";
-"reading.tab.latest" = "Latest";
 "reading.tab.bookshelf" = "Bookshelf";
 "reading.search.placeholder" = "Search people";
 "reading.empty.featured" = "No featured sections yet";
-"reading.empty.latest" = "No latest soulers yet";
 "reading.empty.bookshelf" = "Bookshelf is empty";
 
 "starsea.settlement.settleButton" = "Save to Haven";

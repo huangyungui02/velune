@@ -3,7 +3,6 @@ import SwiftUI
 
 enum ReadingTab: String, CaseIterable, Identifiable {
     case featured
-    case latest
     case bookshelf
 
     var id: String { rawValue }
@@ -12,8 +11,6 @@ enum ReadingTab: String, CaseIterable, Identifiable {
         switch self {
         case .featured:
             return "reading.tab.featured"
-        case .latest:
-            return "reading.tab.latest"
         case .bookshelf:
             return "reading.tab.bookshelf"
         }
@@ -26,16 +23,11 @@ struct ReadingView: View {
     @State private var selectedTab: ReadingTab = .featured
     @State private var authManager = AuthManager.shared
     @State private var featuredSections: [ReadingSection] = []
-    @State private var latestItems: [ReadingSoulerItem] = []
     @State private var bookshelfItems: [BookshelfItem] = []
     @State private var searchResults: [ReadingSoulerItem] = []
     @State private var searchText = ""
     @State private var searchTask: Task<Void, Never>?
-    @State private var latestPage = 0
-    @State private var latestHasMore = true
     @State private var isLoadingFeatured = false
-    @State private var isLoadingLatest = false
-    @State private var isLoadingMoreLatest = false
     @State private var isLoadingBookshelf = false
     @State private var isSearching = false
     @State private var errorMessage: String?
@@ -63,9 +55,6 @@ struct ReadingView: View {
         guard let errorMessage else { return nil }
 
         if selectedTab == .featured, !featuredSections.isEmpty {
-            return nil
-        }
-        if selectedTab == .latest, !latestItems.isEmpty {
             return nil
         }
         if selectedTab == .bookshelf, !bookshelfItems.isEmpty {
@@ -111,19 +100,14 @@ struct ReadingView: View {
                         ReadingMainContent(
                             selectedTab: selectedTab,
                             featuredSections: featuredSections,
-                            latestItems: latestItems,
                             bookshelfItems: bookshelfItems,
-                            latestHasMore: latestHasMore,
                             isLoadingFeatured: isLoadingFeatured,
-                            isLoadingLatest: isLoadingLatest,
-                            isLoadingMoreLatest: isLoadingMoreLatest,
                             isLoadingBookshelf: isLoadingBookshelf,
                             errorMessage: visibleErrorMessage,
                             bookshelfErrorMessage: bookshelfErrorMessage,
                             gridColumns: gridColumns,
                             onRefresh: refreshCurrentTab,
-                            onRetryBookshelf: refreshBookshelf,
-                            onLoadMoreLatest: loadMoreLatest
+                            onRetryBookshelf: refreshBookshelf
                         )
                     }
                 }
@@ -137,8 +121,6 @@ struct ReadingView: View {
                     switch tab {
                     case .featured:
                         break
-                    case .latest:
-                        await loadLatestIfNeeded()
                     case .bookshelf:
                         await loadBookshelf()
                     }
@@ -164,8 +146,6 @@ struct ReadingView: View {
 
         if selectedTab == .featured {
             await loadFeatured()
-        } else if selectedTab == .latest {
-            await loadLatest(reset: true)
         } else {
             await loadBookshelf()
         }
@@ -177,28 +157,17 @@ struct ReadingView: View {
 
         displayedLanguageCode = currentLanguageCode
         featuredSections = []
-        latestItems = []
         searchResults = []
         searchText = ""
-        latestPage = 0
-        latestHasMore = true
         errorMessage = nil
         searchErrorMessage = nil
         searchTask?.cancel()
-    }
-
-    @MainActor
-    private func loadLatestIfNeeded() async {
-        guard latestItems.isEmpty else { return }
-        await loadLatest(reset: true)
     }
 
     private func refreshCurrentTab() {
         Task {
             if selectedTab == .featured {
                 await loadFeatured()
-            } else if selectedTab == .latest {
-                await loadLatest(reset: true)
             } else {
                 await loadBookshelf()
             }
@@ -222,10 +191,6 @@ struct ReadingView: View {
         } catch {
             handleRefreshFailure(error)
         }
-    }
-
-    private func loadMoreLatest() {
-        Task { await loadLatest(reset: false) }
     }
 
     @MainActor
@@ -252,43 +217,6 @@ struct ReadingView: View {
     }
 
     @MainActor
-    private func loadLatest(reset: Bool) async {
-        if isLoadingLatest || isLoadingMoreLatest { return }
-        if !reset, !latestHasMore { return }
-
-        let previousItems = latestItems
-        let previousPage = latestPage
-        let previousHasMore = latestHasMore
-
-        if reset {
-            isLoadingLatest = true
-            latestPage = 0
-            latestHasMore = true
-        } else {
-            isLoadingMoreLatest = true
-        }
-        errorMessage = nil
-        defer {
-            isLoadingLatest = false
-            isLoadingMoreLatest = false
-        }
-
-        do {
-            let page = try await ReadingSoulerItem.latest(page: latestPage + 1)
-            latestPage = page.page
-            latestHasMore = page.hasNextPage
-            latestItems = reset ? page.items : latestItems + page.items
-        } catch {
-            if reset {
-                latestItems = previousItems
-                latestPage = previousPage
-                latestHasMore = previousHasMore
-            }
-            handleRefreshFailure(error)
-        }
-    }
-
-    @MainActor
     private func loadCachedReading() async {
         do {
             guard let payload = try ReadingCacheStore.shared.load() else { return }
@@ -302,7 +230,7 @@ struct ReadingView: View {
 
     @MainActor
     private func handleRefreshFailure(_ error: Error) {
-        if featuredSections.isEmpty && latestItems.isEmpty {
+        if featuredSections.isEmpty {
             errorMessage = error.localizedDescription
         } else {
             errorMessage = nil

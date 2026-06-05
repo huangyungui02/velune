@@ -14,12 +14,6 @@ struct ReadingSection: Identifiable, Equatable, Codable, Sendable {
     var soulers: [ReadingSoulerItem]
 }
 
-struct LatestReadingSoulersPage: Equatable, Sendable {
-    var page: Int
-    var items: [ReadingSoulerItem]
-    var hasNextPage: Bool
-}
-
 extension ReadingSoulerItem {
     private struct SoulerRow: Decodable {
         var id: UUID
@@ -51,30 +45,6 @@ extension ReadingSoulerItem {
     }
 
     private static let fallbackName = String(localized: "resonance.unknownSouler")
-
-    static func latest(page: Int, pageSize: Int = 20) async throws -> LatestReadingSoulersPage {
-        let normalizedPage = max(page, 1)
-        let size = max(pageSize, 1)
-        let from = (normalizedPage - 1) * size
-        let to = from + size
-        let supabase = try Backend.requireSupabase()
-        let rows: [SoulerRow] = try await supabase
-            .from("soulers")
-            .select("id, wiki_id, souler_profile!inner(name, lang)")
-            .eq("checked", value: true)
-            .eq("souler_profile.lang", value: AppLanguage.current.apiLanguageCode)
-            .order("updated_at", ascending: false)
-            .range(from: from, to: to)
-            .execute()
-            .value
-
-        let limitedRows = Array(rows.prefix(size))
-        return LatestReadingSoulersPage(
-            page: normalizedPage,
-            items: try await mapRows(limitedRows),
-            hasNextPage: rows.count > size
-        )
-    }
 
     static func search(query: String, limit: Int = 24) async throws -> [ReadingSoulerItem] {
         let normalizedQuery = query

@@ -50,7 +50,7 @@
 
 "app.tab.starsea" = "星海";
 "app.tab.chat" = "聊天";
-"app.tab.reading" = "一席";
+"app.tab.reading" = "一页";
 "app.tab.map" = "地图";
 "app.tab.profile" = "心舍";
 
@@ -167,13 +167,11 @@
 "paywall.restore.signInRequired.description" = "匿名账号暂不支持恢复购买。请先登录。";
 "souler.introduction.empty.title" = "当前页面正在完善中";
 "common.refresh" = "刷新";
-"reading.title" = "一席";
-"reading.tab.featured" = "精选";
-"reading.tab.latest" = "最新";
+"reading.title" = "一页";
+"reading.tab.featured" = "发现";
 "reading.tab.bookshelf" = "书架";
 "reading.search.placeholder" = "搜索人物";
 "reading.empty.featured" = "暂无可展示分类";
-"reading.empty.latest" = "暂无最新内容";
 "reading.empty.bookshelf" = "书架为空";
 
 "starsea.settlement.settleButton" = "存入心舍";
