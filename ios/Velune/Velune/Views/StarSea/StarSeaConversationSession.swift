@@ -18,6 +18,7 @@ final class StarSeaConversationSession {
     var shouldPauseAutoScrollDuringStreaming = false
     var isLeaveConfirmationPresented = false
     var settlementText = ""
+    var settlementBlessing = ""
     var isAwaitingSettlementConfirmation = false
     var isShowingImmersiveSettlement = false
     var isSettlementReady = false
@@ -73,6 +74,7 @@ final class StarSeaConversationSession {
         isSettling = true
         errorMessage = nil
         settlementText = ""
+        settlementBlessing = ""
         isSettlementReady = false
         isAwaitingSettlementConfirmation = true
         showImmersiveSettlement()
@@ -176,6 +178,7 @@ final class StarSeaConversationSession {
             removeEmptyAssistantMessage(id: currentAssistantMessageId)
             currentAssistantMessageId = nil
             settlementText = glimmer.content
+            settlementBlessing = (glimmer.blessing ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             isSettlementReady = true
             isAwaitingSettlementConfirmation = true
             showImmersiveSettlement()
@@ -190,6 +193,7 @@ final class StarSeaConversationSession {
             settlementText += delta
         case let .settled(glimmer):
             settlementText = glimmer.content
+            settlementBlessing = (glimmer.blessing ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             isSettlementReady = true
         case .options, .resonanceMatch, .done:
             break

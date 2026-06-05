@@ -30,7 +30,7 @@ def collect_node(state: State) -> dict[str, Any]:
             HumanMessage(content=_conversation_prompt(format_messages(state["messages"], lang), lang)),
         ],
     )
-    content, keywords = _parse_collect_output(_content_text(response.content))
+    content, keywords, blessing = _parse_collect_output(_content_text(response.content))
     message = AIMessage(content=content)
 
     return {
@@ -38,6 +38,7 @@ def collect_node(state: State) -> dict[str, Any]:
         "glimmer": {
             "content": content,
             "keywords": keywords,
+            "blessing": blessing,
         },
     }
 
@@ -114,25 +115,26 @@ def _content_text(content: Any) -> str:
     return ""
 
 
-def _parse_collect_output(raw_content: str) -> tuple[str, list[str]]:
+def _parse_collect_output(raw_content: str) -> tuple[str, list[str], str]:
     start_index = raw_content.find(META_START)
     if start_index < 0:
-        return raw_content.strip(), []
+        return raw_content.strip(), [], ""
 
     visible_content = raw_content[:start_index].strip()
     meta_start_index = start_index + len(META_START)
     end_index = raw_content.find(META_END, meta_start_index)
     if end_index < 0:
-        return visible_content, []
+        return visible_content, [], ""
 
     meta_text = raw_content[meta_start_index:end_index].strip()
     try:
         payload = json.loads(meta_text)
     except json.JSONDecodeError:
-        return visible_content, []
+        return visible_content, [], ""
 
     keywords = _clean_keywords(payload.get("keywords"))
-    return visible_content, keywords
+    blessing = _clean_blessing(payload.get("blessing"))
+    return visible_content, keywords, blessing
 
 
 def _clean_keywords(value: Any) -> list[str]:
@@ -151,6 +153,10 @@ def _clean_keywords(value: Any) -> list[str]:
             break
 
     return keywords
+
+
+def _clean_blessing(value: Any) -> str:
+    return str(value).strip() if value is not None else ""
 
 
 class _CollectStreamFilter:

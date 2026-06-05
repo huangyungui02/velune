@@ -19,6 +19,7 @@ class ArchiveEvent(TypedDict):
 class GlimmerState(TypedDict):
     content: str
     keywords: list[str]
+    blessing: str
 
 
 class State(TypedDict):

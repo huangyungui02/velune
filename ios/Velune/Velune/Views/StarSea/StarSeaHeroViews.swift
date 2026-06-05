@@ -1,8 +1,16 @@
 import SwiftUI
 
 struct HeroVerse: View {
+    let text: String
+
     var body: some View {
-        Text("starsea.hero.verse")
+        Group {
+            if text.isEmpty {
+                Text("starsea.hero.verse")
+            } else {
+                Text(text)
+            }
+        }
             .font(.title3)
             .fontDesign(.serif)
             .tracking(2.0)

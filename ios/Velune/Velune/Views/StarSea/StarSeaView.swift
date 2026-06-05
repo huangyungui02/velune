@@ -5,9 +5,12 @@ private enum StarSeaRoute: Hashable {
 }
 
 struct StarSeaView: View {
+    private static let blessingKey = "starsea.latestBlessing"
+
     @State private var text = ""
     @State private var isComposerPresented = false
     @State private var path: [StarSeaRoute] = []
+    @AppStorage(Self.blessingKey) private var latestBlessing = ""
     @Binding var composeRequestID: Int
 
     init(composeRequestID: Binding<Int> = .constant(0)) {
@@ -21,11 +24,11 @@ struct StarSeaView: View {
                 .navigationDestination(for: StarSeaRoute.self) { route in
                     switch route {
                     case let .conversation(openingText):
-                        StarSeaConversationView(openingText: openingText) {
-                            if !path.isEmpty {
-                                path.removeLast()
-                            }
-                        }
+                        StarSeaConversationView(
+                            openingText: openingText,
+                            onBlessing: updateLatestBlessing,
+                            onLeave: leaveConversation
+                        )
                     }
                 }
         }
@@ -50,7 +53,7 @@ struct StarSeaView: View {
                 Spacer()
 
                 ZStack {
-                    HeroVerse()
+                    HeroVerse(text: latestBlessing)
                         .padding(.horizontal, 32)
                         .transition(.opacity.combined(with: .scale(scale: 1.02)))
                 }
@@ -93,5 +96,15 @@ struct StarSeaView: View {
 
         text = ""
         path.append(.conversation(openingText: openingText))
+    }
+
+    private func updateLatestBlessing(_ blessing: String) {
+        latestBlessing = blessing
+    }
+
+    private func leaveConversation() {
+        if !path.isEmpty {
+            path.removeLast()
+        }
     }
 }

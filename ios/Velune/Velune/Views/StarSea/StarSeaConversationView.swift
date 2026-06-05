@@ -1,12 +1,18 @@
 import SwiftUI
 
 struct StarSeaConversationView: View {
+    let onBlessing: (String) -> Void
     let onLeave: () -> Void
 
     @State private var session: StarSeaConversationSession
     @FocusState private var isComposerFocused: Bool
 
-    init(openingText: String, onLeave: @escaping () -> Void) {
+    init(
+        openingText: String,
+        onBlessing: @escaping (String) -> Void = { _ in },
+        onLeave: @escaping () -> Void
+    ) {
+        self.onBlessing = onBlessing
         self.onLeave = onLeave
         _session = State(initialValue: StarSeaConversationSession(openingText: openingText))
     }
@@ -77,6 +83,11 @@ struct StarSeaConversationView: View {
         }
         .task {
             await session.startIfNeeded()
+        }
+        .onChange(of: session.settlementBlessing) { _, blessing in
+            let normalized = blessing.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !normalized.isEmpty else { return }
+            onBlessing(normalized)
         }
     }
 

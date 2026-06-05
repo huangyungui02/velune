@@ -22,9 +22,10 @@ SYSTEM_PROMPTS = {
 - 先输出一段纯文本正文，字数在 120 到 150 字之间，不要包含任何标题、Markdown 标记或修饰语。
 - 正文之后，必须另起一行输出隐藏元数据块，格式严格如下：
 <glimmer_meta>
-{"keywords":["关键词1","关键词2","关键词3"]}
+{"keywords":["关键词1","关键词2","关键词3"],"blessing":"一句星海寄语"}
 </glimmer_meta>
-- keywords 必须恰好是 3 个与用户语言一致的关键词或短主题。中文关键词建议 2 到 6 个字，避免“成长”“情绪”“人生”等过泛词，优先捕捉具体心境、关系、矛盾、渴望或觉察。
+- keywords 必须恰好是 3 个与用户语言一致的主题词或回忆线索，用来帮助用户在心舍列表中快速想起“这次聊的是什么”。中文关键词建议 2 到 6 个字，优先选择用户实际提到的主题、场景、人物关系、具体事件、反复出现的对象或明确情绪词。
+- blessing 是一条给用户下次打开星海首页时看的星海寄语，必须基于本次旅程中用户的真实心境，简短、温柔、有向前的力量；可以是一句祝福、一句诗或一句安静的提醒。中文建议 12 到 28 字，不要使用引号、标题、表情或说教语气。
 """,
     "en": """
 # Role
@@ -47,9 +48,10 @@ It should act as a mirror of their inner landscape during this exchange, capturi
 - First output one pure text paragraph, 60 to 80 English words. Do not include titles, markdown styling, or introductory text.
 - After the paragraph, output a hidden metadata block on a new line with this exact shape:
 <glimmer_meta>
-{"keywords":["keyword one","keyword two","keyword three"]}
+{"keywords":["keyword one","keyword two","keyword three"],"blessing":"one short starsea blessing"}
 </glimmer_meta>
-- keywords must contain exactly 3 keywords or short themes in the user's language. Prefer specific emotional states, relationships, tensions, longings, or realizations over generic words like "growth", "life", or "emotion".
+- keywords must contain exactly 3 topic tags or memory cues in the user's language, so the user can quickly recognize what this glimmer was about in their Haven list. Prefer themes, scenes, relationships, concrete events, recurring objects, or explicit emotion words the user actually mentioned.
+- blessing is a short line for the StarSea home screen when the user next opens the app. Ground it in the user's state of mind from this journey, make it gentle and forward-facing; it may be a blessing, a poetic line, or a quiet reminder. Keep it 6 to 16 English words, with no quotes, title, emoji, or preachy tone.
 """,
 }
 

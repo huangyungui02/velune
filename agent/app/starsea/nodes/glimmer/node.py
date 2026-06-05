@@ -13,6 +13,7 @@ async def glimmer_node(state: State) -> dict[str, Any]:
     glimmer = state.get("glimmer") or {}
     content = str(glimmer.get("content") or "").strip()
     keywords = _clean_keywords(glimmer.get("keywords") or [])
+    blessing = str(glimmer.get("blessing") or "").strip()
     archive_events = _clean_archive_events(state.get("archive_events") or [])
 
     if not user_id:
@@ -28,6 +29,7 @@ async def glimmer_node(state: State) -> dict[str, Any]:
         "glimmer": {
             "content": content,
             "keywords": keywords,
+            "blessing": blessing,
         },
     }
 

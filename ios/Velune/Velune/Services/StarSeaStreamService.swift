@@ -27,6 +27,7 @@ enum StarSeaStreamService {
     struct SettledGlimmer: Hashable, Decodable {
         var content: String
         var keywords: [String]
+        var blessing: String?
     }
 
     enum Event {
