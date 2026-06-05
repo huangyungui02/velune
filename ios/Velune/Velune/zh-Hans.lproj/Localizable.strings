@@ -170,7 +170,7 @@
 "reading.title" = "一页";
 "reading.tab.featured" = "发现";
 "reading.tab.bookshelf" = "书架";
-"reading.search.placeholder" = "搜索人物";
+"reading.search.placeholder" = "搜索";
 "reading.empty.featured" = "暂无可展示分类";
 "reading.empty.bookshelf" = "书架为空";
 

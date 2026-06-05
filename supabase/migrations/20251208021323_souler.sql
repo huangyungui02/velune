@@ -46,6 +46,9 @@ CREATE INDEX IF NOT EXISTS idx_souler_aliases_alias_lower
     ON public.souler_aliases (lower(trim(alias)));
 CREATE UNIQUE INDEX IF NOT EXISTS souler_aliases_alias_unique
     ON public.souler_aliases (alias);
+CREATE INDEX IF NOT EXISTS idx_souler_aliases_alias_trgm
+    ON public.souler_aliases
+    USING gin (alias extensions.gin_trgm_ops);
 
 CREATE TRIGGER handle_soulers_updated_at
     BEFORE UPDATE ON soulers

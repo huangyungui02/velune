@@ -15,6 +15,18 @@ struct ReadingSection: Identifiable, Equatable, Codable, Sendable {
 }
 
 extension ReadingSoulerItem {
+    private struct AliasRow: Decodable {
+        var soulerId: UUID
+        var alias: String
+        var souler: SoulerRow?
+
+        enum CodingKeys: String, CodingKey {
+            case soulerId = "souler_id"
+            case alias
+            case souler = "soulers"
+        }
+    }
+
     private struct SoulerRow: Decodable {
         var id: UUID
         var wikiId: String?
@@ -56,38 +68,38 @@ extension ReadingSoulerItem {
 
         let safeQuery = escapeSearchPattern(String(normalizedQuery))
         let boundedLimit = min(max(limit, 1), 50)
-        let supabase = try Backend.requireSupabase()
-        let prefixRows: [SoulerRow] = try await supabase
-            .from("soulers")
-            .select("id, wiki_id, souler_profile!inner(name, lang)")
-            .eq("checked", value: true)
-            .eq("souler_profile.lang", value: AppLanguage.current.apiLanguageCode)
-            .ilike("souler_profile.name", pattern: "\(safeQuery)%")
-            .order("updated_at", ascending: false)
-            .limit(boundedLimit)
-            .execute()
-            .value
-
-        var rowsById = Dictionary(uniqueKeysWithValues: prefixRows.map { ($0.id, $0) })
+        let prefixRows = try await searchAliasRows(pattern: "\(safeQuery)%", limit: boundedLimit)
+        var rowsById = rowsBySoulerId(from: prefixRows)
         if rowsById.count < boundedLimit {
-            let fuzzyRows: [SoulerRow] = try await supabase
-                .from("soulers")
-                .select("id, wiki_id, souler_profile!inner(name, lang)")
-                .eq("checked", value: true)
-                .eq("souler_profile.lang", value: AppLanguage.current.apiLanguageCode)
-                .ilike("souler_profile.name", pattern: "%\(safeQuery)%")
-                .order("updated_at", ascending: false)
-                .limit(boundedLimit)
-                .execute()
-                .value
-
-            for row in fuzzyRows where rowsById.count < boundedLimit {
+            let fuzzyRows = try await searchAliasRows(pattern: "%\(safeQuery)%", limit: boundedLimit)
+            for row in rowsBySoulerId(from: fuzzyRows).values where rowsById.count < boundedLimit {
                 rowsById[row.id] = row
             }
         }
 
         return try await mapRows(Array(rowsById.values))
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    private static func searchAliasRows(pattern: String, limit: Int) async throws -> [AliasRow] {
+        try await Backend.requireSupabase()
+            .from("souler_aliases")
+            .select("souler_id, alias, soulers!inner(id, wiki_id, checked)")
+            .ilike("alias", pattern: pattern)
+            .eq("soulers.checked", value: true)
+            .order("alias", ascending: true)
+            .limit(limit)
+            .execute()
+            .value
+    }
+
+    private static func rowsBySoulerId(from aliasRows: [AliasRow]) -> [UUID: SoulerRow] {
+        var rows: [UUID: SoulerRow] = [:]
+        for aliasRow in aliasRows {
+            guard let souler = aliasRow.souler else { continue }
+            rows[aliasRow.soulerId] = souler
+        }
+        return rows
     }
 
     static func resolveImageURLs(wikiIds: [String?]) async throws -> [String: URL] {

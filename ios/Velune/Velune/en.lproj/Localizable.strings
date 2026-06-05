@@ -170,7 +170,7 @@
 "reading.title" = "Folio";
 "reading.tab.featured" = "Featured";
 "reading.tab.bookshelf" = "Bookshelf";
-"reading.search.placeholder" = "Search people";
+"reading.search.placeholder" = "Search";
 "reading.empty.featured" = "No featured sections yet";
 "reading.empty.bookshelf" = "Bookshelf is empty";
 
