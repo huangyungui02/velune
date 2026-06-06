@@ -49,6 +49,7 @@
 "network.error.serverUnavailable" = "后端服务暂时不可用，请稍后再试。";
 
 "app.tab.starsea" = "星海";
+"starsea.chat.title" = "星海";
 "app.tab.chat" = "聊天";
 "app.tab.reading" = "一页";
 "app.tab.map" = "地图";

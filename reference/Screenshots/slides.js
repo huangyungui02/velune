@@ -44,7 +44,7 @@ export const zhSlides = [
 export const enSlides = [
   {
     index: "01",
-    title: "Every glimmer\nreceives a gentle\necho from starsea",
+    title: "Every glimmer\nreceives a gentle\necho from Cosmos",
     image: "starsea",
     align: "right",
     accent: "mist",

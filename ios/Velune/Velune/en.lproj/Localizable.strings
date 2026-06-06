@@ -48,7 +48,8 @@
 "network.error.timeout" = "The request timed out. Please check your connection and try again.";
 "network.error.serverUnavailable" = "The server is unavailable. Please try again later.";
 
-"app.tab.starsea" = "Stars";
+"app.tab.starsea" = "Cosmos";
+"starsea.chat.title" = "Starsea";
 "app.tab.chat" = "Chat";
 "app.tab.reading" = "Folio";
 "app.tab.map" = "Map";
@@ -67,8 +68,8 @@
 "glimmerHistory.empty.noGlimmers" = "No glimmers yet";
 "glimmerHistory.title" = "Haven";
 "glimmerHistory.detail.title" = "Glimmer";
-"glimmerHistory.history.title" = "Stars History";
-"glimmerHistory.history.empty" = "No Stars history";
+"glimmerHistory.history.title" = "Starsea History";
+"glimmerHistory.history.empty" = "No Starsea history";
 "glimmerHistory.section.today" = "Today";
 "glimmerHistory.section.yesterday" = "Yesterday";
 "glimmerHistory.section.pastWeek" = "Past Week";
@@ -90,7 +91,7 @@
 "starsea.settlement.exit" = "Exit";
 "starsea.settlement.exit.title" = "Forget this glimmer?";
 "starsea.settlement.exit.message" = "If you exit, this unsaved glimmer will dissolve into the starsea.";
-"starsea.settlement.discardConfirm" = "Let it dissolve, return to Stars";
+"starsea.settlement.discardConfirm" = "Let it dissolve, return to Starsea";
 "starsea.settlement.editor" = "Edit glimmer";
 "starsea.settlement.clickToView" = "Tap to view";
 

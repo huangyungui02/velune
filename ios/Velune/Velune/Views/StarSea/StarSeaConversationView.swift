@@ -41,7 +41,7 @@ struct StarSeaConversationView: View {
                 .gesture(backSwipeGesture)
         }
         .navigationBarBackButtonHidden(true)
-        .navigationTitle("app.tab.starsea")
+        .navigationTitle("starsea.chat.title")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(session.isShowingImmersiveSettlement ? .hidden : .visible, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
