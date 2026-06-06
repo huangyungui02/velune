@@ -10,7 +10,7 @@ struct VeluneMarkView: View {
             let side = min(proxy.size.width, proxy.size.height)
             let outerDiameter = side * (720.0 / 1024.0)
             let innerDiameter = side * (400.0 / 1024.0)
-            let outerStroke = max(minimumOuterStroke, side * (12.0 / 1024.0))
+            let outerStroke = max(minimumOuterStroke, side * (8.0 / 1024.0))
             let innerStroke = max(minimumInnerStroke, side * (16.0 / 1024.0))
 
             ZStack {
@@ -18,9 +18,9 @@ struct VeluneMarkView: View {
                     .stroke(
                         LinearGradient(
                             stops: [
-                                .init(color: baseColor.opacity(0.4), location: 0.0),
-                                .init(color: baseColor.opacity(0.2), location: 0.5),
-                                .init(color: baseColor.opacity(0.4), location: 1.0)
+                                .init(color: baseColor.opacity(0.2), location: 0.0),
+                                .init(color: baseColor.opacity(0.4), location: 0.5),
+                                .init(color: baseColor.opacity(0.2), location: 1.0)
                             ],
                             startPoint: .topTrailing,
                             endPoint: .bottomLeading
