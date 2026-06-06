@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var isSigningOut = false
     @State private var showPaywall = false
     @State private var showSignInSheet = false
+    @State private var showFeedbackSheet = false
     @State private var signInSheetDescriptionKey = "paywall.restore.signInRequired.description"
     @State private var feedbackTitleKey = "settings.error.title"
     @State private var feedbackMessage: String?
@@ -105,6 +106,13 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Button {
+                        showFeedbackSheet = true
+                    } label: {
+                        settingsRowLabel("settings.feedback.title", systemImage: "text.bubble")
+                    }
+                    .foregroundStyle(UITheme.primaryText)
+
                     Link(destination: AppLinks.contactEmail) {
                         settingsRowLabel("settings.link.contactSupport", systemImage: "envelope")
                     }
@@ -197,6 +205,19 @@ struct SettingsView: View {
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
+        .sheet(isPresented: $showFeedbackSheet) {
+            FeedbackForm(
+                title: "settings.feedback.title",
+                prompt: "settings.feedback.prompt",
+                placeholder: "settings.feedback.placeholder",
+                onSubmit: { content in
+                    try await AppFeedback.submit(content: content)
+                },
+                onSubmitted: {
+                    showNotice(String(localized: "settings.feedback.submitted"))
+                }
+            )
+        }
         .sheet(isPresented: $showSignInSheet) {
             SignInRequiredSheet(descriptionKey: LocalizedStringKey(signInSheetDescriptionKey))
         }
@@ -285,4 +306,11 @@ struct SettingsView: View {
         feedbackMessage = message
     }
 
+    private func showNotice(_ message: String) {
+        feedbackTitleKey = "settings.notice.title"
+        feedbackMessage = message
+    }
+
 }
+
+

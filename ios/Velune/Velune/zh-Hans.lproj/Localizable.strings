@@ -18,6 +18,10 @@
 "settings.link.terms" = "用户协议";
 "settings.link.privacy" = "隐私政策";
 "settings.link.contactSupport" = "联系开发者";
+"settings.feedback.title" = "问题反馈";
+"settings.feedback.prompt" = "请描述你遇到的问题或建议。";
+"settings.feedback.placeholder" = "写下你的反馈…";
+"settings.feedback.submitted" = "反馈已提交，感谢你的帮助。";
 "settings.version" = "版本";
 "settings.billing.action.upgrade" = "升级";
 "settings.billing.action.restore" = "恢复购买";

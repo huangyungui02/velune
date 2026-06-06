@@ -18,6 +18,10 @@
 "settings.link.terms" = "Terms of Service";
 "settings.link.privacy" = "Privacy Policy";
 "settings.link.contactSupport" = "Contact Developer";
+"settings.feedback.title" = "Feedback";
+"settings.feedback.prompt" = "Tell us about any issues or suggestions.";
+"settings.feedback.placeholder" = "Write your feedback…";
+"settings.feedback.submitted" = "Feedback submitted. Thank you.";
 "settings.version" = "Version";
 "settings.billing.action.upgrade" = "Upgrade";
 "settings.billing.action.restore" = "Restore Purchases";

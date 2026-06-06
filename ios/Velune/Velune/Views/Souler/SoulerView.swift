@@ -78,9 +78,19 @@ struct SoulerView: View {
             }
         }
         .sheet(item: $feedbackSouler) { souler in
-            SoulerFeedbackSheet(souler: souler) {
-                feedbackMessage = String(localized: "souler.feedback.submitted")
-            }
+            FeedbackForm(
+                title: "souler.feedback.title",
+                prompt: "souler.feedback.prompt",
+                placeholder: "settings.feedback.placeholder",
+                headerName: souler.name,
+                headerImageURL: souler.imageURL,
+                onSubmit: { content in
+                    try await SoulerFeedback.submit(soulerId: souler.id, content: content)
+                },
+                onSubmitted: {
+                    feedbackMessage = String(localized: "souler.feedback.submitted")
+                }
+            )
         }
         .alert("souler.feedback.title", isPresented: Binding(
             get: { feedbackMessage != nil },
@@ -162,89 +172,7 @@ private struct SoulerActionMenu: View {
     }
 }
 
-private struct SoulerFeedbackSheet: View {
-    let souler: Souler
-    let onSubmitted: () -> Void
 
-    @Environment(\.dismiss) private var dismiss
-    @State private var content = ""
-    @State private var isSubmitting = false
-    @State private var errorMessage: String?
-
-    private var trimmedContent: String {
-        content.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("souler.feedback.prompt")
-                    .font(.subheadline)
-                    .foregroundStyle(UITheme.secondaryText)
-
-                TextEditor(text: $content)
-                    .font(.body)
-                    .scrollContentBackground(.hidden)
-                    .padding(12)
-                    .frame(minHeight: 180)
-                    .background(Color.white.opacity(0.06), in: .rect(cornerRadius: 12, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(.white.opacity(0.12), lineWidth: 0.7)
-                    }
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(.red.opacity(0.85))
-                }
-
-                Spacer()
-            }
-            .padding(20)
-            .background(BackgroundView())
-            .navigationTitle(Text("souler.feedback.title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("common.cancel") {
-                        dismiss()
-                    }
-                    .disabled(isSubmitting)
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        submit()
-                    } label: {
-                        if isSubmitting {
-                            ProgressView()
-                        } else {
-                            Text("common.submit")
-                        }
-                    }
-                    .disabled(trimmedContent.isEmpty || isSubmitting)
-                }
-            }
-        }
-    }
-
-    private func submit() {
-        Task {
-            isSubmitting = true
-            errorMessage = nil
-            defer { isSubmitting = false }
-
-            do {
-                try await SoulerFeedback.submit(soulerId: souler.id, content: content)
-                onSubmitted()
-                dismiss()
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
-    }
-}
 
 private struct SoulerContent: View {
     let souler: Souler?
