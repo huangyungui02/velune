@@ -4,7 +4,7 @@ struct StarSeaResonanceMatchesView: View {
     let matches: [StarSeaStreamService.ResonanceMatch]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("starsea.resonance.title")
                 .font(.system(size: 11, weight: .light))
                 .tracking(2.0)
@@ -61,36 +61,33 @@ private struct StarSeaResonanceMatchRow: View {
     }
 
     private var rowContent: some View {
-        HStack(spacing: 16) {
-            avatar
+        VStack(alignment: .leading, spacing: 10) {
+            Text(match.line)
+                .font(.system(size: 14, weight: .light, design: .serif))
+                .lineSpacing(6)
+                .tracking(0.5)
+                .foregroundStyle(UITheme.primaryText.opacity(0.92))
+                .fixedSize(horizontal: false, vertical: true)
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(match.name)
-                    .font(.system(size: 14.5, weight: .light, design: .serif))
-                    .tracking(1.0)
-                    .foregroundStyle(UITheme.primaryText.opacity(0.92))
-                    .lineLimit(1)
-
-                Text(match.line)
+            HStack(spacing: 4) {
+                Text("— \(match.name)")
                     .font(.system(size: 12, weight: .light, design: .serif))
-                    .lineSpacing(5)
-                    .tracking(0.5)
-                    .foregroundStyle(UITheme.secondaryText.opacity(0.68))
-                    .lineLimit(2)
-            }
+                    .tracking(1.0)
+                    .foregroundStyle(UITheme.secondaryText.opacity(0.75))
 
-            Spacer(minLength: 0)
-
-            if canOpen {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .light))
-                    .foregroundStyle(UITheme.tertiaryText.opacity(0.6))
+                if canOpen {
+                    Image(systemName: "arrow.up.forward")
+                        .font(.system(size: 9, weight: .light))
+                        .foregroundStyle(UITheme.tertiaryText.opacity(0.6))
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        .padding(12)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            .ultraThinMaterial.opacity(0.20),
+            .ultraThinMaterial.opacity(0.18),
             in: .rect(cornerRadius: 16, style: .continuous)
         )
         .background {
@@ -130,36 +127,6 @@ private struct StarSeaResonanceMatchRow: View {
         }
 
         errorMessage = String(localized: "matching.error.unknown")
-    }
-
-    private var avatar: some View {
-        let initial = String(match.name.prefix(1))
-        let hue = Double(abs(match.name.hashValue) % 360) / 360.0
-
-        return ZStack {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(hue: hue, saturation: 0.24, brightness: 0.65).opacity(0.24),
-                            Color(hue: hue, saturation: 0.12, brightness: 0.82).opacity(0.08)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                      )
-                )
-                .frame(width: 45, height: 60)
-
-            Text(initial)
-                .font(.system(size: 16, weight: .light, design: .serif))
-                .foregroundStyle(UITheme.primaryText.opacity(0.85))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .stroke(.white.opacity(0.12), lineWidth: 0.5)
-        }
-        .frame(width: 45, height: 60)
-        .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
     }
 }
 
