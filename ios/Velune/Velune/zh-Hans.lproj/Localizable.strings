@@ -68,8 +68,8 @@
 "glimmerHistory.empty.noGlimmers" = "暂无心澜";
 "glimmerHistory.title" = "心舍";
 "glimmerHistory.detail.title" = "心澜";
-"glimmerHistory.history.title" = "星海回望";
-"glimmerHistory.history.empty" = "暂无星海记录";
+"glimmerHistory.history.title" = "回望";
+"glimmerHistory.history.empty" = "暂无回望记录";
 "glimmerHistory.section.today" = "今天";
 "glimmerHistory.section.yesterday" = "昨天";
 "glimmerHistory.section.pastWeek" = "过去一周";

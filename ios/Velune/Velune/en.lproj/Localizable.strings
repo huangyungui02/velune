@@ -68,8 +68,8 @@
 "glimmerHistory.empty.noGlimmers" = "No glimmers yet";
 "glimmerHistory.title" = "Haven";
 "glimmerHistory.detail.title" = "Glimmer";
-"glimmerHistory.history.title" = "Starsea History";
-"glimmerHistory.history.empty" = "No Starsea history";
+"glimmerHistory.history.title" = "History";
+"glimmerHistory.history.empty" = "No history";
 "glimmerHistory.section.today" = "Today";
 "glimmerHistory.section.yesterday" = "Yesterday";
 "glimmerHistory.section.pastWeek" = "Past Week";
