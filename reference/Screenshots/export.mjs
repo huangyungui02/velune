@@ -122,7 +122,8 @@ function slugify(value) {
 }
 
 async function createSlide(locale, slide) {
-  const imagePath = path.join(localeInputDir(locale), slide.image);
+  const filename = `${slide.image}-${locale}.PNG`;
+  const imagePath = path.join(localeInputDir(locale), filename);
   const imageBuffer = await fs.readFile(imagePath);
   const imageData = `data:image/png;base64,${imageBuffer.toString("base64")}`;
   const titleLines = splitTitle(slide.title, locale);
