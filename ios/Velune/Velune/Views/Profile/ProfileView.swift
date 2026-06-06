@@ -1,7 +1,8 @@
 import SwiftUI
 
-private enum ProfileRoute: Hashable {
+enum ProfileRoute: Hashable {
     case settings
+    case glimmerDetail(id: UUID)
 }
 
 struct ProfileView: View {
@@ -16,12 +17,6 @@ struct ProfileView: View {
                             Image(systemName: "gearshape")
                         }
                         .accessibilityLabel(Text("settings.title"))
-                    }
-                }
-                .navigationDestination(for: ProfileRoute.self) { route in
-                    switch route {
-                    case .settings:
-                        SettingsView()
                     }
                 }
         }

@@ -22,13 +22,7 @@ struct GlimmerRecordsView: View {
                     LazyVStack(alignment: .leading, spacing: 32) {
                         ForEach(glimmerSections) { section in
                             GlimmerDaySection(section: section) { glimmer, isFeatured in
-                                NavigationLink {
-                                    GlimmerDetailView(glimmer: glimmer) {
-                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                            glimmers.removeAll { $0.id == glimmer.id }
-                                        }
-                                    }
-                                } label: {
+                                NavigationLink(value: ProfileRoute.glimmerDetail(id: glimmer.id)) {
                                     GlimmerTimelineRow(glimmer: glimmer, isFeatured: isFeatured)
                                 }
                                 .buttonStyle(.plain)
@@ -46,6 +40,20 @@ struct GlimmerRecordsView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(for: ProfileRoute.self) { route in
+            switch route {
+            case .settings:
+                SettingsView()
+            case .glimmerDetail(let id):
+                if let glimmer = glimmers.first(where: { $0.id == id }) {
+                    GlimmerDetailView(glimmer: glimmer) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            glimmers.removeAll { $0.id == id }
+                        }
+                    }
+                }
+            }
+        }
         .alert("matching.error.title", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
