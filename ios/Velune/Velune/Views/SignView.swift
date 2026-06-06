@@ -36,9 +36,8 @@ struct SignView: View {
     private func brandBlock(metrics: SignLayoutMetrics) -> some View {
         VStack(spacing: metrics.brandSpacing) {
             VStack(spacing: 12) {
-                AppMarkView()
+                VeluneMarkView(baseColor: UITheme.primaryText)
                     .frame(width: metrics.logoSize, height: metrics.logoSize)
-                    .foregroundStyle(UITheme.primaryText.opacity(0.92))
                 
                 Text("sign.appName")
                     .font(.system(size: metrics.brandTitleSize, weight: .medium, design: .serif))
@@ -159,53 +158,4 @@ private struct SignLayoutMetrics {
     var sloganSize: CGFloat { isCompactHeight ? 22 : 24 }
     var sloganWidth: CGFloat { isNarrowWidth ? 286 : 320 }
     var actionWidth: CGFloat { min(356, size.width - horizontalPadding * 2) }
-}
-
-private struct AppMarkView: View {
-    var body: some View {
-        GeometryReader { proxy in
-            let side = min(proxy.size.width, proxy.size.height)
-            let outerDiameter = side * (720.0 / 1024.0)
-            let innerDiameter = side * (480.0 / 1024.0)
-            
-            // Slightly thicker and clearer strokes
-            let outerStroke = max(1.5, side * (8.0 / 1024.0))
-            let innerStroke = max(2.0, side * (12.0 / 1024.0))
-
-            ZStack {
-                // Outer resonance circle
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            stops: [
-                                .init(color: .white.opacity(0.5), location: 0.0),
-                                .init(color: .white.opacity(0.15), location: 0.5),
-                                .init(color: .white.opacity(0.4), location: 1.0)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        style: StrokeStyle(lineWidth: outerStroke)
-                    )
-                    .frame(width: outerDiameter, height: outerDiameter)
-
-                // Inner Soul Circle - "微澜" (Slight Ripple)
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            stops: [
-                                .init(color: .white.opacity(0.95), location: 0.0),
-                                .init(color: .white.opacity(0.4), location: 0.5),
-                                .init(color: .white.opacity(0.8), location: 1.0)
-                            ],
-                            startPoint: .bottomTrailing,
-                            endPoint: .topLeading
-                        ),
-                        style: StrokeStyle(lineWidth: innerStroke)
-                    )
-                    .frame(width: innerDiameter, height: innerDiameter)
-            }
-            .frame(width: proxy.size.width, height: proxy.size.height)
-        }
-    }
 }
