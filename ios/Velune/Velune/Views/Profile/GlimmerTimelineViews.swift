@@ -112,14 +112,14 @@ struct GlimmerKeywordChips: View {
                 ForEach(keywords, id: \.self) { keyword in
                     Text(keyword)
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(UITheme.glimmerGlow.opacity(0.82))
+                        .foregroundStyle(UITheme.primaryText.opacity(0.68))
                         .lineLimit(1)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(UITheme.glimmerGlow.opacity(0.08), in: .capsule)
+                        .background(.white.opacity(0.055), in: .capsule)
                         .overlay {
                             Capsule()
-                                .stroke(UITheme.glimmerGlow.opacity(0.15), lineWidth: 0.5)
+                                .stroke(.white.opacity(0.1), lineWidth: 0.5)
                         }
                 }
             }
