@@ -14,7 +14,7 @@ from app.soulers.repositories.resolution import (
     mark_resolution_processing,
 )
 from app.soulers.services.profile_generation import canonicalize_souler_name, generate_profile_content
-from app.soulers.services.wikipedia import get_wikipedia_title_by_wiki_id, search_wiki_id
+from app.soulers.services.wikipedia import search_wiki_id
 from app.tasks.broker import broker
 
 logger = logging.getLogger(__name__)
@@ -74,14 +74,7 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
                     )
                     return {"status": "complete", "soulerId": souler_id}
 
-                profile_name = await _profile_name_for_resolution(
-                    wiki_id=wiki_id,
-                    canonical_name=canonical_name,
-                    fallback_name=name,
-                    lang=lang,
-                )
-                aliases.append(profile_name)
-                profile = await _generate_current_lang_profile(profile_name, lang)
+                profile = await _generate_current_lang_profile(name, lang)
                 souler = await complete_souler_resolution_transactionally(
                     request_id=request_id,
                     souler_id=souler_id,
@@ -93,14 +86,7 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
                 )
                 return {"status": "complete", "soulerId": str(souler["id"])}
 
-        profile_name = await _profile_name_for_resolution(
-            wiki_id=wiki_id,
-            canonical_name=canonical_name,
-            fallback_name=name,
-            lang=lang,
-        )
-        aliases.append(profile_name)
-        profile = await _generate_current_lang_profile(profile_name, lang)
+        profile = await _generate_current_lang_profile(name, lang)
         souler = await complete_souler_resolution_transactionally(
             request_id=request_id,
             souler_id=None,
@@ -127,20 +113,6 @@ async def _ensure_database() -> None:
 
 def _normalize_lang(lang: str) -> str:
     return "zh" if lang.strip().lower().startswith("zh") else "en"
-
-
-async def _profile_name_for_resolution(
-    *,
-    wiki_id: str | None,
-    canonical_name: str,
-    fallback_name: str,
-    lang: str,
-) -> str:
-    if wiki_id:
-        wiki_title = await get_wikipedia_title_by_wiki_id(wiki_id, lang)
-        if wiki_title:
-            return wiki_title.strip()
-    return (canonical_name or fallback_name).strip()
 
 
 async def _generate_current_lang_profile(profile_name: str, lang: str) -> dict[str, object]:
