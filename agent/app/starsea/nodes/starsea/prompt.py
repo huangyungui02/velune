@@ -23,11 +23,31 @@ SYSTEM_PROMPT = """
   <opt>这是第四个选项</opt>
 </options>
 ```
-
-# 结束
-当你觉得对话可以结束，可以进行沉淀时，可以主动提供结束的选项。
 """
 
 
-def system_prompt(lang: str) -> str:
-    return apply_prompt_lang(SYSTEM_PROMPT, lang)
+def system_prompt(
+    lang: str,
+    *,
+    current_time: str | None = None,
+    recent_glimmers: str | None = None,
+) -> str:
+    context = _runtime_context(current_time, recent_glimmers)
+    return apply_prompt_lang(f"{SYSTEM_PROMPT.rstrip()}\n\n{context}", lang)
+
+
+def _runtime_context(current_time: str | None, recent_glimmers: str | None) -> str:
+    parts = ["# 当前上下文"]
+    if current_time:
+        parts.append(f"用户当前时间：{current_time}")
+    if recent_glimmers:
+        parts.append(
+            "\n".join(
+                [
+                    "最近 5 次 glimmer（从新到旧）：",
+                    recent_glimmers,
+                    "需要查看某个 glimmer 的完整星海聊天归档时，调用 get_glimmer_messages。",
+                ]
+            )
+        )
+    return "\n".join(parts)

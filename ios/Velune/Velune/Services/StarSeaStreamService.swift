@@ -1,5 +1,13 @@
 import Foundation
 
+enum StarSeaMemoryPreference {
+    static let key = "starsea.memoryEnabled"
+
+    static var isEnabled: Bool {
+        UserDefaults.standard.bool(forKey: key)
+    }
+}
+
 enum StarSeaStreamService {
     private static let domain = "StarSea"
 
@@ -43,6 +51,8 @@ enum StarSeaStreamService {
         var threadId: String?
         var content: String?
         var intent: Intent?
+        var timezone: String
+        var memoryEnabled: Bool
     }
 
     private struct StreamEvent: Decodable {
@@ -64,7 +74,9 @@ enum StarSeaStreamService {
         let request = SendRequest(
             threadId: threadId,
             content: content,
-            intent: intent
+            intent: intent,
+            timezone: UserStatusClientMetadata.current().timezone,
+            memoryEnabled: StarSeaMemoryPreference.isEnabled
         )
         let payloadDataStream = APISSEClient.stream(
             path: "v1/\(AppLanguage.current.apiLanguageCode)/starsea",

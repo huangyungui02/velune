@@ -28,7 +28,7 @@ async def starsea(
         return sse_response(
             start_starsea_stream(
                 content=body.cleaned_content,
-                metadata=body.safe_metadata,
+                metadata=body.runtime_metadata,
                 thread_id=thread_id,
                 user_id=user_id,
                 is_premium=await is_user_premium(user_id),

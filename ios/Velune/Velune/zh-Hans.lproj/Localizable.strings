@@ -11,6 +11,9 @@
 "settings.account.defaultName" = "灵魂旅人";
 "settings.account.anonymous.title" = "登录后解锁完整功能";
 "settings.section.profile" = "个人资料";
+"settings.section.starsea" = "星海";
+"settings.starsea.memory" = "星海记忆";
+"settings.starsea.memory.description" = "开启后，星海会参考最近 5 次心澜，并可在需要时读取对应对话。";
 "settings.delete.warning" = "删除账号将永久清除你的所有数据。";
 "settings.rateApp" = "应用评分";
 "settings.action.signOut" = "退出登录";

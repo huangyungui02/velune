@@ -8,6 +8,7 @@ struct AccountSettingsView: View {
     @State private var isUpdatingName = false
     @State private var feedbackMessage: String?
     @State private var editingName: String = ""
+    @AppStorage(StarSeaMemoryPreference.key) private var isStarSeaMemoryEnabled = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
@@ -49,6 +50,17 @@ struct AccountSettingsView: View {
             } header: {
                 Text("settings.section.profile")
                     .textCase(nil)
+            }
+
+            Section {
+                Toggle(isOn: $isStarSeaMemoryEnabled) {
+                    settingsRowLabel("settings.starsea.memory", systemImage: "brain")
+                }
+            } header: {
+                Text("settings.section.starsea")
+                    .textCase(nil)
+            } footer: {
+                Text("settings.starsea.memory.description")
             }
 
             Section {

@@ -14,7 +14,7 @@ MATCH_TEMPERATURE = 0.45
 
 MATCH_PROMPT = """
 # 角色
-你是星海内部的思想与灵魂匹配工具。
+你是星海内部的思想与共鸣匹配工具。
 
 # 任务
 根据当前对话，匹配 3 位最能与用户处境产生共鸣的人物。
@@ -59,7 +59,7 @@ class ThoughtMatch(BaseModel):
 
 @tool
 def match_thought_voices(conversation: str, lang: str = "zh") -> str:
-    """寻找星海中能够与当前用户处境共鸣的灵魂。"""
+    """寻找星海中能够与当前用户处境共鸣的历史人物。"""
     normalized_lang = "zh" if lang == "zh" else "en"
     model = create_chat_model(model=MATCH_MODEL, temperature=MATCH_TEMPERATURE)
     structured_model = model.with_structured_output(ThoughtMatch, method="json_mode")

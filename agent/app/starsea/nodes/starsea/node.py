@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any
 
-from langchain_core.messages import AIMessage, AIMessageChunk, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, SystemMessage
 from langgraph.config import get_stream_writer
 
 from app.core.conversation_options import (
@@ -13,28 +12,46 @@ from app.core.conversation_options import (
     strip_conversation_options_markup,
 )
 from app.core.llm import DEFAULT_MODEL, create_chat_model
-from app.soulers.services.resolution import resolve_or_enqueue_souler
-from app.starsea.messages import format_messages
-from app.starsea.tools import match_thought_voices
 
+from .context import (
+    current_time_context,
+    format_recent_glimmers,
+    state_memory_enabled,
+    state_recent_glimmers,
+    state_timezone,
+)
 from .prompt import system_prompt
+from .tools import run_starsea_tools, starsea_tools
 
 if TYPE_CHECKING:
     from app.starsea.state import State
 
 STARSEA_MODEL = DEFAULT_MODEL
 STARSEA_TEMPERATURE = 0.5
-STARSEA_TOOLS = [match_thought_voices]
 
 
 async def starsea_node(state: State) -> dict[str, Any]:
     lang = _state_lang(state)
+    timezone_name = await state_timezone(state)
+    memory_enabled = state_memory_enabled(state)
+    recent_glimmers = await state_recent_glimmers(state) if memory_enabled else []
+    tools = starsea_tools(state, timezone_name, memory_enabled=memory_enabled)
     model = create_chat_model(
         model=_state_model(state),
         temperature=STARSEA_TEMPERATURE,
-    ).bind_tools(STARSEA_TOOLS)
+    ).bind_tools(tools)
     messages = [
-        SystemMessage(content=system_prompt(lang)),
+        SystemMessage(
+            content=system_prompt(
+                lang,
+                current_time=current_time_context(timezone_name),
+                recent_glimmers=(
+                    format_recent_glimmers(recent_glimmers, timezone_name)
+                    if memory_enabled
+                    else None
+                ),
+            )
+        ),
         *state["messages"],
     ]
     response = await _stream_ai_message(model, messages)
@@ -43,8 +60,14 @@ async def starsea_node(state: State) -> dict[str, Any]:
     resonance_matches: list[Any] = []
 
     if isinstance(response, AIMessage) and response.tool_calls:
-        tool_messages, resonance_matches = await _run_starsea_tools(response, state)
+        tool_messages, resonance_matches = await run_starsea_tools(
+            response,
+            state,
+            tools,
+            lang=lang,
+        )
         returned_messages.extend(tool_messages)
+        _stream_resonance_matches(resonance_matches)
         final_response = await _stream_ai_message(model, [*messages, response, *tool_messages])
         returned_messages.append(final_response)
 
@@ -101,84 +124,6 @@ def _append_visible_message(events: list[dict[str, Any]], content: Any) -> None:
     )
 
 
-async def _run_starsea_tools(
-    response: AIMessage,
-    state: State,
-) -> tuple[list[ToolMessage], list[Any]]:
-    tools_by_name = {tool.name: tool for tool in STARSEA_TOOLS}
-    tool_messages: list[ToolMessage] = []
-    resonance_matches: list[Any] = []
-    lang = _state_lang(state)
-    conversation = format_messages(state["messages"], lang)
-
-    for tool_call in response.tool_calls:
-        selected_tool = tools_by_name.get(tool_call["name"])
-        if selected_tool is None:
-            tool_messages.append(
-                ToolMessage(
-                    content=f"Unknown tool: {tool_call['name']}",
-                    tool_call_id=tool_call["id"],
-                )
-            )
-            continue
-
-        args = dict(tool_call.get("args") or {})
-        args["conversation"] = args.get("conversation") or conversation
-        args["lang"] = lang
-        try:
-            tool_message = selected_tool.invoke({**tool_call, "args": args})
-        except Exception as exc:
-            tool_message = ToolMessage(
-                content=json.dumps(
-                    {
-                        "voices": [],
-                        "error": f"{selected_tool.name} failed: {exc}",
-                    },
-                    ensure_ascii=False,
-                ),
-                name=selected_tool.name,
-                tool_call_id=tool_call["id"],
-            )
-
-        if selected_tool.name == match_thought_voices.name:
-            tool_message, previews = _prepare_match_tool_message(tool_message)
-            resolved_previews = await _resolve_match_previews(previews, lang)
-            resonance_matches.extend(resolved_previews)
-            _stream_resonance_matches(resolved_previews)
-
-        tool_messages.append(tool_message)
-
-    return tool_messages, resonance_matches
-
-
-async def _resolve_match_previews(
-    previews: list[dict[str, str]],
-    lang: str,
-) -> list[dict[str, Any]]:
-    resolved_previews: list[dict[str, Any]] = []
-    for preview in previews:
-        name = preview["name"]
-        resolved: dict[str, Any]
-        try:
-            resolved = await resolve_or_enqueue_souler(name, lang)
-        except Exception:  # noqa: BLE001
-            resolved = {"status": "unavailable"}
-
-        enriched: dict[str, Any] = {
-            "name": name,
-            "line": preview["line"],
-            "resolutionStatus": resolved.get("status") or "unavailable",
-        }
-        if resolved.get("soulerId"):
-            enriched["soulerId"] = resolved["soulerId"]
-        if resolved.get("requestId"):
-            enriched["resolutionRequestId"] = resolved["requestId"]
-
-        resolved_previews.append(enriched)
-
-    return resolved_previews
-
-
 def _state_lang(state: State) -> str:
     return "zh" if state.get("metadata", {}).get("lang") == "zh" else "en"
 
@@ -221,67 +166,7 @@ async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
     )
 
 
-def _prepare_match_tool_message(
-    tool_message: ToolMessage,
-) -> tuple[ToolMessage, list[dict[str, str]]]:
-    payload = _load_tool_json(tool_message.content)
-    if payload is None:
-        return tool_message, []
-
-    voices = payload.get("voices") or payload.get("matches") or []
-    if not isinstance(voices, list):
-        return tool_message, []
-
-    previews: list[dict[str, str]] = []
-    stripped_voices: list[dict[str, str]] = []
-    for voice in voices:
-        if not isinstance(voice, dict):
-            continue
-
-        name = str(voice.get("name") or "").strip()
-        resonance = str(voice.get("resonance") or "").strip()
-        whisper = str(voice.get("whisper") or "").strip()
-        if not name:
-            continue
-
-        if name and resonance:
-            stripped_voices.append({"name": name, "resonance": resonance})
-
-        if name and whisper:
-            previews.append({"name": name, "line": whisper})
-
-    stripped_payload = {
-        **payload,
-        "voices": stripped_voices,
-    }
-    stripped_payload.pop("matches", None)
-
-    return (
-        ToolMessage(
-            content=json.dumps(stripped_payload, ensure_ascii=False),
-            name=tool_message.name,
-            tool_call_id=tool_message.tool_call_id,
-        ),
-        previews,
-    )
-
-
-def _load_tool_json(content: Any) -> dict[str, Any] | None:
-    if not isinstance(content, str):
-        return None
-
-    try:
-        payload = json.loads(content)
-    except json.JSONDecodeError:
-        return None
-
-    if isinstance(payload, dict):
-        return payload
-
-    return None
-
-
-def _stream_resonance_matches(previews: list[dict[str, str]]) -> None:
+def _stream_resonance_matches(previews: list[Any]) -> None:
     if not previews:
         return
 
