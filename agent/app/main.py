@@ -6,6 +6,7 @@ from fastapi import FastAPI
 
 from app.api.router import router
 from app.core.config import get_settings
+from app.core.langfuse import flush_langfuse
 from app.db.session import database_manager
 from app.auth.client import supabase_auth_manager
 from app.starsea.checkpoint import checkpoint_manager
@@ -27,6 +28,7 @@ async def lifespan(_app: FastAPI):
     finally:
         if not broker.is_worker_process:
             await broker.shutdown()
+        flush_langfuse()
         reset_graph()
         await checkpoint_manager.close()
         await database_manager.close()

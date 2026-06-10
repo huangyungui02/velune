@@ -8,6 +8,7 @@ from uuid import uuid4
 from langchain_core.messages import HumanMessage
 
 from app.core.common import Lang, validate_lang
+from app.core.langfuse import langfuse_callbacks, langfuse_metadata
 from app.core.llm import model_for_premium
 from app.starsea.checkpoint import checkpoint_manager
 from app.starsea.graph import build_graph
@@ -26,7 +27,19 @@ async def stream_graph(
     lang: Lang = "zh",
 ) -> AsyncIterator[dict[str, Any]]:
     thread_id = thread_id or str(uuid4())
-    config = {"configurable": {"thread_id": thread_id}}
+    initial_state = _initial_state(
+        user_input,
+        metadata,
+        intent,
+        user_id=user_id,
+        is_premium=is_premium,
+        lang=lang,
+    )
+    config = _graph_config(
+        thread_id=thread_id,
+        user_id=user_id,
+        metadata=initial_state["metadata"],
+    )
     graph = build_graph()
 
     try:
@@ -35,14 +48,7 @@ async def stream_graph(
             _ensure_thread_owner(snapshot.values, user_id)
 
         async for chunk in graph.astream(
-            _initial_state(
-                user_input,
-                metadata,
-                intent,
-                user_id=user_id,
-                is_premium=is_premium,
-                lang=lang,
-            ),
+            initial_state,
             config,
             stream_mode="custom",
         ):
@@ -123,6 +129,32 @@ def _initial_state(
     }
 
     return initial_state
+
+
+def _graph_config(
+    *,
+    thread_id: str,
+    user_id: str | None,
+    metadata: dict[str, Any],
+) -> dict[str, Any]:
+    trace_metadata = langfuse_metadata(
+        user_id=user_id,
+        session_id=thread_id,
+        metadata=metadata,
+    )
+    intent = str(metadata.get("intent") or "chat")
+    config: dict[str, Any] = {
+        "configurable": {"thread_id": thread_id},
+        "metadata": trace_metadata,
+        "run_name": f"starsea.{intent}",
+        "tags": ["starsea", intent],
+    }
+
+    callbacks = langfuse_callbacks()
+    if callbacks:
+        config["callbacks"] = callbacks
+
+    return config
 
 
 def _event_from_chunk(chunk: Any, thread_id: str) -> dict[str, Any]:

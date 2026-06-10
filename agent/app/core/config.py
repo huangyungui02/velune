@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     REPO_TIMEOUT_SECONDS: float = 12.0
     CHAT_HISTORY_LIMIT: int = 30
 
+    LANGFUSE_ENABLED: bool = True
+    LANGFUSE_PUBLIC_KEY: str | None = None
+    LANGFUSE_SECRET_KEY: str | None = None
+    LANGFUSE_BASE_URL: str | None = None
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
