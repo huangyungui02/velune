@@ -11,8 +11,7 @@ struct HeroVerse: View {
                 Text(text)
             }
         }
-            .font(.title3)
-            .fontDesign(.serif)
+            .font(.system(size: 20, weight: .regular, design: .serif))
             .tracking(2.0)
             .multilineTextAlignment(.center)
             .foregroundStyle(UITheme.primaryText.opacity(0.65))
