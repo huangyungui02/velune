@@ -69,19 +69,11 @@ private struct StarSeaResonanceMatchRow: View {
                 .foregroundStyle(UITheme.primaryText.opacity(0.92))
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 4) {
-                Text("— \(match.name)")
-                    .font(.system(size: 12, weight: .light, design: .serif))
-                    .tracking(1.0)
-                    .foregroundStyle(UITheme.secondaryText.opacity(0.75))
-
-                if canOpen {
-                    Image(systemName: "arrow.up.forward")
-                        .font(.system(size: 9, weight: .light))
-                        .foregroundStyle(UITheme.tertiaryText.opacity(0.6))
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .trailing)
+            Text("— \(match.name)")
+                .font(.system(size: 12, weight: .light, design: .serif))
+                .tracking(1.0)
+                .foregroundStyle(UITheme.secondaryText.opacity(0.75))
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -90,29 +82,6 @@ private struct StarSeaResonanceMatchRow: View {
             .ultraThinMaterial.opacity(0.18),
             in: .rect(cornerRadius: 16, style: .continuous)
         )
-        .background {
-            RadialGradient(
-                colors: [
-                    UITheme.glimmerGlow.opacity(0.04),
-                    .clear
-                ],
-                center: .topLeading,
-                startRadius: 0,
-                endRadius: 180
-            )
-            .clipShape(.rect(cornerRadius: 16, style: .continuous))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [.white.opacity(0.04), .white.opacity(0.005)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 0.5
-                )
-        }
     }
 
     private func openSouler() async {
