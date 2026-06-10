@@ -11,9 +11,8 @@
 "settings.account.defaultName" = "Soul Traveler";
 "settings.account.anonymous.title" = "Unlock full features by signing in";
 "settings.section.profile" = "Profile";
-"settings.section.starsea" = "Starsea";
-"settings.starsea.memory" = "Starsea Memory";
-"settings.starsea.memory.description" = "When enabled, Starsea can reference your 5 most recent glimmers and read their conversations when needed.";
+"settings.section.preferences" = "Preferences";
+"settings.preference.memory" = "Memory";
 "settings.delete.warning" = "Deleting your account will permanently remove all your data.";
 "settings.rateApp" = "Rate App";
 "settings.action.signOut" = "Sign Out";

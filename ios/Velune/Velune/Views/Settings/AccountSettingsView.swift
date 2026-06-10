@@ -13,73 +13,80 @@ struct AccountSettingsView: View {
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
-        List {
-            Section {
-                LabeledContent {
-                    HStack(spacing: 8) {
-                        TextField("settings.account.defaultName", text: $editingName)
-                            .multilineTextAlignment(.trailing)
-                            .foregroundStyle(.primary)
-                            .onSubmit {
-                                Task { await updateName() }
+        ZStack {
+            BackgroundView()
+
+            List {
+                Section {
+                    LabeledContent {
+                        HStack(spacing: 8) {
+                            TextField("settings.account.defaultName", text: $editingName)
+                                .multilineTextAlignment(.trailing)
+                                .foregroundStyle(.primary)
+                                .onSubmit {
+                                    Task { await updateName() }
+                                }
+                                .submitLabel(.done)
+                                .disabled(isUpdatingName)
+
+                            if isUpdatingName {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Image(systemName: "pencil")
+                                    .foregroundStyle(.tertiary)
+                                    .font(.subheadline)
                             }
-                            .submitLabel(.done)
-                            .disabled(isUpdatingName)
+                        }
+                    } label: {
+                        settingsRowLabel("settings.account.name", systemImage: "person")
+                    }
 
-                        if isUpdatingName {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Image(systemName: "pencil")
-                                .foregroundStyle(.tertiary)
-                                .font(.subheadline)
+                    LabeledContent {
+                        Text(authManager.userEmail ?? "--")
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    } label: {
+                        settingsRowLabel("settings.account.email", systemImage: "envelope")
+                    }
+                } header: {
+                    sectionHeader("settings.section.profile")
+                }
+
+                Section {
+                    Toggle(isOn: $isStarSeaMemoryEnabled) {
+                        settingsRowLabel("settings.preference.memory", systemImage: "brain")
+                    }
+                    .toggleStyle(.switch)
+                    .tint(.white.opacity(0.45))
+                    .padding(.vertical, 3)
+                } header: {
+                    sectionHeader("settings.section.preferences")
+                }
+
+                Section {
+                    Button {
+                        showDeleteConfirmation = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            settingsRowLabel("settings.action.deleteAccount", systemImage: "trash")
+                            Spacer(minLength: 0)
+                            if isDeleting {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
                         }
                     }
-                } label: {
-                    settingsRowLabel("settings.account.name", systemImage: "person")
+                    .disabled(isDeleting)
                 }
-
-                LabeledContent {
-                    Text(authManager.userEmail ?? "--")
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                } label: {
-                    settingsRowLabel("settings.account.email", systemImage: "envelope")
-                }
-            } header: {
-                Text("settings.section.profile")
-                    .textCase(nil)
             }
-
-            Section {
-                Toggle(isOn: $isStarSeaMemoryEnabled) {
-                    settingsRowLabel("settings.starsea.memory", systemImage: "brain")
-                }
-            } header: {
-                Text("settings.section.starsea")
-                    .textCase(nil)
-            } footer: {
-                Text("settings.starsea.memory.description")
-            }
-
-            Section {
-                Button {
-                    showDeleteConfirmation = true
-                } label: {
-                    HStack(spacing: 10) {
-                        settingsRowLabel("settings.action.deleteAccount", systemImage: "trash")
-                        Spacer(minLength: 0)
-                        if isDeleting {
-                            ProgressView()
-                                .controlSize(.small)
-                        }
-                    }
-                }
-                .disabled(isDeleting)
-            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(Color.clear)
+            .environment(\.defaultMinListRowHeight, 50)
+            .modifier(SettingsListChrome())
         }
-        .listStyle(.insetGrouped)
         .navigationTitle("settings.account")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -104,6 +111,12 @@ struct AccountSettingsView: View {
         } message: {
             Text(feedbackMessage ?? "")
         }
+    }
+
+    private func sectionHeader(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .textCase(nil)
+            .foregroundStyle(UITheme.tertiaryText)
     }
 
     private func updateName() async {
