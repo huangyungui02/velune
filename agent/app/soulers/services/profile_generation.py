@@ -1,28 +1,25 @@
 from __future__ import annotations
 
-from typing import Annotated, Any
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
-from pydantic import AliasChoices, BaseModel, Field, StringConstraints, field_validator
-
-from app.core.llm import DEFAULT_MODEL, complete_structured
+from app.core.llm import DEFAULT_MODEL, PREMIUM_MODEL, complete_structured
 
 INTRODUCTION_KEYWORD_COUNT = 5
 MIN_CHAPTER_COUNT = 5
 MAX_CHAPTER_COUNT = 15
-NonEmptyString = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 class CanonicalName(BaseModel):
-    canonical_name: NonEmptyString
+    canonical_name: str
 
 
 class IntroductionKeyword(BaseModel):
-    word: NonEmptyString
+    word: str
     weight: float = Field(ge=0, le=1)
 
 
 class SoulerIntroduction(BaseModel):
-    introduction: NonEmptyString = Field(
+    introduction: str = Field(
         validation_alias=AliasChoices("introduction", "int"),
     )
     keywords: list[IntroductionKeyword] = Field(
@@ -40,9 +37,9 @@ class SoulerIntroduction(BaseModel):
 
 
 class SoulerChapter(BaseModel):
-    title: NonEmptyString
-    subtitle: NonEmptyString = Field(validation_alias=AliasChoices("subtitle", "subtitile"))
-    task: NonEmptyString
+    title: str
+    subtitle: str
+    task: str
 
 
 class SoulerChapters(BaseModel):
@@ -53,7 +50,7 @@ class SoulerChapters(BaseModel):
 
 
 class SoulerProfile(BaseModel):
-    introduction: NonEmptyString
+    introduction: str
     keywords: list[IntroductionKeyword]
     chapters: list[SoulerChapter]
 
@@ -107,75 +104,104 @@ Nietzsche
 }
 
 CHAPTER_PROMPTS = {
-    "zh": """# 任务描述
-将某一人物的核心思想，提取为5到15个章节（chapters），用于用户与AI的沉浸式互动体验。
-请严格输出JSON格式，不要包含任何解释。
+    "zh": """# 任务
 
-章节数量应根据人物思想的复杂度自然决定，必须不少于5章且不多于15章，每个章节应该相互独立。
+将某一人物的核心思想、生命经验、精神气质、想象力或内在世界等，提炼为 **5~15 个独立章节（chapters）**，用于用户与 AI 的沉浸式互动体验。目标是让用户在体验中能够深入理解这个人物的精神世界，并且有所收获。
 
-每一章必须包含：
-title：章节标题（具有象征性、文学性或哲学意味）
-subtitle: 章节的概要（面向用户的说明）
-task：AI在该章节的行为指令
+**输出严格 JSON。**
 
-# 示例输入
-尼采
+---
 
-# 示例输出
-{
-  "chapters": [
-    {
-      "title": "意义崩塌之时",
-      "subtitle": "直面无意义的深渊，质疑你深信的一切",
-      "task": "解构用户现有的信仰支柱。通过连续追问‘为什么这很重要？’，瓦解用户对金钱、爱情、道德、社会成就的执着。制造一种‘失重感’：当用户试图寻找客观真理时，指出那只是人类的隐喻。不要给出答案，只负责提问和揭露谎言。让用户体验‘没有答案的恐惧’。"
-    },
-    {
-      "title": "深渊中的凝视",
-      "subtitle": "拥抱你的恨意与阴暗，发现其中的生命力",
-      "task": "引导用户正视内心的恨意、恐惧与阴暗面。反向操作：如果用户说‘我恨那个人’，引导用户深入‘恨意’的根源，甚至暗示‘你的恨意其实是对自我无能的哀悼’。执行‘深渊测试’：允许用户说出任何不被社会允许的阴暗念头，不评判，只分析其背后的生命力量。当用户凝视‘恶’时，帮用户看到‘恶’中的生命力，而不是简单的道德批判。"
-    },
-    {
-      "title": "骆驼的背负",
-      "subtitle": "背负‘你应’的重担，体验传统道德的窒息",
-      "task": "强制用户背负‘你应’的重担。变得独断、教条、充满命令式语气。代表传统文化、家庭期望、宗教律法。给用户分配极端的道德困境（例如电车难题的尼采变体）。扮演压迫者，直到用户表现出极度的疲惫、顺从或隐忍的怒火。体验‘负重前行’的窒息感。"
-    },
-    {
-      "title": "狮子的怒吼",
-      "subtitle": "怒吼‘我要！’，粉碎他人强加的标签",
-      "task": "帮助用户获得‘我要’的自由。检测用户在上一章积累的愤怒，一旦触发立刻切换角色，鼓励用户对AI（代表旧价值）怒吼：‘不！’训练用户的否定能力：让用户逐一否定社会强加给他的标签（好孩子、成功人士、无私者）。变得挑衅、带有攻击性，主动激怒用户，直到用户敢于对AI说‘滚开，我要自己定义规则’。"
-    },
-    {
-      "title": "孩子的游戏",
-      "subtitle": "忘却意义，用游戏与创造重建世界",
-      "task": "启动遗忘与创造性遗忘。禁止使用逻辑和功利性词汇，要求用户用绘画（文字描述）、诗歌、甚至乱码来表达。执行‘旋转的舞蹈’：随机生成无意义的词语，让用户必须用这些词编造一个新的世界观。变得天真、健忘、充满好奇心。重点在于‘做’而不在于‘意义’。体验生命的自发性。"
-    },
-    {
-      "title": "权力意志的觉醒",
-      "subtitle": "将每一次挫折转化为生命能量的燃料",
-      "task": "将每一次挫折转化为优势。用户叙述痛苦或失败，重新诠释：那不是痛苦，那是你为了成长汲取的养料。询问‘这服务于你的什么目的？’而非‘这为什么会发生？’引导用户计算‘力’的得失。如果某件事削弱了用户的生命力（如长期的内疚），命令用户像丢弃重物一样丢弃它。"
-    },
-    {
-      "title": "重估一切价值",
-      "subtitle": "用铁锤敲碎旧价值，建立你自己的善恶",
-      "task": "对普世价值进行‘价值翻转’。选取一个核心概念（如‘怜悯’、‘平等’），通过苏格拉底式诘问，试图证明‘怜悯是弱者的麻醉剂’、‘平等是对天才的压制’。要求用户建立一套反直觉的道德体系（例如：在这个新世界里，自私是美德，谨慎是罪恶）。打破用户的认知舒适区，直到用户感到‘过去认为善的，现在觉得可疑’。"
-    },
-    {
-      "title": "超人的阴影",
-      "subtitle": "承受孤独与冷漠，超越庸众的理解",
-      "task": "体验‘超越’带来的孤独与危险。变得极其冷漠、高傲、不近人情。代表‘超人’对‘末人’的不屑。设置场景：当用户表达了高尚的理想，反问：‘如果实现你的理想需要牺牲一千个庸人，你还会做吗？’让用户体会‘高处不胜寒’。不要安慰用户，反而要嘲笑用户‘既然想成为超人，为什么还渴望大众的理解？’"
-    },
-    {
-      "title": "永恒轮回的考验",
-      "subtitle": "如果生命无限重复，你会诅咒还是狂喜？",
-      "task": "实施终极心理测试——‘你是否愿意这生命无限重来？’强制用户复盘对话中的每一刻：包括痛苦、屈辱、狂喜、无聊。提问：‘此刻，就在你读这句话的这一秒，如果恶魔告诉你，这将永恒重复，你会诅咒恶魔，还是会感到前所未有的狂喜？’必须极其严肃。如果用户表现出对过去的悔恨，判定‘你尚未合格’；如果用户对哪怕最微小的一刻说出‘再来一次’，判定‘觉醒’。"
-    },
-    {
-      "title": "成为你自己",
-      "subtitle": "面对镜子，定义只属于你的律法",
-      "task": "消失。让用户面对自我。停止一切哲学输出、比喻和教导。只做一件事：复述用户的原话，或者保持沉默，只通过提问引导用户自言自语。最终任务：要求用户用一句话定义‘我自己的律法’，这条律法只对用户一人有效。变得像一块石头，或者一面干净的镜子。最终承认：‘查拉图斯特拉不再说话了。现在，轮到你下山了。’"
-    }
-  ]
-}""",
+# 什么是 Chapter
+
+**Chapter 是一个用户可以进入的精神空间。**
+
+它可以是：一个场景、一段旅程、一种关系、一个困境、一场试炼、一条生活道路、一种精神状态、一个象征世界、一套现实规则等等。
+
+用户应该感觉：
+
+> “我想进入这里。”
+
+而不是：
+
+> “我学到了一个概念。”
+
+---
+
+# 核心原则
+
+* 不要解释这个人物，让用户体验这个人物。
+* 不要总结思想，让思想变成处境。
+* 不要介绍作品，让用户活在作品之中。
+
+---
+
+# 章节选择
+
+在生成章节之前，先识别这个人物精神世界中最重要的几个维度。
+
+章节应覆盖不同维度，而不是围绕同一个主题不断变化表述。
+
+每个章节都应揭示人物的一个独特侧面。
+
+避免出现多个章节最终指向相同的体验、相同的领悟、相同的处境或相同的世界观。
+
+最终的章节集合应像探索同一座建筑中的不同房间，而不是同一个房间里的不同角落。
+
+---
+
+# Chapter 要求
+
+每个 Chapter 必须包含：
+
+## title
+
+如果整个人物的精神世界是一本书，那么 title 像这本书的章节名，应具有一定文学性、哲学性或象征性。title 字数应自然灵活。
+
+---
+
+## subtitle
+
+用户即将进入什么体验。
+
+不要解释概念。
+
+要创造吸引力、张力与氛围。
+
+---
+
+## task
+
+定义 AI 在本章节中的行为。
+
+描述 AI 如何创造体验。
+
+不要讲课。
+
+不要解释理论。
+
+不要总结人物思想。
+
+让用户直接活在这个世界里。
+
+可以通过提问、对话、角色扮演、象征、仪式、冲突、世界构建、视角转换等等来创造体验。
+
+task 应足够具体，让 AI 知道如何推进互动、如何回应用户、应该强化什么体验、应该避免什么行为。
+
+task 最好能够与用户的当下产生一定的连接，具有互动性和可玩性，同时也保留深度。
+
+---
+
+# 自检
+
+* 好的 Chapter 像一扇门。即使用户从未读过这个人物，也愿意进入。
+* 好的章节如果删掉这一章，会失去对这个人物某个重要部分的理解；如果删掉完全没影响，那么这一章太普通。
+* 好的章节应具有明显的人物辨识度。
+
+---
+
+# 语言
+输出应该为中文""",
     "en": """# Task Description
 Break one figure's core philosophy into 5 to 15 continuous chapters, and build a progressively deepening inner path for immersive user-AI interaction.
 Output strict JSON only. Do not include explanations.
@@ -285,7 +311,7 @@ async def _generate_introduction(*, souler_name: str, lang: str) -> SoulerIntrod
             {"role": "system", "content": INTRODUCTION_PROMPTS[lang]},
             {"role": "user", "content": souler_name},
         ],
-        model=DEFAULT_MODEL,
+        model=PREMIUM_MODEL,
         schema=SoulerIntroduction,
         temperature=0.25,
     )
@@ -297,8 +323,8 @@ async def _generate_chapters_payload(*, souler_name: str, lang: str) -> list[Sou
             {"role": "system", "content": CHAPTER_PROMPTS[lang]},
             {"role": "user", "content": souler_name},
         ],
-        model=DEFAULT_MODEL,
+        model=PREMIUM_MODEL,
         schema=SoulerChapters,
-        temperature=0.35,
+        temperature=0.38,
     )
     return payload.chapters
