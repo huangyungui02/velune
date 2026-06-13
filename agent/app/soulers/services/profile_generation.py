@@ -104,7 +104,8 @@ Nietzsche
 }
 
 CHAPTER_PROMPTS = {
-    "zh": """# 任务
+    "zh": """
+# 任务
 
 将某一人物的核心思想、生命经验、精神气质、想象力或内在世界等，提炼为 **5~15 个独立章节（chapters）**，用于用户与 AI 的沉浸式互动体验。目标是让用户在体验中能够深入理解这个人物的精神世界，并且有所收获。
 
@@ -156,7 +157,7 @@ CHAPTER_PROMPTS = {
 
 ## title
 
-如果整个人物的精神世界是一本书，那么 title 像这本书的章节名，应具有一定文学性、哲学性或象征性。title 字数应自然灵活。
+如果整个人物的精神世界是一本书，那么title像这本书的章节名，应具有一定文学性、哲学性或象征性。title字数应自然灵活。
 
 ---
 
@@ -201,7 +202,8 @@ task 最好能够与用户的当下产生一定的连接，具有互动性和可
 ---
 
 # 语言
-输出应该为中文""",
+输出应该为中文
+""",
     "en": """# Task Description
 Break one figure's core philosophy into 5 to 15 continuous chapters, and build a progressively deepening inner path for immersive user-AI interaction.
 Output strict JSON only. Do not include explanations.
@@ -297,7 +299,7 @@ async def generate_profile_content(
     if not introduction_name or not chapter_name:
         raise ValueError("souler name is empty")
     introduction = await _generate_introduction(souler_name=introduction_name, lang=lang)
-    chapters = await _generate_chapters_payload(souler_name=chapter_name, lang=lang)
+    chapters = await generate_chapters_content(souler_name=chapter_name, lang=lang)
     return SoulerProfile(
         introduction=introduction.introduction,
         keywords=introduction.keywords,
@@ -317,7 +319,7 @@ async def _generate_introduction(*, souler_name: str, lang: str) -> SoulerIntrod
     )
 
 
-async def _generate_chapters_payload(*, souler_name: str, lang: str) -> list[SoulerChapter]:
+async def generate_chapters_content(*, souler_name: str, lang: str) -> list[SoulerChapter]:
     payload = await complete_structured(
         [
             {"role": "system", "content": CHAPTER_PROMPTS[lang]},

@@ -2,6 +2,7 @@ CREATE EXTENSION IF NOT EXISTS moddatetime schema extensions;
 CREATE TABLE IF NOT EXISTS public.chapters (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     souler_id UUID NOT NULL REFERENCES public.soulers(id) ON DELETE CASCADE,
+    version INT NOT NULL DEFAULT 1 CHECK (version > 0),
     seq INT NOT NULL CHECK (seq > 0),
     title TEXT NOT NULL,
     subtitle TEXT NOT NULL,

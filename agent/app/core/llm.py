@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from typing import Any, TypeVar, cast
 
-from langchain_openai import ChatOpenAI
+from langchain_qwq import ChatQwen
 from pydantic import BaseModel
 
 from app.core.config import get_settings
@@ -17,24 +17,14 @@ def model_for_premium(is_premium: bool) -> str:
     return PREMIUM_MODEL if is_premium else DEFAULT_MODEL
 
 
-def _is_qwen_model(model: str) -> bool:
-    return model.strip().lower().startswith("qwen")
-
-
-def create_chat_model(model: str, **model_kwargs: Any) -> ChatOpenAI:
+def create_chat_model(model: str, **model_kwargs: Any) -> ChatQwen:
     settings = get_settings()
-    if not settings.DASHSCOPE_API_KEY:
-        raise RuntimeError("DASHSCOPE_API_KEY is required to call DashScope models.")
 
-    if _is_qwen_model(model):
-        extra_body = dict(model_kwargs.pop("extra_body", {}) or {})
-        extra_body["enable_thinking"] = False
-        model_kwargs["extra_body"] = extra_body
-
-    return ChatOpenAI(
+    return ChatQwen(
         api_key=settings.DASHSCOPE_API_KEY,
         base_url=settings.DASHSCOPE_BASE_URL,
         model=model,
+        enable_thinking=False,
         **model_kwargs,
     )
 
@@ -56,10 +46,7 @@ async def complete_structured(
     schema: type[StructuredOutputT],
     temperature: float,
 ) -> StructuredOutputT:
-    structured_model = create_chat_model(model=model, temperature=temperature).with_structured_output(
-        schema,
-        method="json_mode",
-    )
+    structured_model = create_chat_model(model=model, temperature=temperature).with_structured_output(schema)
     response = await structured_model.ainvoke(messages)
     return cast(StructuredOutputT, response)
 
