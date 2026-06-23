@@ -5,7 +5,7 @@ from uuid import UUID
 
 from app.core.common import Lang
 from app.core.config import get_settings
-from app.core.errors import error_log_payload
+from app.core.errors import error_log_data
 from app.core.llm import DEFAULT_MODEL, complete_text
 from app.chat.chat_response import parse_chat_response
 from app.chat.preferences import (
@@ -84,7 +84,7 @@ async def start_chapter(
             logger.warning(
                 "Chapter session side effect failed: session_id=%s error=%s",
                 created_session_id,
-                error_log_payload(side_effect_error),
+                error_log_data(side_effect_error),
             )
 
         return {
@@ -107,6 +107,6 @@ async def start_chapter(
                 logger.warning(
                     "Failed to cleanup chapter session: session_id=%s error=%s",
                     created_session_id,
-                    error_log_payload(cleanup_error),
+                    error_log_data(cleanup_error),
                 )
         raise

@@ -73,7 +73,7 @@ class SoulerResolutionResult(BaseModel):
     request_id: str | None = Field(default=None, alias="requestId")
 
 
-class ResonanceMatchPayload(BaseModel):
+class ResonanceMatchEvent(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     name: str
@@ -83,29 +83,29 @@ class ResonanceMatchPayload(BaseModel):
     resolution_request_id: str | None = Field(default=None, alias="resolutionRequestId")
 
 
-class DeltaPayload(BaseModel):
+class DeltaEvent(BaseModel):
     type: Literal["delta"] = "delta"
     delta: str
 
 
-class ReadyPayload(BaseModel):
+class ReadyEvent(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     type: Literal["ready"] = "ready"
     thread_id: str = Field(alias="threadId")
 
 
-class StarseaMatchesPayload(BaseModel):
+class StarseaMatchesEvent(BaseModel):
     type: Literal["resonance_match"] = "resonance_match"
-    matches: list[ResonanceMatchPayload]
+    matches: list[ResonanceMatchEvent]
 
 
-class ConversationOptionsPayload(BaseModel):
+class ConversationOptionsEvent(BaseModel):
     type: Literal["options"] = "options"
     options: list[str]
 
 
-class SettledPayload(BaseModel):
+class SettledEvent(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     type: Literal["settled"] = "settled"
@@ -113,19 +113,19 @@ class SettledPayload(BaseModel):
     glimmer: dict[str, Any]
 
 
-class DonePayload(BaseModel):
+class DoneEvent(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     type: Literal["done"] = "done"
     thread_id: str = Field(alias="threadId")
 
 
-class ErrorPayload(BaseModel):
+class ErrorEvent(BaseModel):
     type: Literal["error"] = "error"
     message: str
 
 
-class UnknownEventPayload(BaseModel):
+class UnknownEvent(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     type: Literal["event"] = "event"

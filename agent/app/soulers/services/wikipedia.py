@@ -30,9 +30,9 @@ async def search_wiki_id(name: str, lang: str) -> str | None:
             headers=WIKI_HEADERS,
         )
         response.raise_for_status()
-        payload = response.json()
+        data = response.json()
 
-    return _extract_wikibase_item(payload)
+    return _extract_wikibase_item(data)
 
 
 async def get_wikipedia_title_by_wiki_id(wiki_id: str, lang: str) -> str | None:
@@ -51,11 +51,11 @@ async def get_wikipedia_title_by_wiki_id(wiki_id: str, lang: str) -> str | None:
     async with httpx.AsyncClient(timeout=8.0) as client:
         response = await client.get(WIKIDATA_API, params=params, headers=WIKI_HEADERS)
         response.raise_for_status()
-        payload = response.json()
+        data = response.json()
 
-    if not _is_record(payload) or not _is_record(payload.get("entities")):
+    if not _is_record(data) or not _is_record(data.get("entities")):
         return None
-    entity = payload["entities"].get(entity_id)
+    entity = data["entities"].get(entity_id)
     if not _is_record(entity):
         return None
 
@@ -78,10 +78,10 @@ async def get_wikipedia_title_by_wiki_id(wiki_id: str, lang: str) -> str | None:
     return None
 
 
-def _extract_wikibase_item(payload: Any) -> str | None:
-    if not _is_record(payload) or not _is_record(payload.get("query")):
+def _extract_wikibase_item(data: Any) -> str | None:
+    if not _is_record(data) or not _is_record(data.get("query")):
         return None
-    pages = payload["query"].get("pages")
+    pages = data["query"].get("pages")
     if not _is_record(pages):
         return None
 

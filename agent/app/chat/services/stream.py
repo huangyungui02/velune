@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator
 from starlette.requests import ClientDisconnect
 
 from app.core.config import get_settings
-from app.core.errors import error_log_payload, error_message
+from app.core.errors import error_log_data, error_message
 from app.core.sse import sse_event
 from app.core.llm import stream_text
 
@@ -94,7 +94,7 @@ def stream_events(
             logger.info("Chat stream closed by client.")
             return
         except Exception as error:  # noqa: BLE001
-            logger.error("Failed to process chat request: %s", error_log_payload(error))
+            logger.error("Failed to process chat request: %s", error_log_data(error))
             yield sse_event({"type": "error", "message": error_message(error)})
 
     return generate()

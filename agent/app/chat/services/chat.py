@@ -6,7 +6,7 @@ import logging
 from fastapi.responses import StreamingResponse
 
 from app.auth.billing import is_user_premium
-from app.core.errors import error_log_payload, error_message
+from app.core.errors import error_log_data, error_message
 from app.core.llm import model_for_premium
 from app.core.sse import emit_once, sse_response
 from app.core.common import Lang
@@ -49,7 +49,7 @@ async def create_chat_response(
     except ValueError:
         raise
     except Exception as error:  # noqa: BLE001
-        logger.error("Failed before stream start: %s", error_log_payload(error))
+        logger.error("Failed before stream start: %s", error_log_data(error))
         return sse_response(emit_once({"type": "error", "message": error_message(error)}))
 
     return sse_response(stream_events(prepared, log_stage))

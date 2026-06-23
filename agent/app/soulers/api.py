@@ -32,7 +32,7 @@ async def souler_resolution_status(
     _normalized_lang: Lang = Depends(require_lang),
     _user_id: str = Depends(require_user_id),
 ):
-    payload = await get_resolution_status(str(request_id))
-    if payload is None:
+    status = await get_resolution_status(str(request_id))
+    if status is None:
         raise HTTPException(status_code=404, detail="Resolution request not found")
-    return payload
+    return status

@@ -10,7 +10,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.db.session import database_manager, fetch_all, fetch_one
-from app.soulers.services.profile_generation import SoulerChapter, generate_chapters_content
+from app.soulers.services.ai.chapters import SoulerChapter, generate_chapters_content
 
 logger = logging.getLogger(__name__)
 
@@ -100,11 +100,10 @@ async def load_soulers(
         INNER JOIN public.souler_profile AS p
             ON p.souler_id = s.id
             AND p.lang = %(lang)s
-        WHERE NULLIF(trim(COALESCE(p.name, '')), '') IS NOT NULL
-            AND (
-                %(souler_ids)s::uuid[] IS NULL
-                OR s.id = ANY(%(souler_ids)s::uuid[])
-            )
+        WHERE (
+            %(souler_ids)s::uuid[] IS NULL
+            OR s.id = ANY(%(souler_ids)s::uuid[])
+        )
         ORDER BY lower(p.name), s.id
         """,
         {
@@ -122,7 +121,7 @@ async def process_souler(
     args: argparse.Namespace,
 ) -> tuple[dict[str, Any], str] | None:
     souler_id = str(souler["id"])
-    name = str(souler["name"]).strip()
+    name = str(souler["name"])
     logger.info("[%s/%s] Checking chapters for %s (%s)", index, total, name, souler_id)
     try:
         if await has_chapters_version(souler_id=souler_id, lang=args.lang, version=args.version):

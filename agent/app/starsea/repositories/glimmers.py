@@ -22,7 +22,7 @@ class GlimmerMessage(TypedDict):
     type: str
     role: str | None
     content: str | None
-    payload: dict[str, Any]
+    data: dict[str, Any]
     created_at: str
 
 
@@ -30,7 +30,7 @@ class GlimmerMessageDraft(TypedDict):
     type: str
     role: str | None
     content: str | None
-    payload: dict[str, Any]
+    data: dict[str, Any]
 
 
 async def get_glimmer_by_id(user_id: str, glimmer_id: str) -> Glimmer | None:
@@ -104,7 +104,7 @@ async def get_glimmer_messages(
             "type": str(row.get("type", "")),
             "role": _row_optional_str(row.get("role")),
             "content": _row_optional_str(row.get("content")),
-            "payload": _row_payload(row.get("payload")),
+            "data": _row_data(row.get("payload")),
             "created_at": str(row.get("created_at", "")),
         }
         for row in rows
@@ -183,7 +183,7 @@ async def create_glimmer_with_messages(
                         %(type)s,
                         %(role)s,
                         %(content)s,
-                        %(payload)s
+                        %(data)s
                     )
                     """,
                     [
@@ -194,7 +194,7 @@ async def create_glimmer_with_messages(
                             "type": message["type"],
                             "role": message.get("role"),
                             "content": message.get("content"),
-                            "payload": Jsonb(message.get("payload") or {}),
+                            "data": Jsonb(message.get("data") or {}),
                         }
                         for index, message in enumerate(messages)
                     ],
@@ -235,5 +235,5 @@ def _row_optional_str(value: Any) -> str | None:
     return str(value)
 
 
-def _row_payload(value: Any) -> dict[str, Any]:
+def _row_data(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}

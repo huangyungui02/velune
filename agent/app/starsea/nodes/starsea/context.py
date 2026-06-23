@@ -80,7 +80,7 @@ def format_glimmer_messages(
             "type": message["type"],
             "role": message["role"],
             "content": message["content"],
-            "payload": message["payload"],
+            "data": message["data"],
             "created_at": format_local_datetime(
                 _parse_datetime(message["created_at"]),
                 timezone_name,

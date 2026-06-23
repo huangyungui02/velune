@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth.billing import is_user_premium
 from app.auth.dependencies import require_lang, require_user_id
-from app.core.errors import error_log_payload, error_message
+from app.core.errors import error_log_data, error_message
 from app.core.common import Lang
 from app.core.llm import model_for_premium
 from app.chat.schemas.chat import ChatRequest
@@ -49,7 +49,7 @@ async def start_chapter_session_route(
     user_id: str = Depends(require_user_id),
 ):
     try:
-        payload = await start_chapter(
+        chapter_session = await start_chapter(
             user_id=user_id,
             souler_id=souler_id,
             chapter_id=chapter_id,
@@ -57,7 +57,7 @@ async def start_chapter_session_route(
             model=model_for_premium(await is_user_premium(user_id)),
             reply_length=body.reply_length if body else DEFAULT_REPLY_LENGTH,
         )
-        return payload
+        return chapter_session
     except Exception as error:  # noqa: BLE001
-        logger.error("Failed to start chapter session: %s", error_log_payload(error))
+        logger.error("Failed to start chapter session: %s", error_log_data(error))
         raise HTTPException(status_code=400, detail=error_message(error)) from error

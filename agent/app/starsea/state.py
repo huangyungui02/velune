@@ -13,7 +13,7 @@ class ArchiveEvent(TypedDict):
     type: str
     role: str | None
     content: str | None
-    payload: dict[str, Any]
+    data: dict[str, Any]
 
 
 class GlimmerState(TypedDict):

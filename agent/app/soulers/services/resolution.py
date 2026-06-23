@@ -60,13 +60,13 @@ async def get_resolution_status(request_id: str) -> dict[str, Any] | None:
     row = await get_resolution_request(request_id)
     if row is None:
         return None
-    payload: dict[str, Any] = {
+    status: dict[str, Any] = {
         "status": row["status"],
         "requestId": row["id"],
         "name": row["requested_name"],
     }
     if row.get("souler_id"):
-        payload["soulerId"] = row["souler_id"]
+        status["soulerId"] = row["souler_id"]
     if row.get("error"):
-        payload["error"] = row["error"]
-    return payload
+        status["error"] = row["error"]
+    return status

@@ -6,25 +6,25 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from app.core.errors import error_log_payload, error_message
+from app.core.errors import error_log_data, error_message
 from app.core.sse import sse_event
 from app.core.common import Lang
 from app.starsea.schemas.events import (
     ConversationOptionsData,
-    ConversationOptionsPayload,
-    DeltaPayload,
-    DonePayload,
+    ConversationOptionsEvent,
+    DeltaEvent,
+    DoneEvent,
     ErrorData,
-    ErrorPayload,
+    ErrorEvent,
     MessageDeltaData,
-    ReadyPayload,
-    ResonanceMatchPayload,
+    ReadyEvent,
+    ResonanceMatchEvent,
     ResonanceMatchPreview,
-    SettledPayload,
+    SettledEvent,
     SoulerResolutionResult,
     StarseaGraphEvent,
-    StarseaMatchesPayload,
-    UnknownEventPayload,
+    StarseaMatchesEvent,
+    UnknownEvent,
 )
 from app.soulers.services.resolution import resolve_or_enqueue_souler
 from app.starsea.runner import stream_graph
@@ -42,7 +42,7 @@ async def start_starsea_stream(
     intent: str | None,
     lang: Lang,
 ) -> AsyncIterator[str]:
-    yield sse_event(ReadyPayload(thread_id=thread_id).model_dump(by_alias=True))
+    yield sse_event(ReadyEvent(thread_id=thread_id).model_dump(by_alias=True))
     async for event in stream_graph(
         content,
         metadata=metadata,
@@ -52,61 +52,61 @@ async def start_starsea_stream(
         is_premium=is_premium,
         lang=lang,
     ):
-        yield sse_event(await _starsea_payload(event, lang))
+        yield sse_event(await _starsea_event(event, lang))
 
 
 async def emit_starsea_error(message: str) -> AsyncIterator[str]:
-    yield sse_event(ErrorPayload(message=message).model_dump())
+    yield sse_event(ErrorEvent(message=message).model_dump())
 
 
-async def _starsea_payload(event: dict[str, Any], lang: Lang) -> dict[str, Any]:
+async def _starsea_event(event: dict[str, Any], lang: Lang) -> dict[str, Any]:
     try:
-        return await _map_starsea_payload(StarseaGraphEvent.model_validate(event), lang)
+        return await _map_starsea_event(StarseaGraphEvent.model_validate(event), lang)
     except Exception as error:  # noqa: BLE001
-        logger.error("Failed to map starsea stream event: %s", error_log_payload(error))
-        return ErrorPayload(message=error_message(error)).model_dump()
+        logger.error("Failed to map starsea stream event: %s", error_log_data(error))
+        return ErrorEvent(message=error_message(error)).model_dump()
 
 
-async def _map_starsea_payload(event: StarseaGraphEvent, lang: Lang) -> dict[str, Any]:
+async def _map_starsea_event(event: StarseaGraphEvent, lang: Lang) -> dict[str, Any]:
     match event.event:
         case "message_delta":
             data = MessageDeltaData.model_validate(_dict_data(event.data))
-            return DeltaPayload(delta=data.delta).model_dump()
+            return DeltaEvent(delta=data.delta).model_dump()
         case "resonance_match":
-            payload = StarseaMatchesPayload(matches=await _resonance_matches(event.data, lang))
-            return payload.model_dump(by_alias=True, exclude_none=True)
+            starsea_event = StarseaMatchesEvent(matches=await _resonance_matches(event.data, lang))
+            return starsea_event.model_dump(by_alias=True, exclude_none=True)
         case "conversation_options":
             data = ConversationOptionsData.model_validate(_dict_data(event.data))
-            return ConversationOptionsPayload(options=data.options).model_dump()
+            return ConversationOptionsEvent(options=data.options).model_dump()
         case "completed":
-            return _completed_payload(event)
+            return _completed_event(event)
         case "error":
             data = ErrorData.model_validate(_dict_data(event.data))
-            return ErrorPayload(message=data.message).model_dump()
+            return ErrorEvent(message=data.message).model_dump()
         case _:
-            payload = UnknownEventPayload(thread_id=event.thread_id, data=event.data)
-            return payload.model_dump(by_alias=True)
+            starsea_event = UnknownEvent(thread_id=event.thread_id, data=event.data)
+            return starsea_event.model_dump(by_alias=True)
 
 
-def _completed_payload(event: StarseaGraphEvent) -> dict[str, Any]:
+def _completed_event(event: StarseaGraphEvent) -> dict[str, Any]:
     glimmer = _dict_data(event.data).get("glimmer")
     if isinstance(glimmer, dict):
-        payload = SettledPayload(thread_id=event.thread_id, glimmer=glimmer)
-        return payload.model_dump(by_alias=True)
+        starsea_event = SettledEvent(thread_id=event.thread_id, glimmer=glimmer)
+        return starsea_event.model_dump(by_alias=True)
 
-    payload = DonePayload(thread_id=event.thread_id)
-    return payload.model_dump(by_alias=True)
+    starsea_event = DoneEvent(thread_id=event.thread_id)
+    return starsea_event.model_dump(by_alias=True)
 
 
 def _dict_data(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
-async def _resonance_matches(data: Any, lang: Lang) -> list[ResonanceMatchPayload]:
+async def _resonance_matches(data: Any, lang: Lang) -> list[ResonanceMatchEvent]:
     if not isinstance(data, list):
         return []
 
-    matches: list[ResonanceMatchPayload] = []
+    matches: list[ResonanceMatchEvent] = []
     for item in data:
         try:
             preview = ResonanceMatchPreview.model_validate(item)
@@ -121,12 +121,12 @@ async def _resonance_matches(data: Any, lang: Lang) -> list[ResonanceMatchPayloa
             logger.warning(
                 "Failed to resolve resonance match %s: %s",
                 preview.name,
-                error_log_payload(error),
+                error_log_data(error),
             )
             resolved = SoulerResolutionResult(status="unavailable")
 
         matches.append(
-            ResonanceMatchPayload(
+            ResonanceMatchEvent(
                 name=preview.name,
                 line=preview.line,
                 resolution_status=resolved.status,

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 
 from app.auth.billing import is_user_premium
 from app.auth.dependencies import require_lang, require_user_id
-from app.core.errors import error_log_payload, error_message
+from app.core.errors import error_log_data, error_message
 from app.core.sse import sse_response
 from app.core.common import Lang
 from app.starsea.schemas.starsea import StarseaRequest
@@ -37,5 +37,5 @@ async def starsea(
             )
         )
     except Exception as error:  # noqa: BLE001
-        logger.error("Failed before starsea stream start: %s", error_log_payload(error))
+        logger.error("Failed before starsea stream start: %s", error_log_data(error))
         return sse_response(emit_starsea_error(error_message(error)))

@@ -97,7 +97,7 @@ def _archive_events(
                 "type": "tool_result",
                 "role": None,
                 "content": None,
-                "payload": {
+                "data": {
                     "tool": "resonance_match",
                     "items": resonance_matches,
                 },
@@ -119,7 +119,7 @@ def _append_visible_message(events: list[dict[str, Any]], content: Any) -> None:
             "type": "message",
             "role": "assistant",
             "content": visible_reply,
-            "payload": {},
+            "data": {},
         }
     )
 

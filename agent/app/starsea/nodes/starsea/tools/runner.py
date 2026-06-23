@@ -60,7 +60,7 @@ async def run_starsea_tools(
         except Exception as exc:
             tool_message = ToolMessage(
                 content=json.dumps(
-                    _tool_error_payload(selected_tool.name, exc),
+                    _tool_error_content(selected_tool.name, exc),
                     ensure_ascii=False,
                 ),
                 name=selected_tool.name,
@@ -77,7 +77,7 @@ async def run_starsea_tools(
     return tool_messages, resonance_matches
 
 
-def _tool_error_payload(tool_name: str, exc: Exception) -> dict[str, Any]:
+def _tool_error_content(tool_name: str, exc: Exception) -> dict[str, Any]:
     if tool_name == match_thought_voices.name:
         return {"voices": [], "error": f"{tool_name} failed: {exc}"}
     return {"error": f"{tool_name} failed: {exc}"}
@@ -114,11 +114,11 @@ async def _resolve_match_previews(
 def _prepare_match_tool_message(
     tool_message: ToolMessage,
 ) -> tuple[ToolMessage, list[dict[str, str]]]:
-    payload = _load_tool_json(tool_message.content)
-    if payload is None:
+    tool_data = _load_tool_json(tool_message.content)
+    if tool_data is None:
         return tool_message, []
 
-    voices = payload.get("voices") or payload.get("matches") or []
+    voices = tool_data.get("voices") or tool_data.get("matches") or []
     if not isinstance(voices, list):
         return tool_message, []
 
@@ -140,15 +140,15 @@ def _prepare_match_tool_message(
         if name and whisper:
             previews.append({"name": name, "line": whisper})
 
-    stripped_payload = {
-        **payload,
+    stripped_data = {
+        **tool_data,
         "voices": stripped_voices,
     }
-    stripped_payload.pop("matches", None)
+    stripped_data.pop("matches", None)
 
     return (
         ToolMessage(
-            content=json.dumps(stripped_payload, ensure_ascii=False),
+            content=json.dumps(stripped_data, ensure_ascii=False),
             name=tool_message.name,
             tool_call_id=tool_message.tool_call_id,
         ),
@@ -161,11 +161,11 @@ def _load_tool_json(content: Any) -> dict[str, Any] | None:
         return None
 
     try:
-        payload = json.loads(content)
+        tool_data = json.loads(content)
     except json.JSONDecodeError:
         return None
 
-    if isinstance(payload, dict):
-        return payload
+    if isinstance(tool_data, dict):
+        return tool_data
 
     return None

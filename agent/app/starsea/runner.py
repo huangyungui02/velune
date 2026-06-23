@@ -117,7 +117,7 @@ def _initial_state(
                 "type": "message",
                 "role": "user",
                 "content": content,
-                "payload": {},
+                "data": {},
             }
         )
 

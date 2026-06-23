@@ -126,12 +126,12 @@ def _parse_collect_output(raw_content: str) -> tuple[str, list[str], str]:
 
     meta_text = raw_content[meta_start_index:end_index].strip()
     try:
-        payload = json.loads(meta_text)
+        meta = json.loads(meta_text)
     except json.JSONDecodeError:
         return visible_content, [], ""
 
-    keywords = _clean_keywords(payload.get("keywords"))
-    blessing = _clean_blessing(payload.get("blessing"))
+    keywords = _clean_keywords(meta.get("keywords"))
+    blessing = _clean_blessing(meta.get("blessing"))
     return visible_content, keywords, blessing
 
 

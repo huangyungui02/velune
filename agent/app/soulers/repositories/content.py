@@ -10,8 +10,8 @@ def to_souler(raw: Any) -> Souler:
     if not isinstance(souler, dict):
         raise ValueError("Souler not found")
 
-    souler_id = str(souler.get("id", "")).strip()
-    name = str(souler.get("name", "")).strip()
+    souler_id = str(souler.get("id", ""))
+    name = str(souler.get("name", ""))
     if not souler_id or not name:
         raise ValueError("Souler not found")
 

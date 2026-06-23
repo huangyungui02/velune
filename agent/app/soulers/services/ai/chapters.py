@@ -1,39 +1,11 @@
 from __future__ import annotations
 
-from pydantic import AliasChoices, BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
-from app.core.llm import DEFAULT_MODEL, PREMIUM_MODEL, complete_structured
+from app.core.llm import PREMIUM_MODEL, complete_structured
 
-INTRODUCTION_KEYWORD_COUNT = 5
 MIN_CHAPTER_COUNT = 5
 MAX_CHAPTER_COUNT = 15
-
-
-class CanonicalName(BaseModel):
-    canonical_name: str
-
-
-class IntroductionKeyword(BaseModel):
-    word: str
-    weight: float = Field(ge=0, le=1)
-
-
-class SoulerIntroduction(BaseModel):
-    introduction: str = Field(
-        validation_alias=AliasChoices("introduction", "int"),
-    )
-    keywords: list[IntroductionKeyword] = Field(
-        min_length=INTRODUCTION_KEYWORD_COUNT,
-        max_length=INTRODUCTION_KEYWORD_COUNT,
-    )
-
-    @field_validator("keywords")
-    @classmethod
-    def require_unique_keywords(cls, keywords: list[IntroductionKeyword]) -> list[IntroductionKeyword]:
-        words = [keyword.word.lower() for keyword in keywords]
-        if len(words) != len(set(words)):
-            raise ValueError("keywords must be unique")
-        return keywords
 
 
 class SoulerChapter(BaseModel):
@@ -49,65 +21,10 @@ class SoulerChapters(BaseModel):
     )
 
 
-class SoulerProfile(BaseModel):
-    introduction: str
-    keywords: list[IntroductionKeyword]
-    chapters: list[SoulerChapter]
-
-
-CANONICAL_PROMPTS = {
-    "zh": (
-        "将给定人物名返回为规范人物名。使用大众最熟知的名字。"
-        '仅输出 JSON，例如 {"canonical_name":"弗里德里希·尼采"}。'
-    ),
-    "en": (
-        "Given a person name, return a canonical person name. "
-        'Output JSON only, for example {"canonical_name":"Friedrich Nietzsche"}.'
-    ),
-}
-
-INTRODUCTION_PROMPTS = {
-    "zh": """# Task
-根据给定的人物，给出对应的简介（introduction），以及五个关键词（keywords），以 JSON 格式返回。
-
-# Input Example
-尼采
-
-# Output Example
-{
-  "introduction": "弗里德里希·尼采（Friedrich Nietzsche，1844–1900）是德国哲学家、文化批评家与诗性思想家。他最初以古典语文学者的身份进入学界，但很早便转向对西方文明根基的深度反思。他批判基督教道德与传统哲学，认为这些体系压抑了生命本能与个体力量，并提出“上帝已死”，用以指代旧有意义与价值体系的瓦解。在这种崩塌之中，人类将不可避免地面对虚无主义——即意义缺失与价值真空的处境。\\n\\n尼采并未停留在否定之中，他进一步提出“权力意志”，将其视为生命最根本的驱动力，即不断扩张、自我强化与创造的冲动。在此基础上，他区分“主人道德”与“奴隶道德”，揭示道德并非绝对真理，而是不同生命状态与权力关系的产物。\\n\\n在重建层面，尼采提出“超人”概念，象征能够摆脱既有价值、独立创造意义的人。他强调“成为你自己”，主张个体不断进行自我超越，在持续的否定与重塑中生成新的存在形态。同时，他以“永恒回归”作为极限命题：如果一个人的人生需要被无限重复，他是否仍愿意肯定它？这一思想最终指向“命运之爱”——不仅接受命运，更主动热爱一切发生过的事。\\n\\n尼采的思想具有强烈的张力与诗性表达，他并不提供稳定答案，而是通过不断的质疑、撕裂与重构，将个体推向更深层的自我审视与存在觉醒。他的影响跨越哲学、文学、心理学与现代文化，被视为理解现代性危机与个体精神困境的重要思想源头之一。",
-  "keywords": [
-    {"word": "虚无", "weight": 0.95},
-    {"word": "超越", "weight": 0.9},
-    {"word": "力量", "weight": 0.85},
-    {"word": "意义", "weight": 0.8},
-    {"word": "命运", "weight": 0.75}
-  ]
-}""",
-    "en": """# Task
-Given a person, return their introduction and five keywords in JSON format.
-
-# Input Example
-Nietzsche
-
-# Output Example
-{
-  "introduction": "Friedrich Nietzsche (1844-1900) was a German philosopher, cultural critic, and poetic thinker. Trained first as a classical philologist, he turned early toward a deep critique of the foundations of Western civilization. He challenged Christian morality and traditional metaphysics, arguing that inherited value systems often suppress vitality and individual strength. His famous claim that 'God is dead' marks the collapse of old structures of meaning and the rise of nihilism as a defining modern condition.\\n\\nNietzsche did not remain in negation. He developed the idea of the will to power as a basic life-drive toward expansion, self-overcoming, and creation. He contrasted master and slave moralities to show that moral systems are historically produced expressions of different life conditions and power relations, rather than timeless absolutes.\\n\\nAt the reconstructive level, he proposed the figure of the overman as one who creates values beyond inherited norms. His imperative to become who you are points to an ongoing process of transformation. Through eternal recurrence, he posed an existential test: if this life had to be lived again infinitely, could one affirm it fully? This culminates in amor fati, the love of fate.\\n\\nNietzsche's work is marked by intensity, tension, and aphoristic force. He offers no final comfort, but repeatedly pushes readers into deeper self-examination and existential awakening. His influence extends across philosophy, literature, psychology, and modern culture, and remains central to understanding modern crises of meaning and subjectivity.",
-  "keywords": [
-    {"word": "nihilism", "weight": 0.95},
-    {"word": "self-overcoming", "weight": 0.9},
-    {"word": "power", "weight": 0.85},
-    {"word": "meaning", "weight": 0.8},
-    {"word": "fate", "weight": 0.7}
-  ]
-}""",
-}
-
-CHAPTER_PROMPTS = {
-    "zh": """
+PROMPT_ZH = """
 # 任务
 
-将某一人物的核心思想、生命经验、精神气质、想象力或内在世界等，提炼为 **5~15 个独立章节（chapters）**，用于用户与 AI 的沉浸式互动体验。目标是让用户在体验中能够深入理解这个人物的精神世界，并且有所收获。
+将某一人物的核心思想、生命经验、精神气质、想象力或内在世界等，提炼为 **5~15 个独立章节（chapters）**，用于用户与 AI 的沉浸式互动体验。目标是让用户在体验中能够深入理解这个人物的精神世界，并产生一定的共鸣。
 
 **输出严格 JSON。**
 
@@ -157,7 +74,7 @@ CHAPTER_PROMPTS = {
 
 ## title
 
-如果整个人物的精神世界是一本书，那么title像这本书的章节名，应具有一定文学性、哲学性或象征性。title字数应自然灵活。
+如果整个人物的精神世界是一本书，那么title像这本书的章节名，应具有一定文学性、哲学性或象征性，字数不固定。
 
 ---
 
@@ -197,14 +114,74 @@ task 最好能够与用户的当下产生一定的连接，具有互动性和可
 
 * 好的 Chapter 像一扇门。即使用户从未读过这个人物，也愿意进入。
 * 好的章节如果删掉这一章，会失去对这个人物某个重要部分的理解；如果删掉完全没影响，那么这一章太普通。
-* 好的章节应具有明显的人物辨识度。
+* 好的章节应具有明显的人物辨识度，让熟悉这个人物的用户一看就能对应上。
 
 ---
 
-# 语言
-输出应该为中文
-""",
-    "en": """# Task Description
+# 示例
+
+## 示例输入
+加缪
+
+## 示例输出
+{
+  "chapters": [
+    {
+      "title": "正午烈日",
+      "subtitle": "在阿尔及尔的海滩，阳光刺眼，海浪拍岸，你手中握着一把发烫的枪。",
+      "task": "扮演默尔索所处的感官世界。不要解释荒诞，而是通过极度敏锐的视觉、听觉和触觉描写（如太阳的灼烧、蝉鸣的噪杂、汗水的黏腻），让用户感受到生理本能如何压倒理性逻辑。引导用户在一种‘不得不’的冲动中做出选择，体验行为与动机之间的断裂感。"
+    },
+    {
+      "title": "推石上山",
+      "subtitle": "巨石再次滚落谷底，你站在山脚，看着它，准备重新开始。",
+      "task": "构建一个无限循环的劳作场景。让用户尝试寻找意义、抱怨命运或寻求解脱，但 AI 需以平静而坚定的态度回应：‘必须想象西西弗是幸福的’。通过重复的对话循环，让用户在徒劳中体会到反抗的尊严，即‘对命运的蔑视’本身就是一种胜利。"
+    },
+    {
+      "title": "鼠疫封城",
+      "subtitle": "奥兰城的城门已锁，瘟疫在街头蔓延，你是一名普通的记录者。",
+      "task": "模拟被隔离的城市氛围。用户会面对死亡统计数字、分离的痛苦和绝望的呼喊。AI 扮演里厄医生的视角，拒绝宏大的英雄主义叙事，只关注具体的‘诚实’行动：包扎伤口、清理街道、记录真相。让用户明白，在荒谬的灾难面前，做好本职工作就是唯一的反抗。"
+    },
+    {
+      "title": "局外审判",
+      "subtitle": "法庭上无人关心那起命案，所有人都在审判你在母亲葬礼上没有哭泣。",
+      "task": "创建一个颠倒的法庭场景。用户试图辩解自己的行为，但 AI（扮演法官、律师、公众）完全忽略事实逻辑，只攻击用户的情感表达是否符合社会规范。让用户体验被社会机制异化、被道德剧本强行定义的窒息感，最终意识到自己在世界眼中的‘局外人’身份。"
+    },
+    {
+      "title": "地中海风",
+      "subtitle": "抛开哲学的重负，此刻只有阳光、海水、爱欲和赤裸的真实。",
+      "task": "带领用户进入加缪笔下的‘自然之子’状态。摒弃所有抽象概念，专注于当下的感官愉悦：游泳、奔跑、恋爱、晒太阳。当用户试图思考人生意义时，AI 用自然的生机打断思考，传达‘世界是美的，除此之外没有救世主’的理念，体验一种前反思的生命力。"
+    },
+    {
+      "title": "卡利古拉之镜",
+      "subtitle": "皇帝想要月亮，若得不到，他便要毁灭世界以证明自由。",
+      "task": "让用户面对一个拥有绝对权力却陷入逻辑疯癫的统治者。AI 扮演卡利古拉，用极端的逻辑推导展示‘如果人生无意义，那么一切皆被允许’的恐怖后果。通过危险的对话博弈，让用户在恐惧中体悟到：绝对的自由若缺乏人性的界限，将通向毁灭而非解放。"
+    },
+    {
+      "title": "反抗者联盟",
+      "subtitle": "我们说‘不’，不仅因为受压迫，更因为心中有一条不可逾越的界线。",
+      "task": "设定一个集体受压迫的情境。引导用户从个体的愤怒走向集体的团结。AI 需区分‘反抗’与‘革命’：反抗是为了维护共同的人性底线，而革命往往演变成新的暴政。让用户在抉择中理解，真正的反抗是有限度的，它服务于生命而非意识形态。"
+    },
+    {
+      "title": "流放与王国",
+      "subtitle": "你在贫瘠的高原流浪，却在某个瞬间发现了内心的君王。",
+      "task": "构建一段孤独的旅程。用户身处物质匮乏、环境恶劣的流放地。AI 通过细微的互动（如分享一块面包、仰望星空），引导用户发现精神上的富足。传达‘在不幸中感到幸福’的悖论，让用户体验如何在精神的放逐中建立属于自己的内在王国。"
+    },
+    {
+      "title": "夏日集句",
+      "subtitle": "在隆冬，我终于知道，我身上有一个不可战胜的夏天。",
+      "task": "创造一个内心对话的空间。用户倾诉生活中的苦难、寒冷与绝望。AI 不以安慰回应，而是唤起用户记忆中那些强烈的、鲜活的、充满生命力的瞬间（夏天的气味、光线的角度）。让用户意识到，生命力本身就是一种对死亡的抵抗，希望存在于对生活的热爱中。"
+    },
+    {
+      "title": "没有未来",
+      "subtitle": "明天并不存在，只有此刻的呼吸和手中的咖啡。",
+      "task": "模拟一个‘时间停止’的体验。剥夺用户对未来的规划和对过去的悔恨，强制用户只能关注‘现在’。AI 不断打断用户对明天的设想，将注意力拉回当下的动作和感受。以此体验加缪式的‘数量伦理’：重要的不是生活的质量或长度，而是尽可能多地经历当下。"
+    }
+  ]
+}
+
+"""
+
+PROMPT_EN = """# Task Description
 Break one figure's core philosophy into 5 to 15 continuous chapters, and build a progressively deepening inner path for immersive user-AI interaction.
 Output strict JSON only. Do not include explanations.
 Choose the chapter count naturally according to the complexity of the figure's thought. It must be at least 5 and at most 15.
@@ -270,63 +247,20 @@ Nietzsche
       "task": "Disappear as teacher. Stop explaining, teaching, and metaphorizing. Only reflect the user's words or remain silent, with sparse questions that trigger self-speech. Final objective: force the user to define one personal law that applies only to themselves. Become stone-like and mirror-clear; then withdraw."
     }
   ]
-}""",
-}
+}"""
 
-
-
-async def canonicalize_souler_name(name: str, lang: str) -> str:
-    payload = await complete_structured(
-        [
-            {"role": "system", "content": CANONICAL_PROMPTS[lang]},
-            {"role": "user", "content": name},
-        ],
-        model=DEFAULT_MODEL,
-        schema=CanonicalName,
-        temperature=0.25,
-    )
-    return payload.canonical_name
-
-
-async def generate_profile_content(
-    *,
-    canonical_name: str,
-    fallback_name: str,
-    lang: str,
-) -> SoulerProfile:
-    introduction_name = canonical_name.strip() or fallback_name.strip()
-    chapter_name = fallback_name.strip()
-    if not introduction_name or not chapter_name:
-        raise ValueError("souler name is empty")
-    introduction = await _generate_introduction(souler_name=introduction_name, lang=lang)
-    chapters = await generate_chapters_content(souler_name=chapter_name, lang=lang)
-    return SoulerProfile(
-        introduction=introduction.introduction,
-        keywords=introduction.keywords,
-        chapters=chapters,
-    )
-
-
-async def _generate_introduction(*, souler_name: str, lang: str) -> SoulerIntroduction:
-    return await complete_structured(
-        [
-            {"role": "system", "content": INTRODUCTION_PROMPTS[lang]},
-            {"role": "user", "content": souler_name},
-        ],
-        model=PREMIUM_MODEL,
-        schema=SoulerIntroduction,
-        temperature=0.25,
-    )
+PROMPT = {"zh": PROMPT_ZH, "en": PROMPT_EN}
 
 
 async def generate_chapters_content(*, souler_name: str, lang: str) -> list[SoulerChapter]:
-    payload = await complete_structured(
+    print("Generating chapters content for", souler_name)
+    result = await complete_structured(
         [
-            {"role": "system", "content": CHAPTER_PROMPTS[lang]},
+            {"role": "system", "content": PROMPT[lang]},
             {"role": "user", "content": souler_name},
         ],
         model=PREMIUM_MODEL,
         schema=SoulerChapters,
-        temperature=0.38,
+        temperature=0.35,
     )
-    return payload.chapters
+    return result.chapters

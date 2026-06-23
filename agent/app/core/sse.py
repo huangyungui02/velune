@@ -12,12 +12,12 @@ SSE_HEADERS = {
 }
 
 
-def sse_event(payload: dict[str, Any]) -> str:
-    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+def sse_event(event_data: dict[str, Any]) -> str:
+    return f"data: {json.dumps(event_data, ensure_ascii=False)}\n\n"
 
 
-async def emit_once(payload: dict[str, Any]):
-    yield sse_event(payload)
+async def emit_once(event_data: dict[str, Any]):
+    yield sse_event(event_data)
 
 
 def sse_response(events) -> StreamingResponse:

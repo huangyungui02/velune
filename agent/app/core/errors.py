@@ -7,7 +7,7 @@ __all__ = [
     "UnauthorizedError",
     "safe_json_stringify",
     "error_message",
-    "error_log_payload",
+    "error_log_data",
 ]
 
 
@@ -44,7 +44,7 @@ def error_message(error: Any) -> str:
     return "Unknown error"
 
 
-def error_log_payload(error: Any) -> Any:
+def error_log_data(error: Any) -> Any:
     if isinstance(error, Exception):
         return {
             "name": error.__class__.__name__,

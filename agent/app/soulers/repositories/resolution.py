@@ -6,7 +6,7 @@ from app.db.session import database_manager, execute, execute_fetch_one, fetch_o
 
 
 def normalize_name_key(name: str) -> str:
-    return " ".join(name.strip().lower().split())
+    return " ".join(name.lower().split())
 
 
 async def find_souler_by_alias(alias: str, _lang: str | None = None) -> dict[str, Any] | None:
@@ -15,7 +15,7 @@ async def find_souler_by_alias(alias: str, _lang: str | None = None) -> dict[str
         SELECT s.id, s.wiki_id
         FROM public.souler_aliases a
         INNER JOIN public.soulers s ON s.id = a.souler_id
-        WHERE lower(trim(a.alias)) = %(alias_key)s
+        WHERE lower(a.alias) = %(alias_key)s
         LIMIT 1
         """,
         {"alias_key": normalize_name_key(alias)},
@@ -30,7 +30,7 @@ async def find_souler_by_wiki_id(wiki_id: str) -> dict[str, Any] | None:
         WHERE wiki_id = %(wiki_id)s
         LIMIT 1
         """,
-        {"wiki_id": wiki_id.strip().upper()},
+        {"wiki_id": wiki_id},
     )
 
 
@@ -43,8 +43,7 @@ async def get_souler_lang_content_state(souler_id: str, lang: str) -> dict[str, 
                 FROM public.souler_profile p
                 WHERE p.souler_id = CAST(%(souler_id)s AS uuid)
                     AND p.lang = %(lang)s
-                    AND NULLIF(trim(COALESCE(p.name, '')), '') IS NOT NULL
-                    AND NULLIF(trim(COALESCE(p.introduction, '')), '') IS NOT NULL
+                    AND p.introduction IS NOT NULL
             ) AS has_profile,
             EXISTS (
                 SELECT 1
@@ -64,7 +63,6 @@ def is_souler_lang_content_complete(state: dict[str, Any]) -> bool:
 
 
 async def upsert_resolution_request(name: str, lang: str) -> dict[str, Any]:
-    cleaned = name.strip()
     return await execute_fetch_one(
         """
         INSERT INTO public.souler_resolution_requests (requested_name, lang)
@@ -85,7 +83,7 @@ async def upsert_resolution_request(name: str, lang: str) -> dict[str, Any]:
             END
         RETURNING id, requested_name, lang, status, task_id, souler_id, canonical_name, wiki_id, error
         """,
-        {"name": cleaned, "lang": lang},
+        {"name": name, "lang": lang},
     ) or {}
 
 
@@ -166,13 +164,12 @@ async def complete_souler_resolution_transactionally(
     aliases: list[str | None],
     canonical_name: str | None,
 ) -> dict[str, Any]:
-    cleaned_wiki_id = wiki_id.strip().upper() if wiki_id else None
     async with database_manager.get_pool().connection() as connection:
         async with connection.transaction():
             async with connection.cursor() as cursor:
                 resolved_souler_id = souler_id
                 if resolved_souler_id is None:
-                    souler = await _insert_souler(cursor, cleaned_wiki_id)
+                    souler = await _insert_souler(cursor, wiki_id)
                     resolved_souler_id = str(souler["id"])
 
                 state = await _get_souler_lang_content_state(cursor, resolved_souler_id, lang)
@@ -203,10 +200,10 @@ async def complete_souler_resolution_transactionally(
                     request_id=request_id,
                     souler_id=resolved_souler_id,
                     canonical_name=canonical_name,
-                    wiki_id=cleaned_wiki_id,
+                    wiki_id=wiki_id,
                 )
 
-                return {"id": resolved_souler_id, "wiki_id": cleaned_wiki_id}
+                return {"id": resolved_souler_id, "wiki_id": wiki_id}
 
 
 async def _insert_souler(cursor: Any, wiki_id: str | None) -> dict[str, Any]:
@@ -250,8 +247,7 @@ async def _get_souler_lang_content_state(cursor: Any, souler_id: str, lang: str)
                 FROM public.souler_profile p
                 WHERE p.souler_id = CAST(%(souler_id)s AS uuid)
                     AND p.lang = %(lang)s
-                    AND NULLIF(trim(COALESCE(p.name, '')), '') IS NOT NULL
-                    AND NULLIF(trim(COALESCE(p.introduction, '')), '') IS NOT NULL
+                    AND p.introduction IS NOT NULL
             ) AS has_profile,
             EXISTS (
                 SELECT 1
@@ -285,11 +281,7 @@ async def _upsert_profile(
             %(introduction)s
         )
         ON CONFLICT (souler_id, lang) DO UPDATE SET
-            name = COALESCE(NULLIF(trim(souler_profile.name), ''), EXCLUDED.name),
-            introduction = COALESCE(
-                NULLIF(trim(souler_profile.introduction), ''),
-                EXCLUDED.introduction
-            )
+            introduction = COALESCE(souler_profile.introduction, EXCLUDED.introduction)
         """,
         {
             "souler_id": souler_id,
@@ -322,10 +314,10 @@ async def _insert_keywords(
         keyword = await cursor.fetchone()
         if not keyword:
             raise RuntimeError(f"Failed to upsert keyword: {item['word']}")
-        keyword_ids[str(keyword["word"]).strip().lower()] = str(keyword["id"])
+        keyword_ids[str(keyword["word"]).lower()] = str(keyword["id"])
 
     for item in keywords:
-        keyword_id = keyword_ids.get(str(item["word"]).strip().lower())
+        keyword_id = keyword_ids.get(str(item["word"]).lower())
         if not keyword_id:
             raise RuntimeError(f"Missing keyword id for word: {item['word']}")
         await cursor.execute(
@@ -380,9 +372,7 @@ async def _insert_chapters(
 
 
 async def _insert_souler_aliases(cursor: Any, souler_id: str, aliases: list[str | None]) -> None:
-    for alias in dict.fromkeys((item or "").strip() for item in aliases):
-        if not alias:
-            continue
+    for alias in dict.fromkeys(item for item in aliases if item):
         await cursor.execute(
             """
             INSERT INTO public.souler_aliases (souler_id, alias)

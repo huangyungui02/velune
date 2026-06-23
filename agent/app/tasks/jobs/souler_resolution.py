@@ -13,7 +13,8 @@ from app.soulers.repositories.resolution import (
     is_souler_lang_content_complete,
     mark_resolution_processing,
 )
-from app.soulers.services.profile_generation import canonicalize_souler_name, generate_profile_content
+from app.soulers.services.ai.canonical_name import canonicalize_souler_name
+from app.soulers.services.ai.profile import generate_profile_content
 from app.soulers.services.wikipedia import search_wiki_id
 from app.tasks.broker import broker
 
@@ -27,8 +28,8 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
     if request is None:
         return {"status": "missing", "requestId": request_id}
 
-    name = str(request["requested_name"]).strip()
-    lang = _normalize_lang(str(request["lang"]))
+    name = str(request["requested_name"])
+    lang = str(request["lang"])
     try:
         by_name = await find_souler_by_alias(name)
         if by_name is not None:
@@ -74,7 +75,11 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
                     )
                     return {"status": "complete", "soulerId": souler_id}
 
-                profile = await _generate_current_lang_profile(name, lang)
+                profile = await _generate_profile(
+                    name=name,
+                    canonical_name=canonical_name,
+                    lang=lang,
+                )
                 souler = await complete_souler_resolution_transactionally(
                     request_id=request_id,
                     souler_id=souler_id,
@@ -86,7 +91,11 @@ async def resolve_souler_request(request_id: str) -> dict[str, str]:
                 )
                 return {"status": "complete", "soulerId": str(souler["id"])}
 
-        profile = await _generate_current_lang_profile(name, lang)
+        profile = await _generate_profile(
+            name=name,
+            canonical_name=canonical_name,
+            lang=lang,
+        )
         souler = await complete_souler_resolution_transactionally(
             request_id=request_id,
             souler_id=None,
@@ -111,18 +120,14 @@ async def _ensure_database() -> None:
         await database_manager.open()
 
 
-def _normalize_lang(lang: str) -> str:
-    return "zh" if lang.strip().lower().startswith("zh") else "en"
-
-
-async def _generate_current_lang_profile(profile_name: str, lang: str) -> dict[str, object]:
+async def _generate_profile(*, name: str, canonical_name: str, lang: str) -> dict[str, object]:
     profile = await generate_profile_content(
-        canonical_name=profile_name,
-        fallback_name=profile_name,
+        name=name,
+        canonical_name=canonical_name,
         lang=lang,
     )
     return {
-        "name": profile_name,
+        "name": name,
         "introduction": profile.introduction,
         "keywords": [keyword.model_dump() for keyword in profile.keywords],
         "chapters": [chapter.model_dump() for chapter in profile.chapters],

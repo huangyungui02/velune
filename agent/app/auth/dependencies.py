@@ -5,7 +5,7 @@ import logging
 from fastapi import HTTPException, Request
 from pydantic import ValidationError
 
-from app.core.errors import UnauthorizedError, error_log_payload, error_message
+from app.core.errors import UnauthorizedError, error_log_data, error_message
 from app.auth.repository import get_user_id_from_auth_header
 from app.core.common import Lang, validate_lang
 
@@ -25,5 +25,5 @@ async def require_user_id(request: Request) -> str:
     except UnauthorizedError as error:
         raise HTTPException(status_code=401, detail="Unauthorized") from error
     except Exception as error:  # noqa: BLE001
-        logger.error("Failed to validate auth: %s", error_log_payload(error))
+        logger.error("Failed to validate auth: %s", error_log_data(error))
         raise HTTPException(status_code=400, detail=error_message(error)) from error
