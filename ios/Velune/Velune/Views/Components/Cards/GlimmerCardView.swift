@@ -17,62 +17,42 @@ struct GlimmerCardView: View {
             if content.isEmpty && isGenerating {
                 generatingRow
             } else {
-                letterContent
+                diaryContent
             }
         }
-        .padding(.horizontal, 22)
+        .padding(.horizontal, 24)
         .padding(.vertical, 28)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            .ultraThinMaterial.opacity(0.22),
-            in: .rect(cornerRadius: 24, style: .continuous)
+            .ultraThinMaterial.opacity(0.12),
+            in: .rect(cornerRadius: 16, style: .continuous)
         )
-        .background {
-            RadialGradient(
-                colors: [Color.white.opacity(0.04), .clear],
-                center: .topLeading,
-                startRadius: 0,
-                endRadius: 300
-            )
-            .clipShape(.rect(cornerRadius: 24, style: .continuous))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [.white.opacity(0.04), .white.opacity(0.005)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 0.5
-                )
-        }
-        .shadow(color: .black.opacity(0.24), radius: 24, x: 0, y: 12)
         .animation(.easeOut(duration: 0.16), value: content)
     }
 
-    private var letterContent: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("“")
-                .font(.system(size: 88, weight: .light, design: .serif))
-                .foregroundStyle(Color.white.opacity(0.06))
-                .frame(height: 24)
-                .offset(x: -8, y: 16)
-
+    private var diaryContent: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 8) {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 14, weight: .light))
+                    .foregroundStyle(UITheme.secondaryText)
+                
+                Text(String(localized: "starsea.settlement.diaryTitle"))
+                    .font(.system(size: 14, weight: .light, design: .serif))
+                    .foregroundStyle(UITheme.secondaryText)
+                    .tracking(1.5)
+                
+                Spacer()
+            }
+            
+            Rectangle()
+                .fill(Color.white.opacity(0.08))
+                .frame(height: 0.5)
+            
             GlimmerCardText(content)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
-
-            HStack {
-                Spacer()
-                Text("”")
-                    .font(.system(size: 88, weight: .light, design: .serif))
-                    .foregroundStyle(Color.white.opacity(0.06))
-                    .frame(height: 24)
-                    .offset(x: 8, y: -16)
-            }
+                .padding(.top, 4)
         }
     }
 

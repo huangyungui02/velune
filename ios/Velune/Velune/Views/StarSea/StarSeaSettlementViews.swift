@@ -40,19 +40,27 @@ struct ImmersiveSettlementView: View {
         ZStack {
             StarryBackgroundView().ignoresSafeArea()
 
-            VStack {
-                Spacer()
+            VStack(spacing: 0) {
+                GeometryReader { geometry in
+                    ScrollView {
+                        VStack {
+                            Spacer()
 
-                // Original GlimmerCardView for seamless UI consistency
-                GlimmerCardView(
-                    content: text,
-                    isGenerating: isGenerating
-                )
-                .padding(.horizontal, 20)
-                .scaleEffect(cardScale)
-                .opacity(cardOpacity)
+                            // Original GlimmerCardView (now styled as a diary) for seamless UI consistency
+                            GlimmerCardView(
+                                content: text,
+                                isGenerating: isGenerating
+                            )
+                            .scaleEffect(cardScale)
+                            .opacity(cardOpacity)
 
-                Spacer()
+                            Spacer()
+                        }
+                        .frame(minHeight: geometry.size.height)
+                        .padding(.horizontal, 20)
+                    }
+                    .scrollIndicators(.hidden)
+                }
 
                 // "静候安澜" Button
                 if isReady {

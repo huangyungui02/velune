@@ -90,6 +90,7 @@
 "starsea.leave.settleFailed" = "心澜未能如期凝聚，请稍后再试。";
 "starsea.settlement.title" = "心澜";
 "starsea.settlement.glimmerTitle" = "心澜";
+"starsea.settlement.diaryTitle" = "心澜日记";
 "starsea.settlement.readyTitle" = "心澜已生成";
 "starsea.settlement.generating" = "心澜正在生成…";
 "starsea.settlement.edit" = "编辑";

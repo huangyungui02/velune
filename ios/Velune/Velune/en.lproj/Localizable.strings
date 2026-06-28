@@ -90,6 +90,7 @@
 "starsea.leave.settleFailed" = "The glimmer could not be gathered as expected. Please try again.";
 "starsea.settlement.title" = "Glimmer";
 "starsea.settlement.glimmerTitle" = "Glimmer";
+"starsea.settlement.diaryTitle" = "Glimmer Diary";
 "starsea.settlement.readyTitle" = "Glimmer generated";
 "starsea.settlement.generating" = "Generating glimmer…";
 "starsea.settlement.edit" = "Edit";
