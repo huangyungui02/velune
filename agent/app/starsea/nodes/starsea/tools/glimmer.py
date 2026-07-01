@@ -13,9 +13,6 @@ def create_get_glimmer_messages_tool(user_id: str, timezone_name: str):
     @tool("get_glimmer_messages")
     async def get_glimmer_messages_tool(glimmer_id: str) -> str:
         """查询某个 glimmer 对应的星海聊天 messages 详情。"""
-        if not user_id:
-            return json.dumps({"messages": [], "error": "Missing user_id"}, ensure_ascii=False)
-
         messages = await get_glimmer_messages(user_id, glimmer_id)
         return json.dumps(
             {

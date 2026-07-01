@@ -23,9 +23,9 @@ async def stream_graph(
     user_input: StarseaContent,
     *,
     lang: str,
-    metadata: dict[str, Any] | None = None,
+    metadata: dict[str, Any],
     thread_id: str,
-    user_id: str | None = None,
+    user_id: str,
     is_premium: bool = False,
 ) -> AsyncIterator[StarseaEvent]:
     initial_state = _initial_state(
@@ -44,9 +44,8 @@ async def stream_graph(
     graph = build_graph()
 
     try:
-        if user_id is not None:
-            snapshot = await graph.aget_state(config)
-            _ensure_thread_owner(snapshot.values, user_id)
+        snapshot = await graph.aget_state(config)
+        _ensure_thread_owner(snapshot.values, user_id)
 
         async for chunk in graph.astream(
             initial_state,
@@ -79,19 +78,18 @@ async def stream_graph(
 
 def _initial_state(
     user_input: StarseaContent,
-    metadata: dict[str, Any] | None = None,
+    metadata: dict[str, Any],
     *,
-    user_id: str | None = None,
+    user_id: str,
     is_premium: bool = False,
     lang: str,
 ) -> State:
     runtime_metadata = {
-        **(metadata or {}),
+        **metadata,
         "lang": lang,
+        "user_id": user_id,
+        "model": model_for_premium(is_premium),
     }
-    if user_id is not None:
-        runtime_metadata["user_id"] = user_id
-    runtime_metadata["model"] = model_for_premium(is_premium)
 
     messages, archive_events = _initial_messages_and_archive_events(user_input)
 
@@ -139,7 +137,7 @@ def _text_archive_event(content: str) -> ArchiveEvent:
 def _graph_config(
     *,
     thread_id: str,
-    user_id: str | None,
+    user_id: str,
     content: StarseaContent,
     metadata: dict[str, Any],
 ) -> dict[str, Any]:
@@ -165,11 +163,10 @@ def _graph_config(
 
 def _ensure_thread_owner(values: dict[str, Any], user_id: str) -> None:
     metadata = values.get("metadata")
-    if not isinstance(metadata, dict):
+    if not metadata:
         return
 
-    owner_id = str(metadata.get("user_id") or "").strip()
-    if owner_id and owner_id != user_id:
+    if metadata["user_id"] != user_id:
         raise PermissionError("Starsea thread does not belong to the current user")
 
 

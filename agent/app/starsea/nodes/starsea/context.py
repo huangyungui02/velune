@@ -16,12 +16,8 @@ async def state_timezone(state: State) -> str:
 
 
 async def state_recent_glimmers(state: State) -> list[Glimmer]:
-    user_id = str(state.get("metadata", {}).get("user_id") or "").strip()
-    if not user_id:
-        return []
-
     try:
-        return await get_recent_glimmers(user_id, limit=5)
+        return await get_recent_glimmers(state["metadata"]["user_id"], limit=5)
     except Exception:  # noqa: BLE001
         return []
 

@@ -9,15 +9,13 @@ if TYPE_CHECKING:
 
 
 async def glimmer_node(state: State) -> dict[str, Any]:
-    user_id = str(state.get("metadata", {}).get("user_id") or "").strip()
+    user_id = state["metadata"]["user_id"]
     glimmer = state.get("glimmer") or {}
     content = str(glimmer.get("content") or "").strip()
     keywords = glimmer.get("keywords") or []
     blessing = str(glimmer.get("blessing") or "").strip()
     archive_events = _clean_archive_events(state.get("archive_events") or [])
 
-    if not user_id:
-        raise ValueError("Missing user_id for glimmer archive")
     if not content:
         raise ValueError("Glimmer content cannot be empty")
     if not archive_events:
