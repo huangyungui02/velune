@@ -12,17 +12,16 @@ from app.core.langfuse import langfuse_callbacks, langfuse_metadata
 from app.core.llm import model_for_premium
 from app.starsea.checkpoint import checkpoint_manager
 from app.starsea.graph import build_graph
-from app.starsea.schemas.starsea import DivinationEnvelope, StarseaContent, TextContent
+from app.starsea.schemas.starsea import DivinationEnvelope, StarseaContent, TextContent, TriggerContent
 from app.starsea.state import ArchiveEvent, State
 
 logger = logging.getLogger(__name__)
 
 
 async def stream_graph(
-    user_input: StarseaContent | None,
+    user_input: StarseaContent,
     metadata: dict[str, Any] | None = None,
     thread_id: str | None = None,
-    intent: str | None = None,
     user_id: str | None = None,
     is_premium: bool = False,
     lang: Lang = "zh",
@@ -31,7 +30,6 @@ async def stream_graph(
     initial_state = _initial_state(
         user_input,
         metadata,
-        intent,
         user_id=user_id,
         is_premium=is_premium,
         lang=lang,
@@ -39,6 +37,7 @@ async def stream_graph(
     config = _graph_config(
         thread_id=thread_id,
         user_id=user_id,
+        content=user_input,
         metadata=initial_state["metadata"],
     )
     graph = build_graph()
@@ -89,9 +88,8 @@ async def stream_graph(
 
 
 def _initial_state(
-    user_input: StarseaContent | None,
+    user_input: StarseaContent,
     metadata: dict[str, Any] | None = None,
-    intent: str | None = None,
     *,
     user_id: str | None = None,
     is_premium: bool = False,
@@ -105,13 +103,12 @@ def _initial_state(
     runtime_metadata["lang"] = validate_lang(str(runtime_metadata.get("lang") or normalized_lang))
     if user_id is not None:
         runtime_metadata["user_id"] = user_id
-    if intent is not None:
-        runtime_metadata["intent"] = intent
     runtime_metadata["model"] = model_for_premium(is_premium)
 
-    messages, archive_events = _initial_messages_and_archive_events(user_input, runtime_metadata)
+    messages, archive_events = _initial_messages_and_archive_events(user_input)
 
     initial_state: State = {
+        "content": user_input.model_dump(mode="json"),
         "messages": messages,
         "archive_events": archive_events,
         "glimmer": None,
@@ -122,24 +119,14 @@ def _initial_state(
 
 
 def _initial_messages_and_archive_events(
-    user_input: StarseaContent | None,
-    metadata: dict[str, Any],
+    user_input: StarseaContent,
 ) -> tuple[list[HumanMessage], list[ArchiveEvent]]:
-    if user_input is None:
-        return [], []
-
     if isinstance(user_input, TextContent):
         content = user_input.content
         return [HumanMessage(content=content)], [_text_archive_event(content)]
 
     if isinstance(user_input, DivinationEnvelope):
         divination = user_input.content
-        metadata["contentType"] = "divination"
-        metadata["divination"] = {
-            "casted_lines": divination.casted_lines,
-            "date": divination.date.isoformat(),
-            "question": divination.question,
-        }
         return [], [
             {
                 "type": "divination",
@@ -149,7 +136,8 @@ def _initial_messages_and_archive_events(
             _text_archive_event(divination.question),
         ]
 
-    return [], []
+    if isinstance(user_input, TriggerContent):
+        return [], []
 
 
 def _text_archive_event(content: str) -> ArchiveEvent:
@@ -159,10 +147,12 @@ def _text_archive_event(content: str) -> ArchiveEvent:
         "content": content,
     }
 
+
 def _graph_config(
     *,
     thread_id: str,
     user_id: str | None,
+    content: StarseaContent,
     metadata: dict[str, Any],
 ) -> dict[str, Any]:
     trace_metadata = langfuse_metadata(
@@ -170,12 +160,12 @@ def _graph_config(
         session_id=thread_id,
         metadata=metadata,
     )
-    intent = str(metadata.get("intent") or "chat")
+    run_type = content.content if isinstance(content, TriggerContent) else content.type
     config: dict[str, Any] = {
         "configurable": {"thread_id": thread_id},
         "metadata": trace_metadata,
-        "run_name": f"starsea.{intent}",
-        "tags": ["starsea", intent],
+        "run_name": f"starsea.{run_type}",
+        "tags": ["starsea", run_type],
     }
 
     callbacks = langfuse_callbacks()
@@ -227,10 +217,11 @@ def _ensure_thread_owner(values: dict[str, Any], user_id: str) -> None:
 
 
 def _should_delete_checkpoint(values: dict[str, Any]) -> bool:
-    metadata = values.get("metadata")
+    content = values.get("content")
     return (
-        isinstance(metadata, dict)
-        and metadata.get("intent") == "collect"
+        isinstance(content, dict)
+        and content.get("type") == "trigger"
+        and content.get("content") == "collect"
         and isinstance(values.get("glimmer"), dict)
     )
 

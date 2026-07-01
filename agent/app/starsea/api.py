@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from uuid import uuid4
 
 from fastapi import APIRouter, Depends
 
@@ -24,15 +23,13 @@ async def starsea(
     user_id: str = Depends(require_user_id),
 ):
     try:
-        thread_id = body.thread_id or str(uuid4())
         return sse_response(
             start_starsea_stream(
                 content=body.content,
                 metadata=body.runtime_metadata,
-                thread_id=thread_id,
+                thread_id=body.thread_id,
                 user_id=user_id,
                 is_premium=await is_user_premium(user_id),
-                intent=body.intent,
                 lang=normalized_lang,
             )
         )

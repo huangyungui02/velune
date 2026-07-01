@@ -22,6 +22,7 @@ class GlimmerState(TypedDict):
 
 
 class State(TypedDict):
+    content: dict[str, Any]
     messages: Annotated[list[AnyMessage], add_messages]
     archive_events: Annotated[list[ArchiveEvent], operator.add]
     glimmer: GlimmerState | None

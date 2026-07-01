@@ -11,10 +11,6 @@ enum StarSeaMemoryPreference {
 enum StarSeaStreamService {
     private static let domain = "StarSea"
 
-    enum Intent: String, Encodable {
-        case collect
-    }
-
     struct ResonanceMatch: Identifiable, Hashable, Decodable {
         var id: String { "\(name)-\(line)" }
         var name: String
@@ -64,6 +60,7 @@ enum StarSeaStreamService {
     enum Content: Encodable {
         case text(String)
         case divination(DivinationContent)
+        case triggerCollect
 
         struct DivinationContent: Encodable {
             var castedLines: [Int]
@@ -91,16 +88,33 @@ enum StarSeaStreamService {
             case let .divination(content):
                 try container.encode("divination", forKey: .type)
                 try container.encode(content, forKey: .content)
+            case .triggerCollect:
+                try container.encode("trigger", forKey: .type)
+                try container.encode("collect", forKey: .content)
             }
         }
     }
 
     private struct SendRequest: Encodable {
         var threadId: String?
-        var content: Content?
-        var intent: Intent?
+        var content: Content
+        var metadata: Metadata
+
+        enum CodingKeys: String, CodingKey {
+            case threadId = "thread_id"
+            case content
+            case metadata
+        }
+    }
+
+    private struct Metadata: Encodable {
         var timezone: String
         var memoryEnabled: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case timezone
+            case memoryEnabled = "memory_enabled"
+        }
     }
 
     private struct StreamEvent: Decodable {
@@ -117,15 +131,15 @@ enum StarSeaStreamService {
 
     static func stream(
         threadId: String?,
-        content: Content?,
-        intent: Intent? = nil
+        content: Content
     ) -> AsyncThrowingStream<Event, Error> {
         let request = SendRequest(
             threadId: threadId,
             content: content,
-            intent: intent,
-            timezone: UserStatusClientMetadata.current().timezone,
-            memoryEnabled: StarSeaMemoryPreference.isEnabled
+            metadata: Metadata(
+                timezone: UserStatusClientMetadata.current().timezone,
+                memoryEnabled: StarSeaMemoryPreference.isEnabled
+            )
         )
         let payloadDataStream = APISSEClient.stream(
             path: "v1/\(AppLanguage.current.apiLanguageCode)/starsea",

@@ -60,15 +60,15 @@ def _archive_events(content: Any) -> list[dict[str, Any]]:
     ]
 
 def _user_prompt(state: State) -> str:
-    metadata = state.get("metadata", {})
-    divination = metadata.get("divination")
-    if not isinstance(divination, dict):
-        raise ValueError("divination metadata is required")
+    content = state["content"]
+    if content["type"] != "divination":
+        raise ValueError("divination content is required")
+    divination = content["content"]
 
     return build_divination_user_prompt(
         divination=divination,
-        timezone=metadata.get("timezone") if isinstance(metadata.get("timezone"), str) else None,
-        lang=str(metadata.get("lang") or "zh"),
+        timezone=state["metadata"]["timezone"],
+        lang=state["metadata"]["lang"],
     )
 
 

@@ -3,32 +3,16 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from zoneinfo import ZoneInfo
 
 from app.starsea.repositories.glimmers import Glimmer, GlimmerMessage, get_recent_glimmers
-from app.starsea.repositories.user_status import get_user_timezone
 
 if TYPE_CHECKING:
     from app.starsea.state import State
 
 
 async def state_timezone(state: State) -> str:
-    metadata = state.get("metadata", {})
-    timezone_name = _metadata_timezone(metadata)
-    if timezone_name:
-        return timezone_name
-
-    user_id = str(metadata.get("user_id") or "").strip()
-    if user_id:
-        try:
-            stored_timezone = await get_user_timezone(user_id)
-        except Exception:  # noqa: BLE001
-            stored_timezone = None
-        timezone_name = _valid_timezone(stored_timezone)
-        if timezone_name:
-            return timezone_name
-
-    return "UTC"
+    return state["metadata"]["timezone"]
 
 
 async def state_recent_glimmers(state: State) -> list[Glimmer]:
@@ -43,7 +27,7 @@ async def state_recent_glimmers(state: State) -> list[Glimmer]:
 
 
 def state_memory_enabled(state: State) -> bool:
-    return state.get("metadata", {}).get("memoryEnabled") is True
+    return state["metadata"]["memory_enabled"] is True
 
 
 def current_time_context(timezone_name: str) -> str:
@@ -92,26 +76,6 @@ def format_glimmer_messages(
 def format_local_datetime(value: datetime, timezone_name: str) -> str:
     local_value = value.astimezone(ZoneInfo(timezone_name))
     return f"{local_value.isoformat()} ({timezone_name})"
-
-
-def _metadata_timezone(metadata: dict[str, Any]) -> str | None:
-    for key in ("timezone", "timeZone", "tz"):
-        timezone_name = _valid_timezone(metadata.get(key))
-        if timezone_name:
-            return timezone_name
-    return None
-
-
-def _valid_timezone(value: Any) -> str | None:
-    timezone_name = str(value or "").strip()
-    if not timezone_name or timezone_name.lower() == "unknown":
-        return None
-
-    try:
-        ZoneInfo(timezone_name)
-    except ZoneInfoNotFoundError:
-        return None
-    return timezone_name
 
 
 def _parse_datetime(value: str) -> datetime:

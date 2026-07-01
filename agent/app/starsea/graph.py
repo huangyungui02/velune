@@ -40,9 +40,9 @@ def reset_graph() -> None:
 
 
 def _route(state: State) -> RouterAction:
-    metadata = state.get("metadata", {})
-    if metadata.get("intent") == "collect":
+    content = state["content"]
+    if content["type"] == "trigger" and content["content"] == "collect":
         return "collect"
-    if metadata.get("contentType") == "divination":
+    if content["type"] == "divination":
         return "divination"
     return "starsea"

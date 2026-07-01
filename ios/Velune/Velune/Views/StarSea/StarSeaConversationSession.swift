@@ -86,8 +86,7 @@ final class StarSeaConversationSession {
         do {
             for try await event in StarSeaStreamService.stream(
                 threadId: threadId,
-                content: nil,
-                intent: .collect
+                content: .triggerCollect
             ) {
                 handleSettlementEvent(event)
             }

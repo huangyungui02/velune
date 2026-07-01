@@ -77,9 +77,8 @@ def _is_langfuse_configured() -> bool:
 
 def _safe_trace_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     allowed_keys = {
-        "intent",
         "lang",
-        "memoryEnabled",
+        "memory_enabled",
         "model",
         "timezone",
     }

@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator
 from typing import Any
+from uuid import uuid4
 
 from pydantic import ValidationError
 
@@ -32,20 +33,23 @@ logger = logging.getLogger(__name__)
 
 async def start_starsea_stream(
     *,
-    content: StarseaContent | None,
+    content: StarseaContent,
     metadata: dict[str, Any],
-    thread_id: str,
+    thread_id: str | None,
     user_id: str,
     is_premium: bool,
-    intent: str | None,
     lang: Lang,
 ) -> AsyncIterator[str]:
+    if content.type == "trigger" and content.content == "collect" and thread_id is None:
+        yield sse_event(ErrorEvent(message="thread_id is required when trigger is collect").model_dump())
+        return
+
+    thread_id = thread_id or str(uuid4())
     yield sse_event(ReadyEvent(thread_id=thread_id).model_dump(by_alias=True))
     async for event in stream_graph(
         content,
         metadata=metadata,
         thread_id=thread_id,
-        intent=intent,
         user_id=user_id,
         is_premium=is_premium,
         lang=lang,
