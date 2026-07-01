@@ -113,11 +113,11 @@ struct GlimmerConversationHistoryView: View {
         return items.compactMap { item in
             guard let object = item.objectValue else { return nil }
             let name = object["name"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            let line = object["line"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            guard !name.isEmpty, !line.isEmpty else { return nil }
+            let whisper = object["whisper"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !name.isEmpty, !whisper.isEmpty else { return nil }
             return StarSeaStreamService.ResonanceMatch(
                 name: name,
-                line: line,
+                whisper: whisper,
                 soulerId: uuidValue(for: ["soulerId", "souler_id"], in: object),
                 resolutionRequestId: uuidValue(
                     for: ["resolutionRequestId", "resolution_request_id"],

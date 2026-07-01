@@ -12,9 +12,9 @@ enum StarSeaStreamService {
     private static let domain = "StarSea"
 
     struct ResonanceMatch: Identifiable, Hashable, Decodable {
-        var id: String { "\(name)-\(line)" }
+        var id: String { "\(name)-\(whisper)" }
         var name: String
-        var line: String
+        var whisper: String
         var soulerId: UUID?
         var resolutionRequestId: UUID?
         var resolutionStatus: String?

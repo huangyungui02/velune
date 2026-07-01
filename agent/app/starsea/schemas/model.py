@@ -29,7 +29,7 @@ class ResonanceMatch(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     name: str
-    line: str
+    whisper: str
     resolution_status: str = Field(alias="resolutionStatus")
     souler_id: str | None = Field(default=None, alias="soulerId")
     resolution_request_id: str | None = Field(default=None, alias="resolutionRequestId")

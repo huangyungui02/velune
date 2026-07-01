@@ -30,22 +30,84 @@ STARSEA_TEMPERATURE = 0.5
 
 
 async def starsea_node(state: State) -> dict[str, Any]:
-    lang = state["metadata"]["lang"]
-    timezone_name = state["metadata"]["timezone"]
-    memory_enabled = state["metadata"]["memory_enabled"]
-    recent_glimmers = (
-        await get_recent_glimmers(state["metadata"]["user_id"], limit=5)
-        if memory_enabled
-        else []
+    metadata = state["metadata"]
+    lang = metadata["lang"]
+    tools = starsea_tools(state, memory_enabled=metadata["memory_enabled"])
+    chat_model = model_for_premium(metadata["is_premium"])
+    prompt_messages = [
+        SystemMessage(content=await _build_system_prompt(state)),
+        *state["messages"],
+    ]
+
+    first_reply = await _stream_ai_message(
+        create_chat_model(
+            model=chat_model,
+            temperature=STARSEA_TEMPERATURE,
+        ).bind_tools(tools),
+        prompt_messages,
     )
+    messages: list[Any] = [first_reply]
+    archives: list[ArchiveState] = []
+    if text := _visible_text(first_reply):
+        archives.append(
+            TextArchive(role="assistant", content=text).model_dump(mode="json")
+        )
+    last_reply = first_reply
+    resonance_matches: list[Any] = []
+
+    if first_reply.tool_calls:
+        tool_messages, resonance_matches = await run_starsea_tools(
+            first_reply,
+            tools,
+            lang=lang,
+        )
+        messages.extend(tool_messages)
+        _stream_resonance_matches(resonance_matches)
+        if resonance_matches:
+            archives.append(
+                ResonanceMatchArchive(content=resonance_matches).model_dump(
+                    mode="json",
+                    by_alias=True,
+                    exclude_none=True,
+                )
+            )
+
+        # The first reply decides which tools to call; this second reply turns
+        # their results into user-facing prose without exposing raw tool JSON.
+        final_reply = await _stream_ai_message(
+            create_chat_model(
+                model=chat_model,
+                temperature=STARSEA_TEMPERATURE,
+            ),
+            [*prompt_messages, first_reply, *tool_messages],
+        )
+        messages.append(final_reply)
+        if text := _visible_text(final_reply):
+            archives.append(
+                TextArchive(role="assistant", content=text).model_dump(mode="json")
+            )
+        last_reply = final_reply
+
+    _stream_conversation_options(last_reply.content)
+
+    return {
+        "messages": messages,
+        "archives": archives,
+    }
+
+
+async def _build_system_prompt(state: State) -> str:
+    metadata = state["metadata"]
+    timezone_name = metadata["timezone"]
     current_time = (
         datetime.now(timezone.utc)
         .astimezone(ZoneInfo(timezone_name))
         .isoformat()
     )
-    recent_glimmers_context = None
-    if memory_enabled:
-        recent_glimmers_context = "\n".join(
+    recent_glimmers = None
+
+    if metadata["memory_enabled"]:
+        recent_glimmers = "\n".join(
             json.dumps(
                 {
                     "id": glimmer["id"],
@@ -57,89 +119,18 @@ async def starsea_node(state: State) -> dict[str, Any]:
                 },
                 ensure_ascii=False,
             )
-            for glimmer in recent_glimmers
+            for glimmer in await get_recent_glimmers(metadata["user_id"], limit=5)
         )
 
-    tools = starsea_tools(state, memory_enabled=memory_enabled)
-    starsea_model = model_for_premium(state["metadata"]["is_premium"])
-    model = create_chat_model(
-        model=starsea_model,
-        temperature=STARSEA_TEMPERATURE,
-    ).bind_tools(tools)
-    reply_model = create_chat_model(
-        model=starsea_model,
-        temperature=STARSEA_TEMPERATURE,
+    return system_prompt(
+        metadata["lang"],
+        current_time=current_time,
+        recent_glimmers=recent_glimmers,
     )
-    messages = [
-        SystemMessage(
-            content=system_prompt(
-                lang,
-                current_time=current_time,
-                recent_glimmers=recent_glimmers_context,
-            )
-        ),
-        *state["messages"],
-    ]
-    response = await _stream_ai_message(model, messages)
-    returned_messages: list[Any] = [response]
-    final_response = response
-    resonance_matches: list[Any] = []
-
-    if isinstance(response, AIMessage) and response.tool_calls:
-        tool_messages, resonance_matches = await run_starsea_tools(
-            response,
-            state,
-            tools,
-            lang=lang,
-        )
-        returned_messages.extend(tool_messages)
-        _stream_resonance_matches(resonance_matches)
-        final_response = await _stream_ai_message(
-            reply_model,
-            [*messages, response, *tool_messages],
-        )
-        returned_messages.append(final_response)
-
-    _stream_conversation_options(final_response.content)
-
-    return {
-        "messages": returned_messages,
-        "archives": _archives(
-            response.content if resonance_matches else None,
-            resonance_matches,
-            final_response.content,
-        ),
-    }
 
 
-def _archives(
-    before_matches_content: str | None,
-    resonance_matches: list[Any],
-    after_matches_content: str,
-) -> list[ArchiveState]:
-    events: list[ArchiveState] = []
-    _append_visible_message(events, before_matches_content)
-
-    if resonance_matches:
-        events.append(
-            ResonanceMatchArchive(content=resonance_matches).model_dump(
-                mode="json",
-                by_alias=True,
-                exclude_none=True,
-            )
-        )
-
-    _append_visible_message(events, after_matches_content)
-
-    return events
-
-
-def _append_visible_message(events: list[ArchiveState], content: str | None) -> None:
-    visible_reply = strip_conversation_options_markup((content or "").strip())
-    if not visible_reply:
-        return
-
-    events.append(TextArchive(role="assistant", content=visible_reply).model_dump(mode="json"))
+def _visible_text(message: AIMessage) -> str:
+    return strip_conversation_options_markup(message.content.strip())
 
 
 async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
@@ -180,11 +171,11 @@ async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
     )
 
 
-def _stream_resonance_matches(previews: list[Any]) -> None:
-    if not previews:
+def _stream_resonance_matches(resonance_matches: list[Any]) -> None:
+    if not resonance_matches:
         return
 
-    content = ResonanceMatchContent(matches=previews)
+    content = ResonanceMatchContent(matches=resonance_matches)
     get_stream_writer()(ResonanceMatchEvent(content=content))
 
 

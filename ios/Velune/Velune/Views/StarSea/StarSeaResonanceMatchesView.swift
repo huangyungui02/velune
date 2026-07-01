@@ -62,7 +62,7 @@ private struct StarSeaResonanceMatchRow: View {
 
     private var rowContent: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(match.line)
+            Text(match.whisper)
                 .font(.system(size: 14, weight: .light, design: .serif))
                 .lineSpacing(6)
                 .tracking(0.5)
