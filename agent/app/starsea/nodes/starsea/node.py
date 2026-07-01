@@ -12,6 +12,7 @@ from app.core.conversation_options import (
     strip_conversation_options_markup,
 )
 from app.core.llm import DEFAULT_MODEL, create_chat_model
+from app.starsea.schemas.archive import ResonanceMatchArchive, TextArchive
 from app.starsea.schemas.events import DeltaEvent, OptionEvent, ResonanceMatchEvent
 from app.starsea.schemas.model import DeltaContent, OptionContent, ResonanceMatchContent
 
@@ -81,7 +82,7 @@ async def starsea_node(state: State) -> dict[str, Any]:
 
     return {
         "messages": returned_messages,
-        "archive_events": _archive_events(
+        "archives": _archives(
             response.content if resonance_matches else None,
             resonance_matches,
             final_response.content,
@@ -89,7 +90,7 @@ async def starsea_node(state: State) -> dict[str, Any]:
     }
 
 
-def _archive_events(
+def _archives(
     before_matches_content: Any,
     resonance_matches: list[Any],
     after_matches_content: Any,
@@ -99,11 +100,11 @@ def _archive_events(
 
     if resonance_matches:
         events.append(
-            {
-                "type": "resonance_match",
-                "role": "assistant",
-                "content": resonance_matches,
-            }
+            ResonanceMatchArchive(content=resonance_matches).model_dump(
+                mode="json",
+                by_alias=True,
+                exclude_none=True,
+            )
         )
 
     _append_visible_message(events, after_matches_content)
@@ -116,13 +117,7 @@ def _append_visible_message(events: list[dict[str, Any]], content: Any) -> None:
     if not visible_reply:
         return
 
-    events.append(
-        {
-            "type": "message",
-            "role": "assistant",
-            "content": visible_reply,
-        }
-    )
+    events.append(TextArchive(role="assistant", content=visible_reply).model_dump(mode="json"))
 
 
 async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:

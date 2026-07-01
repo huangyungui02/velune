@@ -12,6 +12,7 @@ from app.core.conversation_options import (
     strip_conversation_options_markup,
 )
 from app.core.llm import DIVINATION_MODEL, create_deepseek_chat_model
+from app.starsea.schemas.archive import TextArchive
 from app.starsea.schemas.events import DeltaEvent, OptionEvent
 from app.starsea.schemas.model import DeltaContent, OptionContent
 
@@ -44,22 +45,17 @@ async def divination_node(state: State) -> dict[str, Any]:
 
     return {
         "messages": [user_message, response],
-        "archive_events": _archive_events(response.content),
+        "archives": _archives(response.content),
     }
 
 
-def _archive_events(content: Any) -> list[dict[str, Any]]:
+def _archives(content: Any) -> list[dict[str, Any]]:
     visible_reply = strip_conversation_options_markup(_content_text(content).strip())
     if not visible_reply:
         return []
 
-    return [
-        {
-            "type": "message",
-            "role": "assistant",
-            "content": visible_reply,
-        }
-    ]
+    return [TextArchive(role="assistant", content=visible_reply).model_dump(mode="json")]
+
 
 def _user_prompt(state: State) -> str:
     user_input = state["user_input"]

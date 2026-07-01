@@ -43,14 +43,6 @@ class DivinationContent(BaseModel):
             raise ValueError("divination question cannot be empty")
         return content
 
-    @property
-    def archive_content(self) -> dict[str, Any]:
-        return {
-            "casted_lines": self.casted_lines,
-            "date": self.date.isoformat(),
-        }
-
-
 class DivinationEnvelope(BaseModel):
     type: Literal["divination"]
     content: DivinationContent

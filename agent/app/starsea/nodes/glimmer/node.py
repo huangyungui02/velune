@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from app.starsea.repositories.glimmers import create_glimmer_with_messages
 
@@ -14,14 +14,14 @@ async def glimmer_node(state: State) -> dict[str, Any]:
     content = str(glimmer.get("content") or "").strip()
     keywords = glimmer.get("keywords") or []
     blessing = str(glimmer.get("blessing") or "").strip()
-    archive_events = _clean_archive_events(state.get("archive_events") or [])
+    archives = state["archives"]
 
     if not content:
         raise ValueError("Glimmer content cannot be empty")
-    if not archive_events:
+    if not archives:
         raise ValueError("Glimmer archive messages cannot be empty")
 
-    await create_glimmer_with_messages(user_id, content, keywords, archive_events)
+    await create_glimmer_with_messages(user_id, content, keywords, archives)
 
     return {
         "glimmer": {
@@ -30,31 +30,3 @@ async def glimmer_node(state: State) -> dict[str, Any]:
             "blessing": blessing,
         },
     }
-
-
-def _clean_archive_events(events: list[Any]) -> list[dict[str, Any]]:
-    cleaned: list[dict[str, Any]] = []
-    for event in events:
-        if not isinstance(event, dict):
-            continue
-
-        event_type = str(event.get("type") or "").strip()
-        role = event.get("role")
-        content = event.get("content")
-        if role is not None:
-            role = str(role)
-        if isinstance(content, str):
-            content = str(content).strip() or None
-
-        if not event_type or content is None:
-            continue
-
-        cleaned.append(
-            {
-                "type": event_type,
-                "role": role,
-                "content": content,
-            }
-        )
-
-    return cleaned

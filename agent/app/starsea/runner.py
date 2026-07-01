@@ -11,10 +11,15 @@ from app.core.langfuse import langfuse_callbacks, langfuse_metadata
 from app.core.llm import model_for_premium
 from app.starsea.checkpoint import checkpoint_manager
 from app.starsea.graph import build_graph
+from app.starsea.schemas.archive import (
+    DivinationArchive,
+    DivinationArchiveContent,
+    TextArchive,
+)
 from app.starsea.schemas.events import DoneEvent, ErrorEvent, SettledEvent, StarseaEvent
 from app.starsea.schemas.model import DoneContent, ErrorContent, SettledContent
-from app.starsea.schemas.starsea import DivinationEnvelope, StarseaContent, TextContent, TriggerContent
-from app.starsea.state import ArchiveEvent, State
+from app.starsea.schemas.starsea import DivinationEnvelope, StarseaContent, TextContent
+from app.starsea.state import State
 
 logger = logging.getLogger(__name__)
 
@@ -90,47 +95,35 @@ def _initial_state(
         "model": model_for_premium(is_premium),
     }
 
-    messages, archive_events = _initial_messages_and_archive_events(user_input)
+    messages: list[HumanMessage] = []
+    archives: list[dict[str, Any]] = []
+
+    if isinstance(user_input, TextContent):
+        messages = [HumanMessage(content=user_input.content)]
+        archives = [
+            TextArchive(role="user", content=user_input.content).model_dump(mode="json")
+        ]
+    elif isinstance(user_input, DivinationEnvelope):
+        divination = user_input.content
+        archives = [
+            DivinationArchive(
+                content=DivinationArchiveContent(
+                    casted_lines=divination.casted_lines,
+                    date=divination.date.isoformat(),
+                )
+            ).model_dump(mode="json"),
+            TextArchive(role="user", content=divination.question).model_dump(mode="json"),
+        ]
 
     initial_state: State = {
         "user_input": user_input.model_dump(mode="json"),
         "messages": messages,
-        "archive_events": archive_events,
+        "archives": archives,
         "glimmer": None,
         "metadata": runtime_metadata,
     }
 
     return initial_state
-
-
-def _initial_messages_and_archive_events(
-    user_input: StarseaContent,
-) -> tuple[list[HumanMessage], list[ArchiveEvent]]:
-    if isinstance(user_input, TextContent):
-        content = user_input.content
-        return [HumanMessage(content=content)], [_text_archive_event(content)]
-
-    if isinstance(user_input, DivinationEnvelope):
-        divination = user_input.content
-        return [], [
-            {
-                "type": "divination",
-                "role": "user",
-                "content": divination.archive_content,
-            },
-            _text_archive_event(divination.question),
-        ]
-
-    if isinstance(user_input, TriggerContent):
-        return [], []
-
-
-def _text_archive_event(content: str) -> ArchiveEvent:
-    return {
-        "type": "text",
-        "role": "user",
-        "content": content,
-    }
 
 
 def _graph_config(
