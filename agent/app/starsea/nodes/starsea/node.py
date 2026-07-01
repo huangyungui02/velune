@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
+from zoneinfo import ZoneInfo
 
 from langchain_core.messages import AIMessage, AIMessageChunk, SystemMessage
 from langgraph.config import get_stream_writer
@@ -12,17 +15,11 @@ from app.core.conversation_options import (
     strip_conversation_options_markup,
 )
 from app.core.llm import create_chat_model, model_for_premium
+from app.starsea.repositories.glimmers import get_recent_glimmers
 from app.starsea.schemas.archive import ResonanceMatchArchive, TextArchive
 from app.starsea.schemas.events import DeltaEvent, OptionEvent, ResonanceMatchEvent
 from app.starsea.schemas.model import DeltaContent, OptionContent, ResonanceMatchContent
 
-from .context import (
-    current_time_context,
-    format_recent_glimmers,
-    state_memory_enabled,
-    state_recent_glimmers,
-    state_timezone,
-)
 from .prompt import system_prompt
 from .tools import run_starsea_tools, starsea_tools
 
@@ -34,9 +31,31 @@ STARSEA_TEMPERATURE = 0.5
 
 async def starsea_node(state: State) -> dict[str, Any]:
     lang = state["metadata"]["lang"]
-    timezone_name = await state_timezone(state)
-    memory_enabled = state_memory_enabled(state)
-    recent_glimmers = await state_recent_glimmers(state) if memory_enabled else []
+    timezone_name = state["metadata"]["timezone"]
+    memory_enabled = state["metadata"]["memory_enabled"]
+    recent_glimmers = (
+        await get_recent_glimmers(state["metadata"]["user_id"], limit=5)
+        if memory_enabled
+        else []
+    )
+    current_time = _format_local_datetime(datetime.now(timezone.utc), timezone_name)
+    recent_glimmers_context = None
+    if memory_enabled:
+        recent_glimmers_context = "\n".join(
+            json.dumps(
+                {
+                    "id": glimmer["id"],
+                    "content": glimmer["content"],
+                    "created_at": _format_local_datetime(
+                        _parse_datetime(glimmer["created_at"]),
+                        timezone_name,
+                    ),
+                },
+                ensure_ascii=False,
+            )
+            for glimmer in recent_glimmers
+        )
+
     tools = starsea_tools(state, timezone_name, memory_enabled=memory_enabled)
     starsea_model = model_for_premium(state["metadata"]["is_premium"])
     model = create_chat_model(
@@ -51,12 +70,8 @@ async def starsea_node(state: State) -> dict[str, Any]:
         SystemMessage(
             content=system_prompt(
                 lang,
-                current_time=current_time_context(timezone_name),
-                recent_glimmers=(
-                    format_recent_glimmers(recent_glimmers, timezone_name)
-                    if memory_enabled
-                    else None
-                ),
+                current_time=current_time,
+                recent_glimmers=recent_glimmers_context,
             )
         ),
         *state["messages"],
@@ -75,7 +90,10 @@ async def starsea_node(state: State) -> dict[str, Any]:
         )
         returned_messages.extend(tool_messages)
         _stream_resonance_matches(resonance_matches)
-        final_response = await _stream_ai_message(reply_model, [*messages, response, *tool_messages])
+        final_response = await _stream_ai_message(
+            reply_model,
+            [*messages, response, *tool_messages],
+        )
         returned_messages.append(final_response)
 
     _stream_conversation_options(final_response.content)
@@ -196,3 +214,16 @@ def _content_text(content: Any) -> str:
                 parts.append(text)
 
     return "".join(parts)
+
+
+def _format_local_datetime(value: datetime, timezone_name: str) -> str:
+    local_value = value.astimezone(ZoneInfo(timezone_name))
+    return f"{local_value.isoformat()} ({timezone_name})"
+
+
+def _parse_datetime(value: str) -> datetime:
+    normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
+    parsed = datetime.fromisoformat(normalized)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
