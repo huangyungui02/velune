@@ -113,9 +113,9 @@ async def starsea_node(state: State) -> dict[str, Any]:
 
 
 def _archives(
-    before_matches_content: Any,
+    before_matches_content: str | None,
     resonance_matches: list[Any],
-    after_matches_content: Any,
+    after_matches_content: str,
 ) -> list[ArchiveState]:
     events: list[ArchiveState] = []
     _append_visible_message(events, before_matches_content)
@@ -134,8 +134,8 @@ def _archives(
     return events
 
 
-def _append_visible_message(events: list[ArchiveState], content: Any) -> None:
-    visible_reply = strip_conversation_options_markup(str(content or "").strip())
+def _append_visible_message(events: list[ArchiveState], content: str | None) -> None:
+    visible_reply = strip_conversation_options_markup((content or "").strip())
     if not visible_reply:
         return
 
@@ -144,6 +144,7 @@ def _append_visible_message(events: list[ArchiveState], content: Any) -> None:
 
 async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
     final_chunk: AIMessageChunk | None = None
+    content_chunks: list[str] = []
     option_state = ConversationOptionStreamState(
         raw_chunks=[],
         output_chunks=[],
@@ -155,9 +156,13 @@ async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
             continue
 
         final_chunk = chunk if final_chunk is None else final_chunk + chunk
+        if not isinstance(chunk.content, str):
+            continue
+
+        content_chunks.append(chunk.content)
         visible_delta = consume_conversation_options_stream_delta(
             option_state,
-            _content_text(chunk.content),
+            chunk.content,
         )
         _stream_message_delta(visible_delta)
 
@@ -165,7 +170,7 @@ async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
         return AIMessage(content="")
 
     return AIMessage(
-        content=final_chunk.content,
+        content="".join(content_chunks),
         additional_kwargs=final_chunk.additional_kwargs,
         response_metadata=final_chunk.response_metadata,
         tool_calls=final_chunk.tool_calls,
@@ -183,9 +188,9 @@ def _stream_resonance_matches(previews: list[Any]) -> None:
     get_stream_writer()(ResonanceMatchEvent(content=content))
 
 
-def _stream_conversation_options(content: Any) -> None:
+def _stream_conversation_options(content: str) -> None:
     try:
-        _, options = parse_conversation_options_response(_content_text(content))
+        _, options = parse_conversation_options_response(content)
     except ValueError:
         return
 
@@ -199,25 +204,6 @@ def _stream_message_delta(delta: str) -> None:
 
     content = DeltaContent(delta=delta, display_type="starsea")
     get_stream_writer()(DeltaEvent(content=content))
-
-
-def _content_text(content: Any) -> str:
-    if isinstance(content, str):
-        return content
-
-    if not isinstance(content, list):
-        return ""
-
-    parts: list[str] = []
-    for item in content:
-        if isinstance(item, str):
-            parts.append(item)
-        elif isinstance(item, dict):
-            text = item.get("text")
-            if isinstance(text, str):
-                parts.append(text)
-
-    return "".join(parts)
 
 
 def _local_datetime_string(value: str, timezone_name: str) -> str:

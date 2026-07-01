@@ -49,8 +49,8 @@ async def divination_node(state: State) -> dict[str, Any]:
     }
 
 
-def _archives(content: Any) -> list[ArchiveState]:
-    visible_reply = strip_conversation_options_markup(_content_text(content).strip())
+def _archives(content: str) -> list[ArchiveState]:
+    visible_reply = strip_conversation_options_markup(content.strip())
     if not visible_reply:
         return []
 
@@ -87,13 +87,14 @@ async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
         if reasoning_delta:
             _stream_message_delta(reasoning_delta, display_type="thinking")
 
-        content_delta = _content_text(chunk.content)
-        if content_delta:
-            response_chunks.append(content_delta)
+        if not isinstance(chunk.content, str):
+            continue
+
+        response_chunks.append(chunk.content)
 
         visible_delta = consume_conversation_options_stream_delta(
             option_state,
-            content_delta,
+            chunk.content,
         )
         _stream_message_delta(visible_delta, display_type="starsea")
 
@@ -117,9 +118,9 @@ async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
     )
 
 
-def _stream_conversation_options(content: Any) -> None:
+def _stream_conversation_options(content: str) -> None:
     try:
-        _, options = parse_conversation_options_response(_content_text(content))
+        _, options = parse_conversation_options_response(content)
     except ValueError:
         return
 
@@ -154,24 +155,5 @@ def _reasoning_text(chunk: AIMessageChunk) -> str:
     response_metadata_reasoning = chunk.response_metadata.get("reasoning_content")
     if isinstance(response_metadata_reasoning, str):
         parts.append(response_metadata_reasoning)
-
-    return "".join(parts)
-
-
-def _content_text(content: Any) -> str:
-    if isinstance(content, str):
-        return content
-
-    if not isinstance(content, list):
-        return ""
-
-    parts: list[str] = []
-    for item in content:
-        if isinstance(item, str):
-            parts.append(item)
-        elif isinstance(item, dict):
-            text = item.get("text")
-            if isinstance(text, str):
-                parts.append(text)
 
     return "".join(parts)
