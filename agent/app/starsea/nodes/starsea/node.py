@@ -31,17 +31,17 @@ STARSEA_TEMPERATURE = 0.5
 
 
 async def starsea_node(state: State) -> dict[str, Any]:
-    lang = _state_lang(state)
+    lang = state["metadata"]["lang"]
     timezone_name = await state_timezone(state)
     memory_enabled = state_memory_enabled(state)
     recent_glimmers = await state_recent_glimmers(state) if memory_enabled else []
     tools = starsea_tools(state, timezone_name, memory_enabled=memory_enabled)
     model = create_chat_model(
-        model=_state_model(state),
+        model=STARSEA_MODEL,
         temperature=STARSEA_TEMPERATURE,
     ).bind_tools(tools)
     reply_model = create_chat_model(
-        model=_state_model(state),
+        model=STARSEA_MODEL,
         temperature=STARSEA_TEMPERATURE,
     )
     messages = [
@@ -121,15 +121,6 @@ def _append_visible_message(events: list[dict[str, Any]], content: Any) -> None:
             "content": visible_reply,
         }
     )
-
-
-def _state_lang(state: State) -> str:
-    return "zh" if state.get("metadata", {}).get("lang") == "zh" else "en"
-
-
-def _state_model(state: State) -> str:
-    model = str(state.get("metadata", {}).get("model") or "").strip()
-    return model or STARSEA_MODEL
 
 
 async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:

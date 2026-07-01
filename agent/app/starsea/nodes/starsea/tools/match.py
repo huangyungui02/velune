@@ -57,14 +57,13 @@ class ThoughtMatch(BaseModel):
 
 
 @tool("match_resonances")
-def match_resonances(context: str, lang: str = "zh") -> str:
+def match_resonances(context: str, lang: str) -> str:
     """寻找星海中能够与当前用户处境共鸣的历史人物。"""
-    normalized_lang = "zh" if lang == "zh" else "en"
     model = create_chat_model(model=MATCH_MODEL, temperature=MATCH_TEMPERATURE)
     structured_model = model.with_structured_output(ThoughtMatch, method="json_mode")
     match = structured_model.invoke(
         [
-            SystemMessage(content=apply_prompt_lang(MATCH_PROMPT, normalized_lang)),
+            SystemMessage(content=apply_prompt_lang(MATCH_PROMPT, lang)),
             HumanMessage(content=context),
         ]
     )

@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.auth.billing import is_user_premium
 from app.auth.dependencies import require_lang, require_user_id
 from app.core.errors import error_log_data, error_message
-from app.core.common import Lang
 from app.core.llm import model_for_premium
 from app.chat.schemas.chat import ChatRequest
 from app.chat.schemas.chapters import ChapterStartRequest
@@ -23,7 +22,7 @@ router = APIRouter()
 @router.post("/{lang}/chat")
 async def chat_route(
     body: ChatRequest,
-    normalized_lang: Lang = Depends(require_lang),
+    normalized_lang: str = Depends(require_lang),
     user_id: str = Depends(require_user_id),
 ):
     try:
@@ -45,7 +44,7 @@ async def start_chapter_session_route(
     souler_id: UUID,
     chapter_id: UUID,
     body: ChapterStartRequest | None = None,
-    normalized_lang: Lang = Depends(require_lang),
+    normalized_lang: str = Depends(require_lang),
     user_id: str = Depends(require_user_id),
 ):
     try:

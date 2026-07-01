@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.auth.dependencies import require_lang, require_user_id
-from app.core.common import Lang
 from app.soulers.services.resolution import get_resolution_status
 from app.soulers.services.resolution import resolve_or_enqueue_souler
 
@@ -20,7 +19,7 @@ class SoulerResolveRequest(BaseModel):
 @router.post("/{lang}/soulers/resolve")
 async def resolve_souler(
     request: SoulerResolveRequest,
-    normalized_lang: Lang = Depends(require_lang),
+    normalized_lang: str = Depends(require_lang),
     _user_id: str = Depends(require_user_id),
 ):
     return await resolve_or_enqueue_souler(request.name, normalized_lang)
@@ -29,7 +28,7 @@ async def resolve_souler(
 @router.get("/{lang}/soulers/resolutions/{request_id}")
 async def souler_resolution_status(
     request_id: UUID,
-    _normalized_lang: Lang = Depends(require_lang),
+    _normalized_lang: str = Depends(require_lang),
     _user_id: str = Depends(require_user_id),
 ):
     status = await get_resolution_status(str(request_id))

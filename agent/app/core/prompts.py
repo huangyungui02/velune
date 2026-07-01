@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from app.core.common import Lang, validate_lang
-
-LANGUAGE_NAMES: dict[Lang, str] = {
+LANGUAGE_NAMES: dict[str, str] = {
     "zh": "简体中文",
     "en": "English",
 }
@@ -15,8 +13,7 @@ LANGUAGE_PROMPT = """
 
 
 def apply_prompt_lang(prompt: str, lang: str) -> str:
-    normalized_lang = validate_lang(lang)
     language_prompt = LANGUAGE_PROMPT.format(
-        language_name=LANGUAGE_NAMES[normalized_lang]
+        language_name=LANGUAGE_NAMES[lang]
     ).strip()
     return f"{prompt.rstrip()}\n\n{language_prompt}"

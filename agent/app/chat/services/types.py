@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from app.core.common import Lang
 from app.core.entities import Session
 
 StageLogger = Callable[[str], None]
@@ -13,7 +12,7 @@ StageLogger = Callable[[str], None]
 class PreparedChat:
     user_id: str
     session: Session
-    lang: Lang
+    lang: str
     content: str
     model: str
     is_new_session: bool

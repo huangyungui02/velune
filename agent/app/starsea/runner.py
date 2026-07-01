@@ -7,7 +7,6 @@ from uuid import uuid4
 
 from langchain_core.messages import HumanMessage
 
-from app.core.common import Lang, validate_lang
 from app.core.langfuse import langfuse_callbacks, langfuse_metadata
 from app.core.llm import model_for_premium
 from app.starsea.checkpoint import checkpoint_manager
@@ -20,16 +19,17 @@ logger = logging.getLogger(__name__)
 
 async def stream_graph(
     user_input: StarseaContent,
+    *,
+    lang: str,
     metadata: dict[str, Any] | None = None,
     thread_id: str | None = None,
     user_id: str | None = None,
     is_premium: bool = False,
-    lang: Lang = "zh",
 ) -> AsyncIterator[dict[str, Any]]:
     thread_id = thread_id or str(uuid4())
     initial_state = _initial_state(
         user_input,
-        metadata,
+        metadata=metadata,
         user_id=user_id,
         is_premium=is_premium,
         lang=lang,
@@ -93,14 +93,12 @@ def _initial_state(
     *,
     user_id: str | None = None,
     is_premium: bool = False,
-    lang: Lang = "zh",
+    lang: str,
 ) -> State:
-    normalized_lang = validate_lang(lang)
     runtime_metadata = {
-        "lang": normalized_lang,
         **(metadata or {}),
+        "lang": lang,
     }
-    runtime_metadata["lang"] = validate_lang(str(runtime_metadata.get("lang") or normalized_lang))
     if user_id is not None:
         runtime_metadata["user_id"] = user_id
     runtime_metadata["model"] = model_for_premium(is_premium)

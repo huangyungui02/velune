@@ -9,7 +9,6 @@ from pydantic import ValidationError
 
 from app.core.errors import error_log_data, error_message
 from app.core.sse import sse_event
-from app.core.common import Lang
 from app.starsea.schemas.events import (
     ConversationOptionsData,
     ConversationOptionsEvent,
@@ -38,7 +37,7 @@ async def start_starsea_stream(
     thread_id: str | None,
     user_id: str,
     is_premium: bool,
-    lang: Lang,
+    lang: str,
 ) -> AsyncIterator[str]:
     if content.type == "trigger" and content.content == "collect" and thread_id is None:
         yield sse_event(ErrorEvent(message="thread_id is required when trigger is collect").model_dump())
@@ -48,28 +47,28 @@ async def start_starsea_stream(
     yield sse_event(ReadyEvent(thread_id=thread_id).model_dump(by_alias=True))
     async for event in stream_graph(
         content,
+        lang=lang,
         metadata=metadata,
         thread_id=thread_id,
         user_id=user_id,
         is_premium=is_premium,
-        lang=lang,
     ):
-        yield sse_event(await _starsea_event(event, lang))
+        yield sse_event(await _starsea_event(event))
 
 
 async def emit_starsea_error(message: str) -> AsyncIterator[str]:
     yield sse_event(ErrorEvent(message=message).model_dump())
 
 
-async def _starsea_event(event: dict[str, Any], lang: Lang) -> dict[str, Any]:
+async def _starsea_event(event: dict[str, Any]) -> dict[str, Any]:
     try:
-        return await _map_starsea_event(StarseaGraphEvent.model_validate(event), lang)
+        return await _map_starsea_event(StarseaGraphEvent.model_validate(event))
     except Exception as error:  # noqa: BLE001
         logger.error("Failed to map starsea stream event: %s", error_log_data(error))
         return ErrorEvent(message=error_message(error)).model_dump()
 
 
-async def _map_starsea_event(event: StarseaGraphEvent, lang: Lang) -> dict[str, Any]:
+async def _map_starsea_event(event: StarseaGraphEvent) -> dict[str, Any]:
     match event.event:
         case "message_delta":
             data = MessageDeltaData.model_validate(_dict_data(event.data))
@@ -78,7 +77,7 @@ async def _map_starsea_event(event: StarseaGraphEvent, lang: Lang) -> dict[str, 
                 exclude_none=True,
             )
         case "resonance_match":
-            starsea_event = StarseaMatchesEvent(matches=await _resonance_matches(event.data, lang))
+            starsea_event = StarseaMatchesEvent(matches=await _resonance_matches(event.data))
             return starsea_event.model_dump(by_alias=True, exclude_none=True)
         case "conversation_options":
             data = ConversationOptionsData.model_validate(_dict_data(event.data))
@@ -107,7 +106,7 @@ def _dict_data(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
-async def _resonance_matches(data: Any, _lang: Lang) -> list[ResonanceMatchEvent]:
+async def _resonance_matches(data: Any) -> list[ResonanceMatchEvent]:
     if not isinstance(data, list):
         return []
 

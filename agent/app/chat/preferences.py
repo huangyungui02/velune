@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Literal
 
-from app.core.common import Lang
-
 ReplyLength = Literal["standard", "concise"]
 DEFAULT_REPLY_LENGTH: ReplyLength = "standard"
 
@@ -14,13 +12,13 @@ def normalize_reply_length(value: object) -> ReplyLength:
 
 def apply_reply_length_prompt(
     system_prompt: str,
-    lang: Lang,
+    lang: str,
     reply_length: ReplyLength,
 ) -> str:
     if reply_length != "concise":
         return system_prompt
 
-    instruction: dict[Lang, str] = {
+    instruction: dict[str, str] = {
         "zh": (
             "回复长度偏好：用户选择了简洁。请保持回复简洁明了，"
             "优先回应核心内容，避免铺陈和重复，将AI生成内容控制在300字以内。"

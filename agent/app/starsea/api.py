@@ -8,7 +8,6 @@ from app.auth.billing import is_user_premium
 from app.auth.dependencies import require_lang, require_user_id
 from app.core.errors import error_log_data, error_message
 from app.core.sse import sse_response
-from app.core.common import Lang
 from app.starsea.schemas.starsea import StarseaRequest
 from app.starsea import emit_starsea_error, start_starsea_stream
 
@@ -19,7 +18,7 @@ router = APIRouter()
 @router.post("/{lang}/starsea")
 async def starsea(
     body: StarseaRequest,
-    normalized_lang: Lang = Depends(require_lang),
+    normalized_lang: str = Depends(require_lang),
     user_id: str = Depends(require_user_id),
 ):
     try:

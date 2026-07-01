@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 
 from app.core.config import get_settings
-from app.core.common import Lang
 from app.core.llm import DEFAULT_MODEL, complete_text
 
 from app.chat.repositories.messages import insert_message
@@ -55,7 +54,7 @@ async def save_response(
 async def _generate_session_title(
     user_content: str,
     reply_content: str,
-    lang: Lang,
+    lang: str,
     *,
     model: str = DEFAULT_MODEL,
 ) -> str:
@@ -74,7 +73,7 @@ async def _generate_session_title(
     return _sanitize_title(raw, lang)
 
 
-def _sanitize_title(raw: str, lang: Lang) -> str:
+def _sanitize_title(raw: str, lang: str) -> str:
     trimmed = raw.strip().strip('"\'`')
     if not trimmed:
         return "未命名会话" if lang == "zh" else "Untitled Session"

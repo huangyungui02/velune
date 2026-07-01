@@ -9,7 +9,6 @@ from app.auth.billing import is_user_premium
 from app.core.errors import error_log_data, error_message
 from app.core.llm import model_for_premium
 from app.core.sse import emit_once, sse_response
-from app.core.common import Lang
 from app.chat.preferences import ReplyLength
 from .prepare import prepare_chat
 from .stream import stream_events
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 async def create_chat_response(
     *,
-    lang: Lang,
+    lang: str,
     user_id: str,
     session_id: str,
     souler_id: str,

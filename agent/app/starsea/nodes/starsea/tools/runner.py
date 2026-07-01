@@ -21,7 +21,7 @@ def starsea_tools(
     *,
     memory_enabled: bool = False,
 ) -> list[Any]:
-    user_id = str(state.get("metadata", {}).get("user_id") or "").strip()
+    user_id = state["metadata"]["user_id"]
     tools = [match_resonances]
     if memory_enabled:
         tools.append(create_get_glimmer_messages_tool(user_id, timezone_name))
@@ -53,7 +53,7 @@ async def run_starsea_tools(
 
         args = dict(tool_call.get("args") or {})
         if selected_tool.name == match_resonances.name:
-            args["context"] = args.get("context") or args.pop("conversation", None) or context
+            args["context"] = context
             args["lang"] = lang
         try:
             tool_message = await selected_tool.ainvoke({**tool_call, "args": args})
@@ -113,7 +113,7 @@ def _prepare_match_tool_message(
     if tool_data is None:
         return tool_message, []
 
-    matches = tool_data.get("matches") or tool_data.get("voices") or []
+    matches = tool_data.get("matches") or []
     if not isinstance(matches, list):
         return tool_message, []
 
@@ -139,7 +139,6 @@ def _prepare_match_tool_message(
         **tool_data,
         "matches": stripped_matches,
     }
-    stripped_data.pop("voices", None)
 
     return (
         ToolMessage(

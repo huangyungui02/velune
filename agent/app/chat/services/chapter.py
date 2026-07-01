@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from app.core.common import Lang
 from app.core.config import get_settings
 from app.core.errors import error_log_data
 from app.core.llm import DEFAULT_MODEL, complete_text
@@ -31,7 +30,7 @@ async def start_chapter(
     user_id: str,
     souler_id: UUID,
     chapter_id: UUID,
-    lang: Lang,
+    lang: str,
     model: str = DEFAULT_MODEL,
     reply_length: ReplyLength = DEFAULT_REPLY_LENGTH,
 ) -> dict[str, object]:

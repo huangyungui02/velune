@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-from app.core.common import Lang
 from app.core.entities import Message, Session
 from app.chat.repositories.messages import get_recent_messages, insert_message
 from app.chat.preferences import ReplyLength, apply_reply_length_prompt
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 async def prepare_chat(
     *,
     user_id: str,
-    lang: Lang,
+    lang: str,
     model: str,
     session_id: str,
     souler_id: str,
@@ -70,7 +69,7 @@ def build_chat_history(
     session: Session,
     history: list[Message],
     content: str,
-    lang: Lang,
+    lang: str,
     reply_length: ReplyLength = "standard",
 ) -> list[dict[str, str]]:
     chapter = session.get("chapter")
