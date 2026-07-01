@@ -70,3 +70,6 @@ site/.vercel/
 # Reference
 *.png
 *.PNG
+
+# iOS
+.xcodebuildmcp
