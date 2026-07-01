@@ -60,13 +60,12 @@ async def stream_graph(
 
         snapshot = await graph.aget_state(config)
         result = snapshot.values
-        if _should_delete_checkpoint(result):
-            await _delete_checkpoint(thread_id)
 
-        glimmer = result.get("glimmer")
-        if isinstance(glimmer, dict):
+        user_input = result["user_input"]
+        if user_input["type"] == "trigger" and user_input["content"] == "collect":
+            await _delete_checkpoint(thread_id)
             yield SettledEvent(
-                content=SettledContent(thread_id=thread_id, glimmer=glimmer)
+                content=SettledContent(thread_id=thread_id, glimmer=result["glimmer"])
             )
         else:
             yield DoneEvent(content=DoneContent(thread_id=thread_id))
@@ -150,16 +149,6 @@ def _ensure_thread_owner(values: dict[str, Any], user_id: str) -> None:
 
     if metadata["user_id"] != user_id:
         raise PermissionError("Starsea thread does not belong to the current user")
-
-
-def _should_delete_checkpoint(values: dict[str, Any]) -> bool:
-    user_input = values.get("user_input")
-    return (
-        isinstance(user_input, dict)
-        and user_input.get("type") == "trigger"
-        and user_input.get("content") == "collect"
-        and isinstance(values.get("glimmer"), dict)
-    )
 
 
 async def _delete_checkpoint(thread_id: str) -> None:
