@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 SSE_HEADERS = {
     "Cache-Control": "no-cache, no-transform",
@@ -12,7 +13,9 @@ SSE_HEADERS = {
 }
 
 
-def sse_event(event_data: dict[str, Any]) -> str:
+def sse_event(event_data: BaseModel | dict[str, Any]) -> str:
+    if isinstance(event_data, BaseModel):
+        event_data = event_data.model_dump(mode="json", exclude_none=True)
     return f"data: {json.dumps(event_data, ensure_ascii=False)}\n\n"
 
 

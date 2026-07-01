@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, SystemMessage
+from langgraph.config import get_stream_writer
 
 from app.core.conversation_options import (
     ConversationOptionStreamState,
@@ -13,7 +14,6 @@ from app.core.conversation_options import (
 from app.core.llm import DIVINATION_MODEL, create_deepseek_chat_model
 from app.starsea.schemas.events import DeltaEvent, OptionEvent
 from app.starsea.schemas.model import DeltaContent, OptionContent
-from app.starsea.stream_events import emit_starsea_event
 
 from .interpretation import build_divination_user_prompt
 from .prompt import SYSTEM_PROMPT
@@ -129,7 +129,7 @@ def _stream_conversation_options(content: Any) -> None:
         return
 
     option_content = OptionContent(options=options)
-    emit_starsea_event(OptionEvent(content=option_content))
+    get_stream_writer()(OptionEvent(content=option_content))
 
 
 def _stream_message_delta(delta: str, *, display_type: str) -> None:
@@ -137,7 +137,7 @@ def _stream_message_delta(delta: str, *, display_type: str) -> None:
         return
 
     content = DeltaContent(delta=delta, display_type=display_type)
-    emit_starsea_event(DeltaEvent(content=content))
+    get_stream_writer()(DeltaEvent(content=content))
 
 
 def _reasoning_text(chunk: AIMessageChunk) -> str:

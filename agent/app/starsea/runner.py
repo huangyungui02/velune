@@ -11,7 +11,7 @@ from app.core.langfuse import langfuse_callbacks, langfuse_metadata
 from app.core.llm import model_for_premium
 from app.starsea.checkpoint import checkpoint_manager
 from app.starsea.graph import build_graph
-from app.starsea.schemas.events import DoneEvent, ErrorEvent, SettledEvent
+from app.starsea.schemas.events import DoneEvent, ErrorEvent, SettledEvent, StarseaEvent
 from app.starsea.schemas.model import DoneContent, ErrorContent, SettledContent
 from app.starsea.schemas.starsea import DivinationEnvelope, StarseaContent, TextContent, TriggerContent
 from app.starsea.state import ArchiveEvent, State
@@ -27,7 +27,7 @@ async def stream_graph(
     thread_id: str,
     user_id: str | None = None,
     is_premium: bool = False,
-) -> AsyncIterator[dict[str, Any]]:
+) -> AsyncIterator[StarseaEvent]:
     initial_state = _initial_state(
         user_input,
         metadata=metadata,
@@ -64,9 +64,9 @@ async def stream_graph(
         if isinstance(glimmer, dict):
             yield SettledEvent(
                 content=SettledContent(thread_id=thread_id, glimmer=glimmer)
-            ).model_dump(mode="json", exclude_none=True)
+            )
         else:
-            yield DoneEvent(content=DoneContent(thread_id=thread_id)).model_dump()
+            yield DoneEvent(content=DoneContent(thread_id=thread_id))
     except Exception as exc:
         logger.warning(
             "LangGraph stream failed for thread %s: %s: %s",
@@ -74,7 +74,7 @@ async def stream_graph(
             type(exc).__name__,
             exc,
         )
-        yield ErrorEvent(content=ErrorContent(message=error_message(exc))).model_dump()
+        yield ErrorEvent(content=ErrorContent(message=error_message(exc)))
 
 
 def _initial_state(

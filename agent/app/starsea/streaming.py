@@ -24,11 +24,11 @@ async def start_starsea_stream(
         event = ErrorEvent(
             content=ErrorContent(message="thread_id is required when trigger is collect")
         )
-        yield sse_event(event.model_dump())
+        yield sse_event(event)
         return
 
     thread_id = thread_id or str(uuid4())
-    yield sse_event(ReadyEvent(content=ReadyContent(thread_id=thread_id)).model_dump())
+    yield sse_event(ReadyEvent(content=ReadyContent(thread_id=thread_id)))
     async for event in stream_graph(
         content,
         lang=lang,
@@ -41,4 +41,4 @@ async def start_starsea_stream(
 
 
 async def emit_starsea_error(message: str) -> AsyncIterator[str]:
-    yield sse_event(ErrorEvent(content=ErrorContent(message=message)).model_dump())
+    yield sse_event(ErrorEvent(content=ErrorContent(message=message)))
