@@ -117,7 +117,7 @@ async def create_glimmer(
         VALUES (CAST(%(user_id)s AS uuid), %(content)s, %(keywords)s)
         RETURNING id, user_id, content, keywords, created_at
         """,
-        {"user_id": user_id, "content": content, "keywords": _clean_keywords(keywords)},
+        {"user_id": user_id, "content": content, "keywords": keywords or []},
     )
     if not row:
         raise RuntimeError("Failed to create glimmer")
@@ -152,7 +152,7 @@ async def create_glimmer_with_messages(
                     {
                         "user_id": user_id,
                         "content": content,
-                        "keywords": _clean_keywords(keywords),
+                        "keywords": keywords,
                     },
                 )
                 row = await cursor.fetchone()
@@ -201,28 +201,13 @@ async def create_glimmer_with_messages(
     }
 
 
-def _clean_keywords(keywords: list[str] | None) -> list[str]:
-    cleaned: list[str] = []
-    seen: set[str] = set()
-    for keyword in keywords or []:
-        value = str(keyword).strip()
-        if not value or value in seen:
-            continue
-        seen.add(value)
-        cleaned.append(value)
-        if len(cleaned) == 3:
-            break
-    return cleaned
-
-
 def _row_keywords(value: Any) -> list[str]:
     if not isinstance(value, list | tuple):
         return []
-    return _clean_keywords([str(item) for item in value])
+    return list(value)
 
 
 def _row_optional_str(value: Any) -> str | None:
     if value is None:
         return None
     return str(value)
-

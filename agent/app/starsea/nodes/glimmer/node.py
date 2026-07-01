@@ -12,7 +12,7 @@ async def glimmer_node(state: State) -> dict[str, Any]:
     user_id = str(state.get("metadata", {}).get("user_id") or "").strip()
     glimmer = state.get("glimmer") or {}
     content = str(glimmer.get("content") or "").strip()
-    keywords = _clean_keywords(glimmer.get("keywords") or [])
+    keywords = glimmer.get("keywords") or []
     blessing = str(glimmer.get("blessing") or "").strip()
     archive_events = _clean_archive_events(state.get("archive_events") or [])
 
@@ -32,20 +32,6 @@ async def glimmer_node(state: State) -> dict[str, Any]:
             "blessing": blessing,
         },
     }
-
-
-def _clean_keywords(value: list[Any]) -> list[str]:
-    keywords: list[str] = []
-    seen: set[str] = set()
-    for item in value:
-        keyword = str(item).strip()
-        if not keyword or keyword in seen:
-            continue
-        seen.add(keyword)
-        keywords.append(keyword)
-        if len(keywords) == 3:
-            break
-    return keywords
 
 
 def _clean_archive_events(events: list[Any]) -> list[dict[str, Any]]:

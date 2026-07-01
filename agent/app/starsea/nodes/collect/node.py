@@ -21,8 +21,8 @@ META_END = "</glimmer_meta>"
 
 
 def collect_node(state: State) -> dict[str, Any]:
-    lang = _state_lang(state)
-    model = create_chat_model(model=_state_model(state), temperature=COLLECT_TEMPERATURE)
+    lang = state["metadata"]["lang"]
+    model = create_chat_model(model=COLLECT_MODEL, temperature=COLLECT_TEMPERATURE)
     response = _stream_ai_message(
         model,
         [
@@ -30,37 +30,60 @@ def collect_node(state: State) -> dict[str, Any]:
             HumanMessage(content=format_messages(state["messages"], lang)),
         ],
     )
-    content, keywords, blessing = _parse_collect_output(_content_text(response.content))
-    message = AIMessage(content=content)
+    glimmer = _parse_collect_output(response.content)
+    message = AIMessage(content=glimmer["content"])
 
     return {
         "messages": [message],
-        "glimmer": {
-            "content": content,
-            "keywords": keywords,
-            "blessing": blessing,
-        },
+        "glimmer": glimmer,
     }
 
 
-def _state_lang(state: State) -> str:
-    return "zh" if state.get("metadata", {}).get("lang") == "zh" else "en"
+def _parse_collect_output(raw_content: str) -> dict[str, Any]:
+    content, separator, remainder = raw_content.partition(META_START)
+    if not separator:
+        return {
+            "content": raw_content.strip(),
+            "keywords": [],
+            "blessing": "",
+        }
 
+    meta_text, separator, _ = remainder.partition(META_END)
+    if not separator:
+        return {
+            "content": content.strip(),
+            "keywords": [],
+            "blessing": "",
+        }
 
-def _state_model(state: State) -> str:
-    model = str(state.get("metadata", {}).get("model") or "").strip()
-    return model or COLLECT_MODEL
+    try:
+        meta = json.loads(meta_text.strip())
+    except json.JSONDecodeError:
+        meta = {}
+    if not isinstance(meta, dict):
+        meta = {}
+
+    return {
+        "content": content.strip(),
+        "keywords": meta.get("keywords", []),
+        "blessing": str(meta.get("blessing") or "").strip(),
+    }
 
 
 def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
     final_chunk: AIMessageChunk | None = None
+    content_chunks: list[str] = []
     filter_state = _CollectStreamFilter()
     for chunk in model.stream(messages):
         if not isinstance(chunk, AIMessageChunk):
             continue
 
         final_chunk = chunk if final_chunk is None else final_chunk + chunk
-        visible_delta = filter_state.push(_content_text(chunk.content))
+        if not isinstance(chunk.content, str):
+            continue
+
+        content_chunks.append(chunk.content)
+        visible_delta = filter_state.push(chunk.content)
         _stream_message_delta(visible_delta)
 
     _stream_message_delta(filter_state.finish())
@@ -69,7 +92,7 @@ def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
         return AIMessage(content="")
 
     return AIMessage(
-        content=final_chunk.content,
+        content="".join(content_chunks),
         additional_kwargs=final_chunk.additional_kwargs,
         response_metadata=final_chunk.response_metadata,
         id=final_chunk.id,
@@ -95,64 +118,6 @@ def _stream_message_delta(delta: str) -> None:
     )
 
 
-def _content_text(content: Any) -> str:
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        parts: list[str] = []
-        for item in content:
-            if isinstance(item, str):
-                parts.append(item)
-            elif isinstance(item, dict) and isinstance(item.get("text"), str):
-                parts.append(item["text"])
-        return "".join(parts)
-    return ""
-
-
-def _parse_collect_output(raw_content: str) -> tuple[str, list[str], str]:
-    start_index = raw_content.find(META_START)
-    if start_index < 0:
-        return raw_content.strip(), [], ""
-
-    visible_content = raw_content[:start_index].strip()
-    meta_start_index = start_index + len(META_START)
-    end_index = raw_content.find(META_END, meta_start_index)
-    if end_index < 0:
-        return visible_content, [], ""
-
-    meta_text = raw_content[meta_start_index:end_index].strip()
-    try:
-        meta = json.loads(meta_text)
-    except json.JSONDecodeError:
-        return visible_content, [], ""
-
-    keywords = _clean_keywords(meta.get("keywords"))
-    blessing = _clean_blessing(meta.get("blessing"))
-    return visible_content, keywords, blessing
-
-
-def _clean_keywords(value: Any) -> list[str]:
-    if not isinstance(value, list):
-        return []
-
-    keywords: list[str] = []
-    seen: set[str] = set()
-    for item in value:
-        keyword = str(item).strip() if item is not None else ""
-        if not keyword or keyword in seen:
-            continue
-        seen.add(keyword)
-        keywords.append(keyword)
-        if len(keywords) == 3:
-            break
-
-    return keywords
-
-
-def _clean_blessing(value: Any) -> str:
-    return str(value).strip() if value is not None else ""
-
-
 class _CollectStreamFilter:
     def __init__(self) -> None:
         self._buffer = ""
@@ -170,12 +135,12 @@ class _CollectStreamFilter:
             self._hidden = True
             return visible
 
-        keep = len(META_START) - 1
-        if len(self._buffer) <= keep:
+        keep_length = len(META_START) - 1
+        if len(self._buffer) <= keep_length:
             return ""
 
-        visible = self._buffer[:-keep]
-        self._buffer = self._buffer[-keep:]
+        visible = self._buffer[:-keep_length]
+        self._buffer = self._buffer[-keep_length:]
         return visible
 
     def finish(self) -> str:
