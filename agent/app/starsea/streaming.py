@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from collections.abc import AsyncIterator
-from typing import Any
 from uuid import uuid4
 
 from app.auth.billing import is_user_premium
@@ -12,6 +11,7 @@ from app.starsea.schemas.events import ErrorEvent, ReadyEvent
 from app.starsea.schemas.model import ErrorContent, ReadyContent
 from app.starsea.schemas.starsea import StarseaContent
 from app.starsea.runner import stream_graph
+from app.starsea.state import StarseaInputMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 async def start_starsea_stream(
     *,
     content: StarseaContent,
-    metadata: dict[str, Any],
+    metadata: StarseaInputMetadata,
     thread_id: str | None,
     user_id: str,
     lang: str,

@@ -11,7 +11,7 @@ from app.core.conversation_options import (
     parse_conversation_options_response,
     strip_conversation_options_markup,
 )
-from app.core.llm import DEFAULT_MODEL, create_chat_model
+from app.core.llm import create_chat_model, model_for_premium
 from app.starsea.schemas.archive import ResonanceMatchArchive, TextArchive
 from app.starsea.schemas.events import DeltaEvent, OptionEvent, ResonanceMatchEvent
 from app.starsea.schemas.model import DeltaContent, OptionContent, ResonanceMatchContent
@@ -27,9 +27,8 @@ from .prompt import system_prompt
 from .tools import run_starsea_tools, starsea_tools
 
 if TYPE_CHECKING:
-    from app.starsea.state import State
+    from app.starsea.state import ArchiveState, State
 
-STARSEA_MODEL = DEFAULT_MODEL
 STARSEA_TEMPERATURE = 0.5
 
 
@@ -39,12 +38,13 @@ async def starsea_node(state: State) -> dict[str, Any]:
     memory_enabled = state_memory_enabled(state)
     recent_glimmers = await state_recent_glimmers(state) if memory_enabled else []
     tools = starsea_tools(state, timezone_name, memory_enabled=memory_enabled)
+    starsea_model = model_for_premium(state["metadata"]["is_premium"])
     model = create_chat_model(
-        model=STARSEA_MODEL,
+        model=starsea_model,
         temperature=STARSEA_TEMPERATURE,
     ).bind_tools(tools)
     reply_model = create_chat_model(
-        model=STARSEA_MODEL,
+        model=starsea_model,
         temperature=STARSEA_TEMPERATURE,
     )
     messages = [
@@ -94,8 +94,8 @@ def _archives(
     before_matches_content: Any,
     resonance_matches: list[Any],
     after_matches_content: Any,
-) -> list[dict[str, Any]]:
-    events: list[dict[str, Any]] = []
+) -> list[ArchiveState]:
+    events: list[ArchiveState] = []
     _append_visible_message(events, before_matches_content)
 
     if resonance_matches:
@@ -112,7 +112,7 @@ def _archives(
     return events
 
 
-def _append_visible_message(events: list[dict[str, Any]], content: Any) -> None:
+def _append_visible_message(events: list[ArchiveState], content: Any) -> None:
     visible_reply = strip_conversation_options_markup(str(content or "").strip())
     if not visible_reply:
         return

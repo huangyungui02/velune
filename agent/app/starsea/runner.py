@@ -8,7 +8,6 @@ from langchain_core.messages import HumanMessage
 
 from app.core.errors import error_message
 from app.core.langfuse import langfuse_callbacks, langfuse_metadata
-from app.core.llm import model_for_premium
 from app.starsea.checkpoint import checkpoint_manager
 from app.starsea.graph import build_graph
 from app.starsea.schemas.archive import (
@@ -19,7 +18,7 @@ from app.starsea.schemas.archive import (
 from app.starsea.schemas.events import DoneEvent, ErrorEvent, SettledEvent, StarseaEvent
 from app.starsea.schemas.model import DoneContent, ErrorContent, SettledContent
 from app.starsea.schemas.starsea import DivinationEnvelope, StarseaContent, TextContent
-from app.starsea.state import State
+from app.starsea.state import ArchiveState, StarseaInputMetadata, StarseaStateMetadata, State
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ async def stream_graph(
     user_input: StarseaContent,
     *,
     lang: str,
-    metadata: dict[str, Any],
+    metadata: StarseaInputMetadata,
     thread_id: str,
     user_id: str,
     is_premium: bool = False,
@@ -81,21 +80,21 @@ async def stream_graph(
 
 def _initial_state(
     user_input: StarseaContent,
-    metadata: dict[str, Any],
+    metadata: StarseaInputMetadata,
     *,
     user_id: str,
     is_premium: bool = False,
     lang: str,
 ) -> State:
-    runtime_metadata = {
+    runtime_metadata: StarseaStateMetadata = {
         **metadata,
         "lang": lang,
         "user_id": user_id,
-        "model": model_for_premium(is_premium),
+        "is_premium": is_premium,
     }
 
     messages: list[HumanMessage] = []
-    archives: list[dict[str, Any]] = []
+    archives: list[ArchiveState] = []
 
     if isinstance(user_input, TextContent):
         messages = [HumanMessage(content=user_input.content)]
@@ -129,7 +128,7 @@ def _graph_config(
     *,
     thread_id: str,
     user_id: str,
-    metadata: dict[str, Any],
+    metadata: StarseaStateMetadata,
 ) -> dict[str, Any]:
     return {
         "configurable": {"thread_id": thread_id},

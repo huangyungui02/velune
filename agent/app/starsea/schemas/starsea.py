@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Any, Literal
+from typing import Annotated, Literal
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, Field, field_validator
+
+from app.starsea.state import StarseaInputMetadata
 
 
 class TextContent(BaseModel):
@@ -42,6 +44,7 @@ class DivinationContent(BaseModel):
         if not content:
             raise ValueError("divination question cannot be empty")
         return content
+
 
 class DivinationEnvelope(BaseModel):
     type: Literal["divination"]
@@ -89,5 +92,8 @@ class StarseaRequest(BaseModel):
         return str(UUID(str(value)))
 
     @property
-    def runtime_metadata(self) -> dict[str, Any]:
-        return self.metadata.model_dump()
+    def runtime_metadata(self) -> StarseaInputMetadata:
+        return {
+            "timezone": self.metadata.timezone,
+            "memory_enabled": self.metadata.memory_enabled,
+        }

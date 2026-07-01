@@ -20,7 +20,7 @@ from .interpretation import build_divination_user_prompt
 from .prompt import SYSTEM_PROMPT
 
 if TYPE_CHECKING:
-    from app.starsea.state import State
+    from app.starsea.state import ArchiveState, State
 
 DIVINATION_TEMPERATURE = 0.45
 
@@ -49,7 +49,7 @@ async def divination_node(state: State) -> dict[str, Any]:
     }
 
 
-def _archives(content: Any) -> list[dict[str, Any]]:
+def _archives(content: Any) -> list[ArchiveState]:
     visible_reply = strip_conversation_options_markup(_content_text(content).strip())
     if not visible_reply:
         return []
