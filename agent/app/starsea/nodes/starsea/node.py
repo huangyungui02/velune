@@ -38,7 +38,11 @@ async def starsea_node(state: State) -> dict[str, Any]:
         if memory_enabled
         else []
     )
-    current_time = _format_local_datetime(datetime.now(timezone.utc), timezone_name)
+    current_time = (
+        datetime.now(timezone.utc)
+        .astimezone(ZoneInfo(timezone_name))
+        .isoformat()
+    )
     recent_glimmers_context = None
     if memory_enabled:
         recent_glimmers_context = "\n".join(
@@ -46,8 +50,8 @@ async def starsea_node(state: State) -> dict[str, Any]:
                 {
                     "id": glimmer["id"],
                     "content": glimmer["content"],
-                    "created_at": _format_local_datetime(
-                        _parse_datetime(glimmer["created_at"]),
+                    "created_at": _local_datetime_string(
+                        glimmer["created_at"],
                         timezone_name,
                     ),
                 },
@@ -56,7 +60,7 @@ async def starsea_node(state: State) -> dict[str, Any]:
             for glimmer in recent_glimmers
         )
 
-    tools = starsea_tools(state, timezone_name, memory_enabled=memory_enabled)
+    tools = starsea_tools(state, memory_enabled=memory_enabled)
     starsea_model = model_for_premium(state["metadata"]["is_premium"])
     model = create_chat_model(
         model=starsea_model,
@@ -216,14 +220,9 @@ def _content_text(content: Any) -> str:
     return "".join(parts)
 
 
-def _format_local_datetime(value: datetime, timezone_name: str) -> str:
-    local_value = value.astimezone(ZoneInfo(timezone_name))
-    return f"{local_value.isoformat()} ({timezone_name})"
-
-
-def _parse_datetime(value: str) -> datetime:
+def _local_datetime_string(value: str, timezone_name: str) -> str:
     normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
     parsed = datetime.fromisoformat(normalized)
     if parsed.tzinfo is None:
-        return parsed.replace(tzinfo=timezone.utc)
-    return parsed
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(ZoneInfo(timezone_name)).isoformat()

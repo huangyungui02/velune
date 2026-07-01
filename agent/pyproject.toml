@@ -20,5 +20,6 @@ dependencies = [
     "supabase>=2.28.0",
     "taskiq>=0.12.4",
     "taskiq-redis>=1.2.2",
+    "tiktoken>=0.13.0",
     "uvicorn[standard]>=0.41.0",
 ]

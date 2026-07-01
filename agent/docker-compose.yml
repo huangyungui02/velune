@@ -13,6 +13,7 @@ services:
       retries: 12
 
   agent-api:
+    image: velune-agent:local
     build:
       context: .
     env_file:
@@ -32,8 +33,7 @@ services:
         condition: service_healthy
 
   agent-worker:
-    build:
-      context: .
+    image: velune-agent:local
     env_file:
       - .env
     environment:

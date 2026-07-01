@@ -17,14 +17,14 @@ if TYPE_CHECKING:
 
 def starsea_tools(
     state: State,
-    timezone_name: str,
     *,
     memory_enabled: bool = False,
 ) -> list[Any]:
     user_id = state["metadata"]["user_id"]
+    lang = state["metadata"]["lang"]
     tools = [match_resonances]
     if memory_enabled:
-        tools.append(create_get_glimmer_messages_tool(user_id, timezone_name))
+        tools.append(create_get_glimmer_messages_tool(user_id, lang=lang))
     return tools
 
 
