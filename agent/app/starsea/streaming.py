@@ -19,14 +19,12 @@ from app.starsea.schemas.events import (
     MessageDeltaData,
     ReadyEvent,
     ResonanceMatchEvent,
-    ResonanceMatchPreview,
     SettledEvent,
-    SoulerResolutionResult,
     StarseaGraphEvent,
     StarseaMatchesEvent,
     UnknownEvent,
 )
-from app.soulers.services.resolution import resolve_or_enqueue_souler
+from app.starsea.schemas.starsea import StarseaContent
 from app.starsea.runner import stream_graph
 
 logger = logging.getLogger(__name__)
@@ -34,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 async def start_starsea_stream(
     *,
-    content: str,
+    content: StarseaContent | None,
     metadata: dict[str, Any],
     thread_id: str,
     user_id: str,
@@ -71,7 +69,10 @@ async def _map_starsea_event(event: StarseaGraphEvent, lang: Lang) -> dict[str, 
     match event.event:
         case "message_delta":
             data = MessageDeltaData.model_validate(_dict_data(event.data))
-            return DeltaEvent(delta=data.delta).model_dump()
+            return DeltaEvent(delta=data.delta, display_type=data.display_type).model_dump(
+                by_alias=True,
+                exclude_none=True,
+            )
         case "resonance_match":
             starsea_event = StarseaMatchesEvent(matches=await _resonance_matches(event.data, lang))
             return starsea_event.model_dump(by_alias=True, exclude_none=True)
@@ -102,37 +103,15 @@ def _dict_data(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
-async def _resonance_matches(data: Any, lang: Lang) -> list[ResonanceMatchEvent]:
+async def _resonance_matches(data: Any, _lang: Lang) -> list[ResonanceMatchEvent]:
     if not isinstance(data, list):
         return []
 
     matches: list[ResonanceMatchEvent] = []
     for item in data:
         try:
-            preview = ResonanceMatchPreview.model_validate(item)
+            matches.append(ResonanceMatchEvent.model_validate(item))
         except ValidationError:
             continue
-
-        try:
-            resolved = SoulerResolutionResult.model_validate(
-                await resolve_or_enqueue_souler(preview.name, lang)
-            )
-        except Exception as error:  # noqa: BLE001
-            logger.warning(
-                "Failed to resolve resonance match %s: %s",
-                preview.name,
-                error_log_data(error),
-            )
-            resolved = SoulerResolutionResult(status="unavailable")
-
-        matches.append(
-            ResonanceMatchEvent(
-                name=preview.name,
-                line=preview.line,
-                resolution_status=resolved.status,
-                souler_id=resolved.souler_id,
-                resolution_request_id=resolved.request_id,
-            )
-        )
 
     return matches

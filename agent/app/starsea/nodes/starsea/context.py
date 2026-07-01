@@ -80,7 +80,6 @@ def format_glimmer_messages(
             "type": message["type"],
             "role": message["role"],
             "content": message["content"],
-            "data": message["data"],
             "created_at": format_local_datetime(
                 _parse_datetime(message["created_at"]),
                 timezone_name,
@@ -113,16 +112,6 @@ def _valid_timezone(value: Any) -> str | None:
     except ZoneInfoNotFoundError:
         return None
     return timezone_name
-
-
-def _truthy(value: Any) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, int | float):
-        return value != 0
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes", "on"}
-    return False
 
 
 def _parse_datetime(value: str) -> datetime:

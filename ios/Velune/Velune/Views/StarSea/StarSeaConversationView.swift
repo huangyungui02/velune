@@ -9,12 +9,13 @@ struct StarSeaConversationView: View {
 
     init(
         openingText: String,
+        divinationData: DivinationData? = nil,
         onBlessing: @escaping (String) -> Void = { _ in },
         onLeave: @escaping () -> Void
     ) {
         self.onBlessing = onBlessing
         self.onLeave = onLeave
-        _session = State(initialValue: StarSeaConversationSession(openingText: openingText))
+        _session = State(initialValue: StarSeaConversationSession(openingText: openingText, divinationData: divinationData))
     }
 
     var body: some View {

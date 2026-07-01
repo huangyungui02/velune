@@ -9,7 +9,7 @@ from app.soulers.services.resolution import resolve_or_enqueue_souler
 from app.starsea.messages import format_messages
 
 from .glimmer import create_get_glimmer_messages_tool
-from .match import match_thought_voices
+from .match import match_resonances
 
 if TYPE_CHECKING:
     from app.starsea.state import State
@@ -22,7 +22,7 @@ def starsea_tools(
     memory_enabled: bool = False,
 ) -> list[Any]:
     user_id = str(state.get("metadata", {}).get("user_id") or "").strip()
-    tools = [match_thought_voices]
+    tools = [match_resonances]
     if memory_enabled:
         tools.append(create_get_glimmer_messages_tool(user_id, timezone_name))
     return tools
@@ -38,7 +38,7 @@ async def run_starsea_tools(
     tools_by_name = {tool.name: tool for tool in tools}
     tool_messages: list[ToolMessage] = []
     resonance_matches: list[Any] = []
-    conversation = format_messages(state["messages"], lang)
+    context = format_messages(state["messages"], lang)
 
     for tool_call in response.tool_calls:
         selected_tool = tools_by_name.get(tool_call["name"])
@@ -52,22 +52,23 @@ async def run_starsea_tools(
             continue
 
         args = dict(tool_call.get("args") or {})
-        if selected_tool.name == match_thought_voices.name:
-            args["conversation"] = args.get("conversation") or conversation
+        if selected_tool.name == match_resonances.name:
+            args["context"] = args.get("context") or args.pop("conversation", None) or context
             args["lang"] = lang
         try:
             tool_message = await selected_tool.ainvoke({**tool_call, "args": args})
         except Exception as exc:
+            error_content = {"error": f"{selected_tool.name} failed: {exc}"}
+            print(f"error_content: {error_content}")
+            if selected_tool.name == match_resonances.name:
+                error_content = {"matches": [], **error_content}
             tool_message = ToolMessage(
-                content=json.dumps(
-                    _tool_error_content(selected_tool.name, exc),
-                    ensure_ascii=False,
-                ),
+                content=json.dumps(error_content, ensure_ascii=False),
                 name=selected_tool.name,
                 tool_call_id=tool_call["id"],
             )
 
-        if selected_tool.name == match_thought_voices.name:
+        if selected_tool.name == match_resonances.name:
             tool_message, previews = _prepare_match_tool_message(tool_message)
             resolved_previews = await _resolve_match_previews(previews, lang)
             resonance_matches.extend(resolved_previews)
@@ -75,12 +76,6 @@ async def run_starsea_tools(
         tool_messages.append(tool_message)
 
     return tool_messages, resonance_matches
-
-
-def _tool_error_content(tool_name: str, exc: Exception) -> dict[str, Any]:
-    if tool_name == match_thought_voices.name:
-        return {"voices": [], "error": f"{tool_name} failed: {exc}"}
-    return {"error": f"{tool_name} failed: {exc}"}
 
 
 async def _resolve_match_previews(
@@ -118,33 +113,33 @@ def _prepare_match_tool_message(
     if tool_data is None:
         return tool_message, []
 
-    voices = tool_data.get("voices") or tool_data.get("matches") or []
-    if not isinstance(voices, list):
+    matches = tool_data.get("matches") or tool_data.get("voices") or []
+    if not isinstance(matches, list):
         return tool_message, []
 
     previews: list[dict[str, str]] = []
-    stripped_voices: list[dict[str, str]] = []
-    for voice in voices:
-        if not isinstance(voice, dict):
+    stripped_matches: list[dict[str, str]] = []
+    for match in matches:
+        if not isinstance(match, dict):
             continue
 
-        name = str(voice.get("name") or "").strip()
-        resonance = str(voice.get("resonance") or "").strip()
-        whisper = str(voice.get("whisper") or "").strip()
+        name = str(match.get("name") or "").strip()
+        resonance = str(match.get("resonance") or "").strip()
+        whisper = str(match.get("whisper") or "").strip()
         if not name:
             continue
 
         if name and resonance:
-            stripped_voices.append({"name": name, "resonance": resonance})
+            stripped_matches.append({"name": name, "resonance": resonance})
 
         if name and whisper:
             previews.append({"name": name, "line": whisper})
 
     stripped_data = {
         **tool_data,
-        "voices": stripped_voices,
+        "matches": stripped_matches,
     }
-    stripped_data.pop("matches", None)
+    stripped_data.pop("voices", None)
 
     return (
         ToolMessage(

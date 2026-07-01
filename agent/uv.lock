@@ -10,10 +10,12 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "langchain-core" },
+    { name = "langchain-deepseek" },
     { name = "langchain-qwq" },
     { name = "langfuse" },
     { name = "langgraph" },
     { name = "langgraph-checkpoint-redis" },
+    { name = "lunar-python" },
     { name = "psycopg", extra = ["binary", "pool"] },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
@@ -28,10 +30,12 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.135.1" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "langchain-core", specifier = ">=1.4.0" },
+    { name = "langchain-deepseek", specifier = ">=1.1.0" },
     { name = "langchain-qwq", specifier = ">=0.3.5" },
     { name = "langfuse", specifier = ">=4.7.1" },
     { name = "langgraph", specifier = ">=1.2.1" },
     { name = "langgraph-checkpoint-redis", specifier = ">=0.4.1" },
+    { name = "lunar-python", specifier = ">=1.4.8" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.3.4" },
     { name = "pydantic-settings", specifier = ">=2.13.1" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
@@ -614,6 +618,19 @@ wheels = [
 ]
 
 [[package]]
+name = "langchain-deepseek"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langchain-core" },
+    { name = "langchain-openai" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/15/f4/200792013d86406aa02aba8d1b536f8877a832372702189aef0c8c7a8329/langchain_deepseek-1.1.0.tar.gz", hash = "sha256:5ec8128cabae3d71366e2f297dea2153649be317a4be7f135cfcad1160523bf6", size = 138078, upload-time = "2026-06-03T19:07:11.887Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8c/1a/d18b7f985c35c635503a6cd426161933ffc7785f228d92447c63b026299a/langchain_deepseek-1.1.0-py3-none-any.whl", hash = "sha256:14813cb413a97a5cce95118da253cfd64dce50537b7381b7c5d0ecf11d2a7032", size = 10061, upload-time = "2026-06-03T19:07:11.04Z" },
+]
+
+[[package]]
 name = "langchain-openai"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -770,6 +787,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/17/eb/8883d1158c743d0aa
 wheels = [
     { url = "https://files.pythonhosted.org/packages/23/85/968c88a63e32a59b3e5c68afd2fe114ce0708a125db0be1a85efc25fb2ea/langsmith-0.8.5-py3-none-any.whl", hash = "sha256:efc779f9d450dcaf9d97bc8894f4926276509d6e730e05289af9a64debce06ae", size = 399564, upload-time = "2026-05-15T21:31:39.046Z" },
 ]
+
+[[package]]
+name = "lunar-python"
+version = "1.4.8"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/59/45/5154c95ae7feaab7ca508e71c3288692c09952dfe33b03b7c2f18a32e2cd/lunar_python-1.4.8.tar.gz", hash = "sha256:3aa11cc73c25e70ddf0ba5bdac7398c03acc9491a3aa512a91c9642973b669d6", size = 105862, upload-time = "2025-11-05T12:31:53.353Z" }
 
 [[package]]
 name = "markdown-it-py"

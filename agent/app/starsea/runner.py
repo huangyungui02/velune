@@ -12,13 +12,14 @@ from app.core.langfuse import langfuse_callbacks, langfuse_metadata
 from app.core.llm import model_for_premium
 from app.starsea.checkpoint import checkpoint_manager
 from app.starsea.graph import build_graph
+from app.starsea.schemas.starsea import DivinationEnvelope, StarseaContent, TextContent
 from app.starsea.state import ArchiveEvent, State
 
 logger = logging.getLogger(__name__)
 
 
 async def stream_graph(
-    user_input: str,
+    user_input: StarseaContent | None,
     metadata: dict[str, Any] | None = None,
     thread_id: str | None = None,
     intent: str | None = None,
@@ -88,7 +89,7 @@ async def stream_graph(
 
 
 def _initial_state(
-    user_input: str,
+    user_input: StarseaContent | None,
     metadata: dict[str, Any] | None = None,
     intent: str | None = None,
     *,
@@ -108,18 +109,7 @@ def _initial_state(
         runtime_metadata["intent"] = intent
     runtime_metadata["model"] = model_for_premium(is_premium)
 
-    content = user_input.strip()
-    messages = [HumanMessage(content=content)] if content else []
-    archive_events: list[ArchiveEvent] = []
-    if content:
-        archive_events.append(
-            {
-                "type": "message",
-                "role": "user",
-                "content": content,
-                "data": {},
-            }
-        )
+    messages, archive_events = _initial_messages_and_archive_events(user_input, runtime_metadata)
 
     initial_state: State = {
         "messages": messages,
@@ -130,6 +120,44 @@ def _initial_state(
 
     return initial_state
 
+
+def _initial_messages_and_archive_events(
+    user_input: StarseaContent | None,
+    metadata: dict[str, Any],
+) -> tuple[list[HumanMessage], list[ArchiveEvent]]:
+    if user_input is None:
+        return [], []
+
+    if isinstance(user_input, TextContent):
+        content = user_input.content
+        return [HumanMessage(content=content)], [_text_archive_event(content)]
+
+    if isinstance(user_input, DivinationEnvelope):
+        divination = user_input.content
+        metadata["contentType"] = "divination"
+        metadata["divination"] = {
+            "casted_lines": divination.casted_lines,
+            "date": divination.date.isoformat(),
+            "question": divination.question,
+        }
+        return [], [
+            {
+                "type": "divination",
+                "role": "user",
+                "content": divination.archive_content,
+            },
+            _text_archive_event(divination.question),
+        ]
+
+    return [], []
+
+
+def _text_archive_event(content: str) -> ArchiveEvent:
+    return {
+        "type": "text",
+        "role": "user",
+        "content": content,
+    }
 
 def _graph_config(
     *,

@@ -21,16 +21,14 @@ class GlimmerMessage(TypedDict):
     sequence: int
     type: str
     role: str | None
-    content: str | None
-    data: dict[str, Any]
+    content: Any
     created_at: str
 
 
 class GlimmerMessageDraft(TypedDict):
     type: str
     role: str | None
-    content: str | None
-    data: dict[str, Any]
+    content: Any
 
 
 async def get_glimmer_by_id(user_id: str, glimmer_id: str) -> Glimmer | None:
@@ -85,12 +83,10 @@ async def get_glimmer_messages(
 ) -> list[GlimmerMessage]:
     rows = await fetch_all(
         """
-        SELECT id, glimmer_id, sequence, type, role, content, payload, created_at
+        SELECT id, glimmer_id, sequence, type, role, content, created_at
         FROM public.glimmer_messages
         WHERE user_id = CAST(%(user_id)s AS uuid)
           AND glimmer_id = CAST(%(glimmer_id)s AS uuid)
-          AND type = 'message'
-          AND role IN ('user', 'assistant')
         ORDER BY sequence ASC
         """,
         {"user_id": user_id, "glimmer_id": glimmer_id},
@@ -103,8 +99,7 @@ async def get_glimmer_messages(
             "sequence": int(row.get("sequence") or 0),
             "type": str(row.get("type", "")),
             "role": _row_optional_str(row.get("role")),
-            "content": _row_optional_str(row.get("content")),
-            "data": _row_data(row.get("payload")),
+            "content": row.get("content"),
             "created_at": str(row.get("created_at", "")),
         }
         for row in rows
@@ -173,8 +168,7 @@ async def create_glimmer_with_messages(
                         sequence,
                         type,
                         role,
-                        content,
-                        payload
+                        content
                     )
                     VALUES (
                         CAST(%(user_id)s AS uuid),
@@ -182,8 +176,7 @@ async def create_glimmer_with_messages(
                         %(sequence)s,
                         %(type)s,
                         %(role)s,
-                        %(content)s,
-                        %(data)s
+                        %(content)s
                     )
                     """,
                     [
@@ -193,8 +186,7 @@ async def create_glimmer_with_messages(
                             "sequence": index,
                             "type": message["type"],
                             "role": message.get("role"),
-                            "content": message.get("content"),
-                            "data": Jsonb(message.get("data") or {}),
+                            "content": Jsonb(message["content"]),
                         }
                         for index, message in enumerate(messages)
                     ],
@@ -234,6 +226,3 @@ def _row_optional_str(value: Any) -> str | None:
         return None
     return str(value)
 
-
-def _row_data(value: Any) -> dict[str, Any]:
-    return value if isinstance(value, dict) else {}

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from typing import Any, TypeVar, cast
 
+from langchain_deepseek import ChatDeepSeek
 from langchain_qwq import ChatQwen
 from pydantic import BaseModel
 
@@ -10,6 +11,7 @@ from app.core.config import get_settings
 
 DEFAULT_MODEL = "qwen3.5-flash"
 PREMIUM_MODEL = "qwen3.5-plus"
+DIVINATION_MODEL = "deepseek-v4-pro"
 StructuredOutputT = TypeVar("StructuredOutputT", bound=BaseModel)
 
 
@@ -25,6 +27,19 @@ def create_chat_model(model: str, **model_kwargs: Any) -> ChatQwen:
         base_url=settings.DASHSCOPE_BASE_URL,
         model=model,
         enable_thinking=False,
+        **model_kwargs,
+    )
+
+
+def create_deepseek_chat_model(model: str, **model_kwargs: Any) -> ChatDeepSeek:
+    settings = get_settings()
+    if not settings.DEEPSEEK_API_KEY:
+        raise ValueError("DEEPSEEK_API_KEY is required for DeepSeek chat models")
+
+    return ChatDeepSeek(
+        api_key=settings.DEEPSEEK_API_KEY,
+        base_url=settings.DEEPSEEK_BASE_URL,
+        model=model,
         **model_kwargs,
     )
 

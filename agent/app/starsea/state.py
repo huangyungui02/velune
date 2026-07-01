@@ -6,14 +6,13 @@ from typing import Annotated, Any, Literal, TypedDict
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
-RouterAction = Literal["starsea", "collect"]
+RouterAction = Literal["starsea", "collect", "divination"]
 
 
 class ArchiveEvent(TypedDict):
     type: str
     role: str | None
-    content: str | None
-    data: dict[str, Any]
+    content: Any
 
 
 class GlimmerState(TypedDict):

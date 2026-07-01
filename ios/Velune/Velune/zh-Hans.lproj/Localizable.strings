@@ -181,5 +181,20 @@
 "reading.search.placeholder" = "搜索";
 "reading.empty.featured" = "暂无可展示分类";
 "reading.empty.bookshelf" = "书架为空";
-
 "starsea.settlement.settleButton" = "存入心舍";
+"starsea.thinking.finished" = "已思考 %d 秒";
+
+"starsea.action.divination" = "六爻起卦";
+"divination.focus.prompt" = "请持续专注于心中的问题";
+"divination.tap.prompt" = "连续轻触屏幕六次，完成起卦";
+"divination.inspiredBy" = "源于《易经》六爻传统";
+"divination.result.title" = "感应卦象";
+"divination.result.recast" = "重新起卦";
+"divination.result.close" = "返回星海";
+"divination.result.primary" = "主卦";
+"divination.result.changed" = "变卦";
+"divination.result.futureGlow" = "之卦（未来启示）";
+"divination.result.castTime" = "起卦时间：";
+"divination.input.placeholder" = "写下刚才所专注的问题，开始解卦。";
+"divination.action.interpret" = "开始解卦";
+"divination.status.interpreting" = "正在感应星海潮汐，解析卦象中...";

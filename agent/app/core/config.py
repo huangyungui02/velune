@@ -23,6 +23,8 @@ class Settings(BaseSettings):
 
     DASHSCOPE_API_KEY: str = Field(min_length=1)
     DASHSCOPE_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    DEEPSEEK_API_KEY: str | None = None
+    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
 
     CHAT_TEMPERATURE: float = 0.5
     MODEL_XS_TEMPERATURE: float = 0.1

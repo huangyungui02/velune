@@ -15,6 +15,7 @@ class StarseaGraphEvent(BaseModel):
 
 class MessageDeltaData(BaseModel):
     delta: str = ""
+    display_type: str | None = Field(default=None, alias="display_type")
 
 
 class ConversationOptionsData(BaseModel):
@@ -84,8 +85,11 @@ class ResonanceMatchEvent(BaseModel):
 
 
 class DeltaEvent(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     type: Literal["delta"] = "delta"
     delta: str
+    display_type: str | None = Field(default=None, alias="displayType")
 
 
 class ReadyEvent(BaseModel):

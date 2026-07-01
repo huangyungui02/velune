@@ -52,6 +52,9 @@ struct StarSeaConversationMessageList: View {
         case let .resonanceMatches(_, matches):
             StarSeaResonanceMatchesView(matches: matches)
                 .padding(.vertical, 2)
+        case let .divinationResult(_, divination):
+            ChatDivinationCardView(divination: divination)
+                .padding(.vertical, 4)
         }
     }
 
@@ -62,10 +65,17 @@ struct StarSeaConversationMessageList: View {
             && !payload.options.isEmpty
 
         return VStack(spacing: 8) {
-            ConversationMessageRow(
-                role: message.role == .user ? .user : .assistant,
-                content: payload.body
-            )
+            if message.displayType == .thinking || message.displayType == .thinkingSummary {
+                StarSeaThinkingMessageView(
+                    content: payload.body,
+                    durationSeconds: message.thinkingDurationSeconds
+                )
+            } else {
+                ConversationMessageRow(
+                    role: message.role == .user ? .user : .assistant,
+                    content: payload.body
+                )
+            }
 
             if hasInlineOptions {
                 ConversationOptionsView(
@@ -105,6 +115,54 @@ struct StarSeaConversationMessageList: View {
         } else {
             proxy.scrollTo(target, anchor: .bottom)
         }
+    }
+}
+
+private struct StarSeaThinkingMessageView: View {
+    let content: String
+    let durationSeconds: Int?
+
+    var body: some View {
+        HStack(alignment: .top) {
+            if let durationSeconds {
+                Text(thoughtDurationText(durationSeconds))
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundStyle(UITheme.primaryText.opacity(0.42))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical) {
+                        Text(content)
+                            .font(.system(size: 12, weight: .regular))
+                            .lineSpacing(4)
+                            .foregroundStyle(UITheme.primaryText.opacity(0.42))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.trailing, 4)
+
+                        Color.clear
+                            .frame(height: 1)
+                            .id("thinking-bottom")
+                    }
+                    .scrollIndicators(.hidden)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxHeight: 96, alignment: .top)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(UITheme.primaryText.opacity(0.035), in: .rect(cornerRadius: 10))
+                    .onChange(of: content) { _, _ in
+                        proxy.scrollTo("thinking-bottom", anchor: .bottom)
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func thoughtDurationText(_ seconds: Int) -> String {
+        let format = NSLocalizedString("starsea.thinking.finished", comment: "")
+        return String.localizedStringWithFormat(format, seconds)
     }
 }
 

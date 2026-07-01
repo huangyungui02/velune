@@ -6,7 +6,8 @@ import SwiftUI
 @Observable
 final class StarSeaConversationSession {
     let openingText: String
-
+    let divinationData: DivinationData?
+    
     var threadId: String?
     var timelineEvents: [StarSeaTimelineEvent] = []
     var inputText = ""
@@ -15,6 +16,8 @@ final class StarSeaConversationSession {
     var errorMessage: String?
     var hasStarted = false
     var currentAssistantMessageId: UUID?
+    var currentThinkingMessageId: UUID?
+    var currentThinkingStartedAt: Date?
     var shouldPauseAutoScrollDuringStreaming = false
     var settlementText = ""
     var settlementBlessing = ""
@@ -38,8 +41,9 @@ final class StarSeaConversationSession {
         isAwaitingSettlementConfirmation || threadId == nil
     }
 
-    init(openingText: String) {
+    init(openingText: String, divinationData: DivinationData? = nil) {
         self.openingText = openingText
+        self.divinationData = divinationData
     }
 
     func startIfNeeded() async {
@@ -54,7 +58,7 @@ final class StarSeaConversationSession {
 
         inputText = ""
         timelineEvents.append(.message(StarSeaMessage(role: .user, content: content)))
-        await streamTurn(content: content)
+        await streamTurn(content: .text(content))
     }
 
     func selectConversationOption(_ option: String) {
@@ -121,19 +125,31 @@ final class StarSeaConversationSession {
         let content = openingText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty else { return }
 
-        timelineEvents.append(.message(StarSeaMessage(role: .user, content: content)))
-        await streamTurn(content: content)
-    }
+        if let divinationData {
+            timelineEvents.append(.divinationResult(id: UUID(), divination: divinationData))
+        }
 
-    private func streamTurn(content: String) async {
+        timelineEvents.append(.message(StarSeaMessage(role: .user, content: content)))
+        
+        let requestContent: StarSeaStreamService.Content
+        if let divinationData {
+            requestContent = divinationData.streamContent(question: content)
+        } else {
+            requestContent = .text(content)
+        }
+        
+        await streamTurn(content: requestContent)
+    }
+    
+    private func streamTurn(content: StarSeaStreamService.Content) async {
         guard !isStreaming, !isAwaitingSettlementConfirmation else { return }
 
         isStreaming = true
         shouldPauseAutoScrollDuringStreaming = false
         errorMessage = nil
-        let placeholderMessage = StarSeaMessage(role: .assistant, content: "")
-        currentAssistantMessageId = placeholderMessage.id
-        timelineEvents.append(.message(placeholderMessage))
+        currentAssistantMessageId = nil
+        currentThinkingMessageId = nil
+        currentThinkingStartedAt = nil
 
         cancelActiveTask()
         activeTask = Task { [weak self] in
@@ -162,8 +178,8 @@ final class StarSeaConversationSession {
         switch event {
         case let .ready(threadId):
             self.threadId = threadId
-        case let .delta(delta):
-            appendAssistant(delta: delta)
+        case let .delta(delta, displayType):
+            appendDelta(delta, displayType: displayType)
         case let .options(options):
             appendConversationOptions(options)
         case let .resonanceMatch(matches):
@@ -172,9 +188,11 @@ final class StarSeaConversationSession {
             if let threadId {
                 self.threadId = threadId
             }
+            finishThinkingIfNeeded()
         case let .settled(glimmer):
             removeEmptyAssistantMessage(id: currentAssistantMessageId)
             currentAssistantMessageId = nil
+            finishThinkingIfNeeded()
             settlementText = glimmer.content
             settlementBlessing = (glimmer.blessing ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             isSettlementReady = true
@@ -187,7 +205,7 @@ final class StarSeaConversationSession {
         switch event {
         case let .ready(threadId):
             self.threadId = threadId
-        case let .delta(delta):
+        case let .delta(delta, _):
             settlementText += delta
         case let .settled(glimmer):
             settlementText = glimmer.content
@@ -198,7 +216,18 @@ final class StarSeaConversationSession {
         }
     }
 
+    private func appendDelta(_ delta: String, displayType: StarSeaStreamService.DeltaDisplayType) {
+        if displayType == .thinking {
+            appendThinking(delta: delta)
+            return
+        }
+
+        appendAssistant(delta: delta)
+    }
+
     private func appendAssistant(delta: String) {
+        finishThinkingIfNeeded()
+
         if let messageId = currentAssistantMessageId,
            let index = timelineEvents.firstMessageIndex(id: messageId) {
             timelineEvents[index].appendMessageContent(delta)
@@ -210,8 +239,38 @@ final class StarSeaConversationSession {
         timelineEvents.append(.message(message))
     }
 
+    private func appendThinking(delta: String) {
+        if let messageId = currentThinkingMessageId,
+           let index = timelineEvents.firstMessageIndex(id: messageId) {
+            timelineEvents[index].appendMessageContent(delta)
+            return
+        }
+
+        let message = StarSeaMessage(role: .assistant, displayType: .thinking, content: delta)
+        currentThinkingMessageId = message.id
+        currentThinkingStartedAt = Date()
+        timelineEvents.append(.message(message))
+    }
+
+    private func finishThinkingIfNeeded() {
+        guard let messageId = currentThinkingMessageId,
+              let index = timelineEvents.firstMessageIndex(id: messageId)
+        else {
+            currentThinkingStartedAt = nil
+            return
+        }
+
+        let duration = currentThinkingStartedAt.map {
+            max(1, Int(Date().timeIntervalSince($0).rounded(.up)))
+        } ?? 1
+
+        timelineEvents[index].finishThinking(durationSeconds: duration)
+        currentThinkingMessageId = nil
+        currentThinkingStartedAt = nil
+    }
+
     private func appendConversationOptions(_ options: [String]) {
-        let targetMessageId = currentAssistantMessageId ?? timelineEvents.lastAssistantMessageId
+        let targetMessageId = currentAssistantMessageId ?? timelineEvents.lastStarseaAssistantMessageId
         guard let targetMessageId,
               let index = timelineEvents.firstMessageIndex(id: targetMessageId)
         else {
@@ -228,6 +287,7 @@ final class StarSeaConversationSession {
     private func appendResonanceMatches(_ matches: [StarSeaStreamService.ResonanceMatch]) {
         removeEmptyAssistantMessage(id: currentAssistantMessageId)
         currentAssistantMessageId = nil
+        finishThinkingIfNeeded()
 
         guard !matches.isEmpty else { return }
         timelineEvents.append(.resonanceMatches(id: UUID(), matches: matches))
@@ -242,6 +302,8 @@ final class StarSeaConversationSession {
     }
 
     private func showStreamFailure(_ message: String) {
+        finishThinkingIfNeeded()
+
         if let messageId = currentAssistantMessageId,
            let index = timelineEvents.firstMessageIndex(id: messageId) {
             timelineEvents[index].replaceMessageContent(message)

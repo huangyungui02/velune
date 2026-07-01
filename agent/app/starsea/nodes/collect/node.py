@@ -27,7 +27,7 @@ def collect_node(state: State) -> dict[str, Any]:
         model,
         [
             SystemMessage(content=system_prompt(lang)),
-            HumanMessage(content=_conversation_prompt(format_messages(state["messages"], lang), lang)),
+            HumanMessage(content=format_messages(state["messages"], lang)),
         ],
     )
     content, keywords, blessing = _parse_collect_output(_content_text(response.content))
@@ -50,10 +50,6 @@ def _state_lang(state: State) -> str:
 def _state_model(state: State) -> str:
     model = str(state.get("metadata", {}).get("model") or "").strip()
     return model or COLLECT_MODEL
-
-
-def _conversation_prompt(conversation: str, _lang: str) -> str:
-    return f"完整对话：\n\n{conversation}"
 
 
 def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:

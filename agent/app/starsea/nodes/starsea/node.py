@@ -40,6 +40,10 @@ async def starsea_node(state: State) -> dict[str, Any]:
         model=_state_model(state),
         temperature=STARSEA_TEMPERATURE,
     ).bind_tools(tools)
+    reply_model = create_chat_model(
+        model=_state_model(state),
+        temperature=STARSEA_TEMPERATURE,
+    )
     messages = [
         SystemMessage(
             content=system_prompt(
@@ -68,7 +72,7 @@ async def starsea_node(state: State) -> dict[str, Any]:
         )
         returned_messages.extend(tool_messages)
         _stream_resonance_matches(resonance_matches)
-        final_response = await _stream_ai_message(model, [*messages, response, *tool_messages])
+        final_response = await _stream_ai_message(reply_model, [*messages, response, *tool_messages])
         returned_messages.append(final_response)
 
     _stream_conversation_options(final_response.content)
@@ -94,13 +98,9 @@ def _archive_events(
     if resonance_matches:
         events.append(
             {
-                "type": "tool_result",
-                "role": None,
-                "content": None,
-                "data": {
-                    "tool": "resonance_match",
-                    "items": resonance_matches,
-                },
+                "type": "resonance_match",
+                "role": "assistant",
+                "content": resonance_matches,
             }
         )
 
@@ -119,7 +119,6 @@ def _append_visible_message(events: list[dict[str, Any]], content: Any) -> None:
             "type": "message",
             "role": "assistant",
             "content": visible_reply,
-            "data": {},
         }
     )
 

@@ -181,5 +181,20 @@
 "reading.search.placeholder" = "Search";
 "reading.empty.featured" = "No featured sections yet";
 "reading.empty.bookshelf" = "Bookshelf is empty";
-
 "starsea.settlement.settleButton" = "Save to Haven";
+"starsea.thinking.finished" = "Thought for %d sec";
+
+"starsea.action.divination" = "Hexagram Divination";
+"divination.focus.prompt" = "Keep your question in mind";
+"divination.tap.prompt" = "Tap six times to cast your hexagram.";
+"divination.inspiredBy" = "Rooted in the I Ching tradition";
+"divination.result.title" = "Revealed Hexagram";
+"divination.result.recast" = "Recast";
+"divination.result.close" = "Return to Starsea";
+"divination.result.primary" = "Primary";
+"divination.result.changed" = "Changed";
+"divination.result.futureGlow" = "Future Revelation";
+"divination.result.castTime" = "Casting time:";
+"divination.input.placeholder" = "Write down the question you focused on to start interpretation.";
+"divination.action.interpret" = "Start Interpretation";
+"divination.status.interpreting" = "Sensing Starsea tides, interpreting the hexagram...";

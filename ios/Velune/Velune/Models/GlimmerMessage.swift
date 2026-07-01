@@ -70,6 +70,17 @@ enum JSONValue: Codable, Hashable {
             return nil
         }
     }
+
+    var intValue: Int? {
+        switch self {
+        case let .number(value):
+            return Int(value)
+        case let .string(value):
+            return Int(value)
+        case .bool, .object, .array, .null:
+            return nil
+        }
+    }
 }
 
 struct GlimmerMessage: Identifiable, Decodable, Hashable {
@@ -78,8 +89,7 @@ struct GlimmerMessage: Identifiable, Decodable, Hashable {
     let sequence: Int
     let type: String
     let role: String?
-    let content: String?
-    let payload: JSONValue
+    let content: JSONValue
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -89,7 +99,6 @@ struct GlimmerMessage: Identifiable, Decodable, Hashable {
         case type
         case role
         case content
-        case payload
         case createdAt = "created_at"
     }
 }
@@ -100,7 +109,7 @@ extension GlimmerMessage {
         let supabase = try Backend.requireSupabase()
         return try await supabase
             .from("glimmer_messages")
-            .select("id, glimmer_id, sequence, type, role, content, payload, created_at")
+            .select("id, glimmer_id, sequence, type, role, content, created_at")
             .eq("glimmer_id", value: glimmerId.uuidString)
             .eq("user_id", value: userId.uuidString)
             .order("sequence", ascending: true)

@@ -26,7 +26,7 @@ struct FloatingWriteButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "pencil")
-                .font(.title3.weight(.medium))
+                .font(.title2.weight(.medium))
                 .foregroundStyle(UITheme.primaryText)
                 .frame(width: 56, height: 56)
                 .contentShape(Circle())
@@ -37,3 +37,22 @@ struct FloatingWriteButton: View {
         .accessibilityLabel(Text("starsea.prompt.glimmerWithin"))
     }
 }
+
+struct QuestionmarkButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "questionmark.circle.dashed")
+                .font(.title2.weight(.medium))
+                .foregroundStyle(UITheme.primaryText)
+                .frame(width: 56, height: 56)
+                .contentShape(Circle())
+                .glassEffect(.regular.interactive(), in: .circle)
+                .shadow(color: .black.opacity(0.16), radius: 16, x: 0, y: 8)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("starsea.action.divination"))
+    }
+}
+

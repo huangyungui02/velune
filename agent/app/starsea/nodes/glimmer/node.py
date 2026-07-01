@@ -57,15 +57,12 @@ def _clean_archive_events(events: list[Any]) -> list[dict[str, Any]]:
         event_type = str(event.get("type") or "").strip()
         role = event.get("role")
         content = event.get("content")
-        data = event.get("data")
         if role is not None:
             role = str(role)
-        if content is not None:
+        if isinstance(content, str):
             content = str(content).strip() or None
-        if not isinstance(data, dict):
-            data = {}
 
-        if not event_type or (content is None and not data):
+        if not event_type or content is None:
             continue
 
         cleaned.append(
@@ -73,7 +70,6 @@ def _clean_archive_events(events: list[Any]) -> list[dict[str, Any]]:
                 "type": event_type,
                 "role": role,
                 "content": content,
-                "data": data,
             }
         )
 

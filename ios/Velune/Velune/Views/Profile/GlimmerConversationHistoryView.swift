@@ -63,27 +63,49 @@ struct GlimmerConversationHistoryView: View {
 
     private var timelineEvents: [StarSeaTimelineEvent] {
         messages.compactMap { message in
-            if message.type == "message", let role = message.role {
+            if (message.type == "message" || message.type == "text"), let role = message.role {
                 return .message(
                     StarSeaMessage(
                         id: message.id,
                         role: role == "user" ? .user : .assistant,
-                        content: message.content ?? ""
+                        content: message.content.stringValue ?? ""
                     )
                 )
             }
 
+            if message.type == "divination", let divination = divinationData(for: message) {
+                return .divinationResult(id: message.id, divination: divination)
+            }
+
             let matches = resonanceMatches(for: message)
-            guard message.type == "tool_result", !matches.isEmpty else { return nil }
+            guard message.type == "resonance_match", !matches.isEmpty else { return nil }
             return .resonanceMatches(id: message.id, matches: matches)
         }
     }
 
+    private func divinationData(for message: GlimmerMessage) -> DivinationData? {
+        guard
+            let object = message.content.objectValue,
+            let lineValues = object["casted_lines"]?.arrayValue,
+            let dateString = object["date"]?.stringValue
+        else {
+            return nil
+        }
+
+        let castedLines = lineValues.compactMap(\.intValue)
+        guard castedLines.count == 6 else { return nil }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = formatter.date(from: dateString) ?? ISO8601DateFormatter().date(from: dateString)
+        guard let date else { return nil }
+
+        return DivinationData(castedLines: castedLines, date: date)
+    }
+
     private func resonanceMatches(for message: GlimmerMessage) -> [StarSeaStreamService.ResonanceMatch] {
         guard
-            let object = message.payload.objectValue,
-            object["tool"]?.stringValue == "resonance_match",
-            let items = object["items"]?.arrayValue
+            let items = message.content.arrayValue
         else {
             return []
         }

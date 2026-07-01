@@ -40,16 +40,64 @@ enum StarSeaStreamService {
 
     enum Event {
         case ready(threadId: String)
-        case delta(String)
+        case delta(String, displayType: DeltaDisplayType)
         case options([String])
         case resonanceMatch([ResonanceMatch])
         case done(threadId: String?)
         case settled(SettledGlimmer)
     }
 
+    enum DeltaDisplayType: String, Decodable {
+        case starsea
+        case thinking
+        case thinkingSummary = "thinking_summary"
+        case collect
+        case unknown
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let value = try container.decode(String.self)
+            self = Self(rawValue: value) ?? .unknown
+        }
+    }
+
+    enum Content: Encodable {
+        case text(String)
+        case divination(DivinationContent)
+
+        struct DivinationContent: Encodable {
+            var castedLines: [Int]
+            var date: String
+            var question: String
+
+            enum CodingKeys: String, CodingKey {
+                case castedLines = "casted_lines"
+                case date
+                case question
+            }
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case type
+            case content
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            switch self {
+            case let .text(content):
+                try container.encode("text", forKey: .type)
+                try container.encode(content, forKey: .content)
+            case let .divination(content):
+                try container.encode("divination", forKey: .type)
+                try container.encode(content, forKey: .content)
+            }
+        }
+    }
+
     private struct SendRequest: Encodable {
         var threadId: String?
-        var content: String?
+        var content: Content?
         var intent: Intent?
         var timezone: String
         var memoryEnabled: Bool
@@ -59,6 +107,7 @@ enum StarSeaStreamService {
         var type: String
         var threadId: String?
         var delta: String?
+        var displayType: DeltaDisplayType?
         var matches: [ResonanceMatch]?
         var options: [String]?
         var glimmer: SettledGlimmer?
@@ -68,7 +117,7 @@ enum StarSeaStreamService {
 
     static func stream(
         threadId: String?,
-        content: String?,
+        content: Content?,
         intent: Intent? = nil
     ) -> AsyncThrowingStream<Event, Error> {
         let request = SendRequest(
@@ -147,7 +196,7 @@ enum StarSeaStreamService {
             return .ready(threadId: threadId)
         case "delta":
             guard let delta = payload.delta, !delta.isEmpty else { return nil }
-            return .delta(delta)
+            return .delta(delta, displayType: payload.displayType ?? .starsea)
         case "options":
             guard let options = payload.options else { return nil }
             let normalized = normalizeOptions(options)

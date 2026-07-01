@@ -4,7 +4,7 @@ import json
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
-from pydantic import AliasChoices, BaseModel, Field
+from pydantic import BaseModel, Field
 
 from app.core.llm import create_chat_model
 from app.core.prompts import apply_prompt_lang
@@ -17,7 +17,7 @@ MATCH_PROMPT = """
 你是星海内部的思想与共鸣匹配工具。
 
 # 任务
-根据当前对话，匹配 3 位最能与用户处境产生共鸣的人物。
+根据当前用户的心境，匹配 3 位最能与用户处境产生共鸣的人物。
 
 # 要求
 1. 重点不是讲知识，而是找到“这个人为什么能陪用户走过这一刻”。
@@ -31,7 +31,7 @@ MATCH_PROMPT = """
 
 JSON 结构：
 {
-  "voices": [
+  "matches": [
     {
       "name": "人物姓名",
       "resonance": "与用户当下的共鸣",
@@ -49,16 +49,15 @@ class ThoughtVoice(BaseModel):
 
 
 class ThoughtMatch(BaseModel):
-    voices: list[ThoughtVoice] = Field(
+    matches: list[ThoughtVoice] = Field(
         min_length=3,
         max_length=3,
-        validation_alias=AliasChoices("voices", "matches"),
         description="三位不同人物的共鸣匹配",
     )
 
 
-@tool
-def match_thought_voices(conversation: str, lang: str = "zh") -> str:
+@tool("match_resonances")
+def match_resonances(context: str, lang: str = "zh") -> str:
     """寻找星海中能够与当前用户处境共鸣的历史人物。"""
     normalized_lang = "zh" if lang == "zh" else "en"
     model = create_chat_model(model=MATCH_MODEL, temperature=MATCH_TEMPERATURE)
@@ -66,12 +65,8 @@ def match_thought_voices(conversation: str, lang: str = "zh") -> str:
     match = structured_model.invoke(
         [
             SystemMessage(content=apply_prompt_lang(MATCH_PROMPT, normalized_lang)),
-            HumanMessage(content=_conversation_prompt(conversation, normalized_lang)),
+            HumanMessage(content=context),
         ]
     )
-
+    print(f"match: {match}")
     return json.dumps(match.model_dump(mode="json"), ensure_ascii=False)
-
-
-def _conversation_prompt(conversation: str, _lang: str) -> str:
-    return f"对话内容：\n\n{conversation}"
