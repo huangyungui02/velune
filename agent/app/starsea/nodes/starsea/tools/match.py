@@ -23,8 +23,9 @@ MATCH_PROMPT = """
 1. 重点不是讲知识，而是找到“这个人为什么能陪用户走过这一刻”。
 2. resonance 要说明这个人物如何映照用户当下。
 3. whisper 是这个人物可以留给用户的一句回应。
-4. 人物必须是真实存在的，并且属于公共领域。
+4. 人物必须是真实存在的，并且属于public domain。
 5. 人物名、resonance 和 whisper 使用最终输出语言。
+6. 不要因为某个人更出名而选择他，而是选择与用户处境最共鸣的人物。
 
 # 输出
 仅输出纯 JSON，不要 Markdown。
@@ -33,9 +34,19 @@ JSON 结构：
 {
   "matches": [
     {
-      "name": "人物姓名",
-      "resonance": "与用户当下的共鸣",
-      "whisper": "一句低声回应"
+      "name": "name1",
+      "resonance": "resonance1",
+      "whisper": "whisper1"
+    },
+    {
+      "name": "name2",
+      "resonance": "resonance2",
+      "whisper": "whisper2"
+    },
+    {
+      "name": "name3",
+      "resonance": "resonance3",
+      "whisper": "whisper3"
     }
   ]
 }
@@ -67,5 +78,4 @@ def match_resonances(context: str, lang: str) -> str:
             HumanMessage(content=context),
         ]
     )
-    print(f"match: {match}")
     return json.dumps(match.model_dump(mode="json"), ensure_ascii=False)
