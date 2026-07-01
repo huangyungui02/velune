@@ -40,9 +40,9 @@ def reset_graph() -> None:
 
 
 def _route(state: State) -> RouterAction:
-    content = state["content"]
-    if content["type"] == "trigger" and content["content"] == "collect":
+    user_input = state["user_input"]
+    if user_input["type"] == "trigger" and user_input["content"] == "collect":
         return "collect"
-    if content["type"] == "divination":
+    if user_input["type"] == "divination":
         return "divination"
     return "starsea"

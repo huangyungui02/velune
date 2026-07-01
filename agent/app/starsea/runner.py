@@ -38,7 +38,6 @@ async def stream_graph(
     config = _graph_config(
         thread_id=thread_id,
         user_id=user_id,
-        content=user_input,
         metadata=initial_state["metadata"],
     )
     graph = build_graph()
@@ -94,7 +93,7 @@ def _initial_state(
     messages, archive_events = _initial_messages_and_archive_events(user_input)
 
     initial_state: State = {
-        "content": user_input.model_dump(mode="json"),
+        "user_input": user_input.model_dump(mode="json"),
         "messages": messages,
         "archive_events": archive_events,
         "glimmer": None,
@@ -138,27 +137,17 @@ def _graph_config(
     *,
     thread_id: str,
     user_id: str,
-    content: StarseaContent,
     metadata: dict[str, Any],
 ) -> dict[str, Any]:
-    trace_metadata = langfuse_metadata(
-        user_id=user_id,
-        session_id=thread_id,
-        metadata=metadata,
-    )
-    run_type = content.content if isinstance(content, TriggerContent) else content.type
-    config: dict[str, Any] = {
+    return {
         "configurable": {"thread_id": thread_id},
-        "metadata": trace_metadata,
-        "run_name": f"starsea.{run_type}",
-        "tags": ["starsea", run_type],
+        "metadata": langfuse_metadata(
+            user_id=user_id,
+            session_id=thread_id,
+            metadata=metadata,
+        ),
+        "callbacks": langfuse_callbacks(),
     }
-
-    callbacks = langfuse_callbacks()
-    if callbacks:
-        config["callbacks"] = callbacks
-
-    return config
 
 
 def _ensure_thread_owner(values: dict[str, Any], user_id: str) -> None:
@@ -171,11 +160,11 @@ def _ensure_thread_owner(values: dict[str, Any], user_id: str) -> None:
 
 
 def _should_delete_checkpoint(values: dict[str, Any]) -> bool:
-    content = values.get("content")
+    user_input = values.get("user_input")
     return (
-        isinstance(content, dict)
-        and content.get("type") == "trigger"
-        and content.get("content") == "collect"
+        isinstance(user_input, dict)
+        and user_input.get("type") == "trigger"
+        and user_input.get("content") == "collect"
         and isinstance(values.get("glimmer"), dict)
     )
 

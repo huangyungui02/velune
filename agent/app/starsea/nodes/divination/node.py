@@ -62,13 +62,12 @@ def _archive_events(content: Any) -> list[dict[str, Any]]:
     ]
 
 def _user_prompt(state: State) -> str:
-    content = state["content"]
-    if content["type"] != "divination":
+    user_input = state["user_input"]
+    if user_input["type"] != "divination":
         raise ValueError("divination content is required")
-    divination = content["content"]
 
     return build_divination_user_prompt(
-        divination=divination,
+        divination=user_input["content"],
         timezone=state["metadata"]["timezone"],
         lang=state["metadata"]["lang"],
     )

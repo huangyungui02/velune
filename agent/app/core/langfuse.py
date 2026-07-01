@@ -29,17 +29,15 @@ def langfuse_callbacks() -> list[Any]:
 
 def langfuse_metadata(
     *,
-    user_id: str | None,
+    user_id: str,
     session_id: str,
-    metadata: dict[str, Any] | None = None,
+    metadata: dict[str, Any],
 ) -> dict[str, Any]:
     trace_metadata: dict[str, Any] = {
         "langfuse_session_id": session_id,
+        "langfuse_user_id": user_id,
     }
-    if user_id:
-        trace_metadata["langfuse_user_id"] = user_id
-    if metadata:
-        trace_metadata.update(_safe_trace_metadata(metadata))
+    trace_metadata.update(_safe_trace_metadata(metadata))
     return trace_metadata
 
 
