@@ -119,6 +119,10 @@ enum StarSeaStreamService {
 
     private struct StreamEvent: Decodable {
         var type: String
+        var content: StreamEventContent
+    }
+
+    private struct StreamEventContent: Decodable {
         var threadId: String?
         var delta: String?
         var displayType: DeltaDisplayType?
@@ -204,24 +208,25 @@ enum StarSeaStreamService {
     }
 
     private static func mapEvent(_ payload: StreamEvent) throws -> Event? {
+        let content = payload.content
         switch payload.type {
         case "ready":
-            guard let threadId = payload.threadId else { return nil }
+            guard let threadId = content.threadId else { return nil }
             return .ready(threadId: threadId)
         case "delta":
-            guard let delta = payload.delta, !delta.isEmpty else { return nil }
-            return .delta(delta, displayType: payload.displayType ?? .starsea)
-        case "options":
-            guard let options = payload.options else { return nil }
+            guard let delta = content.delta, !delta.isEmpty else { return nil }
+            return .delta(delta, displayType: content.displayType ?? .starsea)
+        case "option":
+            guard let options = content.options else { return nil }
             let normalized = normalizeOptions(options)
             guard !normalized.isEmpty else { return nil }
             return .options(normalized)
         case "resonance_match":
-            return .resonanceMatch(payload.matches ?? [])
+            return .resonanceMatch(content.matches ?? [])
         case "done":
-            return .done(threadId: payload.threadId)
+            return .done(threadId: content.threadId)
         case "settled":
-            guard let glimmer = payload.glimmer else { return nil }
+            guard let glimmer = content.glimmer else { return nil }
             return .settled(glimmer)
         case "error":
             throw streamError(for: payload)
@@ -241,7 +246,7 @@ enum StarSeaStreamService {
             domain: domain,
             code: -1,
             userInfo: [
-                NSLocalizedDescriptionKey: payload.message ?? String(localized: "matching.error.unknown")
+                NSLocalizedDescriptionKey: payload.content.message ?? String(localized: "matching.error.unknown")
             ]
         )
     }

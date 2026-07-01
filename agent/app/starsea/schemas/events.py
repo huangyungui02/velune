@@ -1,137 +1,61 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel
 
-
-class StarseaGraphEvent(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    event: str = ""
-    thread_id: str = Field(default="", alias="thread_id")
-    data: Any = None
-
-
-class MessageDeltaData(BaseModel):
-    delta: str = ""
-    display_type: str | None = Field(default=None, alias="display_type")
-
-
-class ConversationOptionsData(BaseModel):
-    options: list[str] = []
-
-    @model_validator(mode="after")
-    def clean_options(self) -> ConversationOptionsData:
-        seen: set[str] = set()
-        normalized: list[str] = []
-        for option in self.options:
-            cleaned = option.strip()
-            if not cleaned or cleaned in seen:
-                continue
-            seen.add(cleaned)
-            normalized.append(cleaned)
-            if len(normalized) == 4:
-                break
-        self.options = normalized
-        return self
-
-
-class ErrorData(BaseModel):
-    message: str = "Starsea failed"
-
-    @model_validator(mode="after")
-    def ensure_message(self) -> ErrorData:
-        self.message = self.message or "Starsea failed"
-        return self
-
-
-class ResonanceMatchPreview(BaseModel):
-    name: str
-    line: str = ""
-
-    @model_validator(mode="before")
-    @classmethod
-    def normalize_whisper(cls, value: Any) -> Any:
-        if isinstance(value, dict) and not value.get("line") and value.get("whisper"):
-            return {**value, "line": value["whisper"]}
-        return value
-
-    @model_validator(mode="after")
-    def clean_text(self) -> ResonanceMatchPreview:
-        self.name = self.name.strip()
-        self.line = self.line.strip()
-        if not self.name or not self.line:
-            raise ValueError("name and line are required")
-        return self
-
-
-class SoulerResolutionResult(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    status: str = ""
-    souler_id: str | None = Field(default=None, alias="soulerId")
-    request_id: str | None = Field(default=None, alias="requestId")
-
-
-class ResonanceMatchEvent(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    name: str
-    line: str
-    resolution_status: str = Field(alias="resolutionStatus")
-    souler_id: str | None = Field(default=None, alias="soulerId")
-    resolution_request_id: str | None = Field(default=None, alias="resolutionRequestId")
+from app.starsea.schemas.model import (
+    DeltaContent,
+    DoneContent,
+    ErrorContent,
+    OptionContent,
+    ReadyContent,
+    ResonanceMatchContent,
+    SettledContent,
+)
 
 
 class DeltaEvent(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
     type: Literal["delta"] = "delta"
-    delta: str
-    display_type: str | None = Field(default=None, alias="displayType")
+    content: DeltaContent
 
 
 class ReadyEvent(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
     type: Literal["ready"] = "ready"
-    thread_id: str = Field(alias="threadId")
+    content: ReadyContent
 
 
-class StarseaMatchesEvent(BaseModel):
+class ResonanceMatchEvent(BaseModel):
     type: Literal["resonance_match"] = "resonance_match"
-    matches: list[ResonanceMatchEvent]
+    content: ResonanceMatchContent
 
 
-class ConversationOptionsEvent(BaseModel):
-    type: Literal["options"] = "options"
-    options: list[str]
+class OptionEvent(BaseModel):
+    type: Literal["option"] = "option"
+    content: OptionContent
 
 
 class SettledEvent(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
     type: Literal["settled"] = "settled"
-    thread_id: str = Field(alias="threadId")
-    glimmer: dict[str, Any]
+    content: SettledContent
 
 
 class DoneEvent(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
     type: Literal["done"] = "done"
-    thread_id: str = Field(alias="threadId")
+    content: DoneContent
 
 
 class ErrorEvent(BaseModel):
     type: Literal["error"] = "error"
-    message: str
+    content: ErrorContent
 
 
-class UnknownEvent(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    type: Literal["event"] = "event"
-    thread_id: str = Field(alias="threadId")
-    data: Any = None
+StarseaEvent = (
+    DeltaEvent
+    | ReadyEvent
+    | ResonanceMatchEvent
+    | OptionEvent
+    | SettledEvent
+    | DoneEvent
+    | ErrorEvent
+)

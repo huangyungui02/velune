@@ -3,14 +3,16 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator
 from typing import Any
-from uuid import uuid4
 
 from langchain_core.messages import HumanMessage
 
+from app.core.errors import error_message
 from app.core.langfuse import langfuse_callbacks, langfuse_metadata
 from app.core.llm import model_for_premium
 from app.starsea.checkpoint import checkpoint_manager
 from app.starsea.graph import build_graph
+from app.starsea.schemas.events import DoneEvent, ErrorEvent, SettledEvent
+from app.starsea.schemas.model import DoneContent, ErrorContent, SettledContent
 from app.starsea.schemas.starsea import DivinationEnvelope, StarseaContent, TextContent, TriggerContent
 from app.starsea.state import ArchiveEvent, State
 
@@ -22,11 +24,10 @@ async def stream_graph(
     *,
     lang: str,
     metadata: dict[str, Any] | None = None,
-    thread_id: str | None = None,
+    thread_id: str,
     user_id: str | None = None,
     is_premium: bool = False,
 ) -> AsyncIterator[dict[str, Any]]:
-    thread_id = thread_id or str(uuid4())
     initial_state = _initial_state(
         user_input,
         metadata=metadata,
@@ -52,22 +53,20 @@ async def stream_graph(
             config,
             stream_mode="custom",
         ):
-            yield _event_from_chunk(chunk, thread_id)
+            yield chunk
 
         snapshot = await graph.aget_state(config)
         result = snapshot.values
         if _should_delete_checkpoint(result):
             await _delete_checkpoint(thread_id)
 
-        yield {
-            "event": "completed",
-            "thread_id": thread_id,
-            "data": {
-                "status": "completed",
-                "thread_id": thread_id,
-                "glimmer": result.get("glimmer"),
-            },
-        }
+        glimmer = result.get("glimmer")
+        if isinstance(glimmer, dict):
+            yield SettledEvent(
+                content=SettledContent(thread_id=thread_id, glimmer=glimmer)
+            ).model_dump(mode="json", exclude_none=True)
+        else:
+            yield DoneEvent(content=DoneContent(thread_id=thread_id)).model_dump()
     except Exception as exc:
         logger.warning(
             "LangGraph stream failed for thread %s: %s: %s",
@@ -75,16 +74,7 @@ async def stream_graph(
             type(exc).__name__,
             exc,
         )
-        yield {
-            "event": "error",
-            "thread_id": thread_id,
-            "data": {
-                "status": "failed",
-                "thread_id": thread_id,
-                "error": type(exc).__name__,
-                "message": str(exc) or "LangGraph stream failed.",
-            },
-        }
+        yield ErrorEvent(content=ErrorContent(message=error_message(exc))).model_dump()
 
 
 def _initial_state(
@@ -171,37 +161,6 @@ def _graph_config(
         config["callbacks"] = callbacks
 
     return config
-
-
-def _event_from_chunk(chunk: Any, thread_id: str) -> dict[str, Any]:
-    if isinstance(chunk, dict) and chunk.get("type") == "message_delta":
-        return {
-            "event": "message_delta",
-            "thread_id": thread_id,
-            "data": {
-                "display_type": chunk.get("display_type"),
-                "delta": chunk.get("delta", ""),
-            },
-        }
-    if isinstance(chunk, dict) and chunk.get("type") == "resonance_match":
-        return {
-            "event": "resonance_match",
-            "thread_id": thread_id,
-            "data": chunk["matches"],
-        }
-    if isinstance(chunk, dict) and chunk.get("type") == "conversation_options":
-        return {
-            "event": "conversation_options",
-            "thread_id": thread_id,
-            "data": {
-                "options": chunk.get("options", []),
-            },
-        }
-    return {
-        "event": "custom",
-        "thread_id": thread_id,
-        "data": chunk,
-    }
 
 
 def _ensure_thread_owner(values: dict[str, Any], user_id: str) -> None:

@@ -4,9 +4,11 @@ import json
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, SystemMessage
-from langgraph.config import get_stream_writer
 
 from app.core.llm import DEFAULT_MODEL, create_chat_model
+from app.starsea.schemas.events import DeltaEvent
+from app.starsea.schemas.model import DeltaContent
+from app.starsea.stream_events import emit_starsea_event
 from app.starsea.messages import format_messages
 
 from .prompt import system_prompt
@@ -104,18 +106,8 @@ def _stream_message_delta(delta: str) -> None:
     if not delta:
         return
 
-    try:
-        writer = get_stream_writer()
-    except RuntimeError:
-        return
-
-    writer(
-        {
-            "type": "message_delta",
-            "display_type": "collect",
-            "delta": delta,
-        }
-    )
+    content = DeltaContent(delta=delta, display_type="collect")
+    emit_starsea_event(DeltaEvent(content=content))
 
 
 class _CollectStreamFilter:

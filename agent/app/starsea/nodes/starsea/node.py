@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk, SystemMessage
-from langgraph.config import get_stream_writer
 
 from app.core.conversation_options import (
     ConversationOptionStreamState,
@@ -12,6 +11,9 @@ from app.core.conversation_options import (
     strip_conversation_options_markup,
 )
 from app.core.llm import DEFAULT_MODEL, create_chat_model
+from app.starsea.schemas.events import DeltaEvent, OptionEvent, ResonanceMatchEvent
+from app.starsea.schemas.model import DeltaContent, OptionContent, ResonanceMatchContent
+from app.starsea.stream_events import emit_starsea_event
 
 from .context import (
     current_time_context,
@@ -160,16 +162,9 @@ def _stream_resonance_matches(previews: list[Any]) -> None:
     if not previews:
         return
 
-    try:
-        writer = get_stream_writer()
-    except RuntimeError:
-        return
-
-    writer(
-        {
-            "type": "resonance_match",
-            "matches": previews,
-        }
+    content = ResonanceMatchContent(matches=previews)
+    emit_starsea_event(
+        ResonanceMatchEvent(content=content)
     )
 
 
@@ -179,35 +174,16 @@ def _stream_conversation_options(content: Any) -> None:
     except ValueError:
         return
 
-    try:
-        writer = get_stream_writer()
-    except RuntimeError:
-        return
-
-    writer(
-        {
-            "type": "conversation_options",
-            "options": options,
-        }
-    )
+    option_content = OptionContent(options=options)
+    emit_starsea_event(OptionEvent(content=option_content))
 
 
 def _stream_message_delta(delta: str) -> None:
     if not delta:
         return
 
-    try:
-        writer = get_stream_writer()
-    except RuntimeError:
-        return
-
-    writer(
-        {
-            "type": "message_delta",
-            "display_type": "starsea",
-            "delta": delta,
-        }
-    )
+    content = DeltaContent(delta=delta, display_type="starsea")
+    emit_starsea_event(DeltaEvent(content=content))
 
 
 def _content_text(content: Any) -> str:
