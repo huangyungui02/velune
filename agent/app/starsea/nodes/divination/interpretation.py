@@ -100,7 +100,6 @@ def build_divination_user_prompt(
     primary = _hexagram(casted_lines, changed=False)
     changed = _hexagram(casted_lines, changed=True)
     moving = _moving(casted_lines)
-    output_language = "中文" if lang == "zh" else "English"
 
     prompt = "\n".join(
         [
@@ -114,6 +113,7 @@ def build_divination_user_prompt(
             question,
         ]
     )
+    return prompt
 
 
 def _local_datetime(date: datetime, timezone: str | None) -> datetime:
