@@ -7,10 +7,9 @@ from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, Sys
 from langgraph.config import get_stream_writer
 
 from app.core.llm import DEFAULT_MODEL, create_chat_model
-from app.starsea.messages import format_messages
 from app.starsea.schemas.events import DeltaEvent
 from app.starsea.schemas.model import DeltaContent
-from app.starsea.state import State
+from app.starsea.state import ArchiveState, State
 
 from .prompt import system_prompt
 
@@ -27,7 +26,7 @@ def collect_node(state: State) -> dict[str, Any]:
         model,
         [
             SystemMessage(content=system_prompt(lang)),
-            HumanMessage(content=format_messages(state["messages"], lang)),
+            HumanMessage(content=_format_text_archives(state["archives"])),
         ],
     )
     glimmer = _parse_collect_output(response.content)
@@ -37,6 +36,15 @@ def collect_node(state: State) -> dict[str, Any]:
         "messages": [message],
         "glimmer": glimmer,
     }
+
+
+def _format_text_archives(archives: list[ArchiveState]) -> str:
+    lines = [
+        f"{archive['role']}：{archive['content']}"
+        for archive in archives
+        if archive["type"] == "text"
+    ]
+    return "\n\n".join(lines)
 
 
 def _parse_collect_output(raw_content: str) -> dict[str, Any]:
