@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, SystemMessage
 from langgraph.config import get_stream_writer
@@ -15,12 +15,10 @@ from app.core.llm import DIVINATION_MODEL, create_deepseek_chat_model
 from app.starsea.schemas.archive import TextArchive
 from app.starsea.schemas.events import DeltaEvent, OptionEvent
 from app.starsea.schemas.model import DeltaContent, OptionContent
+from app.starsea.state import ArchiveState, State
 
 from .interpretation import build_divination_user_prompt
 from .prompt import SYSTEM_PROMPT
-
-if TYPE_CHECKING:
-    from app.starsea.state import ArchiveState, State
 
 DIVINATION_TEMPERATURE = 0.5
 

@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from langchain_core.messages import AIMessage, ToolMessage
 
 from app.soulers.services.resolution import resolve_or_enqueue_souler
+from app.starsea.state import State
 
 from .glimmer import create_get_glimmer_messages_tool
 from .match import MATCH_TOOL_NAME, create_match_resonances_tool
-
-if TYPE_CHECKING:
-    from app.starsea.state import State
 
 
 def starsea_tools(

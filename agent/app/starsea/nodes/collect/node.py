@@ -1,20 +1,18 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, SystemMessage
 from langgraph.config import get_stream_writer
 
 from app.core.llm import DEFAULT_MODEL, create_chat_model
+from app.starsea.messages import format_messages
 from app.starsea.schemas.events import DeltaEvent
 from app.starsea.schemas.model import DeltaContent
-from app.starsea.messages import format_messages
+from app.starsea.state import State
 
 from .prompt import system_prompt
-
-if TYPE_CHECKING:
-    from app.starsea.state import State
 
 COLLECT_MODEL = DEFAULT_MODEL
 COLLECT_TEMPERATURE = 0.45

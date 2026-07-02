@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from langchain_core.messages import AIMessage, AIMessageChunk, SystemMessage
@@ -19,12 +19,10 @@ from app.starsea.repositories.glimmers import get_recent_glimmers
 from app.starsea.schemas.archive import ResonanceMatchArchive, TextArchive
 from app.starsea.schemas.events import DeltaEvent, OptionEvent, ResonanceMatchEvent
 from app.starsea.schemas.model import DeltaContent, OptionContent, ResonanceMatchContent
+from app.starsea.state import ArchiveState, State
 
 from .prompt import system_prompt
 from .tools import run_starsea_tools, starsea_tools
-
-if TYPE_CHECKING:
-    from app.starsea.state import ArchiveState, State
 
 STARSEA_TEMPERATURE = 0.5
 
