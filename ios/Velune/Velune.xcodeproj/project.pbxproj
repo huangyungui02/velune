@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		321220EA2EE30B3C00E3705D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 321220E92EE30B3C00E3705D /* Supabase */; };
 		323FF3BA2F6087A300423EAA /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 323FF3B92F6087A300423EAA /* StoreKit.framework */; };
-		324208332F659DBC00D1983D /* EventSource in Frameworks */ = {isa = PBXBuildFile; productRef = 324208322F659DBC00D1983D /* EventSource */; };
 		3299B15B2EF39407009A60EF /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3299B15A2EF39407009A60EF /* MarkdownUI */; };
 		32B3CE312EEBFF130041F499 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 32B3CE302EEBFF130041F499 /* Realtime */; };
 		32F5A0012F70000100423EAA /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 32F5A0022F70000100423EAA /* RevenueCat */; };
@@ -51,7 +50,6 @@
 				3299B15B2EF39407009A60EF /* MarkdownUI in Frameworks */,
 				323FF3BA2F6087A300423EAA /* StoreKit.framework in Frameworks */,
 				321220EA2EE30B3C00E3705D /* Supabase in Frameworks */,
-				324208332F659DBC00D1983D /* EventSource in Frameworks */,
 				32B3CE312EEBFF130041F499 /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -108,7 +106,6 @@
 				32B3CE302EEBFF130041F499 /* Realtime */,
 				3299B15A2EF39407009A60EF /* MarkdownUI */,
 				32F5A0022F70000100423EAA /* RevenueCat */,
-				324208322F659DBC00D1983D /* EventSource */,
 			);
 			productName = Velune;
 			productReference = 321D07BD2EDA8CD8007F4762 /* Velune.app */;
@@ -143,7 +140,6 @@
 				328EC26E2EE2FE26000D601B /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				3299B1592EF39406009A60EF /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 				323FF1AA2F60029600423EAA /* XCRemoteSwiftPackageReference "purchases-ios" */,
-				324208312F659DBC00D1983D /* XCRemoteSwiftPackageReference "EventSource" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 321D07BE2EDA8CD8007F4762 /* Products */;
@@ -523,14 +519,6 @@
 				minimumVersion = 5.61.0;
 			};
 		};
-		324208312F659DBC00D1983D /* XCRemoteSwiftPackageReference "EventSource" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Recouse/EventSource";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.7;
-			};
-		};
 		328EC26E2EE2FE26000D601B /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase-community/supabase-swift.git";
@@ -554,11 +542,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 328EC26E2EE2FE26000D601B /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
-		};
-		324208322F659DBC00D1983D /* EventSource */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 324208312F659DBC00D1983D /* XCRemoteSwiftPackageReference "EventSource" */;
-			productName = EventSource;
 		};
 		3299B15A2EF39407009A60EF /* MarkdownUI */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -1,5 +1,4 @@
 import Foundation
-import EventSource
 import OSLog
 
 nonisolated enum APISSEClient {
@@ -27,46 +26,37 @@ nonisolated enum APISSEClient {
             let task = Task(priority: .userInitiated) {
                 do {
                     let request = try await makeRequest(path: path, body: encodedBody)
-                    let eventSource = EventSource(
-                        mode: .default,
-                        timeoutIntervalForRequest: connectionTimeout
-                    )
-                    let dataTask = eventSource.dataTask(for: request)
-                    var didReceivePayload = false
-                    let timeoutTask = Task {
-                        try? await Task.sleep(for: .seconds(connectionTimeout))
-                        guard !Task.isCancelled else { return }
-                        continuation.finish(throwing: serverUnavailableError())
+                    let (bytes, response) = try await URLSession.shared.bytes(for: request)
+                    guard let httpResponse = response as? HTTPURLResponse else {
+                        throw serverUnavailableError()
                     }
-                    defer { timeoutTask.cancel() }
 
-                    for await event in dataTask.events() {
+                    guard (200..<300).contains(httpResponse.statusCode) else {
+                        let data = try await readData(from: bytes)
+                        throw httpError(statusCode: httpResponse.statusCode, data: data)
+                    }
+
+                    var buffer = Data()
+                    var didReceivePayload = false
+                    for try await byte in bytes {
                         if Task.isCancelled { break }
 
-                        switch event {
-                        case .open:
-                            continue
-                        case .closed:
-                            finish(continuation, didReceivePayload: didReceivePayload)
-                            return
-                        case let .event(message):
-                            guard let raw = message.data?
-                                .trimmingCharacters(in: .whitespacesAndNewlines),
-                                !raw.isEmpty,
-                                raw != "[DONE]"
-                            else {
-                                continue
+                        buffer.append(byte)
+                        while let eventData = nextEventData(from: &buffer) {
+                            if let payload = eventPayload(from: eventData) {
+                                didReceivePayload = true
+                                continuation.yield(Data(payload.utf8))
                             }
-                            didReceivePayload = true
-                            timeoutTask.cancel()
-                            continuation.yield(Data(raw.utf8))
-                        case let .error(error):
-                            throw resolveEventSourceError(error)
                         }
+                    }
+
+                    if let payload = eventPayload(from: buffer) {
+                        didReceivePayload = true
+                        continuation.yield(Data(payload.utf8))
                     }
                     finish(continuation, didReceivePayload: didReceivePayload)
                 } catch {
-                    continuation.finish(throwing: error)
+                    continuation.finish(throwing: resolveNetworkError(error))
                 }
             }
             continuation.onTermination = { _ in
@@ -97,7 +87,7 @@ nonisolated enum APISSEClient {
         return request
     }
 
-    nonisolated private static func resolveEventSourceError(_ error: Error) -> Error {
+    nonisolated private static func resolveNetworkError(_ error: Error) -> Error {
         if let networkError = networkErrorMessage(for: error) {
             logger.error("stream request failed: \(networkError, privacy: .public)")
             return NSError(
@@ -110,11 +100,11 @@ nonisolated enum APISSEClient {
             )
         }
 
-        guard case let EventSourceError.connectionError(statusCode, response) = error else {
-            return error
-        }
+        return error
+    }
 
-        let message = parseAPIErrorMessage(from: response)
+    nonisolated private static func httpError(statusCode: Int, data: Data) -> NSError {
+        let message = parseAPIErrorMessage(from: data)
             ?? HTTPURLResponse.localizedString(forStatusCode: statusCode)
         logger.error("stream request failed: status=\(statusCode, privacy: .public) message=\(message, privacy: .public)")
         return NSError(
@@ -122,6 +112,47 @@ nonisolated enum APISSEClient {
             code: statusCode,
             userInfo: [NSLocalizedDescriptionKey: message]
         )
+    }
+
+    nonisolated private static func nextEventData(from buffer: inout Data) -> Data? {
+        let separators = [
+            Data("\r\n\r\n".utf8),
+            Data("\n\n".utf8),
+        ]
+
+        for separator in separators {
+            if let range = buffer.range(of: separator) {
+                let eventData = buffer[..<range.lowerBound]
+                buffer.removeSubrange(..<range.upperBound)
+                return Data(eventData)
+            }
+        }
+
+        return nil
+    }
+
+    nonisolated private static func eventPayload(from eventData: Data) -> String? {
+        guard let event = String(data: eventData, encoding: .utf8) else { return nil }
+        let dataLines = event
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .compactMap { line -> String? in
+                let line = line.trimmingCharacters(in: .newlines)
+                guard line.hasPrefix("data:") else { return nil }
+                return String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+            }
+        let raw = dataLines
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty, raw != "[DONE]" else { return nil }
+        return raw
+    }
+
+    nonisolated private static func readData(from bytes: URLSession.AsyncBytes) async throws -> Data {
+        var data = Data()
+        for try await byte in bytes {
+            data.append(byte)
+        }
+        return data
     }
 
     nonisolated private static func finish(
@@ -168,12 +199,15 @@ nonisolated enum APISSEClient {
         do {
             return try decoder.decode(payloadType, from: data)
         } catch {
+            let rawPayload = String(data: data, encoding: .utf8) ?? "<non-utf8 payload>"
+            logger.error("invalid stream payload: \(rawPayload, privacy: .private)")
             throw NSError(
                 domain: domain,
                 code: -2,
                 userInfo: [
                     NSLocalizedDescriptionKey: "Invalid stream payload format",
                     NSUnderlyingErrorKey: error,
+                    "payload": rawPayload,
                 ]
             )
         }
