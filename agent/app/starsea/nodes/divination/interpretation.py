@@ -99,25 +99,19 @@ def build_divination_user_prompt(
 
     primary = _hexagram(casted_lines, changed=False)
     changed = _hexagram(casted_lines, changed=True)
-    moving_summary = _moving_summary(casted_lines)
+    moving = _moving(casted_lines)
     output_language = "中文" if lang == "zh" else "English"
 
-    interpretation = "\n".join(
+    prompt = "\n".join(
         [
-            "【六爻起卦上下文】",
+            "# 六爻起卦上下文",
             f"主卦：{primary}",
             f"变卦：{changed}",
             f"起卦时间：{ganzhi}",
-            moving_summary,
-        ]
-    )
-
-    return "\n\n".join(
-        [
-            interpretation,
-            f"用户问题：{question}",
-            "请基于以上六爻起卦上下文和用户问题进行解卦。解读要温和、具体、有启发性，避免宿命化断言。",
-            f"最终回复语言必须是：{output_language}。",
+            f"动爻：{moving}",
+            "",
+            "# 问题",
+            question,
         ]
     )
 
@@ -171,12 +165,22 @@ def _trigram_symbol(lines: list[str]) -> str:
     return TRIGRAM_SYMBOLS[tuple(lines)]
 
 
-def _moving_summary(casted_lines: list[int]) -> str:
-    moving_lines = [
-        str(index)
+def _moving(casted_lines: list[int]) -> str:
+    lines = [
+        _moving_line_name(index, line)
         for index, line in enumerate(casted_lines, start=1)
         if line in {2, 3}
     ]
-    if not moving_lines:
-        return "无动爻，以本卦为主。"
-    return f"动爻：第{', '.join(moving_lines)}爻。"
+    if not lines:
+        return "无，以本卦为主"
+    return "、".join(lines)
+
+
+def _moving_line_name(index: int, line: int) -> str:
+    position = ["初", "二", "三", "四", "五", "上"][index - 1]
+    polarity = "九" if line == 2 else "六"
+    if index == 1:
+        return f"初{polarity}"
+    if index == 6:
+        return f"上{polarity}"
+    return f"{polarity}{position}"

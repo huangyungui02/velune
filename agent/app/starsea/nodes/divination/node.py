@@ -22,7 +22,7 @@ from .prompt import SYSTEM_PROMPT
 if TYPE_CHECKING:
     from app.starsea.state import ArchiveState, State
 
-DIVINATION_TEMPERATURE = 0.45
+DIVINATION_TEMPERATURE = 0.5
 
 
 async def divination_node(state: State) -> dict[str, Any]:
