@@ -7,13 +7,10 @@ struct GlimmerDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isDeleting = false
     @State private var showDeleteAlert = false
-    @State private var isBreathing = false
 
     var body: some View {
         ZStack {
             BackgroundView()
-            GlimmerBreathingGlow(isBreathing: isBreathing)
-                .onAppear(perform: startBreathing)
 
             GlimmerDetailContent(glimmer: glimmer)
         }
@@ -55,12 +52,6 @@ struct GlimmerDetailView: View {
         .disabled(isDeleting)
     }
 
-    private func startBreathing() {
-        withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
-            isBreathing = true
-        }
-    }
-
     private func deleteGlimmer() {
         Task {
             isDeleting = true
@@ -77,24 +68,6 @@ struct GlimmerDetailView: View {
     }
 }
 
-private struct GlimmerBreathingGlow: View {
-    let isBreathing: Bool
-
-    var body: some View {
-        RadialGradient(
-            colors: [
-                Color.white.opacity(isBreathing ? 0.06 : 0.03),
-                Color.white.opacity(isBreathing ? 0.02 : 0.005),
-                .clear
-            ],
-            center: .center,
-            startRadius: 100,
-            endRadius: 500
-        )
-        .ignoresSafeArea()
-    }
-}
-
 private struct GlimmerDetailContent: View {
     let glimmer: Glimmer
 
@@ -102,13 +75,12 @@ private struct GlimmerDetailContent: View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 28) {
-                    Spacer()
                     GlimmerCardView(content: glimmer.content)
                     GlimmerDateBadge(date: glimmer.createdAt)
-                    Spacer()
                 }
                 .frame(minHeight: geometry.size.height)
                 .padding(.horizontal, 22)
+                .padding(.vertical, 32)
             }
         }
     }

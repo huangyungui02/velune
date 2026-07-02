@@ -23,10 +23,16 @@ struct GlimmerCardView: View {
         .padding(.horizontal, 24)
         .padding(.vertical, 28)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
         .background(
-            .ultraThinMaterial.opacity(0.12),
+            .ultraThinMaterial.opacity(0.14),
             in: .rect(cornerRadius: 16, style: .continuous)
         )
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 0.8)
+        }
+        .shadow(color: .black.opacity(0.34), radius: 28, y: 18)
         .animation(.easeOut(duration: 0.16), value: content)
     }
 
@@ -35,18 +41,18 @@ struct GlimmerCardView: View {
             HStack(spacing: 8) {
                 Image(systemName: "square.and.pencil")
                     .font(.system(size: 14, weight: .light))
-                    .foregroundStyle(UITheme.secondaryText)
+                    .foregroundStyle(UITheme.secondaryText.opacity(0.88))
                 
                 Text(String(localized: "starsea.settlement.diaryTitle"))
                     .font(.system(size: 14, weight: .light, design: .serif))
-                    .foregroundStyle(UITheme.secondaryText)
+                    .foregroundStyle(UITheme.secondaryText.opacity(0.88))
                     .tracking(1.5)
                 
                 Spacer()
             }
             
             Rectangle()
-                .fill(Color.white.opacity(0.08))
+                .fill(Color.white.opacity(0.09))
                 .frame(height: 0.5)
             
             GlimmerCardText(content)
@@ -102,5 +108,6 @@ struct GlimmerCardText: View {
             .tracking(tracking)
             .multilineTextAlignment(.leading)
             .foregroundStyle(foregroundStyle)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }

@@ -1,32 +1,5 @@
 import SwiftUI
 
-struct AmbientMistView: View {
-    @State private var pulse = false
-
-    var body: some View {
-        ZStack {
-            // Left subtle smoke
-            Ellipse()
-                .fill(Color(white: 0.15).opacity(0.35))
-                .frame(width: 320, height: 450)
-                .blur(radius: 90)
-                .offset(x: pulse ? -60 : -100, y: pulse ? 100 : 60)
-
-            // Right subtle smoke
-            Ellipse()
-                .fill(Color(white: 0.12).opacity(0.3))
-                .frame(width: 360, height: 480)
-                .blur(radius: 100)
-                .offset(x: pulse ? 120 : 70, y: pulse ? -80 : -120)
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 8.0).repeatForever(autoreverses: true)) {
-                pulse.toggle()
-            }
-        }
-    }
-}
-
 struct ImmersiveSettlementView: View {
     let text: String
     let isGenerating: Bool
@@ -43,21 +16,17 @@ struct ImmersiveSettlementView: View {
             VStack(spacing: 0) {
                 GeometryReader { geometry in
                     ScrollView {
-                        VStack {
-                            Spacer()
-
-                            // Original GlimmerCardView (now styled as a diary) for seamless UI consistency
+                        VStack(spacing: 0) {
                             GlimmerCardView(
                                 content: text,
                                 isGenerating: isGenerating
                             )
                             .scaleEffect(cardScale)
                             .opacity(cardOpacity)
-
-                            Spacer()
                         }
                         .frame(minHeight: geometry.size.height)
                         .padding(.horizontal, 20)
+                        .padding(.vertical, 28)
                     }
                     .scrollIndicators(.hidden)
                 }
