@@ -15,7 +15,7 @@ class DeltaContent(BaseModel):
 
 
 class OptionContent(BaseModel):
-    options: list[str] = Field(min_length=4, max_length=4)
+    options: list[str] = Field(min_length=3, max_length=3)
 
     @field_validator("options")
     @classmethod

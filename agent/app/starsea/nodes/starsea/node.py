@@ -179,7 +179,7 @@ def _stream_resonance_matches(resonance_matches: list[Any]) -> None:
 
 def _stream_conversation_options(content: str) -> None:
     try:
-        _, options = parse_conversation_options_response(content)
+        _, options = parse_conversation_options_response(content, expected_count=3)
     except ValueError:
         return
 

@@ -118,7 +118,7 @@ async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
 
 def _stream_conversation_options(content: str) -> None:
     try:
-        _, options = parse_conversation_options_response(content)
+        _, options = parse_conversation_options_response(content, expected_count=3)
     except ValueError:
         return
 

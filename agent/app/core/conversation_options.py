@@ -21,7 +21,11 @@ class ConversationOptionStreamState:
     phase: str
 
 
-def parse_conversation_options_response(raw_content: str) -> tuple[str, list[str]]:
+def parse_conversation_options_response(
+    raw_content: str,
+    *,
+    expected_count: int = 4,
+) -> tuple[str, list[str]]:
     content = raw_content.strip()
     if not content:
         raise ValueError("Empty conversation response")
@@ -43,8 +47,10 @@ def parse_conversation_options_response(raw_content: str) -> tuple[str, list[str
     options = normalize_options(
         html.unescape(match.group(1)).strip() for match in OPTION_RE.finditer(block)
     )
-    if len(options) != 4:
-        raise ValueError("Conversation options must contain exactly 4 items")
+    if len(options) != expected_count:
+        raise ValueError(
+            f"Conversation options must contain exactly {expected_count} items"
+        )
 
     return content_body, options
 
