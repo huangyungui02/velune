@@ -8,6 +8,7 @@ from langgraph.config import get_stream_writer
 from app.core.conversation_options import (
     ConversationOptionStreamState,
     consume_conversation_options_stream_delta,
+    flush_conversation_options_stream,
     parse_conversation_options_response,
     strip_conversation_options_markup,
 )
@@ -95,6 +96,11 @@ async def _stream_ai_message(model: Any, messages: list[Any]) -> AIMessage:
             chunk.content,
         )
         _stream_message_delta(visible_delta, display_type="starsea")
+
+    _stream_message_delta(
+        flush_conversation_options_stream(option_state),
+        display_type="starsea",
+    )
 
     if final_chunk is None:
         return AIMessage(content="")

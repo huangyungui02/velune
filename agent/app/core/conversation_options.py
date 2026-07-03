@@ -97,6 +97,16 @@ def consume_conversation_options_stream_delta(
     return "".join(visible_parts)
 
 
+def flush_conversation_options_stream(state: ConversationOptionStreamState) -> str:
+    if state.phase != "streaming_content" or not state.pending:
+        return ""
+
+    visible = state.pending
+    state.pending = ""
+    state.output_chunks.append(visible)
+    return visible
+
+
 def strip_conversation_options_markup(content: str) -> str:
     return OPTIONS_BLOCK_RE.sub("", content).strip()
 

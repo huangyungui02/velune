@@ -3,7 +3,7 @@ import OSLog
 
 nonisolated enum APISSEClient {
     private static let logger = AppLogger.network
-    private static let connectionTimeout: TimeInterval = 8
+    private static let streamTimeout: TimeInterval = 300
     private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -80,7 +80,7 @@ nonisolated enum APISSEClient {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.httpBody = body
-        request.timeoutInterval = connectionTimeout
+        request.timeoutInterval = streamTimeout
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
