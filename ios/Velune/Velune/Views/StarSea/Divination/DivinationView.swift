@@ -19,154 +19,159 @@ struct DivinationView: View {
     }
 
     var body: some View {
-        ZStack {
-            StarryBackgroundView()
-                .contentShape(Rectangle())
-
-            // Full-screen tap gesture area to collect 6 taps
-            if !isFinished {
-                Color.clear
+        NavigationStack {
+            ZStack {
+                StarryBackgroundView()
                     .contentShape(Rectangle())
-                    .gesture(
-                        SpatialTapGesture()
-                            .onEnded { value in
-                                if castedLineCount < 6 {
-                                    handleTap(at: value.location)
+
+                // Full-screen tap gesture area to collect 6 taps
+                if !isFinished {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .gesture(
+                            SpatialTapGesture()
+                                .onEnded { value in
+                                    if castedLineCount < 6 {
+                                        handleTap(at: value.location)
+                                    }
                                 }
+                        )
+                }
+
+                // Visual effects for taps
+                ForEach(ripples) { ripple in
+                    MagicalTapView(location: ripple.location)
+                }
+
+                // Foreground UI
+                VStack {
+                    Spacer()
+
+                    if !isFinished {
+                        // Casting Interface
+                        VStack(spacing: 36) {
+                            Text(NSLocalizedString("divination.focus.prompt", comment: ""))
+                                .font(.system(size: 20, weight: .medium, design: .serif))
+                                .tracking(2.0)
+                                .multilineTextAlignment(.center)
+                                .foregroundStyle(UITheme.primaryText)
+                                .padding(.horizontal, 40)
+
+                            VStack(spacing: 24) {
+                                // Graphical Progress Dots
+                                HStack(spacing: 16) {
+                                    ForEach(0..<6, id: \.self) { index in
+                                        Circle()
+                                            .stroke(UITheme.glimmerGlow.opacity(index < castedLineCount ? 0.9 : 0.3), lineWidth: 1.5)
+                                            .background(
+                                                Circle()
+                                                    .fill(index < castedLineCount ? UITheme.glimmerGlow : Color.clear)
+                                            )
+                                            .frame(width: 14, height: 14)
+                                            .shadow(color: index < castedLineCount ? UITheme.glimmerGlow.opacity(0.8) : Color.clear, radius: index < castedLineCount ? 6 : 0)
+                                            .scaleEffect(index < castedLineCount ? 1.15 : 1.0)
+                                            .animation(.spring(response: 0.35, dampingFraction: 0.6), value: index < castedLineCount)
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                                
+                                Text(NSLocalizedString("divination.tap.prompt", comment: ""))
+                                    .font(.footnote)
+                                    .foregroundStyle(UITheme.secondaryText.opacity(0.55))
+                                    .opacity(castedLineCount == 0 ? 1.0 : 0.0)
+                                    .scaleEffect(castedLineCount == 0 ? 1.0 : 0.95)
+                                    .animation(.easeOut(duration: 0.4), value: castedLineCount)
                             }
-                    )
-            }
+                        }
+                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                    } else if divinationData.castedLines.count == 6 {
+                        // Result Interface - displaying only the aligned hexagram diagrams and names
+                        DivinationResultCard(
+                            divination: divinationData,
+                            visibleLinesCount: visibleLinesCount,
+                            showsDate: true
+                        )
+                        .onAppear {
+                            triggerStaggeredReveal()
+                        }
+                    }
 
-            // Visual effects for taps
-            ForEach(ripples) { ripple in
-                MagicalTapView(location: ripple.location)
-            }
+                    Spacer()
 
-            // Foreground UI
-            VStack {
-                // Custom Navigation Bar
-                HStack {
+                    if !isFinished {
+                        VStack(spacing: 10) {
+                            Text(NSLocalizedString("divination.inspiredBy", comment: ""))
+                                .font(.caption2.weight(.medium))
+                                .tracking(1.2)
+                                .foregroundStyle(UITheme.tertiaryText.opacity(0.55))
+                        }
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                        .padding(.bottom, 34)
+                        .transition(.opacity)
+                    }
+
+                    // Anchor input panel at the bottom of the screen (similar to the AI chat composer)
+                    if isFinished && showTexts {
+                        HStack(alignment: .bottom, spacing: 10) {
+                            TextField(NSLocalizedString("divination.input.placeholder", comment: ""), text: $questionText, axis: .vertical)
+                                .textFieldStyle(.plain)
+                                .font(.callout)
+                                .foregroundStyle(UITheme.primaryText)
+                                .lineLimit(1...4)
+                                .tint(UITheme.primaryText)
+                                .padding(.leading, 18)
+                                .padding(.vertical, 12)
+                            
+                            Button(action: startInterpretationFlow) {
+                                Image(systemName: "arrow.up")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundStyle(trimmedQuestion.isEmpty ? Color.white.opacity(0.3) : Color(red: 0.03, green: 0.035, blue: 0.055))
+                                    .frame(width: 32, height: 32)
+                                    .background(trimmedQuestion.isEmpty ? Color.white.opacity(0.12) : UITheme.glimmerGlow, in: .circle)
+                                    .shadow(color: trimmedQuestion.isEmpty ? Color.clear : UITheme.glimmerGlow.opacity(0.25), radius: 6)
+                            }
+                            .disabled(trimmedQuestion.isEmpty)
+                            .padding(.trailing, 8)
+                            .padding(.bottom, 6)
+                            .buttonStyle(.plain)
+                        }
+                        .background(Color(red: 0.03, green: 0.035, blue: 0.055).opacity(0.50), in: .rect(cornerRadius: 22))
+                        .glassEffect(in: .rect(cornerRadius: 22))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 22)
+                                .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                        }
+                        .frame(maxWidth: 340)
+                        .padding(.bottom, 24)
+                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                    }
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
                     Button(action: onLeave) {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(UITheme.primaryText)
                             .frame(width: 44, height: 44)
-                            .glassEffect(.regular.interactive(), in: .circle)
                     }
                     .buttonStyle(.plain)
-                    
-                    Spacer()
-                    
-                    // Recast button in the top-right toolbar area
+                }
+                
+                ToolbarItem(placement: .topBarTrailing) {
                     if isFinished || castedLineCount > 0 {
                         Button(action: recast) {
                             Image(systemName: "arrow.triangle.2.circlepath")
                                 .font(.system(size: 18, weight: .semibold))
                                 .foregroundStyle(UITheme.primaryText)
                                 .frame(width: 44, height: 44)
-                                .glassEffect(.regular.interactive(), in: .circle)
                         }
                         .buttonStyle(.plain)
                     }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-
-                Spacer()
-
-                if !isFinished {
-                    // Casting Interface
-                    VStack(spacing: 48) {
-                        Text(NSLocalizedString("divination.focus.prompt", comment: ""))
-                            .font(.system(size: 20, weight: .medium, design: .serif))
-                            .tracking(2.0)
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(UITheme.primaryText)
-                            .padding(.horizontal, 40)
-
-                        // Graphical Progress Dots
-                        HStack(spacing: 16) {
-                            ForEach(0..<6, id: \.self) { index in
-                                Circle()
-                                    .stroke(UITheme.glimmerGlow.opacity(index < castedLineCount ? 0.9 : 0.3), lineWidth: 1.5)
-                                    .background(
-                                        Circle()
-                                            .fill(index < castedLineCount ? UITheme.glimmerGlow : Color.clear)
-                                    )
-                                    .frame(width: 14, height: 14)
-                                    .shadow(color: index < castedLineCount ? UITheme.glimmerGlow.opacity(0.8) : Color.clear, radius: index < castedLineCount ? 6 : 0)
-                                    .scaleEffect(index < castedLineCount ? 1.15 : 1.0)
-                                    .animation(.spring(response: 0.35, dampingFraction: 0.6), value: index < castedLineCount)
-                            }
-                        }
-                        .padding(.vertical, 12)
-                    }
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
-                } else if divinationData.castedLines.count == 6 {
-                    // Result Interface - displaying only the aligned hexagram diagrams and names
-                    DivinationResultCard(
-                        divination: divinationData,
-                        visibleLinesCount: visibleLinesCount,
-                        showsDate: true
-                    )
-                    .onAppear {
-                        triggerStaggeredReveal()
-                    }
-                }
-
-                Spacer()
-
-                if !isFinished {
-                    VStack(spacing: 10) {
-                        Text(NSLocalizedString("divination.tap.prompt", comment: ""))
-                            .font(.footnote)
-                            .foregroundStyle(UITheme.secondaryText.opacity(0.65))
-
-                        Text(NSLocalizedString("divination.inspiredBy", comment: ""))
-                            .font(.caption2.weight(.medium))
-                            .tracking(1.2)
-                            .foregroundStyle(UITheme.tertiaryText.opacity(0.55))
-                    }
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-                    .padding(.bottom, 34)
-                    .transition(.opacity)
-                }
-
-                // Anchor input panel at the bottom of the screen (similar to the AI chat composer)
-                if isFinished && showTexts {
-                    HStack(alignment: .bottom, spacing: 8) {
-                        TextField(NSLocalizedString("divination.input.placeholder", comment: ""), text: $questionText, axis: .vertical)
-                            .font(.subheadline)
-                            .foregroundStyle(UITheme.primaryText)
-                            .lineLimit(2...5)
-                            .tint(UITheme.primaryText)
-                            .padding(.leading, 16)
-                            .padding(.vertical, 12)
-                        
-                        Button(action: startInterpretationFlow) {
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(trimmedQuestion.isEmpty ? Color.white.opacity(0.3) : Color(red: 0.03, green: 0.035, blue: 0.055))
-                                .frame(width: 32, height: 32)
-                                .background(trimmedQuestion.isEmpty ? Color.white.opacity(0.1) : Color.white, in: .circle)
-                                .shadow(color: trimmedQuestion.isEmpty ? Color.clear : UITheme.glimmerGlow.opacity(0.2), radius: 4)
-                        }
-                        .disabled(trimmedQuestion.isEmpty)
-                        .padding(.trailing, 8)
-                        .padding(.bottom, 8)
-                        .buttonStyle(.plain)
-                    }
-                    .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 20))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 20)
-                            .strokeBorder(.white.opacity(0.1), lineWidth: 0.8)
-                    }
-                    .frame(maxWidth: 340)
-                    .padding(.bottom, 24)
-                    .transition(.opacity)
                 }
             }
+            .toolbarBackground(.hidden, for: .navigationBar)
             .navigationBarBackButtonHidden(true)
             .toolbar(.hidden, for: .tabBar)
         }

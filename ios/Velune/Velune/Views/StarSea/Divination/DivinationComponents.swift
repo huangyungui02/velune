@@ -107,7 +107,7 @@ struct DivinationResultCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .center, spacing: 24) {
+            HStack(alignment: .center, spacing: 40) {
                 // Primary Hexagram (主卦)
                 VStack(spacing: 16) {
                     Text(NSLocalizedString("divination.result.primary", comment: ""))
@@ -130,12 +130,6 @@ struct DivinationResultCard: View {
                     }
                     .frame(width: width, height: 110)
                 }
-                
-                // Arrow Connector
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .light))
-                    .foregroundStyle(UITheme.tertiaryText)
-                    .offset(y: 20)
                 
                 // Changed Hexagram (变卦)
                 VStack(spacing: 16) {
