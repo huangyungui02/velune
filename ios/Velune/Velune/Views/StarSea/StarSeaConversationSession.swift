@@ -61,6 +61,17 @@ final class StarSeaConversationSession {
         await streamTurn(content: .text(content))
     }
 
+    func startDivination(question: String, divinationData: DivinationData) async {
+        let content = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !content.isEmpty, !hasStarted else { return }
+
+        hasStarted = true
+        inputText = ""
+        timelineEvents.append(.divinationResult(id: UUID(), divination: divinationData))
+        timelineEvents.append(.message(StarSeaMessage(role: .user, content: content)))
+        await streamTurn(content: divinationData.streamContent(question: content))
+    }
+
     func selectConversationOption(_ option: String) {
         inputText = option
     }

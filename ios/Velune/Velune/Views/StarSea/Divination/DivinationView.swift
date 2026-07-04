@@ -1,184 +1,102 @@
 import SwiftUI
 
 struct DivinationView: View {
-    let onLeave: () -> Void
-    let onStartInterpretation: (String, DivinationData) -> Void
+    @Binding var divinationData: DivinationData
+    @Binding var isFinished: Bool
+    @Binding var visibleLinesCount: Int
+    @Binding var showTexts: Bool
 
     @State private var ripples: [Ripple] = []
-    @State private var isFinished = false
-    @State private var divinationData = DivinationData(castedLines: [], date: Date())
-    
-    @State private var visibleLinesCount = 0
-    @State private var showTexts = false
 
-    @State private var questionText = ""
-
-    struct Ripple: Identifiable {
+    private struct Ripple: Identifiable {
         let id = UUID()
         let location: CGPoint
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                StarryBackgroundView()
+        ZStack {
+            if !isFinished {
+                Color.clear
                     .contentShape(Rectangle())
-
-                // Full-screen tap gesture area to collect 6 taps
-                if !isFinished {
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .gesture(
-                            SpatialTapGesture()
-                                .onEnded { value in
-                                    if castedLineCount < 6 {
-                                        handleTap(at: value.location)
-                                    }
+                    .gesture(
+                        SpatialTapGesture()
+                            .onEnded { value in
+                                if castedLineCount < 6 {
+                                    handleTap(at: value.location)
                                 }
-                        )
-                }
-
-                // Visual effects for taps
-                ForEach(ripples) { ripple in
-                    MagicalTapView(location: ripple.location)
-                }
-
-                // Foreground UI
-                VStack {
-                    Spacer()
-
-                    if !isFinished {
-                        // Casting Interface
-                        VStack(spacing: 36) {
-                            Text(NSLocalizedString("divination.focus.prompt", comment: ""))
-                                .font(.system(size: 20, weight: .medium, design: .serif))
-                                .tracking(2.0)
-                                .multilineTextAlignment(.center)
-                                .foregroundStyle(UITheme.primaryText)
-                                .padding(.horizontal, 40)
-
-                            VStack(spacing: 24) {
-                                // Graphical Progress Dots
-                                HStack(spacing: 16) {
-                                    ForEach(0..<6, id: \.self) { index in
-                                        Circle()
-                                            .stroke(UITheme.glimmerGlow.opacity(index < castedLineCount ? 0.9 : 0.3), lineWidth: 1.5)
-                                            .background(
-                                                Circle()
-                                                    .fill(index < castedLineCount ? UITheme.glimmerGlow : Color.clear)
-                                            )
-                                            .frame(width: 14, height: 14)
-                                            .shadow(color: index < castedLineCount ? UITheme.glimmerGlow.opacity(0.8) : Color.clear, radius: index < castedLineCount ? 6 : 0)
-                                            .scaleEffect(index < castedLineCount ? 1.15 : 1.0)
-                                            .animation(.spring(response: 0.35, dampingFraction: 0.6), value: index < castedLineCount)
-                                    }
-                                }
-                                .padding(.vertical, 4)
-                                
-                                Text(NSLocalizedString("divination.tap.prompt", comment: ""))
-                                    .font(.footnote)
-                                    .foregroundStyle(UITheme.secondaryText.opacity(0.55))
-                                    .opacity(castedLineCount == 0 ? 1.0 : 0.0)
-                                    .scaleEffect(castedLineCount == 0 ? 1.0 : 0.95)
-                                    .animation(.easeOut(duration: 0.4), value: castedLineCount)
                             }
-                        }
+                    )
+            }
+
+            ForEach(ripples) { ripple in
+                MagicalTapView(location: ripple.location)
+            }
+
+            VStack {
+                Spacer()
+
+                if !isFinished {
+                    castingPrompt
                         .transition(.opacity.combined(with: .scale(scale: 0.98)))
-                    } else if divinationData.castedLines.count == 6 {
-                        // Result Interface - displaying only the aligned hexagram diagrams and names
-                        DivinationResultCard(
-                            divination: divinationData,
-                            visibleLinesCount: visibleLinesCount,
-                            showsDate: true
-                        )
-                        .onAppear {
-                            triggerStaggeredReveal()
-                        }
-                    }
+                } else if divinationData.castedLines.count == 6 {
+                    DivinationResultCard(
+                        divination: divinationData,
+                        visibleLinesCount: visibleLinesCount,
+                        showsDate: true
+                    )
+                    .onAppear(perform: triggerStaggeredReveal)
+                }
 
-                    Spacer()
+                Spacer()
 
-                    if !isFinished {
-                        VStack(spacing: 10) {
-                            Text(NSLocalizedString("divination.inspiredBy", comment: ""))
-                                .font(.caption2.weight(.medium))
-                                .tracking(1.2)
-                                .foregroundStyle(UITheme.tertiaryText.opacity(0.55))
-                        }
+                if !isFinished {
+                    Text(NSLocalizedString("divination.inspiredBy", comment: ""))
+                        .font(.caption2.weight(.medium))
+                        .tracking(1.2)
+                        .foregroundStyle(UITheme.tertiaryText.opacity(0.55))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
-                        .padding(.bottom, 34)
+                        .padding(.bottom, 18)
                         .transition(.opacity)
-                    }
-
-                    // Anchor input panel at the bottom of the screen (similar to the AI chat composer)
-                    if isFinished && showTexts {
-                        HStack(alignment: .bottom, spacing: 10) {
-                            TextField(NSLocalizedString("divination.input.placeholder", comment: ""), text: $questionText, axis: .vertical)
-                                .textFieldStyle(.plain)
-                                .font(.callout)
-                                .foregroundStyle(UITheme.primaryText)
-                                .lineLimit(1...4)
-                                .tint(UITheme.primaryText)
-                                .padding(.leading, 18)
-                                .padding(.vertical, 12)
-                            
-                            Button(action: startInterpretationFlow) {
-                                Image(systemName: "arrow.up")
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundStyle(trimmedQuestion.isEmpty ? Color.white.opacity(0.3) : Color(red: 0.03, green: 0.035, blue: 0.055))
-                                    .frame(width: 32, height: 32)
-                                    .background(trimmedQuestion.isEmpty ? Color.white.opacity(0.12) : UITheme.glimmerGlow, in: .circle)
-                                    .shadow(color: trimmedQuestion.isEmpty ? Color.clear : UITheme.glimmerGlow.opacity(0.25), radius: 6)
-                            }
-                            .disabled(trimmedQuestion.isEmpty)
-                            .padding(.trailing, 8)
-                            .padding(.bottom, 6)
-                            .buttonStyle(.plain)
-                        }
-                        .background(Color(red: 0.03, green: 0.035, blue: 0.055).opacity(0.50), in: .rect(cornerRadius: 22))
-                        .glassEffect(in: .rect(cornerRadius: 22))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 22)
-                                .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
-                        }
-                        .frame(maxWidth: 340)
-                        .padding(.bottom, 24)
-                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
-                    }
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: onLeave) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(UITheme.primaryText)
-                            .frame(width: 44, height: 44)
-                    }
-                    .buttonStyle(.plain)
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    if isFinished || castedLineCount > 0 {
-                        Button(action: recast) {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(UITheme.primaryText)
-                                .frame(width: 44, height: 44)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .navigationBarBackButtonHidden(true)
-            .toolbar(.hidden, for: .tabBar)
         }
     }
 
-    private var trimmedQuestion: String {
-        questionText.trimmingCharacters(in: .whitespacesAndNewlines)
+    private var castingPrompt: some View {
+        VStack(spacing: 36) {
+            Text(NSLocalizedString("divination.focus.prompt", comment: ""))
+                .font(.system(size: 20, weight: .medium, design: .serif))
+                .tracking(2.0)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(UITheme.primaryText)
+                .padding(.horizontal, 40)
+
+            VStack(spacing: 24) {
+                HStack(spacing: 16) {
+                    ForEach(0..<6, id: \.self) { index in
+                        Circle()
+                            .stroke(UITheme.glimmerGlow.opacity(index < castedLineCount ? 0.9 : 0.3), lineWidth: 1.5)
+                            .background(
+                                Circle()
+                                    .fill(index < castedLineCount ? UITheme.glimmerGlow : Color.clear)
+                            )
+                            .frame(width: 14, height: 14)
+                            .shadow(color: index < castedLineCount ? UITheme.glimmerGlow.opacity(0.8) : Color.clear, radius: index < castedLineCount ? 6 : 0)
+                            .scaleEffect(index < castedLineCount ? 1.15 : 1.0)
+                            .animation(.spring(response: 0.35, dampingFraction: 0.6), value: index < castedLineCount)
+                    }
+                }
+                .padding(.vertical, 4)
+
+                Text(NSLocalizedString("divination.tap.prompt", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(UITheme.secondaryText.opacity(0.55))
+                    .opacity(castedLineCount == 0 ? 1.0 : 0.0)
+                    .scaleEffect(castedLineCount == 0 ? 1.0 : 0.95)
+                    .animation(.easeOut(duration: 0.4), value: castedLineCount)
+            }
+        }
     }
 
     private var castedLineCount: Int {
@@ -189,7 +107,6 @@ struct DivinationView: View {
         let ripple = Ripple(location: location)
         ripples.append(ripple)
 
-        // Distribute YaoStates: 37.5% Stable Yang, 37.5% Stable Yin, 12.5% Moving Yang, 12.5% Moving Yin
         let rand = Double.random(in: 0...1)
         let lineCode: Int
         if rand < 0.375 {
@@ -201,17 +118,15 @@ struct DivinationView: View {
         } else {
             lineCode = 3
         }
-        
+
         withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
             divinationData.castedLines.append(lineCode)
         }
 
-        // Point-of-impact immediate feedback. Trigger .success on the 6th tap, and .medium on others.
         if divinationData.castedLines.count == 6 {
             let successGenerator = UINotificationFeedbackGenerator()
             successGenerator.prepare()
             successGenerator.notificationOccurred(.success)
-
             divinationData.date = Date()
         } else {
             let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -246,24 +161,6 @@ struct DivinationView: View {
             withAnimation(.easeOut(duration: 0.4)) {
                 showTexts = true
             }
-        }
-    }
-
-    private func startInterpretationFlow() {
-        let question = trimmedQuestion
-        guard !question.isEmpty, divinationData.castedLines.count == 6 else { return }
-        
-        // Pass data and question to parent layout to trigger sheet dismissal and chat navigation
-        onStartInterpretation(question, divinationData)
-    }
-
-    private func recast() {
-        withAnimation(.easeInOut(duration: 0.4)) {
-            isFinished = false
-            visibleLinesCount = 0
-            showTexts = false
-            divinationData = DivinationData(castedLines: [], date: Date())
-            questionText = ""
         }
     }
 }

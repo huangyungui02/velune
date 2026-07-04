@@ -5,6 +5,11 @@ struct StarSeaConversationView: View {
     let onLeave: () -> Void
 
     @State private var session: StarSeaConversationSession
+    @State private var isPreparingDivination: Bool
+    @State private var divinationData = DivinationData(castedLines: [], date: Date())
+    @State private var isDivinationFinished = false
+    @State private var visibleDivinationLinesCount = 0
+    @State private var showsDivinationComposer = false
     @FocusState private var isComposerFocused: Bool
 
     init(
@@ -16,6 +21,18 @@ struct StarSeaConversationView: View {
         self.onBlessing = onBlessing
         self.onLeave = onLeave
         _session = State(initialValue: StarSeaConversationSession(openingText: openingText, divinationData: divinationData))
+        _isPreparingDivination = State(initialValue: false)
+    }
+
+    init(
+        startsWithDivination: Bool,
+        onBlessing: @escaping (String) -> Void = { _ in },
+        onLeave: @escaping () -> Void
+    ) {
+        self.onBlessing = onBlessing
+        self.onLeave = onLeave
+        _session = State(initialValue: StarSeaConversationSession(openingText: ""))
+        _isPreparingDivination = State(initialValue: startsWithDivination)
     }
 
     var body: some View {
@@ -54,6 +71,16 @@ struct StarSeaConversationView: View {
                 }
                 .accessibilityLabel(Text("common.back"))
             }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                if isPreparingDivination && (isDivinationFinished || !divinationData.castedLines.isEmpty) {
+                    Button(action: recastDivination) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.body.weight(.medium))
+                    }
+                    .accessibilityLabel(Text("divination.result.recast"))
+                }
+            }
         }
         .alert("matching.error.title", isPresented: Binding(
             get: { session.errorMessage != nil },
@@ -64,6 +91,7 @@ struct StarSeaConversationView: View {
             Text(session.errorMessage ?? String(localized: "matching.error.unknown"))
         }
         .task {
+            guard !isPreparingDivination else { return }
             await session.startIfNeeded()
         }
         .onChange(of: session.settlementBlessing) { _, blessing in
@@ -75,9 +103,13 @@ struct StarSeaConversationView: View {
 
     private var conversationSurface: some View {
         VStack(spacing: 0) {
-            messageList
+            if isPreparingDivination {
+                divinationSurface
+            } else {
+                messageList
+            }
 
-            if !session.isShowingImmersiveSettlement {
+            if !session.isShowingImmersiveSettlement && (!isPreparingDivination || showsDivinationComposer) {
                 composer
             }
         }
@@ -98,16 +130,33 @@ struct StarSeaConversationView: View {
         )
     }
 
+    private var divinationSurface: some View {
+        DivinationView(
+            divinationData: $divinationData,
+            isFinished: $isDivinationFinished,
+            visibleLinesCount: $visibleDivinationLinesCount,
+            showTexts: $showsDivinationComposer
+        )
+        .contentShape(.rect)
+        .onTapGesture {
+            isComposerFocused = false
+        }
+    }
+
     private var composer: some View {
         SereneChatComposer(
             text: $session.inputText,
             isFocused: $isComposerFocused,
             isBusy: session.isStreaming || session.isSettling,
-            canSend: session.canSendMessage,
-            placeholderKey: "starsea.chat.placeholder"
+            canSend: canSendComposer,
+            placeholderKey: composerPlaceholderKey
         ) {
             isComposerFocused = false
-            await session.sendFollowUp()
+            if isPreparingDivination {
+                await startDivinationInterpretation()
+            } else {
+                await session.sendFollowUp()
+            }
         }
         .padding(.horizontal, 20)
         .padding(.top, 10)
@@ -123,12 +172,32 @@ struct StarSeaConversationView: View {
             }
     }
 
+    private var canSendComposer: Bool {
+        if isPreparingDivination {
+            return isDivinationFinished
+                && showsDivinationComposer
+                && divinationData.castedLines.count == 6
+                && !session.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+
+        return session.canSendMessage
+    }
+
+    private var composerPlaceholderKey: LocalizedStringKey {
+        isPreparingDivination ? "divination.input.placeholder" : "starsea.chat.placeholder"
+    }
+
     private func selectConversationOption(_ option: String) {
         session.selectConversationOption(option)
         isComposerFocused = true
     }
 
     private func requestLeave() {
+        if isPreparingDivination {
+            leaveDirectly()
+            return
+        }
+
         if session.shouldLeaveDirectly {
             leaveDirectly()
             return
@@ -146,6 +215,26 @@ struct StarSeaConversationView: View {
         Task { @MainActor in
             await Task.yield()
             onLeave()
+        }
+    }
+
+    private func startDivinationInterpretation() async {
+        let question = session.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isDivinationFinished, divinationData.castedLines.count == 6, !question.isEmpty else { return }
+
+        withAnimation(.easeInOut(duration: 0.24)) {
+            isPreparingDivination = false
+        }
+        await session.startDivination(question: question, divinationData: divinationData)
+    }
+
+    private func recastDivination() {
+        withAnimation(.easeInOut(duration: 0.4)) {
+            divinationData = DivinationData(castedLines: [], date: Date())
+            isDivinationFinished = false
+            visibleDivinationLinesCount = 0
+            showsDivinationComposer = false
+            session.inputText = ""
         }
     }
 }

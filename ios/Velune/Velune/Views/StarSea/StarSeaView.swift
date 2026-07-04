@@ -2,6 +2,7 @@ import SwiftUI
 
 private enum StarSeaRoute: Hashable {
     case conversation(openingText: String, divinationData: DivinationData? = nil)
+    case divination
 }
 
 struct StarSeaView: View {
@@ -9,8 +10,6 @@ struct StarSeaView: View {
 
     @State private var text = ""
     @State private var isComposerPresented = false
-    @State private var isDivinationPresented = false
-    @State private var pendingDivinationRoute: StarSeaRoute?
     @State private var path: [StarSeaRoute] = []
     @AppStorage(Self.blessingKey) private var latestBlessing = ""
     @Binding var composeRequestID: Int
@@ -32,6 +31,12 @@ struct StarSeaView: View {
                             onBlessing: updateLatestBlessing,
                             onLeave: leaveConversation
                         )
+                    case .divination:
+                        StarSeaConversationView(
+                            startsWithDivination: true,
+                            onBlessing: updateLatestBlessing,
+                            onLeave: leaveConversation
+                        )
                     }
                 }
         }
@@ -40,17 +45,6 @@ struct StarSeaView: View {
                 text: $text,
                 onDismiss: dismissComposer,
                 onDone: finishComposer
-            )
-        }
-        .fullScreenCover(isPresented: $isDivinationPresented, onDismiss: presentPendingDivinationRoute) {
-            DivinationView(
-                onLeave: {
-                    isDivinationPresented = false
-                },
-                onStartInterpretation: { question, data in
-                    pendingDivinationRoute = .conversation(openingText: question, divinationData: data)
-                    isDivinationPresented = false
-                }
             )
         }
         .onChange(of: composeRequestID) { _, _ in
@@ -82,7 +76,7 @@ struct StarSeaView: View {
                 Spacer()
                 HStack {
                     QuestionmarkButton {
-                        isDivinationPresented = true
+                        path.append(.divination)
                     }
 
                     Spacer()
@@ -115,12 +109,6 @@ struct StarSeaView: View {
 
         text = ""
         path.append(.conversation(openingText: openingText))
-    }
-
-    private func presentPendingDivinationRoute() {
-        guard let route = pendingDivinationRoute else { return }
-        pendingDivinationRoute = nil
-        path.append(route)
     }
 
     private func updateLatestBlessing(_ blessing: String) {
