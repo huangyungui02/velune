@@ -24,6 +24,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				DebugInfo.plist,
+				DevInfo.plist,
 				ReleaseInfo.plist,
 			);
 			target = 321D07BC2EDA8CD8007F4762 /* Velune */;
@@ -453,7 +454,7 @@
 				DEVELOPMENT_TEAM = LQK5WB3692;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Velune/ReleaseInfo.plist;
+				INFOPLIST_FILE = Velune/DevInfo.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Velune;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
