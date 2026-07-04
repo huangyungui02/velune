@@ -64,7 +64,7 @@ struct DivinationView: View {
     }
 
     private var castingPrompt: some View {
-        VStack(spacing: 36) {
+        VStack(spacing: 24) {
             Text(NSLocalizedString("divination.focus.prompt", comment: ""))
                 .font(.system(size: 20, weight: .medium, design: .serif))
                 .tracking(2.0)
@@ -72,30 +72,30 @@ struct DivinationView: View {
                 .foregroundStyle(UITheme.primaryText)
                 .padding(.horizontal, 40)
 
-            VStack(spacing: 24) {
-                HStack(spacing: 16) {
-                    ForEach(0..<6, id: \.self) { index in
-                        Circle()
-                            .stroke(UITheme.glimmerGlow.opacity(index < castedLineCount ? 0.9 : 0.3), lineWidth: 1.5)
-                            .background(
-                                Circle()
-                                    .fill(index < castedLineCount ? UITheme.glimmerGlow : Color.clear)
-                            )
-                            .frame(width: 14, height: 14)
-                            .shadow(color: index < castedLineCount ? UITheme.glimmerGlow.opacity(0.8) : Color.clear, radius: index < castedLineCount ? 6 : 0)
-                            .scaleEffect(index < castedLineCount ? 1.15 : 1.0)
-                            .animation(.spring(response: 0.35, dampingFraction: 0.6), value: index < castedLineCount)
-                    }
-                }
-                .padding(.vertical, 4)
+            Text(NSLocalizedString("divination.tap.prompt", comment: ""))
+                .font(.footnote)
+                .foregroundStyle(UITheme.secondaryText.opacity(0.58))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+                .opacity(castedLineCount == 0 ? 1.0 : 0.0)
+                .scaleEffect(castedLineCount == 0 ? 1.0 : 0.96)
+                .animation(.easeOut(duration: 0.35), value: castedLineCount)
 
-                Text(NSLocalizedString("divination.tap.prompt", comment: ""))
-                    .font(.footnote)
-                    .foregroundStyle(UITheme.secondaryText.opacity(0.55))
-                    .opacity(castedLineCount == 0 ? 1.0 : 0.0)
-                    .scaleEffect(castedLineCount == 0 ? 1.0 : 0.95)
-                    .animation(.easeOut(duration: 0.4), value: castedLineCount)
+            HStack(spacing: 16) {
+                ForEach(0..<6, id: \.self) { index in
+                    Circle()
+                        .stroke(UITheme.glimmerGlow.opacity(index < castedLineCount ? 0.9 : 0.3), lineWidth: 1.5)
+                        .background(
+                            Circle()
+                                .fill(index < castedLineCount ? UITheme.glimmerGlow : Color.clear)
+                        )
+                        .frame(width: 14, height: 14)
+                        .shadow(color: index < castedLineCount ? UITheme.glimmerGlow.opacity(0.8) : Color.clear, radius: index < castedLineCount ? 6 : 0)
+                        .scaleEffect(index < castedLineCount ? 1.15 : 1.0)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.6), value: index < castedLineCount)
+                }
             }
+            .padding(.vertical, 4)
         }
     }
 
@@ -129,9 +129,10 @@ struct DivinationView: View {
             successGenerator.notificationOccurred(.success)
             divinationData.date = Date()
         } else {
-            let generator = UIImpactFeedbackGenerator(style: .medium)
+            let generator = UIImpactFeedbackGenerator(style: .light)
             generator.prepare()
             generator.impactOccurred()
+            // generator.impactOccurred(intensity: 0.55)
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
