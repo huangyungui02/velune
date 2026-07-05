@@ -321,7 +321,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.echoversa.velune;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REVENUECAT_PUBLIC_SDK_KEY = appl_XTJyDZSPpyOQLOFfAoPASReDoIF;
@@ -364,7 +364,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.echoversa.velune;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REVENUECAT_PUBLIC_SDK_KEY = appl_XTJyDZSPpyOQLOFfAoPASReDoIF;
@@ -466,7 +466,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.echoversa.velune;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REVENUECAT_PUBLIC_SDK_KEY = appl_XTJyDZSPpyOQLOFfAoPASReDoIF;
