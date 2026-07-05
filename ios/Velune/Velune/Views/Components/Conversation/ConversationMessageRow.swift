@@ -33,13 +33,7 @@ struct ConversationMessageRow: View {
     @ViewBuilder
     private var messageContent: some View {
         if !isUser && content.isEmpty {
-            MatchingWaveIcon(
-                ringSize: 10,
-                containerSize: 24,
-                color: UITheme.primaryText.opacity(0.62)
-            )
-            .padding(.horizontal, 28)
-            .padding(.vertical, 18)
+            StarlightWaitingPlaceholderView()
         } else if isUser {
             Markdown(content)
                 .veluneMarkdownBodyStyle()

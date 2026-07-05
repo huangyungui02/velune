@@ -122,6 +122,7 @@ struct StarSeaConversationView: View {
             events: session.timelineEvents,
             isOptionsDisabled: session.isStreaming || session.isSettling || session.threadId == nil,
             isStreaming: session.isStreaming,
+            isAwaitingResponse: session.isAwaitingResponse,
             shouldPauseAutoScrollDuringStreaming: $session.shouldPauseAutoScrollDuringStreaming,
             showsOptions: !session.isAwaitingSettlementConfirmation,
             onDismissComposerFocus: { isComposerFocused = false },

@@ -41,6 +41,10 @@ final class StarSeaConversationSession {
         isAwaitingSettlementConfirmation || threadId == nil
     }
 
+    var isAwaitingResponse: Bool {
+        isStreaming && currentAssistantMessageId == nil && currentThinkingMessageId == nil
+    }
+
     init(openingText: String, divinationData: DivinationData? = nil) {
         self.openingText = openingText
         self.divinationData = divinationData

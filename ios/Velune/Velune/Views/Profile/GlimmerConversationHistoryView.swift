@@ -25,6 +25,7 @@ struct GlimmerConversationHistoryView: View {
                     events: timelineEvents,
                     isOptionsDisabled: true,
                     isStreaming: false,
+                    isAwaitingResponse: false,
                     shouldPauseAutoScrollDuringStreaming: $shouldPauseAutoScrollDuringStreaming,
                     showsOptions: false,
                     onDismissComposerFocus: {},

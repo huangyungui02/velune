@@ -4,6 +4,7 @@ struct StarSeaConversationMessageList: View {
     let events: [StarSeaTimelineEvent]
     let isOptionsDisabled: Bool
     let isStreaming: Bool
+    let isAwaitingResponse: Bool
     @Binding var shouldPauseAutoScrollDuringStreaming: Bool
     var showsOptions = true
     let onDismissComposerFocus: () -> Void
@@ -19,6 +20,12 @@ struct StarSeaConversationMessageList: View {
                         eventRow(event, lastVisibleMessageId: lastVisibleMessageId)
                             .id(event.id)
                     }
+
+                    if isAwaitingResponse {
+                        StarlightWaitingPlaceholderView()
+                            .id("waiting-placeholder")
+                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 14)
@@ -32,6 +39,13 @@ struct StarSeaConversationMessageList: View {
             }
             .onChange(of: events.lastMessageContent) { _, _ in
                 scrollToLatest(with: proxy, animated: false, reason: .contentChanged)
+            }
+            .onChange(of: isAwaitingResponse) { _, newValue in
+                if newValue {
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        proxy.scrollTo("waiting-placeholder", anchor: .bottom)
+                    }
+                }
             }
             .simultaneousGesture(
                 DragGesture(minimumDistance: 0)
@@ -103,6 +117,17 @@ struct StarSeaConversationMessageList: View {
 
     private func scrollToLatest(with proxy: ScrollViewProxy, animated: Bool, reason: ScrollTrigger? = nil) {
         if isStreaming, shouldPauseAutoScrollDuringStreaming, reason != nil {
+            return
+        }
+
+        if isAwaitingResponse {
+            if animated {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    proxy.scrollTo("waiting-placeholder", anchor: .bottom)
+                }
+            } else {
+                proxy.scrollTo("waiting-placeholder", anchor: .bottom)
+            }
             return
         }
 
