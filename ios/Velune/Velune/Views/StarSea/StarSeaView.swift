@@ -40,6 +40,7 @@ struct StarSeaView: View {
                     }
                 }
         }
+        .toolbar(path.isEmpty ? .automatic : .hidden, for: .tabBar)
         .fullScreenCover(isPresented: $isComposerPresented) {
             StarSeaComposerCover(
                 text: $text,
