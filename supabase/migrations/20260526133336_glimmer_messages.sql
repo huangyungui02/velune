@@ -5,14 +5,10 @@ CREATE TABLE public.glimmer_messages (
     sequence INT NOT NULL,
     type TEXT NOT NULL,
     role TEXT CHECK (role IN ('user', 'assistant')),
-    content TEXT,
-    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    content JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT glimmer_messages_content_or_payload_check
-    CHECK (
-        NULLIF(trim(COALESCE(content, '')), '') IS NOT NULL
-        OR payload <> '{}'::jsonb
-    )
+    CONSTRAINT glimmer_messages_content_check
+    CHECK (content <> 'null'::jsonb)
 );
 
 CREATE UNIQUE INDEX glimmer_messages_glimmer_sequence_idx
