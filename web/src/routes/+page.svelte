@@ -90,36 +90,42 @@
       name: '尼采',
       note: '超越自我，成为你自己。',
       initials: 'N',
+      image: '/folio/thinkers/nietzsche.jpg',
       tone: 'from-stone-600 to-stone-200 dark:from-stone-300 dark:to-stone-700'
     },
     {
       name: '加缪',
       note: '在荒诞中寻找清醒的自由。',
       initials: 'C',
+      image: '/folio/thinkers/camus.jpg',
       tone: 'from-amber-700 to-stone-200 dark:from-amber-300 dark:to-stone-800'
     },
     {
       name: '卡夫卡',
       note: '在荒诞的世界里，保持清醒的困惑。',
       initials: 'K',
+      image: '/folio/thinkers/kafka.jpg',
       tone: 'from-zinc-700 to-stone-300 dark:from-zinc-300 dark:to-zinc-800'
     },
     {
       name: '王阳明',
       note: '知行合一，致良知。',
       initials: 'W',
+      image: '/folio/thinkers/wang.jpg',
       tone: 'from-neutral-700 to-amber-100 dark:from-neutral-200 dark:to-amber-950'
     },
     {
       name: '惠能',
       note: '本来无一物，何处惹尘埃。',
       initials: 'H',
+      image: '/folio/thinkers/huineng.jpg',
       tone: 'from-stone-600 to-neutral-100 dark:from-stone-200 dark:to-neutral-800'
     },
     {
       name: '泰戈尔',
       note: '用诗歌拥抱世界。',
       initials: 'T',
+      image: '/folio/thinkers/tagore.jpg',
       tone: 'from-zinc-500 to-orange-100 dark:from-zinc-200 dark:to-orange-950'
     }
   ];
@@ -206,9 +212,11 @@
         </div>
       </header>
 
-      <section class="relative overflow-hidden rounded-2xl border bg-card">
+      <section
+        class="relative overflow-hidden rounded-2xl border border-border/40 bg-card/30 backdrop-blur-xs"
+      >
         <img
-          class="h-[320px] w-full object-cover object-center sm:h-[380px] lg:h-[430px]"
+          class="h-[320px] w-full object-cover object-center sm:h-[380px] lg:h-[430px] transition-transform duration-[10000ms] hover:scale-105 ease-out"
           src="/folio/hero.jpg"
           alt="一道通向远方山海的门"
         />
@@ -217,14 +225,17 @@
         ></div>
         <div class="absolute left-7 top-1/2 max-w-[420px] -translate-y-1/2 sm:left-14">
           <h1
-            class="folio-serif text-6xl font-semibold leading-none tracking-normal sm:text-7xl lg:text-8xl"
+            class="folio-serif text-6xl font-semibold leading-none tracking-normal sm:text-7xl lg:text-8xl text-foreground"
           >
             Folio
           </h1>
           <p class="mt-6 text-xl leading-9 tracking-normal text-muted-foreground sm:text-2xl">
             走进思想的世界，<br />遇见另一种可能。
           </p>
-          <Button class="mt-8 rounded-full px-7" size="lg">
+          <Button
+            class="mt-8 rounded-full px-7 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:scale-[1.02] shadow-sm"
+            size="lg"
+          >
             开始探索
             <ArrowRight data-icon="inline-end" />
           </Button>
@@ -238,12 +249,18 @@
         <div class="flex gap-3 overflow-x-auto pb-2">
           {#each themes as theme (theme.label)}
             {@const Icon = theme.icon}
-            <Button variant="secondary" class="h-11 shrink-0 rounded-full px-5">
+            <Button
+              variant="secondary"
+              class="h-10 shrink-0 rounded-full px-5 border border-border/30 bg-secondary/40 hover:bg-secondary/80 hover:-translate-y-0.5 transition-all duration-300 shadow-xs"
+            >
               <Icon data-icon="inline-start" strokeWidth={1.7} />
               <span>{theme.label}</span>
             </Button>
           {/each}
-          <Button variant="outline" class="h-11 shrink-0 rounded-full px-5">
+          <Button
+            variant="outline"
+            class="h-10 shrink-0 rounded-full px-5 border border-border/30 hover:-translate-y-0.5 transition-all duration-300 shadow-xs"
+          >
             <span>更多</span>
             <ChevronDown data-icon="inline-end" strokeWidth={1.7} />
           </Button>
@@ -261,18 +278,21 @@
 
         <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
           {#each folios as folio (folio.title)}
-            <Card.Root class="rounded-xl py-0">
-              <div
-                class="cover-frame relative aspect-[1.38] bg-cover"
-                style:background-position={folio.position}
-              >
+            <Card.Root
+              class="group rounded-xl py-0 overflow-hidden border border-border/40 bg-card/60 backdrop-blur-xs hover:-translate-y-1 hover:shadow-md hover:border-border/70 transition-all duration-300"
+            >
+              <div class="overflow-hidden relative aspect-[1.38]">
+                <div
+                  class="cover-frame size-full bg-cover transition-transform duration-500 group-hover:scale-105"
+                  style:background-position={folio.position}
+                ></div>
                 <Button
-                  class="absolute right-3 top-3 rounded-full bg-background/70 backdrop-blur hover:bg-background"
+                  class="absolute right-3 top-3 rounded-full bg-background/75 backdrop-blur hover:bg-background shadow-xs transition-colors"
                   variant="ghost"
                   size="icon-sm"
                   aria-label={`收藏 ${folio.title}`}
                 >
-                  <Bookmark />
+                  <Bookmark class="size-4" />
                 </Button>
               </div>
               <Card.Content class="pb-5 pt-4">
@@ -280,7 +300,11 @@
                 <p class="mt-1 text-sm text-muted-foreground">{folio.author}</p>
                 <div class="mt-4 flex flex-wrap gap-2">
                   {#each folio.tags as tag (tag)}
-                    <Badge variant="secondary">{tag}</Badge>
+                    <Badge
+                      variant="secondary"
+                      class="rounded-full bg-secondary/50 text-[11px] px-2 py-0.5 border border-border/10"
+                      >{tag}</Badge
+                    >
                   {/each}
                 </div>
               </Card.Content>
@@ -298,24 +322,31 @@
           </Button>
         </div>
 
-        <div class="grid gap-x-8 gap-y-5 sm:grid-cols-2 xl:grid-cols-6">
+        <div class="grid gap-x-6 gap-y-5 sm:grid-cols-2 xl:grid-cols-6">
           {#each thinkers as thinker (thinker.name)}
-            <Card.Root size="sm" class="rounded-xl">
-              <Card.Content>
-                <a class="group flex min-w-0 items-center gap-4" href={resolve('/')}>
-                  <span
-                    class={[
-                      'folio-serif flex size-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xl font-semibold text-white shadow-sm ring-1 ring-border',
-                      thinker.tone
-                    ]}
+            <Card.Root
+              size="sm"
+              class="group rounded-xl overflow-hidden border border-border/40 bg-card/60 backdrop-blur-xs hover:-translate-y-1 hover:shadow-md hover:border-border/70 transition-all duration-300"
+            >
+              <Card.Content class="p-4">
+                <a class="flex min-w-0 items-center gap-4" href={resolve('/')}>
+                  <div
+                    class="relative size-14 shrink-0 overflow-hidden rounded-full border border-border/50 bg-muted shadow-sm"
                   >
-                    {thinker.initials}
-                  </span>
+                    <img
+                      src={thinker.image}
+                      alt={thinker.name}
+                      class="size-full object-cover grayscale transition-all duration-500 group-hover:grayscale-0 group-hover:scale-105"
+                    />
+                  </div>
                   <span class="min-w-0">
-                    <span class="block text-base font-medium group-hover:text-primary"
+                    <span
+                      class="block text-base font-medium text-foreground transition-colors group-hover:text-primary"
                       >{thinker.name}</span
                     >
-                    <span class="mt-1 line-clamp-2 block text-sm leading-6 text-muted-foreground">
+                    <span
+                      class="mt-1 line-clamp-2 block text-xs leading-normal text-muted-foreground/80"
+                    >
                       {thinker.note}
                     </span>
                   </span>
@@ -331,7 +362,7 @@
 
 <style>
   .folio-serif {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--font-serif), Georgia, 'Times New Roman', serif;
   }
 
   .cover-frame {

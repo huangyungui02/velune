@@ -25,13 +25,19 @@ export const load: PageServerLoad = ({ locals, url }) => {
     redirect(303, '/');
   }
 
+  const requestedRedirect = url.searchParams.get('redirectTo');
+
   return {
-    mode: url.searchParams.get('mode') === 'register' ? 'register' : 'login'
+    mode: url.searchParams.get('mode') === 'register' ? 'register' : 'login',
+    redirectTo:
+      requestedRedirect?.startsWith('/') && !requestedRedirect.startsWith('//')
+        ? requestedRedirect
+        : '/'
   };
 };
 
 export const actions: Actions = {
-  login: async ({ locals, request }) => {
+  login: async ({ locals, request, url }) => {
     if (!locals.supabase) {
       return fail(503, { message: 'Supabase 尚未配置，请先设置环境变量。' });
     }
@@ -41,7 +47,7 @@ export const actions: Actions = {
       return fail(400, { message: credentials.error, email: credentials.email });
     }
 
-    const { error } = await locals.supabase.auth.signInWithPassword(credentials);
+    const { data, error } = await locals.supabase.auth.signInWithPassword(credentials);
     if (error) {
       return fail(400, {
         message: '邮箱或密码不正确，请重新输入。',
@@ -49,7 +55,15 @@ export const actions: Actions = {
       });
     }
 
-    redirect(303, '/');
+    locals.user = data.user;
+
+    const requestedRedirect = url.searchParams.get('redirectTo');
+    redirect(
+      303,
+      requestedRedirect?.startsWith('/') && !requestedRedirect.startsWith('//')
+        ? requestedRedirect
+        : '/'
+    );
   },
 
   register: async ({ locals, request }) => {
@@ -77,6 +91,8 @@ export const actions: Actions = {
         email: credentials.email
       });
     }
+
+    locals.user = data.user;
 
     redirect(303, '/');
   }

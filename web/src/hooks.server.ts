@@ -5,15 +5,23 @@ import type { Handle } from '@sveltejs/kit';
 export const handle: Handle = async ({ event, resolve }) => {
   const url = env.PUBLIC_SUPABASE_URL;
   const key = env.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const authHeaders = new Headers();
 
   event.locals.supabase =
     url && key
       ? createServerClient(url, key, {
           cookies: {
             getAll: () => event.cookies.getAll(),
-            setAll: (cookiesToSet) => {
+            setAll: (cookiesToSet, headers) => {
               for (const { name, value, options } of cookiesToSet) {
-                event.cookies.set(name, value, { ...options, path: '/' });
+                event.cookies.set(name, value, {
+                  ...options,
+                  path: '/',
+                  secure: event.url.protocol === 'https:'
+                });
+              }
+              for (const [name, value] of Object.entries(headers)) {
+                authHeaders.set(name, value);
               }
             }
           }
@@ -26,8 +34,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   event.locals.user = error ? null : data.user;
 
-  return resolve(event, {
+  const response = await resolve(event, {
     filterSerializedResponseHeaders: (name) =>
       name === 'content-range' || name === 'x-supabase-api-version'
   });
+
+  for (const [name, value] of authHeaders) {
+    response.headers.set(name, value);
+  }
+
+  return response;
 };
