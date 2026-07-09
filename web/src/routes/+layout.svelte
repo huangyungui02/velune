@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ModeWatcher } from 'mode-watcher';
   import './layout.css';
   import favicon from '$lib/assets/favicon.svg';
 
@@ -6,4 +7,10 @@
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<ModeWatcher
+  defaultMode="system"
+  darkClassNames={['dark']}
+  disableTransitions={true}
+  themeColors={{ light: '#faf7ef', dark: '#1b1814' }}
+/>
 {@render children()}

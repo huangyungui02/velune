@@ -1,6 +1,9 @@
 <script lang="ts">
-  import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge';
+  import { Button } from '$lib/components/ui/button';
+  import * as Card from '$lib/components/ui/card';
+  import { Separator } from '$lib/components/ui/separator';
+  import ThemeToggle from '$lib/components/theme-toggle.svelte';
   import { resolve } from '$app/paths';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import Bird from '@lucide/svelte/icons/bird';
@@ -80,33 +83,38 @@
       name: '尼采',
       note: '超越自我，成为你自己。',
       initials: 'N',
-      tone: 'from-stone-500 to-zinc-200'
+      tone: 'from-stone-600 to-stone-200 dark:from-stone-300 dark:to-stone-700'
     },
     {
       name: '加缪',
       note: '在荒诞中寻找清醒的自由。',
       initials: 'C',
-      tone: 'from-amber-700 to-stone-200'
+      tone: 'from-amber-700 to-stone-200 dark:from-amber-300 dark:to-stone-800'
     },
     {
       name: '卡夫卡',
       note: '在荒诞的世界里，保持清醒的困惑。',
       initials: 'K',
-      tone: 'from-zinc-700 to-stone-300'
+      tone: 'from-zinc-700 to-stone-300 dark:from-zinc-300 dark:to-zinc-800'
     },
     {
       name: '王阳明',
       note: '知行合一，致良知。',
       initials: 'W',
-      tone: 'from-neutral-700 to-amber-100'
+      tone: 'from-neutral-700 to-amber-100 dark:from-neutral-200 dark:to-amber-950'
     },
     {
       name: '惠能',
       note: '本来无一物，何处惹尘埃。',
       initials: 'H',
-      tone: 'from-stone-600 to-neutral-100'
+      tone: 'from-stone-600 to-neutral-100 dark:from-stone-200 dark:to-neutral-800'
     },
-    { name: '泰戈尔', note: '用诗歌拥抱世界。', initials: 'T', tone: 'from-zinc-500 to-orange-100' }
+    {
+      name: '泰戈尔',
+      note: '用诗歌拥抱世界。',
+      initials: 'T',
+      tone: 'from-zinc-500 to-orange-100 dark:from-zinc-200 dark:to-orange-950'
+    }
   ];
 </script>
 
@@ -115,13 +123,13 @@
   <meta name="description" content="Folio 是一个关于哲学、文学和自我探索的阅读空间。" />
 </svelte:head>
 
-<main class="min-h-screen bg-[#f8f4eb] text-[#2e2a24] lg:h-screen lg:overflow-hidden">
+<main class="min-h-screen bg-background text-foreground lg:h-screen lg:overflow-hidden">
   <div class="mx-auto flex min-h-screen w-full max-w-[1720px] lg:h-screen">
     <aside
-      class="hidden w-64 shrink-0 border-r border-[#ded6c8] bg-[#f4efe5]/80 px-8 py-10 lg:flex lg:h-screen lg:flex-col lg:overflow-hidden"
+      class="hidden w-64 shrink-0 border-r bg-sidebar/90 px-8 py-10 lg:flex lg:h-screen lg:flex-col lg:overflow-hidden"
     >
       <a class="folio-serif text-4xl font-semibold tracking-normal" href={resolve('/')}>Folio</a>
-      <p class="mt-8 max-w-36 text-base leading-8 text-[#6c6255]">
+      <p class="mt-8 max-w-36 text-base leading-8 text-muted-foreground">
         走进思想的世界，遇见另一种可能。
       </p>
 
@@ -130,40 +138,45 @@
           {@const Icon = item.icon}
           <a
             class={[
-              'flex h-12 items-center gap-4 rounded-2xl px-4 text-[15px] transition-colors',
+              'flex h-12 items-center gap-4 rounded-xl px-4 text-[15px] transition-colors',
               item.active
-                ? 'bg-[#e9e0d1] text-[#302a22] shadow-sm'
-                : 'text-[#6d6356] hover:bg-[#ece5da]'
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
+                : 'text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground'
             ]}
             href={resolve('/')}
           >
-            <Icon class="size-5" strokeWidth={1.7} />
+            <Icon strokeWidth={1.7} />
             <span>{item.label}</span>
           </a>
         {/each}
       </nav>
 
-      <button
-        class="mt-auto flex w-full items-center gap-4 rounded-2xl px-1 py-2 text-left transition-colors hover:bg-[#ece5da]"
-      >
-        <span
-          class="flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-[#d9c6aa] to-[#8b8377] text-lg font-semibold text-white"
+      <Separator class="mt-auto" />
+      <div class="mt-5 flex items-center justify-between">
+        <button
+          class="flex min-w-0 items-center gap-4 rounded-xl px-1 py-2 text-left transition-colors hover:bg-sidebar-accent/70"
         >
-          B
-        </span>
-        <span class="text-sm font-medium">Bruce</span>
-        <ChevronDown class="ml-auto size-4 text-[#6f665b]" strokeWidth={1.7} />
-      </button>
+          <span
+            class="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-muted-foreground text-base font-semibold text-primary-foreground"
+          >
+            B
+          </span>
+          <span class="text-sm font-medium">Bruce</span>
+          <ChevronDown class="text-muted-foreground" strokeWidth={1.7} />
+        </button>
+        <ThemeToggle />
+      </div>
     </aside>
 
     <section
       class="min-w-0 flex-1 px-4 py-4 sm:px-6 lg:h-screen lg:overflow-y-auto lg:px-8 lg:py-6"
     >
       <header
-        class="mb-4 flex h-14 items-center justify-between rounded-2xl border border-[#e3dbce] bg-[#fbf7ef]/85 px-4 lg:hidden"
+        class="mb-4 flex h-14 items-center justify-between rounded-xl border bg-card/80 px-4 backdrop-blur lg:hidden"
       >
         <a class="folio-serif text-3xl font-semibold" href={resolve('/')}>Folio</a>
         <div class="flex items-center gap-2">
+          <ThemeToggle />
           <Button variant="ghost" size="icon-sm" aria-label="搜索">
             <Search />
           </Button>
@@ -173,14 +186,14 @@
         </div>
       </header>
 
-      <div class="relative overflow-hidden rounded-[22px] border border-[#eadfce] bg-[#f4ead9]">
+      <section class="relative overflow-hidden rounded-2xl border bg-card">
         <img
           class="h-[320px] w-full object-cover object-center sm:h-[380px] lg:h-[430px]"
           src="/folio/hero.jpg"
           alt="一道通向远方山海的门"
         />
         <div
-          class="absolute inset-0 bg-gradient-to-r from-[#f5ead8]/95 via-[#f5ead8]/42 to-transparent"
+          class="absolute inset-0 bg-gradient-to-r from-background/95 via-background/52 to-transparent"
         ></div>
         <div class="absolute left-7 top-1/2 max-w-[420px] -translate-y-1/2 sm:left-14">
           <h1
@@ -188,64 +201,53 @@
           >
             Folio
           </h1>
-          <p class="mt-6 text-xl leading-9 tracking-[0.08em] text-[#514a40] sm:text-2xl">
+          <p class="mt-6 text-xl leading-9 tracking-normal text-muted-foreground sm:text-2xl">
             走进思想的世界，<br />遇见另一种可能。
           </p>
-          <Button
-            class="mt-8 h-11 rounded-full bg-[#302b24] px-7 text-[#fff8ec] hover:bg-[#433b31]"
-          >
+          <Button class="mt-8 rounded-full px-7" size="lg">
             开始探索
             <ArrowRight data-icon="inline-end" />
           </Button>
         </div>
-      </div>
+      </section>
 
       <section class="mt-7">
         <div class="mb-4 flex items-center justify-between gap-4">
           <h2 class="folio-serif text-2xl font-semibold">主题</h2>
         </div>
-        <div class="flex gap-4 overflow-x-auto pb-2">
+        <div class="flex gap-3 overflow-x-auto pb-2">
           {#each themes as theme (theme.label)}
             {@const Icon = theme.icon}
-            <button
-              class="flex h-11 shrink-0 items-center gap-3 rounded-full bg-[#eee6da] px-6 text-sm text-[#40392f] transition-colors hover:bg-[#e4dacb]"
-            >
-              <Icon class="size-5 text-[#6d6255]" strokeWidth={1.7} />
+            <Button variant="secondary" class="h-11 shrink-0 rounded-full px-5">
+              <Icon data-icon="inline-start" strokeWidth={1.7} />
               <span>{theme.label}</span>
-            </button>
+            </Button>
           {/each}
-          <button
-            class="flex h-11 shrink-0 items-center gap-3 rounded-full bg-[#eee6da] px-6 text-sm text-[#40392f] transition-colors hover:bg-[#e4dacb]"
-          >
+          <Button variant="outline" class="h-11 shrink-0 rounded-full px-5">
             <span>更多</span>
-            <ChevronDown class="size-4 text-[#6d6255]" strokeWidth={1.7} />
-          </button>
+            <ChevronDown data-icon="inline-end" strokeWidth={1.7} />
+          </Button>
         </div>
       </section>
 
       <section class="mt-4">
         <div class="mb-3 flex items-center justify-between">
           <h2 class="folio-serif text-2xl font-semibold">Folio</h2>
-          <a
-            class="flex items-center gap-2 text-sm text-[#4b4339] hover:text-[#201c17]"
-            href={resolve('/')}
-          >
+          <Button variant="link" href={resolve('/')} class="px-0">
             查看全部
-            <ArrowRight class="size-4" strokeWidth={1.7} />
-          </a>
+            <ArrowRight data-icon="inline-end" strokeWidth={1.7} />
+          </Button>
         </div>
 
         <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
           {#each folios as folio (folio.title)}
-            <article
-              class="overflow-hidden rounded-xl border border-[#dfd5c6] bg-[#f7f0e5] shadow-sm"
-            >
+            <Card.Root class="rounded-xl py-0">
               <div
                 class="cover-frame relative aspect-[1.38] bg-cover"
                 style:background-position={folio.position}
               >
                 <Button
-                  class="absolute right-3 top-3 bg-[#fbf7ef]/70 text-[#433b32] backdrop-blur hover:bg-[#fbf7ef]"
+                  class="absolute right-3 top-3 rounded-full bg-background/70 backdrop-blur hover:bg-background"
                   variant="ghost"
                   size="icon-sm"
                   aria-label={`收藏 ${folio.title}`}
@@ -253,16 +255,16 @@
                   <Bookmark />
                 </Button>
               </div>
-              <div class="px-5 pb-5 pt-4">
+              <Card.Content class="pb-5 pt-4">
                 <h3 class="folio-serif text-xl font-semibold leading-7">{folio.title}</h3>
-                <p class="mt-1 text-sm text-[#62584d]">{folio.author}</p>
+                <p class="mt-1 text-sm text-muted-foreground">{folio.author}</p>
                 <div class="mt-4 flex flex-wrap gap-2">
                   {#each folio.tags as tag (tag)}
-                    <Badge variant="secondary" class="bg-[#e8dfd2] text-[#5f5549]">{tag}</Badge>
+                    <Badge variant="secondary">{tag}</Badge>
                   {/each}
                 </div>
-              </div>
-            </article>
+              </Card.Content>
+            </Card.Root>
           {/each}
         </div>
       </section>
@@ -270,35 +272,36 @@
       <section class="mt-8 pb-8">
         <div class="mb-5 flex items-center justify-between">
           <h2 class="folio-serif text-2xl font-semibold">思想家</h2>
-          <a
-            class="flex items-center gap-2 text-sm text-[#4b4339] hover:text-[#201c17]"
-            href={resolve('/')}
-          >
+          <Button variant="link" href={resolve('/')} class="px-0">
             查看全部
-            <ArrowRight class="size-4" strokeWidth={1.7} />
-          </a>
+            <ArrowRight data-icon="inline-end" strokeWidth={1.7} />
+          </Button>
         </div>
 
         <div class="grid gap-x-8 gap-y-5 sm:grid-cols-2 xl:grid-cols-6">
           {#each thinkers as thinker (thinker.name)}
-            <a class="group flex min-w-0 items-center gap-4" href={resolve('/')}>
-              <span
-                class={[
-                  'folio-serif flex size-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-2xl font-semibold text-white shadow-sm ring-1 ring-[#d8cfbf]',
-                  thinker.tone
-                ]}
-              >
-                {thinker.initials}
-              </span>
-              <span class="min-w-0">
-                <span class="block text-base font-medium text-[#2e2922] group-hover:text-[#17130f]"
-                  >{thinker.name}</span
-                >
-                <span class="mt-1 line-clamp-2 block text-sm leading-6 text-[#71675b]"
-                  >{thinker.note}</span
-                >
-              </span>
-            </a>
+            <Card.Root size="sm" class="rounded-xl">
+              <Card.Content>
+                <a class="group flex min-w-0 items-center gap-4" href={resolve('/')}>
+                  <span
+                    class={[
+                      'folio-serif flex size-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xl font-semibold text-white shadow-sm ring-1 ring-border',
+                      thinker.tone
+                    ]}
+                  >
+                    {thinker.initials}
+                  </span>
+                  <span class="min-w-0">
+                    <span class="block text-base font-medium group-hover:text-primary"
+                      >{thinker.name}</span
+                    >
+                    <span class="mt-1 line-clamp-2 block text-sm leading-6 text-muted-foreground">
+                      {thinker.note}
+                    </span>
+                  </span>
+                </a>
+              </Card.Content>
+            </Card.Root>
           {/each}
         </div>
       </section>
