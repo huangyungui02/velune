@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
+  import * as Avatar from '$lib/components/ui/avatar';
   import * as Card from '$lib/components/ui/card';
   import { Separator } from '$lib/components/ui/separator';
   import ThemeToggle from '$lib/components/theme-toggle.svelte';
@@ -14,6 +15,7 @@
   import House from '@lucide/svelte/icons/house';
   import LayoutGrid from '@lucide/svelte/icons/layout-grid';
   import Leaf from '@lucide/svelte/icons/leaf';
+  import LogOut from '@lucide/svelte/icons/log-out';
   import Menu from '@lucide/svelte/icons/menu';
   import Moon from '@lucide/svelte/icons/moon';
   import Mountain from '@lucide/svelte/icons/mountain';
@@ -23,6 +25,11 @@
   import Sprout from '@lucide/svelte/icons/sprout';
   import UserRound from '@lucide/svelte/icons/user-round';
   import type { Component } from 'svelte';
+  import type { PageProps } from './$types';
+
+  let { data }: PageProps = $props();
+  const accountLabel = $derived(data.user?.email || '登录');
+  const accountInitial = $derived((data.user?.email?.[0] || 'F').toUpperCase());
 
   type Icon = Component;
 
@@ -152,18 +159,24 @@
       </nav>
 
       <Separator class="mt-auto" />
-      <div class="mt-5 flex items-center justify-between">
-        <button
-          class="flex min-w-0 items-center gap-4 rounded-xl px-1 py-2 text-left transition-colors hover:bg-sidebar-accent/70"
+      <div class="mt-5 flex items-center gap-2">
+        <Button
+          class="min-w-0 flex-1 justify-start px-1"
+          variant="ghost"
+          href={data.user ? undefined : resolve('/login')}
         >
-          <span
-            class="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-muted-foreground text-base font-semibold text-primary-foreground"
-          >
-            B
-          </span>
-          <span class="text-sm font-medium">Bruce</span>
-          <ChevronDown class="text-muted-foreground" strokeWidth={1.7} />
-        </button>
+          <Avatar.Root class="size-10">
+            <Avatar.Fallback>{accountInitial}</Avatar.Fallback>
+          </Avatar.Root>
+          <span class="truncate text-sm font-medium">{accountLabel}</span>
+        </Button>
+        {#if data.user}
+          <form method="POST" action="/auth/signout">
+            <Button type="submit" variant="ghost" size="icon-sm" aria-label="退出登录">
+              <LogOut />
+            </Button>
+          </form>
+        {/if}
         <ThemeToggle />
       </div>
     </aside>
@@ -176,6 +189,13 @@
       >
         <a class="folio-serif text-3xl font-semibold" href={resolve('/')}>Folio</a>
         <div class="flex items-center gap-2">
+          {#if data.user}
+            <Avatar.Root class="size-8">
+              <Avatar.Fallback>{accountInitial}</Avatar.Fallback>
+            </Avatar.Root>
+          {:else}
+            <Button variant="ghost" size="sm" href={resolve('/login')}>登录</Button>
+          {/if}
           <ThemeToggle />
           <Button variant="ghost" size="icon-sm" aria-label="搜索">
             <Search />
