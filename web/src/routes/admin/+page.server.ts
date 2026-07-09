@@ -4,6 +4,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Actions, PageServerLoad } from './$types';
 
 const LANGUAGES = ['zh', 'en'] as const;
+const ASSET_BUCKET = 'avatars';
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 function text(data: FormData, key: string) {
   return String(data.get(key) ?? '').trim();
@@ -30,6 +32,40 @@ async function requireAdmin(locals: App.Locals) {
 
 function databaseFailure(action: string, message: string) {
   return fail(400, { action, message });
+}
+
+function image(data: FormData, key: string) {
+  const value = data.get(key);
+  return value instanceof File && value.size > 0 ? value : null;
+}
+
+function publicAssetUrl(supabase: SupabaseClient, path: string | null, version: string) {
+  if (!path) return null;
+  if (/^https?:\/\//.test(path) || path.startsWith('/')) return path;
+  const url = supabase.storage.from(ASSET_BUCKET).getPublicUrl(path).data.publicUrl;
+  return `${url}?v=${encodeURIComponent(version)}`;
+}
+
+async function uploadImage(
+  supabase: SupabaseClient,
+  file: File | null,
+  path: string,
+  action: string
+) {
+  if (!file) return null;
+  if (file.type !== 'image/png') {
+    return databaseFailure(action, '图片必须为 PNG 格式。');
+  }
+  if (file.size > MAX_IMAGE_SIZE) {
+    return databaseFailure(action, '图片不能超过 5 MB。');
+  }
+
+  const { error: uploadError } = await supabase.storage.from(ASSET_BUCKET).upload(path, file, {
+    cacheControl: '3600',
+    contentType: 'image/png',
+    upsert: true
+  });
+  return uploadError ? databaseFailure(action, uploadError.message) : null;
 }
 
 async function saveTranslations(
@@ -85,13 +121,13 @@ export const load: PageServerLoad = async ({ locals }) => {
     supabase
       .from('soulers')
       .select(
-        'id,wiki_id,checked,avatar,created_at,souler_profile(lang,name,introduction),souler_aliases(alias)'
+        'id,wiki_id,checked,avatar,created_at,updated_at,souler_profile(lang,name,introduction),souler_aliases(alias)'
       )
       .order('updated_at', { ascending: false }),
     supabase
       .from('folios')
       .select(
-        'id,souler_id,cover_image,featured,is_public,created_at,folio_translations(lang,title,subtitle,description),folio_themes(theme_id,sort_order),folio_prompts(id,content,version,is_active)'
+        'id,souler_id,cover_image,featured,is_public,created_at,updated_at,folio_translations(lang,title,subtitle,description),folio_themes(theme_id,sort_order),folio_prompts(id,content,version,is_active)'
       )
       .order('updated_at', { ascending: false })
   ]);
@@ -101,8 +137,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 
   return {
     themes: themesResult.data ?? [],
-    soulers: soulersResult.data ?? [],
-    folios: foliosResult.data ?? []
+    soulers: (soulersResult.data ?? []).map((souler) => ({
+      ...souler,
+      avatar_url: publicAssetUrl(supabase, souler.avatar, souler.updated_at)
+    })),
+    folios: (foliosResult.data ?? []).map((folio) => ({
+      ...folio,
+      cover_image_url: publicAssetUrl(supabase, folio.cover_image, folio.updated_at)
+    }))
   };
 };
 
@@ -191,11 +233,26 @@ export const actions: Actions = {
     const id = text(data, 'id');
     if (!id) return databaseFailure('saveSoulerBase', '缺少 Souler ID。');
 
+    const wikiId = optional(data, 'wiki_id');
+    const avatar = image(data, 'avatar_file');
+    if (avatar && !wikiId) {
+      return databaseFailure('saveSoulerBase', '上传头像前必须填写 Wiki ID。');
+    }
+    if (avatar && wikiId && !/^[A-Za-z0-9_-]+$/.test(wikiId)) {
+      return databaseFailure('saveSoulerBase', 'Wiki ID 只能包含字母、数字、下划线和连字符。');
+    }
+
+    const avatarPath = wikiId ? `soulers/${wikiId}.png` : null;
+    const uploadFailure = avatar
+      ? await uploadImage(supabase, avatar, avatarPath!, 'saveSoulerBase')
+      : null;
+    if (uploadFailure) return uploadFailure;
+
     const { error: updateError } = await supabase
       .from('soulers')
       .update({
-        wiki_id: optional(data, 'wiki_id'),
-        avatar: optional(data, 'avatar'),
+        wiki_id: wikiId,
+        ...(avatarPath && avatar ? { avatar: avatarPath } : {}),
         checked: checked(data, 'checked')
       })
       .eq('id', id);
@@ -257,7 +314,6 @@ export const actions: Actions = {
 
     const values = {
       souler_id: soulerId,
-      cover_image: optional(data, 'cover_image'),
       featured: checked(data, 'featured'),
       is_public: checked(data, 'is_public')
     };
@@ -267,6 +323,18 @@ export const actions: Actions = {
     if (folioResult.error) return databaseFailure('saveFolio', folioResult.error.message);
 
     const folioId = folioResult.data.id;
+    const cover = image(data, 'cover_file');
+    const coverPath = `folios/${folioId}.png`;
+    const uploadFailure = await uploadImage(supabase, cover, coverPath, 'saveFolio');
+    if (uploadFailure) return uploadFailure;
+    if (cover) {
+      const { error: coverError } = await supabase
+        .from('folios')
+        .update({ cover_image: coverPath })
+        .eq('id', folioId);
+      if (coverError) return databaseFailure('saveFolio', coverError.message);
+    }
+
     const translations = await saveTranslations(
       supabase,
       'folio_translations',
