@@ -186,48 +186,48 @@
             <Card.Root
               class="group rounded-xl py-0 overflow-hidden border border-border/40 bg-card/60 backdrop-blur-xs hover:-translate-y-1 hover:shadow-md hover:border-border/70 transition-all duration-300"
             >
-              <div class="relative aspect-square w-full overflow-hidden bg-muted">
-                {#if folio.coverUrl}
-                  <img
-                    src={folio.coverUrl}
-                    alt={folio.title}
-                    class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                {:else}
-                  <div
-                    class="flex size-full items-center justify-center bg-secondary/40 px-6 text-center"
+              <a class="block focus-visible:outline-none" href={resolve(`/folio/${folio.id}`)}>
+                <div class="relative aspect-square w-full overflow-hidden bg-muted">
+                  {#if folio.coverUrl}
+                    <img
+                      src={folio.coverUrl}
+                      alt={folio.title}
+                      class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  {:else}
+                    <div
+                      class="flex size-full items-center justify-center bg-secondary/40 px-6 text-center"
+                    >
+                      <span class="folio-serif text-2xl text-muted-foreground">{folio.title}</span>
+                    </div>
+                  {/if}
+                  <span
+                    class="absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full bg-background/75 text-foreground shadow-xs backdrop-blur transition-colors group-hover:bg-background"
+                    aria-label={`收藏 ${folio.title}`}
                   >
-                    <span class="folio-serif text-2xl text-muted-foreground">{folio.title}</span>
-                  </div>
-                {/if}
-                <Button
-                  class="absolute right-3 top-3 rounded-full bg-background/75 backdrop-blur hover:bg-background shadow-xs transition-colors"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`收藏 ${folio.title}`}
-                >
-                  <Bookmark class="size-4" />
-                </Button>
-              </div>
-              <Card.Content class="pb-5 pt-4">
-                <h3 class="folio-serif text-xl font-semibold leading-7">{folio.title}</h3>
-                {#if folio.subtitle}
-                  <p class="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">
-                    {folio.subtitle}
-                  </p>
-                {/if}
-                {#if folio.tags.length}
-                  <div class="mt-4 flex flex-wrap gap-2">
-                    {#each folio.tags as tag (tag)}
-                      <Badge
-                        variant="secondary"
-                        class="rounded-full bg-secondary/50 text-[11px] px-2 py-0.5 border border-border/10"
-                        >{tag}</Badge
-                      >
-                    {/each}
-                  </div>
-                {/if}
-              </Card.Content>
+                    <Bookmark class="size-4" />
+                  </span>
+                </div>
+                <Card.Content class="pb-5 pt-4">
+                  <h3 class="folio-serif text-xl font-semibold leading-7">{folio.title}</h3>
+                  {#if folio.subtitle}
+                    <p class="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">
+                      {folio.subtitle}
+                    </p>
+                  {/if}
+                  {#if folio.tags.length}
+                    <div class="mt-4 flex flex-wrap gap-2">
+                      {#each folio.tags as tag (tag)}
+                        <Badge
+                          variant="secondary"
+                          class="rounded-full bg-secondary/50 text-[11px] px-2 py-0.5 border border-border/10"
+                          >{tag}</Badge
+                        >
+                      {/each}
+                    </div>
+                  {/if}
+                </Card.Content>
+              </a>
             </Card.Root>
           {/each}
         </div>
@@ -258,7 +258,9 @@
                     class="size-full object-cover grayscale transition-all duration-500 group-hover:scale-105 group-hover:grayscale-0"
                   />
                 {:else}
-                  <div class="flex size-full items-center justify-center text-2xl text-muted-foreground">
+                  <div
+                    class="flex size-full items-center justify-center text-2xl text-muted-foreground"
+                  >
                     {thinker.initials}
                   </div>
                 {/if}
