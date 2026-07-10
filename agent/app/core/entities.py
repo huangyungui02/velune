@@ -23,6 +23,7 @@ class Chapter(TypedDict):
 class Session(TypedDict):
     id: str
     souler_id: str
+    folio_id: str | None
     title: str
     souler: Souler
     chapter: Chapter | None

@@ -34,6 +34,7 @@ async def create_chapter_session(
     return {
         "id": session_id,
         "souler_id": souler["id"],
+        "folio_id": None,
         "title": chapter["title"],
         "souler": souler,
         "chapter": chapter,
@@ -68,6 +69,7 @@ async def resolve_session(
     session: Session = {
         "id": created_id,
         "souler_id": souler["id"],
+        "folio_id": None,
         "title": "",
         "souler": souler,
         "chapter": None,

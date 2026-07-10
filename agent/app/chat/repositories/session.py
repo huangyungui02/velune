@@ -16,6 +16,7 @@ async def get_session_by_id(user_id: str, session_id: str, lang: str = "zh") -> 
             sess.id,
             sess.user_id,
             sess.souler_id,
+            sess.folio_id,
             sess.title,
             sess.chapter_id,
             jsonb_build_object(
@@ -56,6 +57,7 @@ async def get_session_by_id(user_id: str, session_id: str, lang: str = "zh") -> 
     return {
         "id": str(row.get("id")),
         "souler_id": str(row.get("souler_id")),
+        "folio_id": str(row["folio_id"]) if row.get("folio_id") else None,
         "title": str(row.get("title", "")),
         "souler": to_souler(row.get("souler")),
         "chapter": parsed_chapter,
@@ -67,15 +69,17 @@ async def create_session(
     souler_id: str,
     title: str = "",
     chapter_id: str | None = None,
+    folio_id: str | None = None,
 ) -> str:
     row = await execute_fetch_one(
         """
-        INSERT INTO public.sessions (user_id, souler_id, title, chapter_id)
+        INSERT INTO public.sessions (user_id, souler_id, title, chapter_id, folio_id)
         VALUES (
             CAST(%(user_id)s AS uuid),
             CAST(%(souler_id)s AS uuid),
             %(title)s,
-            CAST(%(chapter_id)s AS uuid)
+            CAST(%(chapter_id)s AS uuid),
+            CAST(%(folio_id)s AS uuid)
         )
         RETURNING id
         """,
@@ -84,6 +88,7 @@ async def create_session(
             "souler_id": souler_id,
             "title": title,
             "chapter_id": chapter_id,
+            "folio_id": folio_id,
         },
     )
     if not row or not row.get("id"):

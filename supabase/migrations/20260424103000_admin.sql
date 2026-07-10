@@ -104,3 +104,81 @@ CREATE POLICY "Allow admins to update avatar objects"
 CREATE POLICY "Allow admins to delete avatar objects"
     ON storage.objects FOR DELETE TO authenticated
     USING (bucket_id = 'avatars' AND public.is_admin());
+
+CREATE POLICY "Allow admins to view all folios"
+    ON public.folios FOR SELECT TO authenticated
+    USING (public.is_admin());
+CREATE POLICY "Allow admins to insert folios"
+    ON public.folios FOR INSERT TO authenticated
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to update folios"
+    ON public.folios FOR UPDATE TO authenticated
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to delete folios"
+    ON public.folios FOR DELETE TO authenticated
+    USING (public.is_admin());
+
+CREATE POLICY "Allow admins to view all folio translations"
+    ON public.folio_translations FOR SELECT TO authenticated
+    USING (public.is_admin());
+CREATE POLICY "Allow admins to insert folio translations"
+    ON public.folio_translations FOR INSERT TO authenticated
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to update folio translations"
+    ON public.folio_translations FOR UPDATE TO authenticated
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to delete folio translations"
+    ON public.folio_translations FOR DELETE TO authenticated
+    USING (public.is_admin());
+
+CREATE POLICY "Allow admins to insert themes"
+    ON public.themes FOR INSERT TO authenticated
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to update themes"
+    ON public.themes FOR UPDATE TO authenticated
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to delete themes"
+    ON public.themes FOR DELETE TO authenticated
+    USING (public.is_admin());
+
+CREATE POLICY "Allow admins to insert theme translations"
+    ON public.themes_translations FOR INSERT TO authenticated
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to update theme translations"
+    ON public.themes_translations FOR UPDATE TO authenticated
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to delete theme translations"
+    ON public.themes_translations FOR DELETE TO authenticated
+    USING (public.is_admin());
+
+CREATE POLICY "Allow admins to view all folio themes"
+    ON public.folio_themes FOR SELECT TO authenticated
+    USING (public.is_admin());
+CREATE POLICY "Allow admins to insert folio themes"
+    ON public.folio_themes FOR INSERT TO authenticated
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to update folio themes"
+    ON public.folio_themes FOR UPDATE TO authenticated
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to delete folio themes"
+    ON public.folio_themes FOR DELETE TO authenticated
+    USING (public.is_admin());
+
+CREATE POLICY "Allow admins to view all folio prompts"
+    ON public.folio_prompts FOR SELECT TO authenticated
+    USING (public.is_admin());
+CREATE POLICY "Allow admins to insert folio prompts"
+    ON public.folio_prompts FOR INSERT TO authenticated
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to update folio prompts"
+    ON public.folio_prompts FOR UPDATE TO authenticated
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
+CREATE POLICY "Allow admins to delete folio prompts"
+    ON public.folio_prompts FOR DELETE TO authenticated
+    USING (public.is_admin());

@@ -18,12 +18,10 @@
   const folio = $derived(data.folio);
   const soulers = $derived(data.soulers ?? []);
 
-  const difficulty = $derived(
-    folio.themes.length > 2 ? '中级' : '初级'
-  );
+  const difficulty = $derived(folio.themes.length > 2 ? '中级' : '初级');
 
   const experienceItems = $derived(
-    (folio.title.includes('荒诞') || folio.author.name.includes('加缪'))
+    folio.title.includes('荒诞') || folio.author.name.includes('加缪')
       ? [
           { label: '感受荒诞的日常', icon: Waves },
           { label: '面对沉默的世界', icon: Sun },
@@ -60,17 +58,23 @@
         class="w-full h-full object-cover object-center brightness-[0.97] dark:brightness-75 transition-all duration-1000"
       />
     {:else}
-      <div class="w-full h-full bg-gradient-to-b from-accent/30 via-accent/15 to-background flex items-center justify-center">
+      <div
+        class="w-full h-full bg-gradient-to-b from-accent/30 via-accent/15 to-background flex items-center justify-center"
+      >
         <span class="font-serif text-3xl tracking-widest text-muted-foreground/30 italic">
           {folio.title}
         </span>
       </div>
     {/if}
     <!-- Soft overlay gradient fading into the background -->
-    <div class="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-background to-transparent"></div>
-    
+    <div
+      class="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-background to-transparent"
+    ></div>
+
     <!-- Floating Header overlaying the banner -->
-    <header class="absolute top-0 inset-x-0 z-50 flex h-20 items-center justify-between px-6 sm:px-10 lg:px-16">
+    <header
+      class="absolute top-0 inset-x-0 z-50 flex h-20 items-center justify-between px-6 sm:px-10 lg:px-16"
+    >
       <Button
         variant="ghost"
         size="icon"
@@ -97,16 +101,19 @@
 
   <!-- Content Container (Spacious single column Book Layout) -->
   <div class="mx-auto max-w-[800px] px-6 sm:px-8 -mt-16 relative z-10">
-    
     <!-- Main Title Block -->
     <div class="animate-fade-in-up">
-      <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.15] text-foreground tracking-tight">
+      <h1
+        class="font-serif text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.15] text-foreground tracking-tight"
+      >
         {folio.title}
       </h1>
     </div>
 
     <!-- Metadata Details Block -->
-    <div class="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4 border-y border-border/30 py-6 font-serif text-sm text-muted-foreground/90 animate-fade-in-up delay-100">
+    <div
+      class="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4 border-y border-border/30 py-6 font-serif text-sm text-muted-foreground/90 animate-fade-in-up delay-100"
+    >
       <div class="flex items-center gap-2.5">
         <BarChart2 class="size-4 text-muted-foreground/50" strokeWidth={1.5} />
         <span>难度: {difficulty}</span>
@@ -117,15 +124,21 @@
         <div class="flex flex-wrap gap-2">
           {#if folio.themes.length > 0}
             {#each folio.themes as theme (theme.id)}
-              <span class="rounded-full bg-accent/65 border border-border/30 px-2.5 py-0.5 text-xs text-muted-foreground font-serif tracking-wide transition-all hover:bg-accent/80 hover:text-foreground animate-fade-in">
+              <span
+                class="rounded-full bg-accent/65 border border-border/30 px-2.5 py-0.5 text-xs text-muted-foreground font-serif tracking-wide transition-all hover:bg-accent/80 hover:text-foreground animate-fade-in"
+              >
                 {theme.name}
               </span>
             {/each}
           {:else}
-            <span class="rounded-full bg-accent/65 border border-border/30 px-2.5 py-0.5 text-xs text-muted-foreground font-serif tracking-wide animate-fade-in">
+            <span
+              class="rounded-full bg-accent/65 border border-border/30 px-2.5 py-0.5 text-xs text-muted-foreground font-serif tracking-wide animate-fade-in"
+            >
               哲学
             </span>
-            <span class="rounded-full bg-accent/65 border border-border/30 px-2.5 py-0.5 text-xs text-muted-foreground font-serif tracking-wide animate-fade-in">
+            <span
+              class="rounded-full bg-accent/65 border border-border/30 px-2.5 py-0.5 text-xs text-muted-foreground font-serif tracking-wide animate-fade-in"
+            >
               探索
             </span>
           {/if}
@@ -135,9 +148,17 @@
 
     <!-- Quote Card Block -->
     {#if folio.subtitle}
-      <div class="my-12 rounded-2xl bg-secondary/35 border border-border/20 p-6 sm:p-8 relative overflow-hidden animate-fade-in-up delay-200">
-        <svg class="absolute -top-2 -left-2 size-12 text-muted-foreground/10 font-serif" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.988zm-12 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+      <div
+        class="my-12 rounded-2xl bg-secondary/35 border border-border/20 p-6 sm:p-8 relative overflow-hidden animate-fade-in-up delay-200"
+      >
+        <svg
+          class="absolute -top-2 -left-2 size-12 text-muted-foreground/10 font-serif"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.988zm-12 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"
+          />
         </svg>
         <div class="relative pl-6">
           <p class="font-serif text-lg sm:text-xl leading-relaxed text-foreground/90 italic">
@@ -169,11 +190,16 @@
       <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
         {#each experienceItems as item (item.label)}
           {@const Icon = item.icon as Component}
-          <div class="flex flex-col items-center gap-4 rounded-2xl border border-border/30 bg-card/20 p-6 text-center hover:border-border/60 hover:bg-card/40 transition-all duration-300">
-            <div class="rounded-full bg-accent/45 p-3 text-muted-foreground/75 group-hover:scale-110 transition-transform">
+          <div
+            class="flex flex-col items-center gap-4 rounded-2xl border border-border/30 bg-card/20 p-6 text-center hover:border-border/60 hover:bg-card/40 transition-all duration-300"
+          >
+            <div
+              class="rounded-full bg-accent/45 p-3 text-muted-foreground/75 group-hover:scale-110 transition-transform"
+            >
               <Icon class="size-6" strokeWidth={1.5} />
             </div>
-            <span class="font-serif text-sm font-medium text-muted-foreground/90">{item.label}</span>
+            <span class="font-serif text-sm font-medium text-muted-foreground/90">{item.label}</span
+            >
           </div>
         {/each}
       </div>
@@ -187,8 +213,12 @@
         </h2>
         <div class="mt-8 flex gap-5 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory">
           {#each soulers as thinker (thinker.id)}
-            <div class="group shrink-0 w-[160px] snap-start rounded-2xl border border-border/30 bg-card/15 p-4 hover:shadow-md hover:border-border/60 hover:-translate-y-1 transition-all duration-300">
-              <div class="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-muted/30 border border-border/20">
+            <div
+              class="group shrink-0 w-[160px] snap-start rounded-2xl border border-border/30 bg-card/15 p-4 hover:shadow-md hover:border-border/60 hover:-translate-y-1 transition-all duration-300"
+            >
+              <div
+                class="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-muted/30 border border-border/20"
+              >
                 {#if thinker.avatarUrl}
                   <img
                     class="size-full object-cover brightness-95 contrast-[1.05] grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-out"
@@ -196,18 +226,24 @@
                     alt={thinker.name}
                   />
                 {:else}
-                  <div class="flex size-full items-center justify-center bg-accent/20 font-serif text-2xl text-muted-foreground/40">
+                  <div
+                    class="flex size-full items-center justify-center bg-accent/20 font-serif text-2xl text-muted-foreground/40"
+                  >
                     {thinker.initials}
                   </div>
                 {/if}
               </div>
               <div class="mt-4 text-center">
                 {#if thinker.englishName}
-                  <div class="font-sans text-[11px] font-medium text-muted-foreground tracking-wider line-clamp-1">
+                  <div
+                    class="font-sans text-[11px] font-medium text-muted-foreground tracking-wider line-clamp-1"
+                  >
                     {thinker.englishName}
                   </div>
                 {/if}
-                <div class="mt-1 font-serif text-sm font-semibold text-foreground tracking-wide line-clamp-1">
+                <div
+                  class="mt-1 font-serif text-sm font-semibold text-foreground tracking-wide line-clamp-1"
+                >
                   {thinker.name}
                 </div>
               </div>
@@ -222,6 +258,7 @@
   <div class="fixed inset-x-0 bottom-6 z-45 flex justify-center px-4 animate-fade-in">
     <!-- Main Start Button -->
     <Button
+      href={resolve(`/folio/${folio.id}/experience`)}
       class="group h-12 w-full max-w-xs rounded-full bg-primary text-sm font-serif tracking-widest text-primary-foreground transition-all duration-300 hover:scale-[1.02] hover:opacity-95 hover:shadow-lg active:scale-98 flex items-center justify-center shadow-[0_12px_40px_-12px_rgba(0,0,0,0.15)]"
       size="lg"
     >
@@ -238,8 +275,8 @@
   }
   /* Hide scrollbar for IE, Edge and Firefox */
   .scrollbar-none {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
   }
 
   @keyframes fadeInUp {

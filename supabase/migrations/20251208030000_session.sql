@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     souler_id UUID NOT NULL REFERENCES soulers(id) ON DELETE CASCADE,
     chapter_id UUID REFERENCES chapters(id) ON DELETE SET NULL,
+    folio_id UUID REFERENCES folios(id) ON DELETE SET NULL,
     title TEXT NOT NULL DEFAULT '',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -15,6 +16,10 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user_souler_updated_at
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user_chapter_updated_at
     ON sessions (user_id, chapter_id, updated_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_user_folio_updated_at
+    ON sessions (user_id, folio_id, updated_at DESC)
+    WHERE folio_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user_updated_at
     ON sessions (user_id, updated_at DESC);
