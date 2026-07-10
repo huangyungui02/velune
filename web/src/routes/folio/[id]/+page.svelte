@@ -9,7 +9,6 @@
   import Layers from '@lucide/svelte/icons/layers';
   import Waves from '@lucide/svelte/icons/waves';
   import Sun from '@lucide/svelte/icons/sun';
-  import Clock from '@lucide/svelte/icons/clock';
   import BarChart2 from '@lucide/svelte/icons/bar-chart-2';
   import Tag from '@lucide/svelte/icons/tag';
   import type { Component } from 'svelte';
@@ -19,18 +18,8 @@
   const folio = $derived(data.folio);
   const soulers = $derived(data.soulers ?? []);
 
-  const readingTime = $derived(
-    folio.description ? Math.max(5, Math.ceil(folio.description.length / 40) + 5) : 15
-  );
-
   const difficulty = $derived(
     folio.themes.length > 2 ? '中级' : '初级'
-  );
-
-  const themeList = $derived(
-    folio.themes.length > 0 
-      ? folio.themes.map((t) => t.name).join(' · ') 
-      : '哲学 · 探索'
   );
 
   const experienceItems = $derived(
@@ -117,18 +106,30 @@
     </div>
 
     <!-- Metadata Details Block -->
-    <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 border-y border-border/30 py-6 font-serif text-sm text-muted-foreground/90 animate-fade-in-up delay-100">
-      <div class="flex items-center gap-3">
-        <Clock class="size-4.5 text-muted-foreground/50" strokeWidth={1.5} />
-        <span>约 {readingTime} 分钟</span>
-      </div>
-      <div class="flex items-center gap-3">
-        <BarChart2 class="size-4.5 text-muted-foreground/50" strokeWidth={1.5} />
+    <div class="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4 border-y border-border/30 py-6 font-serif text-sm text-muted-foreground/90 animate-fade-in-up delay-100">
+      <div class="flex items-center gap-2.5">
+        <BarChart2 class="size-4 text-muted-foreground/50" strokeWidth={1.5} />
         <span>难度: {difficulty}</span>
       </div>
-      <div class="flex items-center gap-3">
-        <Tag class="size-4.5 text-muted-foreground/50" strokeWidth={1.5} />
-        <span>主题: {themeList}</span>
+      <div class="flex items-center gap-2.5">
+        <Tag class="size-4 text-muted-foreground/50" strokeWidth={1.5} />
+        <span class="shrink-0">主题:</span>
+        <div class="flex flex-wrap gap-2">
+          {#if folio.themes.length > 0}
+            {#each folio.themes as theme (theme.id)}
+              <span class="rounded-full bg-accent/65 border border-border/30 px-2.5 py-0.5 text-xs text-muted-foreground font-serif tracking-wide transition-all hover:bg-accent/80 hover:text-foreground animate-fade-in">
+                {theme.name}
+              </span>
+            {/each}
+          {:else}
+            <span class="rounded-full bg-accent/65 border border-border/30 px-2.5 py-0.5 text-xs text-muted-foreground font-serif tracking-wide animate-fade-in">
+              哲学
+            </span>
+            <span class="rounded-full bg-accent/65 border border-border/30 px-2.5 py-0.5 text-xs text-muted-foreground font-serif tracking-wide animate-fade-in">
+              探索
+            </span>
+          {/if}
+        </div>
       </div>
     </div>
 
