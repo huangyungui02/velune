@@ -382,12 +382,18 @@
                     ]}
                     onclick={() => (selectedSoulerId = souler.id)}
                   >
-                    <Avatar.Root class="size-8.5 border border-border/40 shadow-xs">
+                    <Avatar.Root
+                      class="h-11 aspect-[3/4] rounded-lg border border-border/40 shadow-xs after:rounded-lg"
+                    >
                       {#if souler.avatar_url}
-                        <Avatar.Image src={souler.avatar_url} alt={name} class="object-cover" />
+                        <Avatar.Image
+                          src={souler.avatar_url}
+                          alt={name}
+                          class="rounded-lg object-cover"
+                        />
                       {/if}
                       <Avatar.Fallback
-                        class="bg-secondary text-muted-foreground font-semibold text-xs"
+                        class="rounded-lg bg-secondary text-muted-foreground font-semibold text-xs"
                       >
                         {name.slice(0, 1).toUpperCase()}
                       </Avatar.Fallback>
@@ -769,11 +775,19 @@
     <Card.Header class="pb-5 border-b border-border/10">
       <div class="flex items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-          <Avatar.Root class="size-12 border border-border/40 shadow-xs">
+          <Avatar.Root
+            class="h-16 aspect-[3/4] rounded-xl border border-border/40 shadow-xs after:rounded-xl"
+          >
             {#if souler.avatar_url}
-              <Avatar.Image src={souler.avatar_url} alt={displayName} class="object-cover" />
+              <Avatar.Image
+                src={souler.avatar_url}
+                alt={displayName}
+                class="rounded-xl object-cover"
+              />
             {/if}
-            <Avatar.Fallback class="bg-secondary text-muted-foreground font-semibold text-sm">
+            <Avatar.Fallback
+              class="rounded-xl bg-secondary text-muted-foreground font-semibold text-sm"
+            >
               {displayName.slice(0, 1).toUpperCase()}
             </Avatar.Fallback>
           </Avatar.Root>
@@ -1082,7 +1096,7 @@
               <img
                 src={folio.cover_image_url}
                 alt={zh?.title || en?.title || 'Folio 封面'}
-                class="mb-3 aspect-[16/9] w-full rounded-xl border border-border/30 object-cover"
+                class="mb-3 aspect-[2/3] w-full rounded-xl border border-border/30 object-cover"
               />
             {/if}
             <Input

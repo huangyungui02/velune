@@ -7,22 +7,14 @@
   import ThemeToggle from '$lib/components/theme-toggle.svelte';
   import { resolve } from '$app/paths';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
-  import Bird from '@lucide/svelte/icons/bird';
   import Bookmark from '@lucide/svelte/icons/bookmark';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import Clock from '@lucide/svelte/icons/clock';
-  import Heart from '@lucide/svelte/icons/heart';
   import House from '@lucide/svelte/icons/house';
   import LayoutGrid from '@lucide/svelte/icons/layout-grid';
-  import Leaf from '@lucide/svelte/icons/leaf';
   import LogOut from '@lucide/svelte/icons/log-out';
   import Menu from '@lucide/svelte/icons/menu';
-  import Moon from '@lucide/svelte/icons/moon';
-  import Mountain from '@lucide/svelte/icons/mountain';
   import Search from '@lucide/svelte/icons/search';
-  import Skull from '@lucide/svelte/icons/skull';
-  import Sparkles from '@lucide/svelte/icons/sparkles';
-  import Sprout from '@lucide/svelte/icons/sprout';
   import UserRound from '@lucide/svelte/icons/user-round';
   import type { Component } from 'svelte';
   import type { PageProps } from './$types';
@@ -41,94 +33,9 @@
     { label: '继续阅读', icon: Clock }
   ];
 
-  const themes: { label: string; icon: Icon }[] = [
-    { label: '存在主义', icon: Leaf },
-    { label: '自由', icon: Bird },
-    { label: '孤独', icon: Moon },
-    { label: '爱', icon: Heart },
-    { label: '意义', icon: Sparkles },
-    { label: '成长', icon: Sprout },
-    { label: '死亡', icon: Skull },
-    { label: '反抗', icon: Mountain }
-  ];
-
-  const folios = [
-    {
-      title: '荒诞的清晨',
-      author: 'Albert Camus',
-      tags: ['荒诞', '孤独', '选择'],
-      position: '0% 50%'
-    },
-    {
-      title: '推石上山',
-      author: 'Albert Camus',
-      tags: ['荒诞', '反抗', '意义'],
-      position: '25% 50%'
-    },
-    {
-      title: '法之前',
-      author: 'Franz Kafka',
-      tags: ['孤独', '权威', '迷惘'],
-      position: '50% 50%'
-    },
-    {
-      title: '龙场夜雨',
-      author: '王阳明',
-      tags: ['心学', '知行合一', '内省'],
-      position: '75% 50%'
-    },
-    {
-      title: '月下独酌',
-      author: '李白',
-      tags: ['自由', '孤独', '诗意'],
-      position: '100% 50%'
-    }
-  ];
-
-  const thinkers = [
-    {
-      name: '尼采',
-      note: '超越自我，成为你自己。',
-      initials: 'N',
-      image: '/folio/thinkers/nietzsche.jpg',
-      tone: 'from-stone-600 to-stone-200 dark:from-stone-300 dark:to-stone-700'
-    },
-    {
-      name: '加缪',
-      note: '在荒诞中寻找清醒的自由。',
-      initials: 'C',
-      image: '/folio/thinkers/camus.jpg',
-      tone: 'from-amber-700 to-stone-200 dark:from-amber-300 dark:to-stone-800'
-    },
-    {
-      name: '卡夫卡',
-      note: '在荒诞的世界里，保持清醒的困惑。',
-      initials: 'K',
-      image: '/folio/thinkers/kafka.jpg',
-      tone: 'from-zinc-700 to-stone-300 dark:from-zinc-300 dark:to-zinc-800'
-    },
-    {
-      name: '王阳明',
-      note: '知行合一，致良知。',
-      initials: 'W',
-      image: '/folio/thinkers/wang.jpg',
-      tone: 'from-neutral-700 to-amber-100 dark:from-neutral-200 dark:to-amber-950'
-    },
-    {
-      name: '惠能',
-      note: '本来无一物，何处惹尘埃。',
-      initials: 'H',
-      image: '/folio/thinkers/huineng.jpg',
-      tone: 'from-stone-600 to-neutral-100 dark:from-stone-200 dark:to-neutral-800'
-    },
-    {
-      name: '泰戈尔',
-      note: '用诗歌拥抱世界。',
-      initials: 'T',
-      image: '/folio/thinkers/tagore.jpg',
-      tone: 'from-zinc-500 to-orange-100 dark:from-zinc-200 dark:to-orange-950'
-    }
-  ];
+  const themes = $derived(data.themes);
+  const folios = $derived(data.folios);
+  const thinkers = $derived(data.soulers);
 </script>
 
 <svelte:head>
@@ -247,13 +154,11 @@
           <h2 class="folio-serif text-2xl font-semibold">主题</h2>
         </div>
         <div class="flex gap-3 overflow-x-auto pb-2">
-          {#each themes as theme (theme.label)}
-            {@const Icon = theme.icon}
+          {#each themes as theme (theme.id)}
             <Button
               variant="secondary"
               class="h-10 shrink-0 rounded-full px-5 border border-border/30 bg-secondary/40 hover:bg-secondary/80 hover:-translate-y-0.5 transition-all duration-300 shadow-xs"
             >
-              <Icon data-icon="inline-start" strokeWidth={1.7} />
               <span>{theme.label}</span>
             </Button>
           {/each}
@@ -276,16 +181,25 @@
           </Button>
         </div>
 
-        <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
-          {#each folios as folio (folio.title)}
+        <div class="grid justify-center gap-5 grid-cols-[repeat(auto-fit,minmax(170px,220px))]">
+          {#each folios as folio (folio.id)}
             <Card.Root
               class="group rounded-xl py-0 overflow-hidden border border-border/40 bg-card/60 backdrop-blur-xs hover:-translate-y-1 hover:shadow-md hover:border-border/70 transition-all duration-300"
             >
-              <div class="overflow-hidden relative aspect-[1.38]">
-                <div
-                  class="cover-frame size-full bg-cover transition-transform duration-500 group-hover:scale-105"
-                  style:background-position={folio.position}
-                ></div>
+              <div class="relative aspect-square w-full overflow-hidden bg-muted">
+                {#if folio.coverUrl}
+                  <img
+                    src={folio.coverUrl}
+                    alt={folio.title}
+                    class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                {:else}
+                  <div
+                    class="flex size-full items-center justify-center bg-secondary/40 px-6 text-center"
+                  >
+                    <span class="folio-serif text-2xl text-muted-foreground">{folio.title}</span>
+                  </div>
+                {/if}
                 <Button
                   class="absolute right-3 top-3 rounded-full bg-background/75 backdrop-blur hover:bg-background shadow-xs transition-colors"
                   variant="ghost"
@@ -297,16 +211,22 @@
               </div>
               <Card.Content class="pb-5 pt-4">
                 <h3 class="folio-serif text-xl font-semibold leading-7">{folio.title}</h3>
-                <p class="mt-1 text-sm text-muted-foreground">{folio.author}</p>
-                <div class="mt-4 flex flex-wrap gap-2">
-                  {#each folio.tags as tag (tag)}
-                    <Badge
-                      variant="secondary"
-                      class="rounded-full bg-secondary/50 text-[11px] px-2 py-0.5 border border-border/10"
-                      >{tag}</Badge
-                    >
-                  {/each}
-                </div>
+                {#if folio.subtitle}
+                  <p class="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">
+                    {folio.subtitle}
+                  </p>
+                {/if}
+                {#if folio.tags.length}
+                  <div class="mt-4 flex flex-wrap gap-2">
+                    {#each folio.tags as tag (tag)}
+                      <Badge
+                        variant="secondary"
+                        class="rounded-full bg-secondary/50 text-[11px] px-2 py-0.5 border border-border/10"
+                        >{tag}</Badge
+                      >
+                    {/each}
+                  </div>
+                {/if}
               </Card.Content>
             </Card.Root>
           {/each}
@@ -322,37 +242,43 @@
           </Button>
         </div>
 
-        <div class="grid gap-x-6 gap-y-5 sm:grid-cols-2 xl:grid-cols-6">
-          {#each thinkers as thinker (thinker.name)}
-            <Card.Root
-              size="sm"
-              class="group rounded-xl overflow-hidden border border-border/40 bg-card/60 backdrop-blur-xs hover:-translate-y-1 hover:shadow-md hover:border-border/70 transition-all duration-300"
+        <div class="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {#each thinkers as thinker (thinker.id)}
+            <a
+              class="group block min-w-0 transition-transform duration-300 hover:-translate-y-1"
+              href={resolve('/')}
             >
-              <Card.Content class="p-4">
-                <a class="flex min-w-0 items-center gap-4" href={resolve('/')}>
-                  <div
-                    class="relative size-14 shrink-0 overflow-hidden rounded-full border border-border/50 bg-muted shadow-sm"
-                  >
-                    <img
-                      src={thinker.image}
-                      alt={thinker.name}
-                      class="size-full object-cover grayscale transition-all duration-500 group-hover:grayscale-0 group-hover:scale-105"
-                    />
+              <div
+                class="relative aspect-[3/4] h-40 overflow-hidden rounded-2xl border border-border/50 bg-muted shadow-sm"
+              >
+                {#if thinker.avatarUrl}
+                  <img
+                    src={thinker.avatarUrl}
+                    alt={thinker.name}
+                    class="size-full object-cover grayscale transition-all duration-500 group-hover:scale-105 group-hover:grayscale-0"
+                  />
+                {:else}
+                  <div class="flex size-full items-center justify-center text-2xl text-muted-foreground">
+                    {thinker.initials}
                   </div>
-                  <span class="min-w-0">
-                    <span
-                      class="block text-base font-medium text-foreground transition-colors group-hover:text-primary"
-                      >{thinker.name}</span
+                {/if}
+              </div>
+              <span
+                class="mt-4 block text-base font-medium text-foreground transition-colors group-hover:text-primary"
+                >{thinker.name}</span
+              >
+              {#if thinker.keywords.length}
+                <span class="mt-3 flex flex-wrap gap-1.5">
+                  {#each thinker.keywords as keyword (keyword)}
+                    <Badge
+                      variant="secondary"
+                      class="rounded-full border border-border/10 bg-secondary/50 px-2 py-0.5 text-[11px]"
+                      >{keyword}</Badge
                     >
-                    <span
-                      class="mt-1 line-clamp-2 block text-xs leading-normal text-muted-foreground/80"
-                    >
-                      {thinker.note}
-                    </span>
-                  </span>
-                </a>
-              </Card.Content>
-            </Card.Root>
+                  {/each}
+                </span>
+              {/if}
+            </a>
           {/each}
         </div>
       </section>
@@ -363,10 +289,5 @@
 <style>
   .folio-serif {
     font-family: var(--font-serif), Georgia, 'Times New Roman', serif;
-  }
-
-  .cover-frame {
-    background-image: url('/folio/covers-sheet.jpg');
-    background-size: 500% 100%;
   }
 </style>
