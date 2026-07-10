@@ -12,6 +12,8 @@ build/
 *.xccheckout
 *.xcscmblueprint
 xcuserdata/
+buildServer.json
+.xcodebuildmcp
 
 # Swift Package Manager
 .build/
@@ -70,6 +72,3 @@ site/.vercel/
 # Reference
 *.png
 *.PNG
-
-# iOS
-.xcodebuildmcp
