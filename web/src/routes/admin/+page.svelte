@@ -48,6 +48,14 @@
     };
   };
 
+  const submitFolio: SubmitFunction = () => {
+    submitting = true;
+    return async ({ update }) => {
+      await update({ reset: false });
+      submitting = false;
+    };
+  };
+
   function translation<T extends { lang: string }>(rows: T[] | null, lang: string) {
     return rows?.find((row) => row.lang === lang);
   }
@@ -565,9 +573,9 @@
                   </Button>
                 </div>
               {:else if selectedFolioId === 'new'}
-                {@render FolioForm(data, undefined, submitting, submit)}
+                {@render FolioForm(data, undefined, submitting, submitFolio)}
               {:else if selectedFolio}
-                {@render FolioForm(data, selectedFolio, submitting, submit)}
+                {@render FolioForm(data, selectedFolio, submitting, submitFolio)}
               {/if}
             </div>
           </div>
