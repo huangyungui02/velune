@@ -8,6 +8,19 @@
     "binding": "ASSETS",
     "directory": ".svelte-kit/cloudflare"
   },
+  "routes": [
+    {
+      "pattern": "folioes.echoversa.com",
+      "custom_domain": true
+    }
+  ],
+  "secrets": {
+    "required": [
+      "PUBLIC_SUPABASE_URL",
+      "PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "AGENT_API_URL"
+    ]
+  },
   "workers_dev": true,
   "preview_urls": true
 }

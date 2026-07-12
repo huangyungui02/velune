@@ -48,10 +48,24 @@
     };
   };
 
-  const submitFolio: SubmitFunction = () => {
+  const submitFolioBase: SubmitFunction = () => {
     submitting = true;
-    return async ({ update }) => {
+    return async ({ result, update }) => {
       await update({ reset: false });
+      const folioId = result.type === 'success' ? result.data?.folioId : null;
+      if (typeof folioId === 'string') {
+        selectedFolioId = folioId;
+      }
+      submitting = false;
+    };
+  };
+
+  const submitThemeBase: SubmitFunction = () => {
+    submitting = true;
+    return async ({ result, update }) => {
+      await update({ reset: false });
+      const themeId = result.type === 'success' ? result.data?.themeId : null;
+      if (typeof themeId === 'string') selectedThemeId = themeId;
       submitting = false;
     };
   };
@@ -311,9 +325,9 @@
                   </Button>
                 </div>
               {:else if selectedThemeId === 'new'}
-                {@render ThemeForm(undefined, submitting, submit)}
+                {@render ThemeForm(undefined, submitting, submitThemeBase, submit)}
               {:else if selectedTheme}
-                {@render ThemeForm(selectedTheme, submitting, submit)}
+                {@render ThemeForm(selectedTheme, submitting, submitThemeBase, submit)}
               {/if}
             </div>
           </div>
@@ -573,9 +587,9 @@
                   </Button>
                 </div>
               {:else if selectedFolioId === 'new'}
-                {@render FolioForm(data, undefined, submitting, submitFolio)}
+                {@render FolioForm(data, undefined, submitting, submitFolioBase, submit)}
               {:else if selectedFolio}
-                {@render FolioForm(data, selectedFolio, submitting, submitFolio)}
+                {@render FolioForm(data, selectedFolio, submitting, submitFolioBase, submit)}
               {/if}
             </div>
           </div>
@@ -630,6 +644,7 @@
 {#snippet ThemeForm(
   theme: PageProps['data']['themes'][number] | undefined = undefined,
   submitting: boolean,
+  submitBase: SubmitFunction,
   submit: SubmitFunction
 )}
   {@const zh = translation(theme?.themes_translations ?? null, 'zh')}
@@ -647,10 +662,10 @@
           : '创建一个可供思想家或思想集关联的公共主题'}
       </Card.Description>
     </Card.Header>
-    <form method="POST" action="?/saveTheme" use:enhance={submit}>
-      <Card.Content>
+    <Card.Content class="space-y-6">
+      <form method="POST" action="?/saveThemeBase" use:enhance={submitBase} class="space-y-5">
         <input type="hidden" name="id" value={theme?.id ?? ''} />
-        <Field.FieldGroup class="space-y-5">
+        <Field.FieldGroup>
           <Field.Field>
             <Field.FieldLabel for="theme-key-{theme?.id ?? 'new'}" class="text-sm font-medium"
               >标识 Key</Field.FieldLabel
@@ -666,38 +681,74 @@
               稳定的小写英文标识符，例如 existentialism、solitude。
             </Field.FieldDescription>
           </Field.Field>
-          <div class="grid gap-5 sm:grid-cols-2">
-            <Field.Field>
-              <Field.FieldLabel for="theme-zh-{theme?.id ?? 'new'}" class="text-sm font-medium"
-                >中文名称</Field.FieldLabel
-              >
-              <Input
-                id="theme-zh-{theme?.id ?? 'new'}"
-                name="name_zh"
-                value={zh?.name ?? ''}
-                class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl"
-                required
-              />
-            </Field.Field>
-            <Field.Field>
-              <Field.FieldLabel for="theme-en-{theme?.id ?? 'new'}" class="text-sm font-medium"
-                >英文名称 (English)</Field.FieldLabel
-              >
-              <Input
-                id="theme-en-{theme?.id ?? 'new'}"
-                name="name_en"
-                value={en?.name ?? ''}
-                class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl"
-                required
-              />
-            </Field.Field>
-          </div>
         </Field.FieldGroup>
-      </Card.Content>
+        <div class="flex justify-end">
+          <Button type="submit" class="rounded-full px-5" disabled={submitting}>
+            <Save data-icon="inline-start" class="size-4 mr-1.5" />
+            {theme ? '保存主题标识' : '创建主题'}
+          </Button>
+        </div>
+      </form>
+      {#if theme}
+        <Separator class="bg-border/40" />
+        <div class="grid gap-5 sm:grid-cols-2">
+          {#each ['zh', 'en'] as lang (lang)}
+            {@const value = lang === 'zh' ? zh : en}
+            <form
+              method="POST"
+              action="?/saveThemeTranslation"
+              use:enhance={submit}
+              class="space-y-3"
+            >
+              <input type="hidden" name="id" value={theme.id} />
+              <input type="hidden" name="lang" value={lang} />
+              <Field.Field>
+                <Field.FieldLabel for="theme-{lang}-{theme.id}" class="text-sm font-medium">
+                  {lang === 'zh' ? '中文名称' : '英文名称 (English)'}
+                </Field.FieldLabel>
+                <Input
+                  id="theme-{lang}-{theme.id}"
+                  name="name"
+                  value={value?.name ?? ''}
+                  class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl"
+                  required
+                />
+              </Field.Field>
+              <div class="flex justify-end">
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="sm"
+                  class="rounded-full px-4"
+                  disabled={submitting}
+                >
+                  <Save data-icon="inline-start" class="size-3.5 mr-1" />
+                  保存{lang === 'zh' ? '中文' : '英文'}
+                </Button>
+              </div>
+            </form>
+          {/each}
+        </div>
+      {:else}
+        <p class="text-sm text-muted-foreground/70">创建后可分别填写中文和英文名称。</p>
+      {/if}
+    </Card.Content>
+    {#if theme}
       <Card.Footer class="mt-6 border-t border-border/10 pt-5">
-        {@render Actions(theme?.id, '?/deleteTheme', submitting)}
+        <form method="POST" action="?/deleteTheme" use:enhance={submit}>
+          <input type="hidden" name="id" value={theme.id} />
+          <Button
+            type="submit"
+            variant="destructive"
+            class="rounded-full px-5"
+            disabled={submitting}
+          >
+            <Trash2 data-icon="inline-start" class="size-4 mr-1.5" />
+            删除主题
+          </Button>
+        </form>
       </Card.Footer>
-    </form>
+    {/if}
   </Card.Root>
 {/snippet}
 
@@ -878,22 +929,6 @@
               确认审核通过（已审核人物才会公开展示）
             </Field.FieldLabel>
           </Field.Field>
-          <Field.Field>
-            <Field.FieldLabel for="souler-aliases-{souler.id}" class="text-sm font-medium"
-              >别名列表</Field.FieldLabel
-            >
-            <Textarea
-              id="souler-aliases-{souler.id}"
-              name="aliases"
-              value={souler.souler_aliases?.map((item) => item.alias).join('\n') ?? ''}
-              placeholder="每行输入一个别名，用于模糊匹配"
-              rows={3}
-              class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl resize-y"
-            />
-            <Field.FieldDescription class="text-xs text-muted-foreground/70 mt-1">
-              每行一个别名，例如“卡缪”。别名用于在分析正文时进行模糊匹配。
-            </Field.FieldDescription>
-          </Field.Field>
         </Field.FieldGroup>
         <div class="flex justify-end pt-2">
           <Button
@@ -907,6 +942,68 @@
               <Save data-icon="inline-start" class="size-4 mr-1.5" />
             {/if}
             保存基础资料
+          </Button>
+        </div>
+      </form>
+      <Separator class="bg-border/40" />
+      <form method="POST" action="?/saveSoulerAliases" use:enhance={submit} class="space-y-4">
+        <input type="hidden" name="id" value={souler.id} />
+        <h3
+          class="text-[15px] font-medium text-foreground border-l-2 border-primary pl-2 leading-none"
+        >
+          别名
+        </h3>
+        <Field.Field>
+          <Field.FieldLabel for="souler-aliases-{souler.id}" class="text-sm font-medium"
+            >别名列表</Field.FieldLabel
+          >
+          <Textarea
+            id="souler-aliases-{souler.id}"
+            name="aliases"
+            value={souler.souler_aliases?.map((item) => item.alias).join('\n') ?? ''}
+            placeholder="每行输入一个别名，用于模糊匹配"
+            rows={3}
+            class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl resize-y"
+          />
+        </Field.Field>
+        <div class="flex justify-end">
+          <Button type="submit" variant="outline" class="rounded-full px-5" disabled={submitting}>
+            <Save data-icon="inline-start" class="size-4 mr-1.5" />保存别名
+          </Button>
+        </div>
+      </form>
+      <Separator class="bg-border/40" />
+      <form method="POST" action="?/saveSoulerKeywords" use:enhance={submit} class="space-y-4">
+        <input type="hidden" name="id" value={souler.id} />
+        <h3
+          class="text-[15px] font-medium text-foreground border-l-2 border-primary pl-2 leading-none"
+        >
+          关键词
+        </h3>
+        <Field.Field>
+          <Field.FieldLabel for="souler-keywords-{souler.id}" class="text-sm font-medium"
+            >关键词、语言与权重</Field.FieldLabel
+          >
+          <Textarea
+            id="souler-keywords-{souler.id}"
+            name="keywords"
+            value={souler.souler_keyword
+              ?.map(
+                (item) =>
+                  `${item.keywords?.word ?? ''} | ${item.keywords?.language ?? 'zh'} | ${item.weight ?? 1}`
+              )
+              .join('\n') ?? ''}
+            placeholder="虚无 | zh | 0.95&#10;nihilism | en | 0.95"
+            rows={5}
+            class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl resize-y font-mono text-sm"
+          />
+          <Field.FieldDescription class="text-xs text-muted-foreground/70 mt-1">
+            每行格式：关键词 | zh 或 en | 0 到 1 的权重。保存会只重建该人物的关键词关联。
+          </Field.FieldDescription>
+        </Field.Field>
+        <div class="flex justify-end">
+          <Button type="submit" variant="outline" class="rounded-full px-5" disabled={submitting}>
+            <Save data-icon="inline-start" class="size-4 mr-1.5" />保存关键词
           </Button>
         </div>
       </form>
@@ -1016,6 +1113,7 @@
   data: PageProps['data'],
   folio: PageProps['data']['folios'][number] | undefined = undefined,
   submitting: boolean,
+  submitBase: SubmitFunction,
   submit: SubmitFunction
 )}
   {@const zh = translation(folio?.folio_translations ?? null, 'zh')}
@@ -1058,16 +1156,15 @@
         </div>
       </div>
     </Card.Header>
-    <form
-      method="POST"
-      action="?/saveFolio"
-      enctype="multipart/form-data"
-      use:enhance={submit}
-      class="space-y-6 p-6"
-    >
-      <input type="hidden" name="id" value={folio?.id ?? ''} />
-      <input type="hidden" name="prompt_id" value={prompt?.id ?? ''} />
-      <Field.FieldGroup class="space-y-6">
+    <Card.Content class="space-y-6 p-6">
+      <form
+        method="POST"
+        action="?/saveFolioBase"
+        enctype="multipart/form-data"
+        use:enhance={submitBase}
+        class="space-y-6"
+      >
+        <input type="hidden" name="id" value={folio?.id ?? ''} />
         <h3
           class="text-[15px] font-medium text-foreground border-l-2 border-primary pl-2 leading-none"
         >
@@ -1104,7 +1201,7 @@
               <img
                 src={folio.cover_image_url}
                 alt={zh?.title || en?.title || 'Folio 封面'}
-                class="mb-3 aspect-[2/3] w-full rounded-xl border border-border/30 object-cover"
+                class="mb-3 aspect-square w-full rounded-xl border border-border/30 object-cover"
               />
             {/if}
             <Input
@@ -1153,6 +1250,23 @@
             </Field.FieldLabel>
           </Field.Field>
         </div>
+        <div class="flex justify-end pt-1">
+          <Button
+            type="submit"
+            class="rounded-full px-5 bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm"
+            disabled={submitting}
+          >
+            {#if submitting}
+              <Spinner data-icon="inline-start" class="size-4 mr-1.5" />
+            {:else}
+              <Save data-icon="inline-start" class="size-4 mr-1.5" />
+            {/if}
+            {folio ? '保存核心关联' : '创建 Folio'}
+          </Button>
+        </div>
+      </form>
+      {#if folio}
+        <Separator class="bg-border/40" />
         <h3
           class="text-[15px] font-medium text-foreground border-l-2 border-primary pl-2 leading-none pt-2"
         >
@@ -1160,65 +1274,108 @@
         </h3>
         <div class="grid gap-6 lg:grid-cols-2">
           <div class="border border-border/30 bg-background/30 rounded-xl p-4 space-y-4">
-            {@render FolioTranslation('中文内容 (Chinese)', 'zh', folio, zh)}
+            {@render FolioTranslation('中文内容 (Chinese)', 'zh', folio, zh, submitting, submit)}
           </div>
           <div class="border border-border/30 bg-background/30 rounded-xl p-4 space-y-4">
-            {@render FolioTranslation('English content', 'en', folio, en)}
+            {@render FolioTranslation('English content', 'en', folio, en, submitting, submit)}
           </div>
         </div>
+        <Separator class="bg-border/40" />
         <h3
           class="text-[15px] font-medium text-foreground border-l-2 border-primary pl-2 leading-none pt-2"
         >
           关联主题 (Themes)
         </h3>
-        <Field.Field>
-          <div
-            class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 bg-background/30 border border-border/30 rounded-xl p-4"
-          >
-            {#each data.themes as theme (theme.id)}
-              {@const name = translation(theme.themes_translations, 'zh')}
-              <Field.Field orientation="horizontal" class="py-1">
-                <Checkbox
-                  id="folio-{folio?.id ?? 'new'}-theme-{theme.id}"
-                  name="theme_ids"
-                  value={theme.id}
-                  checked={selectedThemes.has(theme.id)}
-                  class="border-border/60 data-[state=checked]:bg-primary rounded-md"
-                />
-                <Field.FieldLabel
-                  for="folio-{folio?.id ?? 'new'}-theme-{theme.id}"
-                  class="text-sm select-none cursor-pointer"
-                >
-                  {name?.name || theme.key}
-                  <span class="text-xs text-muted-foreground/60 font-mono ml-1">({theme.key})</span>
-                </Field.FieldLabel>
-              </Field.Field>
-            {/each}
+        <form method="POST" action="?/saveFolioThemes" use:enhance={submit} class="space-y-4">
+          <input type="hidden" name="id" value={folio.id} />
+          <Field.Field>
+            <div
+              class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 bg-background/30 border border-border/30 rounded-xl p-4"
+            >
+              {#each data.themes as theme (theme.id)}
+                {@const name = translation(theme.themes_translations, 'zh')}
+                <Field.Field orientation="horizontal" class="py-1">
+                  <Checkbox
+                    id="folio-{folio.id}-theme-{theme.id}"
+                    name="theme_ids"
+                    value={theme.id}
+                    checked={selectedThemes.has(theme.id)}
+                    class="border-border/60 data-[state=checked]:bg-primary rounded-md"
+                  />
+                  <Field.FieldLabel
+                    for="folio-{folio.id}-theme-{theme.id}"
+                    class="text-sm select-none cursor-pointer"
+                  >
+                    {name?.name || theme.key}
+                    <span class="text-xs text-muted-foreground/60 font-mono ml-1"
+                      >({theme.key})</span
+                    >
+                  </Field.FieldLabel>
+                </Field.Field>
+              {/each}
+            </div>
+          </Field.Field>
+          <div class="flex justify-end">
+            <Button type="submit" variant="outline" class="rounded-full px-5" disabled={submitting}>
+              <Save data-icon="inline-start" class="size-4 mr-1.5" />
+              保存关联主题
+            </Button>
           </div>
-        </Field.Field>
+        </form>
+        <Separator class="bg-border/40" />
         <h3
           class="text-[15px] font-medium text-foreground border-l-2 border-primary pl-2 leading-none pt-2"
         >
           Agent 系统提示词 (System Prompt)
         </h3>
-        <Field.Field>
-          <Textarea
-            id="folio-prompt-{folio?.id ?? 'new'}"
-            name="prompt"
-            value={prompt?.content ?? ''}
-            placeholder="配置用以引导该思想家模拟思辨的 Prompt..."
-            rows={5}
-            class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl text-sm leading-relaxed"
-          />
-          <Field.FieldDescription class="text-xs text-muted-foreground/70 mt-1">
-            用来控制此 Folio 生成对应文章时，AI 扮演该思想家风格的 Prompt 设定。
-          </Field.FieldDescription>
-        </Field.Field>
-      </Field.FieldGroup>
-      <div class="mt-8 border-t border-border/10 pt-5">
-        {@render Actions(folio?.id, '?/deleteFolio', submitting)}
-      </div>
-    </form>
+        <form method="POST" action="?/saveFolioPrompt" use:enhance={submit} class="space-y-4">
+          <input type="hidden" name="id" value={folio.id} />
+          <input type="hidden" name="prompt_id" value={prompt?.id ?? ''} />
+          <Field.Field>
+            <Textarea
+              id="folio-prompt-{folio.id}"
+              name="prompt"
+              value={prompt?.content ?? ''}
+              placeholder="配置用以引导该思想家模拟思辨的 Prompt..."
+              rows={5}
+              class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl text-sm leading-relaxed"
+            />
+            <Field.FieldDescription class="text-xs text-muted-foreground/70 mt-1">
+              用来控制此 Folio 生成对应文章时，AI 扮演该思想家风格的 Prompt 设定。
+            </Field.FieldDescription>
+          </Field.Field>
+          <div class="flex justify-end">
+            <Button type="submit" variant="outline" class="rounded-full px-5" disabled={submitting}>
+              <Save data-icon="inline-start" class="size-4 mr-1.5" />
+              保存提示词
+            </Button>
+          </div>
+        </form>
+      {:else}
+        <p class="text-sm text-muted-foreground/70">
+          创建后可分别编辑中文、英文、关联主题与系统提示词。
+        </p>
+      {/if}
+    </Card.Content>
+    {#if folio}
+      <Card.Footer class="border-t border-border/10 pt-5">
+        <form method="POST" action="?/deleteFolio" use:enhance={submit}>
+          <input type="hidden" name="id" value={folio.id} />
+          <Button
+            type="submit"
+            variant="destructive"
+            class="rounded-full px-5 hover:bg-destructive/95 transition-all shadow-sm"
+            disabled={submitting}
+            onclick={(event) => {
+              if (!confirm('此操作不可撤销，确定删除？')) event.preventDefault();
+            }}
+          >
+            <Trash2 data-icon="inline-start" class="size-4 mr-1.5" />
+            删除 Folio
+          </Button>
+        </form>
+      </Card.Footer>
+    {/if}
   </Card.Root>
 {/snippet}
 
@@ -1226,56 +1383,75 @@
   lang: string,
   suffix: string,
   folio: PageProps['data']['folios'][number] | undefined,
-  values: { title: string; subtitle: string | null; description: string | null } | undefined
+  values: { title: string; subtitle: string | null; description: string | null } | undefined,
+  submitting: boolean,
+  submit: SubmitFunction
 )}
-  <Field.FieldGroup class="space-y-4">
-    <div class="flex items-center justify-between">
-      <span class="text-sm font-semibold text-foreground">{lang}</span>
-    </div>
-    <Field.Field>
-      <Field.FieldLabel
-        for="folio-title-{suffix}-{folio?.id ?? 'new'}"
-        class="text-xs font-medium text-muted-foreground">标题 (Title)</Field.FieldLabel
-      >
-      <Input
-        id="folio-title-{suffix}-{folio?.id ?? 'new'}"
-        name="title_{suffix}"
-        value={values?.title ?? ''}
-        placeholder={suffix === 'zh' ? '推石上山' : 'e.g. The Myth of Sisyphus'}
-        class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl h-9 text-sm"
-        required
-      />
-    </Field.Field>
-    <Field.Field>
-      <Field.FieldLabel
-        for="folio-subtitle-{suffix}-{folio?.id ?? 'new'}"
-        class="text-xs font-medium text-muted-foreground">副标题 (Subtitle)</Field.FieldLabel
-      >
-      <Input
-        id="folio-subtitle-{suffix}-{folio?.id ?? 'new'}"
-        name="subtitle_{suffix}"
-        value={values?.subtitle ?? ''}
-        placeholder={suffix === 'zh' ? '选填副标题...' : 'Optional subtitle...'}
-        class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl h-9 text-sm"
-      />
-    </Field.Field>
-    <Field.Field>
-      <Field.FieldLabel
-        for="folio-description-{suffix}-{folio?.id ?? 'new'}"
-        class="text-xs font-medium text-muted-foreground">引言与概要 (Description)</Field.FieldLabel
-      >
-      <Textarea
-        id="folio-description-{suffix}-{folio?.id ?? 'new'}"
-        name="description_{suffix}"
-        value={values?.description ?? ''}
-        placeholder={suffix === 'zh'
-          ? '输入本思想卷的核心警句或主旨概要...'
-          : 'Enter description...'}
-        rows={6}
-        class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl resize-y text-sm leading-relaxed"
-      />
-    </Field.Field>
-  </Field.FieldGroup>
+  <form method="POST" action="?/saveFolioTranslation" use:enhance={submit} class="space-y-4">
+    <input type="hidden" name="id" value={folio?.id ?? ''} />
+    <input type="hidden" name="lang" value={suffix} />
+    <Field.FieldGroup class="space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-semibold text-foreground">{lang}</span>
+      </div>
+      <Field.Field>
+        <Field.FieldLabel
+          for="folio-title-{suffix}-{folio?.id ?? 'new'}"
+          class="text-xs font-medium text-muted-foreground">标题 (Title)</Field.FieldLabel
+        >
+        <Input
+          id="folio-title-{suffix}-{folio?.id ?? 'new'}"
+          name="title"
+          value={values?.title ?? ''}
+          placeholder={suffix === 'zh' ? '推石上山' : 'e.g. The Myth of Sisyphus'}
+          class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl h-9 text-sm"
+          required
+        />
+      </Field.Field>
+      <Field.Field>
+        <Field.FieldLabel
+          for="folio-subtitle-{suffix}-{folio?.id ?? 'new'}"
+          class="text-xs font-medium text-muted-foreground">副标题 (Subtitle)</Field.FieldLabel
+        >
+        <Input
+          id="folio-subtitle-{suffix}-{folio?.id ?? 'new'}"
+          name="subtitle"
+          value={values?.subtitle ?? ''}
+          placeholder={suffix === 'zh' ? '选填副标题...' : 'Optional subtitle...'}
+          class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl h-9 text-sm"
+        />
+      </Field.Field>
+      <Field.Field>
+        <Field.FieldLabel
+          for="folio-description-{suffix}-{folio?.id ?? 'new'}"
+          class="text-xs font-medium text-muted-foreground"
+          >引言与概要 (Description)</Field.FieldLabel
+        >
+        <Textarea
+          id="folio-description-{suffix}-{folio?.id ?? 'new'}"
+          name="description"
+          value={values?.description ?? ''}
+          placeholder={suffix === 'zh'
+            ? '输入本思想卷的核心警句或主旨概要...'
+            : 'Enter description...'}
+          rows={6}
+          class="bg-background/50 border-border/40 focus-visible:ring-primary/20 rounded-xl resize-y text-sm leading-relaxed"
+        />
+      </Field.Field>
+      <div class="flex justify-end">
+        <Button
+          type="submit"
+          variant="outline"
+          size="sm"
+          class="rounded-full px-4"
+          disabled={submitting}
+        >
+          <Save data-icon="inline-start" class="size-3.5 mr-1" />
+          保存{suffix === 'zh' ? '中文' : '英文'}
+        </Button>
+      </div>
+    </Field.FieldGroup>
+  </form>
 {/snippet}
 
 <style>

@@ -106,6 +106,23 @@ async function saveSoulerAliases(supabase: SupabaseClient, soulerId: string, ali
   return insertError;
 }
 
+function keywords(data: FormData) {
+  const unique = new Map<string, { word: string; language: string; weight: number }>();
+  for (const [index, line] of text(data, 'keywords').split('\n').entries()) {
+    if (!line.trim()) continue;
+    const [word = '', language = '', weight = ''] = line.split('|').map((part) => part.trim());
+    const numericWeight = Number(weight);
+    if (!word || !LANGUAGES.includes(language as (typeof LANGUAGES)[number])) {
+      return { error: `第 ${index + 1} 行应为“关键词 | zh 或 en | 权重”。` };
+    }
+    if (!Number.isFinite(numericWeight) || numericWeight < 0 || numericWeight > 1) {
+      return { error: `第 ${index + 1} 行权重必须在 0 到 1 之间。` };
+    }
+    unique.set(`${word.toLowerCase()}|${language}`, { word, language, weight: numericWeight });
+  }
+  return { data: [...unique.values()] };
+}
+
 async function agentError(response: Response) {
   const body = (await response.json().catch(() => null)) as {
     detail?: string;
@@ -121,7 +138,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     supabase
       .from('soulers')
       .select(
-        'id,wiki_id,checked,avatar,created_at,updated_at,souler_profile(lang,name,introduction),souler_aliases(alias)'
+        'id,wiki_id,checked,avatar,created_at,updated_at,souler_profile(lang,name,introduction),souler_aliases(alias),souler_keyword(weight,keywords(id,word,language))'
       )
       .order('updated_at', { ascending: false }),
     supabase
@@ -149,36 +166,48 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-  saveTheme: async ({ locals, request }) => {
+  saveThemeBase: async ({ locals, request }) => {
     const supabase = await requireAdmin(locals);
     const data = await request.formData();
     const id = text(data, 'id');
     const key = text(data, 'key');
-    const nameZh = text(data, 'name_zh');
-    const nameEn = text(data, 'name_en');
 
-    if (!key || !nameZh || !nameEn) {
-      return databaseFailure('saveTheme', 'Key、中文名和英文名均不能为空。');
+    if (!key) {
+      return databaseFailure('saveThemeBase', 'Key 不能为空。');
     }
 
     const themeResult = id
       ? await supabase.from('themes').update({ key }).eq('id', id).select('id').single()
       : await supabase.from('themes').insert({ key }).select('id').single();
-    if (themeResult.error) return databaseFailure('saveTheme', themeResult.error.message);
+    if (themeResult.error) return databaseFailure('saveThemeBase', themeResult.error.message);
 
-    const translations = await saveTranslations(
-      supabase,
-      'themes_translations',
-      'theme_id',
-      themeResult.data.id,
-      data,
-      ['name']
-    );
-    if (translations.error) {
-      return databaseFailure('saveTheme', translations.error.message);
+    return {
+      action: 'saveThemeBase',
+      success: true,
+      themeId: themeResult.data.id,
+      message: id ? '主题标识已保存。' : '主题已创建，可以继续填写双语名称。'
+    };
+  },
+
+  saveThemeTranslation: async ({ locals, request }) => {
+    const supabase = await requireAdmin(locals);
+    const data = await request.formData();
+    const themeId = text(data, 'id');
+    const lang = text(data, 'lang');
+    const name = text(data, 'name');
+    if (!themeId || !LANGUAGES.includes(lang as (typeof LANGUAGES)[number]) || !name) {
+      return databaseFailure('saveThemeTranslation', '主题、语言和名称均不能为空。');
     }
 
-    return { action: 'saveTheme', success: true, message: '主题已保存。' };
+    const { error: translationError } = await supabase
+      .from('themes_translations')
+      .upsert({ theme_id: themeId, lang, name }, { onConflict: 'theme_id,lang' });
+    if (translationError) return databaseFailure('saveThemeTranslation', translationError.message);
+    return {
+      action: 'saveThemeTranslation',
+      success: true,
+      message: `${lang === 'zh' ? '中文' : '英文'}主题名称已保存。`
+    };
   },
 
   deleteTheme: async ({ locals, request }) => {
@@ -258,10 +287,63 @@ export const actions: Actions = {
       .eq('id', id);
     if (updateError) return databaseFailure('saveSoulerBase', updateError.message);
 
-    const aliasesError = await saveSoulerAliases(supabase, id, text(data, 'aliases'));
-    if (aliasesError) return databaseFailure('saveSoulerBase', aliasesError.message);
-
     return { action: 'saveSoulerBase', success: true, message: '人物基础资料已保存。' };
+  },
+
+  saveSoulerAliases: async ({ locals, request }) => {
+    const supabase = await requireAdmin(locals);
+    const data = await request.formData();
+    const id = text(data, 'id');
+    if (!id) return databaseFailure('saveSoulerAliases', '缺少 Souler ID。');
+    const aliasesError = await saveSoulerAliases(supabase, id, text(data, 'aliases'));
+    if (aliasesError) return databaseFailure('saveSoulerAliases', aliasesError.message);
+
+    return { action: 'saveSoulerAliases', success: true, message: '人物别名已保存。' };
+  },
+
+  saveSoulerKeywords: async ({ locals, request }) => {
+    const supabase = await requireAdmin(locals);
+    const data = await request.formData();
+    const id = text(data, 'id');
+    if (!id) return databaseFailure('saveSoulerKeywords', '缺少 Souler ID。');
+    const parsed = keywords(data);
+    if ('error' in parsed) return databaseFailure('saveSoulerKeywords', parsed.error);
+
+    const { error: clearError } = await supabase
+      .from('souler_keyword')
+      .delete()
+      .eq('souler_id', id);
+    if (clearError) return databaseFailure('saveSoulerKeywords', clearError.message);
+
+    if (parsed.data.length) {
+      const { data: savedKeywords, error: keywordsError } = await supabase
+        .from('keywords')
+        .upsert(
+          parsed.data.map(({ word, language }) => ({ word, language })),
+          {
+            onConflict: 'word,language'
+          }
+        )
+        .select('id,word,language');
+      if (keywordsError) return databaseFailure('saveSoulerKeywords', keywordsError.message);
+
+      const keywordIds = new Map(
+        (savedKeywords ?? []).map((keyword) => [
+          `${keyword.word.toLowerCase()}|${keyword.language}`,
+          keyword.id
+        ])
+      );
+      const { error: relationsError } = await supabase.from('souler_keyword').insert(
+        parsed.data.map((keyword) => ({
+          souler_id: id,
+          keyword_id: keywordIds.get(`${keyword.word.toLowerCase()}|${keyword.language}`),
+          weight: keyword.weight
+        }))
+      );
+      if (relationsError) return databaseFailure('saveSoulerKeywords', relationsError.message);
+    }
+
+    return { action: 'saveSoulerKeywords', success: true, message: '人物关键词已保存。' };
   },
 
   saveSoulerProfile: async ({ locals, request }) => {
@@ -300,16 +382,14 @@ export const actions: Actions = {
     return { action: 'deleteSouler', success: true, message: 'Souler 已删除。' };
   },
 
-  saveFolio: async ({ locals, request }) => {
+  saveFolioBase: async ({ locals, request }) => {
     const supabase = await requireAdmin(locals);
     const data = await request.formData();
     const id = text(data, 'id');
     const soulerId = text(data, 'souler_id');
-    const titleZh = text(data, 'title_zh');
-    const titleEn = text(data, 'title_en');
 
-    if (!soulerId || !titleZh || !titleEn) {
-      return databaseFailure('saveFolio', 'Souler、中文标题和英文标题均不能为空。');
+    if (!soulerId) {
+      return databaseFailure('saveFolioBase', '请选择 Souler。');
     }
 
     const values = {
@@ -320,36 +400,70 @@ export const actions: Actions = {
     const folioResult = id
       ? await supabase.from('folios').update(values).eq('id', id).select('id').single()
       : await supabase.from('folios').insert(values).select('id').single();
-    if (folioResult.error) return databaseFailure('saveFolio', folioResult.error.message);
+    if (folioResult.error) return databaseFailure('saveFolioBase', folioResult.error.message);
 
     const folioId = folioResult.data.id;
     const cover = image(data, 'cover_file');
     const coverPath = `folios/${folioId}.png`;
-    const uploadFailure = await uploadImage(supabase, cover, coverPath, 'saveFolio');
+    const uploadFailure = await uploadImage(supabase, cover, coverPath, 'saveFolioBase');
     if (uploadFailure) return uploadFailure;
     if (cover) {
       const { error: coverError } = await supabase
         .from('folios')
         .update({ cover_image: coverPath })
         .eq('id', folioId);
-      if (coverError) return databaseFailure('saveFolio', coverError.message);
+      if (coverError) return databaseFailure('saveFolioBase', coverError.message);
     }
 
-    const translations = await saveTranslations(
-      supabase,
-      'folio_translations',
-      'folio_id',
+    return {
+      action: 'saveFolioBase',
+      success: true,
       folioId,
-      data,
-      ['title', 'subtitle', 'description']
+      message: id ? 'Folio 核心关联已保存。' : 'Folio 已创建，可以继续填写其他模块。'
+    };
+  },
+
+  saveFolioTranslation: async ({ locals, request }) => {
+    const supabase = await requireAdmin(locals);
+    const data = await request.formData();
+    const folioId = text(data, 'id');
+    const lang = text(data, 'lang');
+    const title = text(data, 'title');
+
+    if (!folioId || !LANGUAGES.includes(lang as (typeof LANGUAGES)[number]) || !title) {
+      return databaseFailure('saveFolioTranslation', 'Folio、语言和标题均不能为空。');
+    }
+
+    const { error: translationError } = await supabase.from('folio_translations').upsert(
+      {
+        folio_id: folioId,
+        lang,
+        title,
+        subtitle: optional(data, 'subtitle'),
+        description: optional(data, 'description')
+      },
+      { onConflict: 'folio_id,lang' }
     );
-    if (translations.error) return databaseFailure('saveFolio', translations.error.message);
+    if (translationError) return databaseFailure('saveFolioTranslation', translationError.message);
+
+    return {
+      action: 'saveFolioTranslation',
+      success: true,
+      message: `${lang === 'zh' ? '中文' : '英文'}内容已保存。`
+    };
+  },
+
+  saveFolioThemes: async ({ locals, request }) => {
+    const supabase = await requireAdmin(locals);
+    const data = await request.formData();
+    const folioId = text(data, 'id');
+    if (!folioId) return databaseFailure('saveFolioThemes', '缺少 Folio ID。');
 
     const { error: clearThemesError } = await supabase
       .from('folio_themes')
       .delete()
       .eq('folio_id', folioId);
-    if (clearThemesError) return databaseFailure('saveFolio', clearThemesError.message);
+    if (clearThemesError) return databaseFailure('saveFolioThemes', clearThemesError.message);
 
     const themeIds = data.getAll('theme_ids').map(String);
     if (themeIds.length) {
@@ -360,13 +474,26 @@ export const actions: Actions = {
           sort_order: sortOrder
         }))
       );
-      if (themesError) return databaseFailure('saveFolio', themesError.message);
+      if (themesError) return databaseFailure('saveFolioThemes', themesError.message);
     }
+
+    return { action: 'saveFolioThemes', success: true, message: '关联主题已保存。' };
+  },
+
+  saveFolioPrompt: async ({ locals, request }) => {
+    const supabase = await requireAdmin(locals);
+    const data = await request.formData();
+    const folioId = text(data, 'id');
+    if (!folioId) return databaseFailure('saveFolioPrompt', '缺少 Folio ID。');
 
     const prompt = text(data, 'prompt');
     const promptId = text(data, 'prompt_id');
     if (prompt) {
-      await supabase.from('folio_prompts').update({ is_active: false }).eq('folio_id', folioId);
+      const { error: deactivateError } = await supabase
+        .from('folio_prompts')
+        .update({ is_active: false })
+        .eq('folio_id', folioId);
+      if (deactivateError) return databaseFailure('saveFolioPrompt', deactivateError.message);
       const promptResult = promptId
         ? await supabase
             .from('folio_prompts')
@@ -378,10 +505,16 @@ export const actions: Actions = {
             version: 1,
             is_active: true
           });
-      if (promptResult.error) return databaseFailure('saveFolio', promptResult.error.message);
+      if (promptResult.error) return databaseFailure('saveFolioPrompt', promptResult.error.message);
+    } else if (promptId) {
+      const { error: deleteError } = await supabase
+        .from('folio_prompts')
+        .delete()
+        .eq('id', promptId);
+      if (deleteError) return databaseFailure('saveFolioPrompt', deleteError.message);
     }
 
-    return { action: 'saveFolio', success: true, message: 'Folio 已保存。' };
+    return { action: 'saveFolioPrompt', success: true, message: '系统提示词已保存。' };
   },
 
   deleteFolio: async ({ locals, request }) => {
