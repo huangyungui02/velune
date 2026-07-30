@@ -44,15 +44,22 @@ async def get_souler_lang_content_state(souler_id: str, lang: str) -> dict[str, 
                 WHERE p.souler_id = CAST(%(souler_id)s AS uuid)
                     AND p.lang = %(lang)s
                     AND p.introduction IS NOT NULL
-            ) AS has_profile
+            ) AS has_profile,
+            EXISTS (
+                SELECT 1
+                FROM public.chapters c
+                WHERE c.souler_id = CAST(%(souler_id)s AS uuid)
+                    AND c.lang = %(lang)s
+                    AND c.active = TRUE
+            ) AS has_chapters
         """,
         {"souler_id": souler_id, "lang": lang},
     )
-    return row or {"has_profile": False}
+    return row or {"has_profile": False, "has_chapters": False}
 
 
 def is_souler_lang_content_complete(state: dict[str, Any]) -> bool:
-    return bool(state.get("has_profile"))
+    return bool(state.get("has_profile")) and bool(state.get("has_chapters"))
 
 
 async def upsert_resolution_request(name: str, lang: str) -> dict[str, Any]:
@@ -180,6 +187,12 @@ async def complete_souler_resolution_transactionally(
                         lang=lang,
                         keywords=profile["keywords"],
                     )
+                    await _insert_chapters(
+                        cursor,
+                        souler_id=resolved_souler_id,
+                        lang=lang,
+                        chapters=profile["chapters"],
+                    )
 
                 await _insert_souler_aliases(cursor, resolved_souler_id, aliases)
                 await _complete_resolution(
@@ -235,12 +248,19 @@ async def _get_souler_lang_content_state(cursor: Any, souler_id: str, lang: str)
                 WHERE p.souler_id = CAST(%(souler_id)s AS uuid)
                     AND p.lang = %(lang)s
                     AND p.introduction IS NOT NULL
-            ) AS has_profile
+            ) AS has_profile,
+            EXISTS (
+                SELECT 1
+                FROM public.chapters c
+                WHERE c.souler_id = CAST(%(souler_id)s AS uuid)
+                    AND c.lang = %(lang)s
+                    AND c.active = TRUE
+            ) AS has_chapters
         """,
         {"souler_id": souler_id, "lang": lang},
     )
     row = await cursor.fetchone()
-    return dict(row) if row else {"has_profile": False}
+    return dict(row) if row else {"has_profile": False, "has_chapters": False}
 
 
 async def _upsert_profile(
@@ -315,6 +335,38 @@ async def _insert_keywords(
                 "souler_id": souler_id,
                 "keyword_id": keyword_id,
                 "weight": item["weight"],
+            },
+        )
+
+
+async def _insert_chapters(
+    cursor: Any,
+    *,
+    souler_id: str,
+    lang: str,
+    chapters: list[dict[str, str]],
+) -> None:
+    for index, chapter in enumerate(chapters, start=1):
+        await cursor.execute(
+            """
+            INSERT INTO public.chapters (souler_id, lang, seq, title, subtitle, task)
+            VALUES (
+                CAST(%(souler_id)s AS uuid),
+                %(lang)s,
+                %(seq)s,
+                %(title)s,
+                %(subtitle)s,
+                %(task)s
+            )
+            ON CONFLICT (souler_id, lang, seq) WHERE active = TRUE DO NOTHING
+            """,
+            {
+                "souler_id": souler_id,
+                "lang": lang,
+                "seq": index,
+                "title": chapter["title"],
+                "subtitle": chapter["subtitle"],
+                "task": chapter["task"],
             },
         )
 

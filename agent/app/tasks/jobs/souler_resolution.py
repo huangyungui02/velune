@@ -122,6 +122,7 @@ async def _ensure_database() -> None:
 
 async def _generate_profile(*, name: str, canonical_name: str, lang: str) -> dict[str, object]:
     profile = await generate_profile_content(
+        name=name,
         canonical_name=canonical_name,
         lang=lang,
     )
@@ -129,4 +130,5 @@ async def _generate_profile(*, name: str, canonical_name: str, lang: str) -> dic
         "name": name,
         "introduction": profile.introduction,
         "keywords": [keyword.model_dump() for keyword in profile.keywords],
+        "chapters": [chapter.model_dump() for chapter in profile.chapters],
     }
